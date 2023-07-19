@@ -1,36 +1,32 @@
 ---
-title: About The Author
-image: /images/author.png
-description: "meta description"
+title: À Propos de l'Association
+description: "À Propos de l'Association"
 layout: about
-education:
-  title: Formal Education
-  degrees:
-    - university: "Southeast University"
-      content: "1985 • 1991 • gravida nibh velvelit auctor alimo quet menean solli"
-    - university: "Northeast University"
-      content: "1985 • 1991 • gravida nibh velvelit auctor alimo quet menean solli"
-    - university: "Easteast University"
-      content: "1985 • 1991 • gravida nibh velvelit auctor alimo quet menean solli"
-    - university: "Southeast University"
-      content: "1985 • 1991 • gravida nibh velvelit auctor alimo quet menean solli"  
-
-experience:
-  title: Work Experience
-  list:
-    - Best Writer Award
-    - Best New Newel
-    - Best Book
-    - Best Article
-    - Best New Newel
-    - Best New Newel
-    - Best Book
-    - Best Article
-    - Best New Newel
-    - Best Book
 
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi amet, ultrices scelerisue cras. Tincidunt hendrerit egestas venenatis risus sit nunc. Est esglit non in ipsum lect;aaus adipiscing et enim porttitor. Dui ultrices et volud eetpat nunc, turpis rutrum elit vestibululm ipsum. Arcu fringilla duis vitae mos dsdllis duicras interdum purus cursus massa metus. Acc umsan felaais, egsdvet nisi, viverra turpis fermentum sit suspf bafedfb ndisse fermentum consectetur. Facilisis feugiat trisique orci tempor sed masd fbsssa tristique ultrices sodales. Augue est sapien elementum facilisis. Enim tincidnt cras interdum purus ndisse. morbi quis nunc.
+Pour soutenir de nouvelles initiatives, les musiciens de l'harmonie municipale de Sucy-en-Brie décident en 2010 de fonder **LES AMIS DE L'HARMONIE** - J.O 06.08.2010
 
-Et dolor placerat tempus risus nunc urna, nunc a. Mattis viverra ut sapidaaen enim sed tortor. Mattis gravida fusce cras interdum purus cursus massa metus. Acc umsan felaais, eget nisi, viverra turpis fermentum sit suspf bafedfb ndisse. morbi quis nunc, at arcu quam facilisi. In in lacus aliquam dictum sagittis morbi odio. Et magnis cursus sem sed condimentum. Nibh non potenti ac amsdfet Tincidunt hendrerit egestas venenatis risus sit nunc. Est esglit non in ipsuasdm lect;aaus adipiscing et enim porttitor. Dui ultrices et volud eetpat nunc, turpis ndisse. morbi quis nunc, at arcu quam facilisi ndisse. morbi quis nunc, at arcu quam facilisi
+Cette association (loi 1901) a pour objet :
+
+- D'aider l'Harmonie Municipale de Sucy-en-Brie dans l'organisation de manifestations festives
+en dehors de sa vocation première qui est d 'assurer sa participation dans toutes
+les manifestations organisées par la municipalité (fêtes locales ou patriotiques).
+
+- De rechercher les possibilités de se produire en public, en facilitant la mise en relation
+avec des organisateurs de concerts ou de festivals, en organisant d'autres formes de
+manifestations dans lesquelles, l'harmonie assurerait la prépondérance de l'animation.
+
+- De financer occasionnellement les musiciens extérieurs appelés en renfort.
+
+- D'établir des relations d'entraide et d'échanges avec d'autres orchestres.
+
+- Stimuler les rencontres inter génération entre jeunes musiciens, anciens musiciens et parents.
+
+- Offrir à l' harmonie et en particulier aux jeunes débutants la possibilité d'exercer leur talent
+en finançant une partie des investissements en matériel.
+
+- Participer à l'enregistrement et à la diffusion de CD ou autre Média ou tout autre action
+de nature à promouvoir le rayonnement de l'Harmonie.
+
+Si vous souhaitez nous rencontrer, nous vous invitons à nous retrouver aux heures de répétition, tous les vendredis soirs de 19h30 à 21h30 à l'auditorium du conservatoire de Sucy-en-Brie.

@@ -1,40 +1,25 @@
 {
   "main": [
     {
-      "name": "Home",
+      "name": "Accueil",
       "url": "/"
     },
     {
-      "name": "About",
+      "name": "À Propos",
       "url": "/about"
-    },
-    {
-      "name": "Elements",
-      "url": "/elements"
     },
     {
       "name": "Contact",
       "url": "/contact"
-    },
-    {
-      "name": "Pages",
-      "url": "",
-      "hasChildren": true,
-      "children": [
-        {
-          "name": "Categories",
-          "url": "/categories"
-        }
-      ]
     }
   ],
   "footer": [
     {
-      "name": "Home",
+      "name": "Accueil",
       "url": "/"
     },
     {
-      "name": "About",
+      "name": "À Propos",
       "url": "/about"
     },
     {
@@ -42,8 +27,8 @@
       "url": "/contact"
     },
     {
-      "name": "Privacy Policy",
-      "url": "#"
+      "name": "Mentions Légales",
+      "url": "/legal"
     }
   ]
 }

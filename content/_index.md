@@ -1,27 +1,27 @@
 ---
 banner:
-  title: Welcome **!**
-  title_small: "to John Bravo's Blog"
-  content: Are Developer and recently started your own business Already made website to ensure presence wants to develop.
+  title: Association
+  title_small: "Les Amis de l'Harmonie"
+  content: Bienvenue sur le site officiel de l'association **Les Amis de l'Harmonie** de Sucy-en-Brie !
   image_enable: true
   image: /images/1.png
   button:
     enable: true
-    label: Know About Me
+    label: En savoir plus
     link: /about
     rel: ""
 
 featured_posts:
-  enable: true
+  enable: false
   title: Featured Posts
 
 promotion:
-  enable: true
+  enable: false
   image: /images/promotion.png
   link: "#"
 
 recent_posts:
   title: Recent Posts
-  enable: true
+  enable: false
 
 ---

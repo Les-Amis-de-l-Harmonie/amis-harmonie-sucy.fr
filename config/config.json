@@ -1,13 +1,13 @@
 {
   "site": {
-    "title": "Geeky Nextjs",
+    "title": "Les Amis de l'Harmonie de Sucy",
     "base_url": "/",
     "favicon": "/images/favicon.png",
     "logo": "/images/logo.png",
     "logo_white": "/images/logo-light.png",
-    "logo_width": "150",
-    "logo_height": "39",
-    "logo_text": "Geeky"
+    "logo_width": "100",
+    "logo_height": "100",
+    "logo_text": "Les Amis de l'Harmonie"
   },
   "settings": {
     "theme_switcher": true,
@@ -22,30 +22,30 @@
   },
   "params": {
     "tag_manager_id": "",
-    "footer_content": "Lorem ipsum dolor sit amt, conse adip iscing. donec iaculis tempasus laoreet. Libero ullam rgscper.",
-    "copyright": "Designed and Developed By [Statichunt](https://statichunt.com/)"
+    "footer_content": "Site officiel de l'association **Les Amis de l'Harmonie** de Sucy-en-Brie.",
+    "copyright": "© Les Amis de l'Harmonie"
   },
   "metadata": {
-    "meta_author": "Statichunt",
-    "meta_image": "/images/og-image.png",
-    "meta_description": "Geeky Nextjs Personal Blog Template"
+    "meta_author": "Les Amis de l'Harmonie",
+    "meta_image": "/images/logo.png",
+    "meta_description": "Site officiel de l'association Les Amis de l'Harmonie de Sucy-en-Brie."
   },
   "widgets": {
     "about": {
-      "enable": true,
+      "enable": false,
       "content": "Lorem ipsum dolor sit amet, conse tfctetur adipiscing elit. Vel in in donec iaculis tempasus odio nunc laoreet . Libero ullam rgscorper."
     },
     "featured_posts": {
-      "enable": true,
+      "enable": false,
       "title": "Blog Categories",
       "showPost": 3
     },
     "categories": {
-      "enable": true,
+      "enable": false,
       "title": "Blog Categories"
     },
     "newsletter": {
-      "enable": true,
+      "enable": false,
       "title": "Newsletter",
       "content": "Join thousands of Tiny Salt subscribers and get our best recipes delivered each week!",
       "privacy_policy_page": "#",
