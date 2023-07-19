@@ -9,6 +9,10 @@
       "url": "/about"
     },
     {
+      "name": "Vidéos",
+      "url": "/videos"
+    },
+    {
       "name": "Contact",
       "url": "/contact"
     }
@@ -21,6 +25,10 @@
     {
       "name": "À Propos",
       "url": "/about"
+    },
+    {
+      "name": "Vidéos",
+      "url": "/videos"
     },
     {
       "name": "Contact",
