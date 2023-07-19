@@ -26,7 +26,7 @@ const Contact = ({ data }) => {
               "h1 my-10 lg:my-11 lg:pt-11 text-center lg:text-left lg:text-[64px]"
             )}
           </div>
-          <div className="contact-form-wrapper rounded border border-border p-6 dark:border-darkmode-border lg:col-6">
+      {/*<div className="contact-form-wrapper rounded border border-border p-6 dark:border-darkmode-border lg:col-6">
             <h2>
               Send Us A
               <span className="ml-1.5 inline-flex items-center text-primary">
@@ -104,6 +104,7 @@ const Contact = ({ data }) => {
               />
             </form>
           </div>
+          */}
         </div>
         <div className="row">
           {phone && (
@@ -121,7 +122,7 @@ const Contact = ({ data }) => {
             </div>
           )}
           {mail && (
-            <div className="md:col-6 lg:col-4">
+            <div className="md:col-6 lg:col-6">
               <Link
                 href={`mailto:${mail}`}
                 className="my-4 flex h-[100px] items-center justify-center
@@ -135,7 +136,7 @@ const Contact = ({ data }) => {
             </div>
           )}
           {location && (
-            <div className="md:col-6 lg:col-4">
+            <div className="md:col-6 lg:col-6">
               <span
                 className="my-4 flex h-[100px] items-center justify-center
              rounded border border-border p-4 text-primary dark:border-darkmode-border"

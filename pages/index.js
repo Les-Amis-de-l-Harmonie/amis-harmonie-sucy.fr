@@ -157,20 +157,20 @@ const Home = ({
                       ))}
                     </div>
                   </div>
+                  <Pagination
+                      totalPages={Math.ceil(posts.length / showPosts)}
+                      currentPage={1}
+                  />
                 </div>
               )}
 
-              <Pagination
-                totalPages={Math.ceil(posts.length / showPosts)}
-                currentPage={1}
-              />
             </div>
             {/* sidebar */}
-            <Sidebar
+            {/*<Sidebar
               className={"lg:mt-[9.5rem]"}
               posts={posts}
               categories={categories}
-            />
+            />*/}
           </div>
         </div>
       </section>
