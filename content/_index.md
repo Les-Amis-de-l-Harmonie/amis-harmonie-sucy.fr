@@ -4,7 +4,7 @@ banner:
   title_small: "Les Amis de l'Harmonie"
   content: Bienvenue sur le site officiel de l'association **Les Amis de l'Harmonie** de Sucy-en-Brie !
   image_enable: true
-  image: /images/banner-author.png
+  image: /images/1.png
   button:
     enable: true
     label: En savoir plus
