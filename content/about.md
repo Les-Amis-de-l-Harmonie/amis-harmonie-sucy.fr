@@ -29,4 +29,3 @@ en finançant une partie des investissements en matériel.
 - Participer à l'enregistrement et à la diffusion de CD ou autre Média ou tout autre action
 de nature à promouvoir le rayonnement de l'Harmonie.
 
-Si vous souhaitez nous rencontrer, nous vous invitons à nous retrouver aux heures de répétition, tous les vendredis soirs de 19h30 à 21h30 à l'auditorium du conservatoire de Sucy-en-Brie.
