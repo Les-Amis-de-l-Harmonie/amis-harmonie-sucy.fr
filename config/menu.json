@@ -5,8 +5,12 @@
       "url": "/"
     },
     {
-      "name": "À Propos",
+      "name": "L'association",
       "url": "/about"
+    },
+    {
+      "name": "L'harmonie",
+      "url": "/harmonie"
     },
     {
       "name": "Vidéos",
@@ -23,8 +27,12 @@
       "url": "/"
     },
     {
-      "name": "À Propos",
+      "name": "L'association",
       "url": "/about"
+    },
+    {
+      "name": "L'harmonie",
+      "url": "/harmonie"
     },
     {
       "name": "Vidéos",
