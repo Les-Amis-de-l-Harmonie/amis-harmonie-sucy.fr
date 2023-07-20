@@ -1,7 +1,6 @@
 ---
 title: À Propos de l'Association
 description: "À Propos de l'Association"
-layout: about
 
 ---
 

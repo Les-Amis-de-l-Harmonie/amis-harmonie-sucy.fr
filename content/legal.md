@@ -1,7 +1,6 @@
 ---
 title: Mentions Légales
 description: "Mentions Légales"
-layout: legal
 
 ---
 
