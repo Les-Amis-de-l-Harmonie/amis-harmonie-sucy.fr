@@ -1,6 +1,18 @@
 import Base from "@layouts/Baseof";
+import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
+  const videos = [
+    {id: "gKQQWB8-PvQ", title: "Concert pour la délégation de Para Athlétisme des USA"},
+    {id: "RS7MAwTtdZE", title: "Fête de la musique 2023"},
+    {id: "ZzvzJ3wVxgQ", title: "Concert au Popott' Truck 2023"},
+    {id: "dwMtHfKVsKY", title: "Commémoration du 8 mai 1945"},
+    {id: "z2hks6eO8WQ", title: "Thé Dansant 2023"},
+    {id: "U-SYrUB8kEw", title: "Fête de la Saint-Vincent 2023"},
+    {id: "5ouK1KDKNF0", title: "\"The Best Of Beatles\""},
+    {id: "XOiG6ri3xRw", title: "Concert \"Autour de la Méditerranée\""},
+  ]
+
   return (
     <Base title={`Vidéos`}>
       <div className="section">
@@ -9,30 +21,12 @@ const Videos = () => {
             Vidéos
           </h1>
           <div className="row">
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/gKQQWB8-PvQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/RS7MAwTtdZE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/ZzvzJ3wVxgQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/dwMtHfKVsKY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/z2hks6eO8WQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/U-SYrUB8kEw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/5ouK1KDKNF0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div className="col-12 mb-5 sm:col-6">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/XOiG6ri3xRw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
+            {videos.map((video) =>
+              <div className="col-12 mb-5 px-12 sm:col-6 text-center">
+                <Youtube id={video.id} title={video.title} />
+                <b>{video.title}</b>
+              </div>
+            )}
           </div>
         </div>
       </div>
