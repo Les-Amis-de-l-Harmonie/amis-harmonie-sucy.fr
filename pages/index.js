@@ -21,12 +21,12 @@ const Home = () => {
             <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
               <div className="banner-title">
                 <h1>Association</h1>
-                <span>Les Amis de l'Harmonie</span>
+                <span>Les Amis de l&apos;Harmonie</span>
               </div>
               <p className="mt-4">
-                Bienvenue sur le site officiel de l'association
+                Bienvenue sur le site officiel de l&apos;association
                 <br />
-                <b>Les Amis de l'Harmonie</b> de Sucy-en-Brie !
+                <b>Les Amis de l&apos;Harmonie</b> de Sucy-en-Brie !
               </p>
               <Link
                 className="btn btn-primary mt-6"
