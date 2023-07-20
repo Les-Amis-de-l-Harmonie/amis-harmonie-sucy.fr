@@ -22,7 +22,7 @@ const Videos = () => {
           </h1>
           <div className="row">
             {videos.map((video) =>
-              <div className="col-12 mb-5 px-12 sm:col-6 text-center">
+              <div key={video.id} className="col-12 mb-5 px-12 sm:col-6 text-center">
                 <Youtube id={video.id} title={video.title} />
                 <b>{video.title}</b>
               </div>
