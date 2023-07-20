@@ -113,15 +113,6 @@ const Header = () => {
             <Social source={socical} className="socials" />
           </div>
           <ThemeSwitcher />
-          {/* Header search */}
-          <div
-            className="search-icon"
-            onClick={() => {
-              setSearchModal(true);
-            }}
-          >
-            <IoSearch />
-          </div>
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white lg:hidden"
@@ -142,11 +133,6 @@ const Header = () => {
             )}
           </button>
         </div>
-
-        <SearchModal
-          searchModal={searchModal}
-          setSearchModal={setSearchModal}
-        />
       </nav>
       {showMenu && (
         <div className="header-backdrop absolute top-0 left-0 h-[100vh] w-full bg-black/50 lg:hidden"></div>
