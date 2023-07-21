@@ -1,0 +1,15 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  sync_helloasso:
+    name: Sync HelloAsso Data
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        curl -o helloasso/credentials.json --location 'https://api.helloasso.com/oauth2/token' --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=client_credentials' --data-urlencode 'client_id=9626f98ea0b247c69e27123fcd47e5f0' --data-urlencode 'client_secret=h1JPeANPXldT+6o4+2PFFgMkGQ5fnkLK'
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5.0.2
+      with:
+        path: helloasso
