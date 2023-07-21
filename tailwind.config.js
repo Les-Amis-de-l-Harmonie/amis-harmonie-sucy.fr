@@ -29,6 +29,7 @@ module.exports = {
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./layouts/**/*.{js,ts,jsx,tsx}",
     "./content/**/*.{md,mdx}",
+    "./node_modules/flowbite-react/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
     screens: {
@@ -87,5 +88,6 @@ module.exports = {
     require("tailwind-scrollbar"),
     require("@tailwindcss/forms"),
     require("tailwind-bootstrap-grid")({ generateContainer: false }),
+    require("flowbite/plugin"),
   ],
 };
