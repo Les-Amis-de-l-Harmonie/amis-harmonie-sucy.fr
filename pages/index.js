@@ -38,7 +38,7 @@ const Home = () => {
             <div className="col-9 lg:col-6">
               <ImageFallback
                 className="mx-auto object-contain"
-                src="/images/1.png"
+                src="/images/7.png"
                 width={548}
                 height={443}
                 priority={true}
