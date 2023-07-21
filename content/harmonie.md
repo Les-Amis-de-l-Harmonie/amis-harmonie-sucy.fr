@@ -1,6 +1,6 @@
 ---
-title: l'Harmonie Municipale
-description: l'Harmonie Municipale
+title: L'Harmonie Municipale
+description: L'Harmonie Municipale
 layout: harmonie
 banner1: "**Venez renforcer l’harmonie municipale !**"
 banner2: L’harmonie a toujours besoin de grossir ses rangs. Aucun niveau musical n’est réclamé. En revanche, « une vraie motivation à expérimenter la musique en groupe est nécessaire », explique David Brunet, le directeur de l’harmonie.

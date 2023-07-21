@@ -5,16 +5,20 @@
       "url": "/"
     },
     {
-      "name": "L'association",
+      "name": "L'Association",
       "url": "/about"
     },
     {
-      "name": "L'harmonie",
+      "name": "L'Harmonie",
       "url": "/harmonie"
     },
     {
       "name": "Vidéos",
       "url": "/videos"
+    },
+    {
+      "name": "Billetterie",
+      "url": "/billetterie"
     },
     {
       "name": "Contact",
@@ -27,16 +31,20 @@
       "url": "/"
     },
     {
-      "name": "L'association",
+      "name": "L'Association",
       "url": "/about"
     },
     {
-      "name": "L'harmonie",
+      "name": "L'Harmonie",
       "url": "/harmonie"
     },
     {
       "name": "Vidéos",
       "url": "/videos"
+    },
+    {
+      "name": "Billetterie",
+      "url": "/billetterie"
     },
     {
       "name": "Contact",
