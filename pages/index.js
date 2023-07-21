@@ -54,7 +54,7 @@ const Home = () => {
         <div className="container">
           <div className="row">
             {evenements.map((evenement) =>
-              <Evenement evenement={evenement} />
+              <Evenement key={evenement.title} evenement={evenement} />
             )}
           </div>
         </div>
