@@ -19,7 +19,6 @@ La formation qui a fêté ses 150 ans fin 2017 rassemble quelque 35 musiciens pr
 On y trouve donc des bois : clarinette, flûte traversière, hautbois, saxophones (alto, ténor, baryton, soprano).
 Mais aussi des cuivres : trompettes, trombones, euphoniums et tubas.
 Côté percussions, la batterie, les cymbales, congas et autres grosses caisses, sont parfois rejoints par un vibraphone.
-Enfin, l’harmonie accueille de temps en temps une basse électrique ainsi qu’une chanteuse : Céline Bognini. 
 
 L’harmonie bénéficie de l’aide de l’association Les amis de l’harmonie (regroupant tous ses fans) qui organise régulièrement des animations en ville, comme le thé dansant-galette des rois en janvier, ainsi que des concerts en province.
 
