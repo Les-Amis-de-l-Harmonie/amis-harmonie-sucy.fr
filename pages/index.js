@@ -1,6 +1,7 @@
 import Base from "@layouts/Baseof";
 import ImageFallback from "@layouts/components/ImageFallback";
 import Link from "next/link";
+import {Evenement, evenements} from "./evenements"
 
 const Home = () => {
   return (
@@ -38,13 +39,23 @@ const Home = () => {
             <div className="col-9 lg:col-6">
               <ImageFallback
                 className="mx-auto object-contain"
-                src="/images/1.png"
+                src="/images/7.png"
                 width={548}
                 height={443}
                 priority={true}
                 alt="Banner Image"
               />
             </div>
+          </div>
+          
+        </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <div className="row">
+            {evenements.map((evenement) =>
+              <Evenement evenement={evenement} />
+            )}
           </div>
         </div>
       </section>

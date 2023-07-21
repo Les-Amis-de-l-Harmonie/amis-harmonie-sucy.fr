@@ -1,6 +1,6 @@
 ---
-title: L'Harmonie Municipale
-description: L'Harmonie Municipale
+title: L'Harmonie Municipale de Sucy-en-Brie
+description: L'Harmonie Municipale de Sucy-en-Brie
 layout: harmonie
 banner1: "**Venez renforcer l’harmonie municipale !**"
 banner2: L’harmonie a toujours besoin de grossir ses rangs. Aucun niveau musical n’est réclamé. En revanche, « une vraie motivation à expérimenter la musique en groupe est nécessaire », explique David Brunet, le directeur de l’harmonie.
@@ -9,7 +9,8 @@ banner4: Les élèves du conservatoire qui s’inscrivent à l’harmonie béné
 
 ---
 
-Harmonie municipale : 35 musiciens et un répertoire très varié
+L'Harmonie Municipale de Sucy-en-Brie : 35 musiciens de tous âges et un répertoire très varié !
+
 Outil municipal d’animation, au service des services de la ville et des associations, l’harmonie participe systématiquement à toutes les cérémonies officielles et commémorations.
 
 Rituel du vendredi soir : la répétition de l’harmonie municipale qui se déroule de 19 h 30 à 21 h 30 à l’auditorium du château, 3e étage.
@@ -18,8 +19,7 @@ La formation qui a fêté ses 150 ans fin 2017 rassemble quelque 35 musiciens pr
 
 On y trouve donc des bois : clarinette, flûte traversière, hautbois, saxophones (alto, ténor, baryton, soprano).
 Mais aussi des cuivres : trompettes, trombones, euphoniums et tubas.
-Côté percussions, la batterie, les cymbales, congas et autres grosses caisses, sont parfois rejoints par un vibraphone.
-Enfin, l’harmonie accueille de temps en temps une basse électrique ainsi qu’une chanteuse : Céline Bognini. 
+Côté rythmique, la batterie, la contrebasse, les cymbales, congas et tout un tas de petites percussions accompagnent l'orchestre.
 
 L’harmonie bénéficie de l’aide de l’association Les amis de l’harmonie (regroupant tous ses fans) qui organise régulièrement des animations en ville, comme le thé dansant-galette des rois en janvier, ainsi que des concerts en province.
 
