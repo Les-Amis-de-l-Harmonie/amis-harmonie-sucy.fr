@@ -8,7 +8,7 @@ export const evenements = [
 ]
 
 export const Evenement = ({evenement}) =>
-  <div key={evenement.title} className="col-12 mb-5 px-2 sm:col-3 text-center">
+  <div className="col-12 mb-5 px-2 sm:col-3 text-center">
     <div class="max-w-sm pb-5 bg-white h-[580px] border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
       <img class="rounded-t-lg" src={evenement.image} alt="" />
       <div class="p-5 h-[350px]">
@@ -38,7 +38,7 @@ const Evenements = () =>
         </h1>
         <div className="row">
           {evenements.map((evenement) =>
-            <Evenement evenement={evenement} />
+            <Evenement key={evenement.title} evenement={evenement} />
           )}
         </div>
       </div>
