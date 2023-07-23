@@ -50,7 +50,7 @@ const Home = () => {
           
         </div>
       </section>
-      <section className="section">
+      <section className="section" id="evenements">
         <div className="container">
           <div className="row">
             {evenements.map((evenement) =>

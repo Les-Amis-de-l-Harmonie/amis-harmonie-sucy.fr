@@ -1,10 +1,16 @@
 import Base from "@layouts/Baseof";
+import Link from "next/link";
 
 export const evenements = [
   {title: "Fête des associations", date : "Dimanche 10 septembre 2023", image: "images/evt100923.png", description: " Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."},
   {title: "Brocante de Sucy", date : "Dimanche 17 septembre 2023", image: "images/evt170923.png", description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"},
   {title: "Concert Musiques Traditionnelles", date : "Samedi 25 novembre 2023 15h", image: "images/evt251123.png", description: "C’est par un voyage «insensé» du soleil de mediterranée au soleil levant, en passant par l’Inde, la Chine et quelques contrées américaines où l’on aime le jazz et les big bands que l’harmonie vous convie.",url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-du-25-novembre"},
-  {title: "Thé Dansant", date : "Dimanche 28 janvier 14h",image: "images/evt280124.png", description: "Nous vous proposons un rendez-vous musical haut en couleur avec 2 orchestres complémentaires dans la grande tradition de la Coupole à Paris. Plus de 4h de musique non-stop !" , url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2024-1"},
+  {title: "Thé Dansant", date : "Dimanche 28 janvier 2024 14h",image: "images/evt280124.png", description: "Nous vous proposons un rendez-vous musical haut en couleur avec 2 orchestres complémentaires dans la grande tradition de la Coupole à Paris. Plus de 4h de musique non-stop !" , url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2024-1"},
+  {title: "Le concert impromptu", date : "Samedi 02 mars 2024 20h30", image: "images/evt020324.png", description: "En première partie du Concert impromptu venez découvrir la restitution du travail de l'Harmonie Municipale après une Master classe, véritable co-création autour d'une approche contemporaine qui met en relief les synergies possibles entre les différents langages artistiques..",url: "https://www.vostickets.net/billet?id=SUCY_EN_BRIE#"},
+  {title: "Commémoration du 08 mai 1945", date : "Mercredi 08 mai 2024", image: "images/evt080524.png", description: "Mercredi 8 mai se tiendra la cérémonie du 79e anniversaire de la Victoire du 8 mai 1945."},
+  {title: "Commémoration du 18 juin 1940", date : "Mardi 18 juin 2024", image: "images/evt180624.png", description: "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »"},,
+  {title: "Fête de la Musique", date : "Samedi 22 juin 2024", image: "images/evt220624.png", description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"}
+
 ]
 
 export const Evenement = ({evenement}) =>
@@ -17,12 +23,9 @@ export const Evenement = ({evenement}) =>
         <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">{evenement.description}</p>
       </div>
         {evenement.url &&
-          <a href={evenement.url} target="_blank" class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-primary rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          <Link className="btn btn-primary" href={evenement.url} target="_blank">
             Réserver
-            <svg class="w-3.5 h-3.5 ml-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-            </svg>
-          </a>
+          </Link>
         }
 
 

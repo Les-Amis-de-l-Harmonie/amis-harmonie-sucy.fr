@@ -17,6 +17,10 @@
       "url": "/videos"
     },
     {
+      "name": "Évenements",
+      "url": "/#evenements"
+    },
+    {
       "name": "Billetterie",
       "url": "/billetterie"
     },
@@ -41,6 +45,10 @@
     {
       "name": "Vidéos",
       "url": "/videos"
+    },
+    {
+      "name": "Évenements",
+      "url": "/#evenements"
     },
     {
       "name": "Billetterie",
