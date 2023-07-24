@@ -16,7 +16,7 @@ const Videos = () => {
           </h1>
           <div className="row">
             {billetteries.map((billetterie) =>
-              <div key={billetterie.title} className="col-12 mb-5 px-12 sm:col-6 text-center">
+              <div key={billetterie.title} className="col-12 mb-5 px-12 md:col-6 text-center">
                 <iframe id="haWidget" allowtransparency="true" src={billetterie.src} className="w-[350px] h-[650px] border-none mx-auto"></iframe>
               </div>
             )}

@@ -22,9 +22,9 @@ const Default = ({ data }) => {
           <MDXRemote {...mdxContent} components={shortcodes} />
         </div>
         <div className="row rounded-2xl bg-primary mt-16">
-          <div className="col-3 my-6 px-16 py-10 border-r-4">
+          <div className="col-12 md:col-3 my-6 px-16 px-10 md:py-10 border-b-4 md:border-b-0 md:border-r-4">
             <ImageFallback
-              className=""
+              className="w-[100px] h-auto md:w-[500px] mx-auto"
               src={"/images/i.png"}
               width="500"
               height="500"
@@ -32,7 +32,7 @@ const Default = ({ data }) => {
               priority
             />
           </div>
-          <div className="col-9 text-white pl-16 py-10">
+          <div className="col-12 md:col-9 text-white pl-16 py-10">
             {markdownify(banner1, "p", "pb-6")}
             {markdownify(banner2, "p", "pb-6")}
             {markdownify(banner3, "p", "pb-6")}
