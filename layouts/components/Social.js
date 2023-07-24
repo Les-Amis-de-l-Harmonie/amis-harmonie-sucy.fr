@@ -29,6 +29,7 @@ import {
   IoLogoWhatsapp,
   IoLogoYoutube,
   IoMail,
+  IoHeart,
   IoLogoStackoverflow,
 } from "react-icons/io5";
 
@@ -61,6 +62,7 @@ const Social = ({ source, className }) => {
     foursquare,
     rss,
     email,
+    don,
     phone,
     address,
     skype,
@@ -408,6 +410,18 @@ const Social = ({ source, className }) => {
         <li className="inline-block">
           <a aria-label="email" href={`mailto:${email}`}>
             <IoMail />
+          </a>
+        </li>
+      )}
+      {don && (
+        <li className="inline-block">
+          <a
+            aria-label="don"
+            href={don}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+          >
+            <IoHeart />
           </a>
         </li>
       )}

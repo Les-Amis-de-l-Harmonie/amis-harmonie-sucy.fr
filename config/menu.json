@@ -5,19 +5,35 @@
       "url": "/"
     },
     {
-      "name": "L'Association",
-      "url": "/about"
+      "name": "A Propos",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "L'Association",
+          "url": "/about"
+        },
+        {
+          "name": "L'Harmonie",
+          "url": "/harmonie"
+        },
+        {
+          "name": "Contact",
+          "url": "/contact"
+        }
+      ]
     },
     {
-      "name": "L'Harmonie",
-      "url": "/harmonie"
+      "name": "Actualités",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "Vidéos",
+          "url": "/videos"
+        }
+      ]
     },
     {
-      "name": "Vidéos",
-      "url": "/videos"
-    },
-    {
-      "name": "Évenements",
+      "name": "Évènements",
       "url": "/#evenements"
     },
     {
@@ -25,9 +41,10 @@
       "url": "/billetterie"
     },
     {
-      "name": "Contact",
-      "url": "/contact"
+      "name": "Adhésion",
+      "url": "/adhesion"
     }
+    
   ],
   "footer": [
     {
@@ -47,12 +64,16 @@
       "url": "/videos"
     },
     {
-      "name": "Évenements",
+      "name": "Évènements",
       "url": "/#evenements"
     },
     {
       "name": "Billetterie",
       "url": "/billetterie"
+    },
+    {
+      "name": "Adhésion",
+      "url": "/adhesion"
     },
     {
       "name": "Contact",
