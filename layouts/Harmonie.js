@@ -2,6 +2,7 @@ import { markdownify } from "@lib/utils/textConverter";
 import shortcodes from "@shortcodes/all";
 import { MDXRemote } from "next-mdx-remote";
 import ImageFallback from "@layouts/components/ImageFallback";
+import harmoniePng from "../public/images/harmonie.png";
 
 const Default = ({ data }) => {
   const { frontmatter, mdxContent } = data;
@@ -12,11 +13,9 @@ const Default = ({ data }) => {
         {markdownify(title, "h1", "h2 mb-8 text-center")}
         <ImageFallback
           className=""
-          src={"/images/harmonie.png"}
-          width="5000"
-          height="1429"
+          src={harmoniePng}
+          sizes="100vw"
           alt="banner-harmonie"
-          priority
         />
         <div className="content">
           <MDXRemote {...mdxContent} components={shortcodes} />
