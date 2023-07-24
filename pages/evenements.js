@@ -121,7 +121,7 @@ const Evenements = () =>
     <div className="section">
       <div className="container">
         <h1 className="h2 mb-8 text-center">
-          Évènements
+          Évènements à venir
         </h1>
         <div className="row">
           {evenements.map((evenement) =>

@@ -53,6 +53,11 @@ const Home = () => {
       <section className="section" id="evenements">
         <div className="container">
           <div className="row">
+            <div className="col-12">
+              <h2 className="h2 mb-8 text-center">
+                Évènements à venir
+              </h2>
+            </div>
             {evenements.map((evenement) =>
               <Evenement key={evenement.title} evenement={evenement} />
             )}
