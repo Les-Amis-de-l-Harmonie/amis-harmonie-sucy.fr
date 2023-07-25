@@ -1,23 +1,38 @@
+import { useState, useRef } from "react";
 import { markdownify } from "@lib/utils/textConverter";
 import Link from "next/link";
 import { FaEnvelope, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
 import Base from "@layouts/Baseof";
-import { Label, TextInput, Button } from 'flowbite-react';
+import { Label, TextInput, Button, Textarea } from 'flowbite-react';
 
 const InnerForm = () => 
-  <div className="flex max-w-md flex-col gap-4">
+  <div className="flex max-w-md flex-col gap-4 mx-auto">
     <div>
       <div className="mb-2 block">
         <Label
           htmlFor="small"
-          value="Nom Prénom"
+          value="Nom"
         />
       </div>
       <TextInput
-        id="small"
         sizing="sm"
         type="text"
         name="nom"
+        required
+      />
+    </div>
+    <div>
+      <div className="mb-2 block">
+        <Label
+          htmlFor="small"
+          value="Prénom"
+        />
+      </div>
+      <TextInput
+        sizing="sm"
+        type="text"
+        name="prénom"
+        required
       />
     </div>
     <div>
@@ -28,10 +43,10 @@ const InnerForm = () =>
         />
       </div>
       <TextInput
-        id="small"
         sizing="sm"
-        type="text"
+        type="email"
         name="email"
+        required
       />
     </div>
     <div>
@@ -41,20 +56,23 @@ const InnerForm = () =>
           value="Votre Message"
         />
       </div>
-      <TextInput
-        id="large"
-        sizing="lg"
+      <Textarea
+        sizing="sm"
         type="text"
         name="message"
+        required
       />
     </div>
     <div class="h-captcha" data-captcha="true"></div>
-    <Button type="submit" className="background-primary">
+    <Button type="submit" className="bg-primary">
       Envoyer mon message
     </Button>
   </div>
 
 const ContactForm = () => {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const form = useRef();
+
   async function handleSubmit(event) {
       event.preventDefault();
       const formData = new FormData(event.target);
@@ -74,15 +92,21 @@ const ContactForm = () => {
       });
       const result = await response.json();
       if (result.success) {
-          console.log(result);
+          setShowConfirmation(true);
+          form.current.reset();
       }
   }
 
 return (
     <>
-      <form onSubmit={handleSubmit}>
+      <form ref={form} onSubmit={handleSubmit}>
         <InnerForm />
       </form>
+      {showConfirmation &&
+        <div className="text-center">
+          <span>Votre message a bien été envoyé.</span>
+        </div>
+      }
     </>
   );
 }
@@ -103,14 +127,14 @@ const Contact = () => {
       <section className="section">
         <div className="container">
           <div className="row">
-            <div className="col-12 md:col-6">
+            <div className="col-12">
               {markdownify(
                 title,
                 "h1",
                 "h2 mb-8 text-center"
               )}
             </div>
-            <div className="col-12 md:col-6">
+            <div className="col-12">
               <ContactForm />
             </div>
           
