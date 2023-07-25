@@ -1,14 +1,16 @@
 import Base from "@layouts/Baseof";
-import ImageFallback from "@layouts/components/ImageFallback";
+import Image from "next/image";
 import Link from "next/link";
 import {Evenement, evenements} from "./evenements"
+
+import i7 from "../public/images/7.png"
 
 const Home = () => {
   return (
     <Base>
       {/* Banner */}
       <section className="section banner relative pb-0">
-        <ImageFallback
+        <Image
           className="absolute bottom-0 left-0 z-[-1] w-full"
           src={"/images/banner-bg-shape.svg"}
           width={1905}
@@ -37,13 +39,12 @@ const Home = () => {
               </Link>
             </div>
             <div className="col-9 lg:col-6">
-              <ImageFallback
+              <Image
                 className="mx-auto object-contain"
-                src="/images/7.png"
-                width={548}
-                height={443}
+                src={i7}
+                sizes="50vw"
                 priority={true}
-                alt="Banner Image"
+                alt=""
               />
             </div>
           </div>
