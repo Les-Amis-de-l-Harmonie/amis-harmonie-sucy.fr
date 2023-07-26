@@ -17,6 +17,8 @@ const Default = ({ data }) => {
           src={harmoniePng}
           sizes="100vw"
           alt="banner-harmonie"
+          priority
+          placeholder="empty"
         />
         <div className="content">
           <MDXRemote {...mdxContent} components={shortcodes} />
@@ -28,6 +30,7 @@ const Default = ({ data }) => {
               src={i}
               sizes="10vw"
               alt="i"
+              priority
             />
           </div>
           <div className="col-12 md:col-9 text-white pl-16 py-10">

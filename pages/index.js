@@ -16,6 +16,8 @@ const Home = () => {
           width={1905}
           height={295}
           alt="banner-shape"
+          priority
+          placeholder="empty"
         />
 
         <div className="container">
