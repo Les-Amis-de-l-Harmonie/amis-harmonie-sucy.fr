@@ -3,7 +3,7 @@ import shortcodes from "@shortcodes/all";
 import { MDXRemote } from "next-mdx-remote";
 import harmoniePng from "../public/images/harmonie.png";
 import i from "../public/images/i.png";
-import Image from "next/image";
+import ExportedImage from "next-image-export-optimizer";
 
 const Default = ({ data }) => {
   const { frontmatter, mdxContent } = data;
@@ -12,7 +12,7 @@ const Default = ({ data }) => {
     <section className="section">
       <div className="container">
         {markdownify(title, "h1", "h2 mb-8 text-center")}
-        <Image
+        <ExportedImage
           className=""
           src={harmoniePng}
           sizes="100vw"
@@ -23,7 +23,7 @@ const Default = ({ data }) => {
         </div>
         <div className="row rounded-2xl bg-primary mt-16">
           <div className="col-12 md:col-3 my-6 px-16 px-10 md:py-10 border-b-4 md:border-b-0 md:border-r-4">
-            <Image
+            <ExportedImage
               className="w-[100px] h-auto md:w-[500px] mx-auto"
               src={i}
               sizes="10vw"

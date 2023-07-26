@@ -1,4 +1,4 @@
-import ImageFallback from "@components/ImageFallback";
+import ExportedImage from "next-image-export-optimizer";
 import config from "@config/config.json";
 import { useTheme } from "next-themes";
 import Link from "next/link";
@@ -15,7 +15,7 @@ const Logo = ({ src }) => {
   return (
     <Link href="/" className="navbar-brand">
       {src || logo ? (
-        <ImageFallback
+        <ExportedImage
           width={logo_width.replace("px", "") * 2}
           height={logo_height.replace("px", "") * 2}
           src={
@@ -24,7 +24,6 @@ const Logo = ({ src }) => {
               : logo
           }
           alt={title}
-          priority
           style={{
             height: logo_height.replace("px", "") + "px",
             width: logo_width.replace("px", "") + "px",

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Base from "@layouts/Baseof";
 import Link from "next/link";
 import { Modal } from 'flowbite-react';
-import Image from 'next/image';
+import ExportedImage from "next-image-export-optimizer";
 import { IoTimeOutline, IoLocationOutline, IoCardOutline } from "react-icons/io5";
 
 const EvenementModal = ({evenement}) => {
@@ -14,8 +14,8 @@ const EvenementModal = ({evenement}) => {
       <Modal dismissible show={openModal === true} onClose={() => setOpenModal(false)}>
         <Modal.Header className="text-center">{evenement.title}</Modal.Header>
         <Modal.Body>
-          <Image sizes="25vw" quality="90" src={evenement.modal.image1} alt="" className="mb-3" />
-          <Image sizes="25vw" quality="90" src={evenement.modal.image2} alt="" className="mb-3" />
+          <ExportedImage sizes="50vw" quality="90" src={evenement.modal.image1} alt="" className="mb-3" />
+          <ExportedImage sizes="50vw" quality="90" src={evenement.modal.image2} alt="" className="mb-3" />
         </Modal.Body>
         <Modal.Footer className="text-center">
           {evenement.url &&
@@ -54,18 +54,18 @@ export const evenements = [
     description: "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."
   },
   {
-    title: "Brocante de Sucy", 
-    date : "Dimanche 17 septembre 2023", 
-    image: evt170923, 
+    title: "Brocante de Sucy",
+    date : "Dimanche 17 septembre 2023",
+    image: evt170923,
     heure: "A définir",
     lieu: "Sucy-en-Brie",
     prix: "Gratuit",
     description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"
   },
   {
-    title: "Concert Musiques Traditionnelles", 
-    date : "Samedi 25 novembre 2023", 
-    image: evt251123, 
+    title: "Concert Musiques Traditionnelles",
+    date : "Samedi 25 novembre 2023",
+    image: evt251123,
     heure: "15H",
     lieu: "La Grange, Sucy-en-Brie",
     prix: "10€",
@@ -77,13 +77,13 @@ export const evenements = [
     }
   },
   {
-    title: "Thé Dansant", 
+    title: "Thé Dansant",
     date : "Dimanche 28 janvier 2024",
-    image: evt280124, 
+    image: evt280124,
     heure: "14H",
     lieu: "Espace JMP, Sucy-en-Brie",
     prix: "10-20€",
-    description: "Nous vous proposons un rendez-vous musical haut en couleur avec 2 orchestres complémentaires dans la grande tradition de la Coupole à Paris. Plus de 4h de musique non-stop !" , 
+    description: "Nous vous proposons un rendez-vous musical haut en couleur avec 2 orchestres complémentaires dans la grande tradition de la Coupole à Paris. Plus de 4h de musique non-stop !" ,
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2024-1",
     modal : {
       image1: i0124_1,
@@ -91,9 +91,9 @@ export const evenements = [
     }
   },
   {
-    title: "Le concert impromptu", 
-    date : "Samedi 02 mars 2024", 
-    image: evt020324, 
+    title: "Le concert impromptu",
+    date : "Samedi 02 mars 2024",
+    image: evt020324,
     heure: "20H30",
     lieu: "L'Orangerie, Sucy-en-Brie",
     prix: "7-11€",
@@ -101,27 +101,27 @@ export const evenements = [
     url: "https://www.vostickets.net/billet/PGE_PRESENTATION_WEB2/_DMAAApVcsEvAIK750HipGBtcgM"
   },
   {
-    title: "Commémoration du 08 mai 1945", 
-    date : "Mercredi 08 mai 2024", 
-    image: evt080524, 
+    title: "Commémoration du 08 mai 1945",
+    date : "Mercredi 08 mai 2024",
+    image: evt080524,
     heure: "11H",
     lieu: "Parvis église Saint-Martin, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Mercredi 8 mai se tiendra la cérémonie du 79e anniversaire de la Victoire du 8 mai 1945."
   },
   {
-    title: "Commémoration du 18 juin 1940", 
-    date : "Mardi 18 juin 2024", 
-    image: evt180624, 
+    title: "Commémoration du 18 juin 1940",
+    date : "Mardi 18 juin 2024",
+    image: evt180624,
     heure: "19H",
     lieu: "Esplanade Château Montaleau, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »"
   },
   {
-    title: "Fête de la Musique", 
-    date : "Samedi 22 juin 2024", 
-    image: evt220624, 
+    title: "Fête de la Musique",
+    date : "Samedi 22 juin 2024",
+    image: evt220624,
     heure: "A définir",
     lieu: "Centre culturel, Sucy-en-Brie",
     prix: "Gratuit",
@@ -133,7 +133,7 @@ export const Evenement = ({evenement}) =>
   <div className="col-12 sm:col-6 lg:col-4 xl:col-3 mb-6">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
       <div className="">
-        <Image sizes="25vw" src={evenement.image} alt={evenement.title} />
+        <ExportedImage sizes="50vw" src={evenement.image} alt={evenement.title} />
         <h5 className="text-xl text-center tracking-tight text-gray-900 dark:text-white pt-6 pb-1 py-3">
           {evenement.title}
         </h5>
@@ -177,7 +177,7 @@ export const Evenement = ({evenement}) =>
     </div>
   </div>
 
-const Evenements = () => 
+const Evenements = () =>
   <Base title={`Évènements`}>
     <div className="section">
       <div className="container">
@@ -185,7 +185,6 @@ const Evenements = () =>
           Évènements à venir
         </h1>
         <div className="row">
-          <Image width={500} height={500} src={evt100923} alt="" />
           {evenements.map((evenement) =>
             <Evenement key={evenement.title} evenement={evenement} />
           )}
