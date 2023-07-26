@@ -47,7 +47,7 @@ body.menu-open {
 }
 
 .nav-dropdown-list {
-  @apply z-10 rounded-lg  border border-transparent bg-body p-4 shadow dark:border-darkmode-border dark:bg-black;
+  @apply pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow dark:border-darkmode-border dark:bg-black;
 }
 
 .nav-dropdown-item {
@@ -55,7 +55,7 @@ body.menu-open {
 }
 
 .nav-dropdown-link {
-  @apply min-w-[150px] rounded py-2.5 px-3.5 text-base font-semibold  text-dark transition hover:bg-primary/10 hover:text-primary dark:text-darkmode-light;
+  @apply min-w-[100px] rounded py-2.5 px-3.5 text-[13.5px] font-semibold text-dark transition hover:bg-primary/10 hover:text-primary dark:text-darkmode-light;
 
   &.active {
     @apply bg-primary/10 text-primary;
