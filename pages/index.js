@@ -1,5 +1,5 @@
 import Base from "@layouts/Baseof";
-import Image from "next/image";
+import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import {Evenement, evenements} from "./evenements"
 
@@ -10,13 +10,12 @@ const Home = () => {
     <Base>
       {/* Banner */}
       <section className="section banner relative pb-0">
-        <Image
+        <ExportedImage
           className="absolute bottom-0 left-0 z-[-1] w-full"
           src={"/images/banner-bg-shape.svg"}
           width={1905}
           height={295}
           alt="banner-shape"
-          priority
         />
 
         <div className="container">
@@ -39,16 +38,15 @@ const Home = () => {
               </Link>
             </div>
             <div className="col-9 lg:col-6">
-              <Image
+              <ExportedImage
                 className="mx-auto object-contain"
                 src={i7}
                 sizes="50vw"
-                priority={true}
                 alt=""
               />
             </div>
           </div>
-          
+
         </div>
       </section>
       <section className="section" id="evenements">

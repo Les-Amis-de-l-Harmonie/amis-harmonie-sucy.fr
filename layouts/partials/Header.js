@@ -3,18 +3,15 @@ import menu from "@config/menu.json";
 import socical from "@config/social.json";
 import Social from "@layouts/components/Social";
 import ThemeSwitcher from "@layouts/components/ThemeSwitcher";
-import SearchModal from "@partials/SearchModal";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import { IoSearch } from "react-icons/io5";
 
 const Header = () => {
   // distructuring the main menu from menu object
   const { main } = menu;
 
   // states declaration
-  const [searchModal, setSearchModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   // Router
