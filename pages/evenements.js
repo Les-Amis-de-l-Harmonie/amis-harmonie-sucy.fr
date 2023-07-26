@@ -29,14 +29,14 @@ const EvenementModal = ({evenement}) => {
   )
 }
 
-import evt100923 from "../public/images/evt100923.png"
-import evt170923 from "../public/images/evt170923.png"
-import evt251123 from "../public/images/evt251123.png"
-import evt280124 from "../public/images/evt280124.png"
-import evt020324 from "../public/images/evt020324.png"
-import evt080524 from "../public/images/evt080524.png"
-import evt180624 from "../public/images/evt180624.png"
-import evt220624 from "../public/images/evt220624.png"
+import evt100923 from "../public/images/evt100923.jpg"
+import evt170923 from "../public/images/evt170923.jpg"
+import evt251123 from "../public/images/evt251123.jpg"
+import evt280124 from "../public/images/evt280124.jpg"
+import evt020324 from "../public/images/evt020324.jpg"
+import evt080524 from "../public/images/evt080524.jpg"
+import evt180624 from "../public/images/evt180624.jpg"
+import evt220624 from "../public/images/evt220624.jpg"
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -133,7 +133,7 @@ export const Evenement = ({evenement}) =>
   <div className="col-12 sm:col-6 lg:col-4 xl:col-3 mb-6">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
       <div className="">
-        <ExportedImage sizes="50vw" src={evenement.image} alt={evenement.title} />
+        <ExportedImage className="rounded-t-lg" sizes="50vw" src={evenement.image} alt={evenement.title} />
         <h5 className="text-xl text-center tracking-tight text-gray-900 dark:text-white pt-6 pb-1 py-3">
           {evenement.title}
         </h5>
@@ -153,7 +153,7 @@ export const Evenement = ({evenement}) =>
       <div>
         <div className="relative my-4">
           <div className="border-b-2 mt-3 absolute w-full"></div>
-          <div className="text-center text-primary font-bold text-md relative bg-white w-fit mx-auto px-1">
+          <div className="text-center text-primary font-bold text-md relative bg-white dark:bg-gray-800 w-fit mx-auto px-1">
             {evenement.date}
           </div>
           <div className="row px-12 pt-3 text-xs">
@@ -168,7 +168,7 @@ export const Evenement = ({evenement}) =>
           </div>
         </div>
         {evenement.url ?
-          <Link className="btn btn-primary w-full rounded-lg text-center overflow-visible" href={evenement.url} target="_blank">
+          <Link className="btn btn-primary w-full rounded-b-lg rounded-t-none before:rounded-b-lg before:rounded-t-none text-center overflow-visible" href={evenement.url} target="_blank">
             Réserver
           </Link> :
           <div className="h-[3rem]"></div>
