@@ -1,4 +1,9 @@
+# *
 User-agent: *
 Allow: /
 
-Disallow: /api/*
+# Host
+Host: https://amis-harmonie-sucy.fr
+
+# Sitemaps
+Sitemap: https://amis-harmonie-sucy.fr/sitemap.xml
