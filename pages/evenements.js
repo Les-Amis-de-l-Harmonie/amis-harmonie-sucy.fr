@@ -70,7 +70,7 @@ export const evenements = [
     lieu: "La Grange, Sucy-en-Brie",
     prix: "10€",
     description: "C’est par un voyage «insensé» du soleil de mediterranée au soleil levant, en passant par l’Inde, la Chine et quelques contrées américaines où l’on aime le jazz et les big bands que l’harmonie vous convie.",
-    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-du-25-novembre",
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-musiques-traditionnelles",
     modal : {
       image1: i1123_1,
       image2: i1123_2
@@ -84,7 +84,7 @@ export const evenements = [
     lieu: "Espace JMP, Sucy-en-Brie",
     prix: "10-20€",
     description: "Nous vous proposons un rendez-vous musical haut en couleur avec 2 orchestres complémentaires dans la grande tradition de la Coupole à Paris. Plus de 4h de musique non-stop !" ,
-    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2024-1",
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2024-2",
     modal : {
       image1: i0124_1,
       image2: i0124_2
