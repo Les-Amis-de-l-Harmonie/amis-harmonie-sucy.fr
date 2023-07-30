@@ -1,6 +1,7 @@
 ---
 title: L'Association
 description: "À Propos de l'Association"
+layout: about
 
 ---
 
@@ -21,12 +22,3 @@ manifestations dans lesquelles, l'harmonie assurerait la prépondérance de l'an
 en finançant une partie des investissements en matériel.
 - Participer à l'enregistrement et à la diffusion de CD ou autre Média ou tout autre action
 de nature à promouvoir le rayonnement de l'Harmonie.
-
-Les membres du bureau de l'association :
-- Président : Stéphane Carcenac
-- Vice Présidente et Secrétaire : Brigitte Lemoine
-- Directeur Musical : David Brunet
-- Trésorier : Maxime Leduc
-- Secrétaire adjointe : Josette Collomb
-- Chargée de communication : Estelle Debache
-
