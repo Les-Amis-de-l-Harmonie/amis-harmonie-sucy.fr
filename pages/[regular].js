@@ -1,6 +1,7 @@
 import NotFound from "@layouts/404";
 import Base from "@layouts/Baseof";
 import Default from "@layouts/Default";
+import About from "@layouts/About";
 import Harmonie from "@layouts/Harmonie";
 import { getRegularPage, getSinglePage } from "@lib/contentParser";
 
@@ -21,6 +22,8 @@ const RegularPages = ({ data }) => {
     >
       {layout === "404" ? (
         <NotFound data={data} />
+      ) : layout === "about" ? (
+        <About data={data} />
       ) : layout === "harmonie" ? (
         <Harmonie data={data} />
       ) : (

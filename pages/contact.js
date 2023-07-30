@@ -116,7 +116,7 @@ const Contact = () => {
   const description = "Contactez-nous"
   const phone = ""
   const mail = "contact@amis-harmonie-sucy.fr"
-  const location = "Maison des associations - 14 Rue du Clos de Pacy, 94370 Sucy-en-Brie"
+  const location = "Les Amis de l'Harmonie - Maison des associations - 14 Rue du Clos de Pacy, 94370 Sucy-en-Brie"
 
   return (
     <Base
