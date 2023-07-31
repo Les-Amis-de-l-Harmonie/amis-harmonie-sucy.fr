@@ -143,12 +143,12 @@ export const Evenement = ({evenement}) =>
         </div>
         <p className="font-normal text-center text-sm text-gray-700 dark:text-gray-400 pt-4 px-6">
           {evenement.description}
-          {evenement.modal &&
-            <p className="mt-3">
-              <EvenementModal evenement={evenement} />
-            </p>
-          }
         </p>
+        {typeof evenement.modal !== "undefined" &&
+          <p className="font-normal text-center text-sm text-gray-700 dark:text-gray-400 mt-3">
+            <EvenementModal evenement={evenement} />
+          </p>
+        }
       </div>
       <div>
         <div className="relative my-4">
