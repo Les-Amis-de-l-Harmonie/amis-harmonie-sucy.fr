@@ -82,6 +82,7 @@ const Default = ({ data }) => {
 
         </div>
       </div>
+      
     </section>
   );
 };
