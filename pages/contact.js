@@ -5,7 +5,7 @@ import { FaEnvelope, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
 import Base from "@layouts/Baseof";
 import { Label, TextInput, Button, Textarea } from 'flowbite-react';
 
-const InnerForm = () => 
+const InnerForm = () =>
   <div className="flex max-w-md flex-col gap-4 mx-auto">
     <div>
       <div className="mb-2 block">
@@ -63,7 +63,7 @@ const InnerForm = () =>
         required
       />
     </div>
-    <div class="h-captcha" data-captcha="true"></div>
+    <div className="h-captcha" data-captcha="true"></div>
     <Button type="submit" className="bg-primary">
       Envoyer mon message
     </Button>
@@ -137,7 +137,7 @@ const Contact = () => {
             <div className="col-12">
               <ContactForm />
             </div>
-          
+
             {phone && (
               <div className="md:col-6 lg:col-4">
                 <Link
