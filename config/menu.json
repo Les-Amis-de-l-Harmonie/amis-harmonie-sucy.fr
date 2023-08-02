@@ -29,6 +29,10 @@
         {
           "name": "Vidéos",
           "url": "/videos"
+        },
+        {
+          "name": "Posts",
+          "url": "/posts"
         }
       ]
     },
@@ -62,6 +66,10 @@
     {
       "name": "Vidéos",
       "url": "/videos"
+    },
+    {
+      "name": "Posts",
+      "url": "/posts"
     },
     {
       "name": "Évènements",
