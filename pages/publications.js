@@ -30,11 +30,11 @@ const Posts = () => {
   }, [])
 
   return (
-    <Base title={`Posts`}>
+    <Base title={`Publications`}>
       <div className="section">
         <div className="container">
           <h1 className="h2 mb-8 text-center">
-            Posts
+          Publications
           </h1>
           <div className="row">
             {/*posts.map((post, index) =>
