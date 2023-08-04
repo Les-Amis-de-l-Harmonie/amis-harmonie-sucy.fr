@@ -31,8 +31,8 @@
           "url": "/videos"
         },
         {
-          "name": "Posts",
-          "url": "/posts"
+          "name": "Publications",
+          "url": "/publications"
         }
       ]
     },
@@ -68,8 +68,8 @@
       "url": "/videos"
     },
     {
-      "name": "Posts",
-      "url": "/posts"
+      "name": "Publications",
+      "url": "/publications"
     },
     {
       "name": "Évènements",
