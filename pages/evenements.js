@@ -98,7 +98,7 @@ export const evenements = [
     lieu: "L'Orangerie, Sucy-en-Brie",
     prix: "7-11€",
     description: "En première partie du Concert impromptu venez découvrir la restitution du travail de l'Harmonie Municipale après une Master classe, véritable co-création autour d'une approche contemporaine qui met en relief les synergies possibles entre les différents langages artistiques..",
-    url: "https://www.vostickets.net/billet/PGE_PRESENTATION_WEB2/_DMAAApVcsEvAIK750HipGBtcgM"
+    url: "https://www.vostickets.net/billet?id=SUCY_EN_BRIE"
   },
   {
     title: "Commémoration du 08 mai 1945",
