@@ -76,7 +76,7 @@ const Partenaires = () =>
               </div>
             </div>
           </div>
-          <div className="col-12">
+          <div className="col-12 mt-32">
             <h6 className="text-primary">ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?</h6>
             <p>{p2}</p>
           </div>
