@@ -17,6 +17,10 @@
           "url": "/harmonie"
         },
         {
+          "name": "Partenaires",
+          "url": "/partenaires"
+        },
+        {
           "name": "Contact",
           "url": "/contact"
         }
@@ -48,7 +52,7 @@
       "name": "Adhésion",
       "url": "/adhesion"
     }
-    
+
   ],
   "footer": [
     {
@@ -62,6 +66,10 @@
     {
       "name": "L'Harmonie",
       "url": "/harmonie"
+    },
+    {
+      "name": "Partenaires",
+      "url": "/partenaires"
     },
     {
       "name": "Vidéos",
