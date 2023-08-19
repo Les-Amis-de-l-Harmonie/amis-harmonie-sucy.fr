@@ -221,3 +221,7 @@ footer .socials {
 #disqus_thread {
   color-scheme: none;
 }
+
+#posts-row > div {
+  @apply row
+}

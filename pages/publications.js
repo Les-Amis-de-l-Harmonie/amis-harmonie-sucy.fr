@@ -1,23 +1,95 @@
-import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState, memo } from 'react';
 import Base from "@layouts/Baseof";
-//import { InstagramEmbed } from 'react-social-media-embed';
+import { InstagramEmbed } from 'react-social-media-embed';
+import VirtualScroller from 'virtual-scroller/react'
+
+const getColumnsCount= (container) => {
+  if (container.getWidth() >= 1280) {
+    return 3
+  }
+  if (container.getWidth() >= 768) {
+    return 2
+  }
+  return 1
+}
+
+const Post = ({ item: post }) =>
+  <div className="col-12 mb-5 md:col-6 xl:col-4 text-center overflow-hidden">
+    <InstagramEmbed url={post} className="w-full"/>
+  </div>
+
+const MemoPost = memo(Post)
 
 const Posts = () => {
-  /*let [posts, setPosts] = useState([])*/
+  let [posts, setPosts] = useState([])
 
   const effectRan = useRef(false);
 
   useEffect(() => {
-    /*setPosts([
+    setPosts([
+      "https://www.instagram.com/p/Cvz36rbIq34/",
+      "https://www.instagram.com/p/Cvz3FOyI2O2/",
+      "https://www.instagram.com/p/Cvy9JNgI-wX/",
       "https://www.instagram.com/p/CuT-KbprU3g/",
-      "https://www.instagram.com/p/CtXHh52rKQU/",
+      "https://www.instagram.com/p/CtXHh52rKQU/?img_index=1",
       "https://www.instagram.com/p/CtM68dDoC6K/",
       "https://www.instagram.com/p/Cs-1hHCLGbW/",
       "https://www.instagram.com/p/CsyGThwI6he/",
       "https://www.instagram.com/p/CsotcQ_Lt-g/",
-    ])*/
+      "https://www.instagram.com/p/CsJEkyttntD/",
+      "https://www.instagram.com/p/CqQx6ShDqbY/?img_index=1",
+      "https://www.instagram.com/p/Cpu4l89jH7E/",
+      "https://www.instagram.com/p/CpRxTXhDtr1/",
+      "https://www.instagram.com/p/Co4nNY2jnuP/?img_index=1",
+      "https://www.instagram.com/p/CnwpeDcIOO4/",
+      "https://www.instagram.com/p/CnfBMjGLPGR/",
+      "https://www.instagram.com/p/CmXNSGaL9o9/?img_index=1",
+      "https://www.instagram.com/p/Clbqh6CDez1/",
+      "https://www.instagram.com/p/ClL31YBDfcb/",
+      "https://www.instagram.com/p/ClLL0qcjfgR/",
+      "https://www.instagram.com/p/ClI1CWKIHkV/",
+      "https://www.instagram.com/p/Ck2xpAEjARo/",
+      "https://www.instagram.com/p/Ck0_-ngjgbT/",
+      "https://www.instagram.com/p/Ck0_ZnfDq_j/",
+      "https://www.instagram.com/p/Ck0gSF0DB-e/",
+      "https://www.instagram.com/p/CkiUf1njKMx/",
+      "https://www.instagram.com/p/CkOG4bYDYB8/",
+      "https://www.instagram.com/p/Cj3J2u5DGk_/",
+      "https://www.instagram.com/p/Ci7U0DajErk/",
+      "https://www.instagram.com/p/CivXQGara_e/?img_index=1",
+      "https://www.instagram.com/p/Cf_EWL9j2li/",
+      "https://www.instagram.com/p/CfyoaOjDuXa/",
+      "https://www.instagram.com/p/CfmghsvIrij/",
+      "https://www.instagram.com/p/CfiiG5YjEJk/?img_index=1",
+      "https://www.instagram.com/p/Cfa2hFzjMfl/",
+      "https://www.instagram.com/p/CfYRwZPjN3m/",
+      "https://www.instagram.com/p/CfUAL5UDK7l/",
+      "https://www.instagram.com/p/CfTH9hWj-3F/",
+      "https://www.instagram.com/p/CfSWRfKjxJv/?img_index=1",
+      "https://www.instagram.com/p/CfN7tnYjZgS/",
+      "https://www.instagram.com/p/CfMMbKNDm6Z/",
+      "https://www.instagram.com/p/Ce_-devoSR8/",
+      "https://www.instagram.com/p/Ce_zbz0LO0y/?img_index=1",
+      "https://www.instagram.com/p/Ce9aYeIqreX/",
+      "https://www.instagram.com/p/CexiktkjU_8/",
+      "https://www.instagram.com/p/CevTAUaLUVt/?img_index=1",
+      "https://www.instagram.com/p/Cean5LVDwvU/",
+      "https://www.instagram.com/p/CeWngjIrvii/",
+      "https://www.instagram.com/p/CdVeUNLjhGX/",
+      "https://www.instagram.com/p/CYLfCDBDdh1/",
+      "https://www.instagram.com/p/CXdrXX1Ieve/",
+      "https://www.instagram.com/p/CXNw1QEIp_Z/",
+      "https://www.instagram.com/p/CXF6S5ioOSg/",
+      "https://www.instagram.com/p/CW0jlU1IKYC/",
+      "https://www.instagram.com/p/CW0ec_Eobv2/",
+      "https://www.instagram.com/p/CW0S_CSoOMl/",
+      "https://www.instagram.com/p/CW0LJLOolL2/",
+      "https://www.instagram.com/p/CWyZIBvIMWn/",
+      "https://www.instagram.com/p/CWyYSvAoP5u/"
+    ])
 
-    if (!effectRan.current) {
+    /*if (!effectRan.current) {
       const script = document.createElement("script")
       script.src = "https://widgets.sociablekit.com/instagram-feed/widget.js"
       script.async = true
@@ -26,7 +98,7 @@ const Posts = () => {
         document.body.removeChild(script)
         effectRan.current = true;
       }
-    }
+    }*/
   }, [])
 
   return (
@@ -36,15 +108,15 @@ const Posts = () => {
           <h1 className="h2 mb-8 text-center">
           Publications
           </h1>
-          <div className="row">
-            {/*posts.map((post, index) =>
-              <div key={index} className="col-12 mb-5 md:col-6 xl:col-4 text-center overflow-hidden">
-                <InstagramEmbed url={post} className="w-full"/>
-              </div>
-            )*/}
-            <div className="col-12">
+          <div id="posts-row">
+            <VirtualScroller
+              items={posts}
+              itemComponent={MemoPost}
+              getColumnsCount={getColumnsCount}
+            />
+            {/*<div className="col-12">
               <div className='sk-instagram-feed' data-embed-id='173898'></div>
-            </div>
+            </div>*/}
           </div>
         </div>
       </div>
@@ -52,4 +124,8 @@ const Posts = () => {
   );
 };
 
-export default Posts;
+const PostsWithoutSSR = dynamic(() => Promise.resolve(Posts), {
+  ssr: false,
+})
+
+export default PostsWithoutSSR
