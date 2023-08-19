@@ -32,7 +32,8 @@
     "react-social-media-embed": "^2.3.5",
     "react-syntax-highlighter": "^15.5.0",
     "rehype-slug": "^5.1.0",
-    "remark-gfm": "^3.0.1"
+    "remark-gfm": "^3.0.1",
+    "virtual-scroller": "^1.12.3"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.4",
