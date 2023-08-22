@@ -28,6 +28,7 @@ const Posts = () => {
 
   useEffect(() => {
     setPosts([
+      "https://www.instagram.com/p/CwQNzZOIF0N/",
       "https://www.instagram.com/p/Cvz36rbIq34/",
       "https://www.instagram.com/p/Cvz3FOyI2O2/",
       "https://www.instagram.com/p/Cvy9JNgI-wX/",
@@ -87,6 +88,7 @@ const Posts = () => {
       "https://www.instagram.com/p/CW0LJLOolL2/",
       "https://www.instagram.com/p/CWyZIBvIMWn/",
       "https://www.instagram.com/p/CWyYSvAoP5u/"
+      
     ])
 
     /*if (!effectRan.current) {
