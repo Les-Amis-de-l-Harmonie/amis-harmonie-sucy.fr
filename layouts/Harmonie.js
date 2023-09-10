@@ -148,7 +148,7 @@ const Default = ({ data }) => {
         </div> */}
         <div className="row mt-12">
           {photos.map((photo, i) =>
-            <div key="i" className="col-12 md:col-4 xl:col-2 mb-6">
+            <div key={i} className="col-12 md:col-4 xl:col-2 mb-6">
               <ExportedImage
                 className=""
                 src={photo}
