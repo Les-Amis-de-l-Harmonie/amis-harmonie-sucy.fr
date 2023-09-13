@@ -3,6 +3,7 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "jg0jYA1mtq4", title: "Fête des associations de Sucy-en-Brie 2023"},
     {id: "gKQQWB8-PvQ", title: "Concert pour la délégation de Para Athlétisme des USA"},
     {id: "RS7MAwTtdZE", title: "Fête de la musique 2023"},
     {id: "ZzvzJ3wVxgQ", title: "Concert au Popott' Truck 2023"},
