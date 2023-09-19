@@ -44,7 +44,7 @@ import i0124_1 from "../public/images/0124_1.jpg"
 import i0124_2 from "../public/images/0124_2.jpg"
 
 export const evenements = [
-  {
+  /*{
     title: "Fête des associations",
     date : "Dimanche 10 septembre 2023",
     image: evt100923,
@@ -61,7 +61,7 @@ export const evenements = [
     lieu: "Sucy-en-Brie",
     prix: "Gratuit",
     description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"
-  },
+  },*/
   {
     title: "Concert Musiques Traditionnelles",
     date : "Samedi 25 novembre 2023",
