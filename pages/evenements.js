@@ -31,12 +31,15 @@ const EvenementModal = ({evenement}) => {
 
 import evt100923 from "../public/images/evt100923.jpg"
 import evt170923 from "../public/images/evt170923.jpg"
+import evt111123 from "../public/images/evt111123.jpg"
+import evt191123 from "../public/images/evt191123.jpg"
 import evt251123 from "../public/images/evt251123.jpg"
 import evt280124 from "../public/images/evt280124.jpg"
 import evt020324 from "../public/images/evt020324.jpg"
 import evt080524 from "../public/images/evt080524.jpg"
 import evt180624 from "../public/images/evt180624.jpg"
 import evt220624 from "../public/images/evt220624.jpg"
+
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -62,6 +65,26 @@ export const evenements = [
     prix: "Gratuit",
     description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"
   },*/
+  {
+    title: "Cérémonie du 11 novembre",
+    date : "11 novembre 2023",
+    image: evt111123,
+    heure: "11H",
+    lieu: "Parvis de l'église Saint-Martin, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
+  
+  },
+  {
+    title: "Banquet de l'amitié",
+    date : "19, 25 et 26 novembre 2023",
+    image: evt191123,
+    heure: "12H",
+    lieu: "JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
+    url: "https://www.ville-sucy.fr/annuaire-des-equipements/la-maison-des-seniors"
+  },
   {
     title: "Concert Musiques Traditionnelles",
     date : "Samedi 25 novembre 2023",
