@@ -3,6 +3,8 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "JKdJ5Ia9YZk", title: "Concert \"Musiques Traditionnelles\""},
+    {id: "YbWBx3DkJrU", title: "Commémoration de l'Armistice de 1918 - 11 novembre 2023"},
     {id: "MJSRTO9_66c", title: "Brocante de Sucy-en-Brie 2023"},
     {id: "jg0jYA1mtq4", title: "Fête des associations de Sucy-en-Brie 2023"},
     {id: "gKQQWB8-PvQ", title: "Concert pour la délégation de Para Athlétisme des USA"},

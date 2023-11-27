@@ -64,7 +64,7 @@ export const evenements = [
     lieu: "Sucy-en-Brie",
     prix: "Gratuit",
     description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"
-  },*/
+  },
   {
     title: "Cérémonie du 11 novembre",
     date : "11 novembre 2023",
@@ -98,7 +98,7 @@ export const evenements = [
       image1: i1123_1,
       image2: i1123_2
     }
-  },
+  },*/
   {
     title: "Thé Dansant",
     date : "Dimanche 28 janvier 2024",
