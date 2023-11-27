@@ -28,6 +28,7 @@ const Posts = () => {
 
   useEffect(() => {
     setPosts([
+      "https://www.instagram.com/p/C0HtGvRLBDA/?img_index=1",
       "https://www.instagram.com/p/CxYrqbDLrHR/",
       "https://www.instagram.com/p/CxAh25SLN0V/",
       "https://www.instagram.com/p/CyS-dq-rop-/?img_index=1",
