@@ -15,7 +15,9 @@ const EvenementModal = ({evenement}) => {
         <Modal.Header className="text-center">{evenement.title}</Modal.Header>
         <Modal.Body>
           <ExportedImage sizes="50vw" quality="90" src={evenement.modal.image1} alt="" className="mb-3" />
-          <ExportedImage sizes="50vw" quality="90" src={evenement.modal.image2} alt="" className="mb-3" />
+          { evenement.modal.image2 &&
+            <ExportedImage sizes="50vw" quality="90" src={evenement.modal.image2} alt="" className="mb-3" />
+          }
         </Modal.Body>
         <Modal.Footer className="text-center">
           {evenement.url &&
@@ -39,7 +41,9 @@ import evt020324 from "../public/images/evt020324.jpg"
 import evt080524 from "../public/images/evt080524.jpg"
 import evt180624 from "../public/images/evt180624.jpg"
 import evt220624 from "../public/images/evt220624.jpg"
-
+import evt210124 from "../public/images/evt210124.jpg"
+import evt260124 from "../public/images/evt260124.jpg"
+import evt2601241 from "../public/images/evt2601241.jpeg"
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -100,6 +104,27 @@ export const evenements = [
     }
   },*/
   {
+    title: "Fête de la Saint-Vincent",
+    date : "Dimanche 21 janvier 2024",
+    image: evt210124,
+    heure: "12H15",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Privé",
+    description: "Depuis le Moyen-Age, chaque 22 janvier, vignerons, famille, voisins, amis parfois venus de loin, participent aux festivités organisées pour célébrer la Saint-Vincent.",
+  },
+  {
+    title: "Nuit des Conservatoires",
+    date : "Vendredi 26 janvier 2024",
+    image: evt260124,
+    heure: "17H30 - 22H",
+    lieu: "Conservatoire, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "A partir de 17h30 venez découvrir au conservatoire les différentes pratiques musicales et artistiques ! Et dès 21H assistez à notre répétition." ,
+    modal : {
+      image1: evt2601241,
+    }
+  },
+  {
     title: "Thé Dansant",
     date : "Dimanche 28 janvier 2024",
     image: evt280124,
@@ -141,6 +166,15 @@ export const evenements = [
     prix: "Gratuit",
     description: "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »"
   },
+  /*{
+    title: "Un dimanche en Fauré",
+    date : "Dimanche 2 juin 2024",
+    image: ,
+    heure: "15H",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "",
+  },*/
   {
     title: "Fête de la Musique",
     date : "Samedi 22 juin 2024",
