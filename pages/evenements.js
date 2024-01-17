@@ -51,7 +51,8 @@ import i0124_1 from "../public/images/0124_1.jpg"
 import i0124_2 from "../public/images/0124_2.jpg"
 
 export const evenements = [
-  /*{
+  {
+    d: "2023-09-10",
     title: "Fête des associations",
     date : "Dimanche 10 septembre 2023",
     image: evt100923,
@@ -61,6 +62,7 @@ export const evenements = [
     description: "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."
   },
   {
+    d: "2023-09-17",
     title: "Brocante de Sucy",
     date : "Dimanche 17 septembre 2023",
     image: evt170923,
@@ -70,6 +72,7 @@ export const evenements = [
     description: "L'Harmonie Municipale de Sucy-en-Brie déambulera à travers la brocante pour vous faire danser !"
   },
   {
+    d: "2023-11-11",
     title: "Cérémonie du 11 novembre",
     date : "11 novembre 2023",
     image: evt111123,
@@ -80,6 +83,7 @@ export const evenements = [
   
   },
   {
+    d: "2023-11-26",
     title: "Banquet de l'amitié",
     date : "19, 25 et 26 novembre 2023",
     image: evt191123,
@@ -90,6 +94,7 @@ export const evenements = [
     url: "https://www.ville-sucy.fr/agenda/banquet-de-lamitie-2023-inscriptions-en-ligne"
   },
   {
+    d: "2023-11-25",
     title: "Concert Musiques Traditionnelles",
     date : "Samedi 25 novembre 2023",
     image: evt251123,
@@ -102,8 +107,9 @@ export const evenements = [
       image1: i1123_1,
       image2: i1123_2
     }
-  },*/
+  },
   {
+    d: "2024-01-17",
     title: "Fête de la Saint-Vincent",
     date : "Dimanche 21 janvier 2024",
     image: evt210124,
@@ -113,6 +119,7 @@ export const evenements = [
     description: "Depuis le Moyen-Age, chaque 22 janvier, vignerons, famille, voisins, amis parfois venus de loin, participent aux festivités organisées pour célébrer la Saint-Vincent.",
   },
   {
+    d: "2024-01-26",
     title: "Nuit des Conservatoires",
     date : "Vendredi 26 janvier 2024",
     image: evt260124,
@@ -125,6 +132,7 @@ export const evenements = [
     }
   },
   {
+    d: "2024-01-28",
     title: "Thé Dansant",
     date : "Dimanche 28 janvier 2024",
     image: evt280124,
@@ -139,6 +147,7 @@ export const evenements = [
     }
   },
   {
+    d: "2024-03-02",
     title: "Le concert impromptu",
     date : "Samedi 02 mars 2024",
     image: evt020324,
@@ -149,6 +158,7 @@ export const evenements = [
     url: "https://www.vostickets.net/billet?id=SUCY_EN_BRIE"
   },
   {
+    d: "2024-05-08",
     title: "Commémoration du 08 mai 1945",
     date : "Mercredi 08 mai 2024",
     image: evt080524,
@@ -158,6 +168,7 @@ export const evenements = [
     description: "Mercredi 8 mai se tiendra la cérémonie du 79e anniversaire de la Victoire du 8 mai 1945."
   },
   {
+    d: "2024-06-18",
     title: "Commémoration du 18 juin 1940",
     date : "Mardi 18 juin 2024",
     image: evt180624,
@@ -167,6 +178,7 @@ export const evenements = [
     description: "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »"
   },
   /*{
+    d: "2024-06-02",
     title: "Un dimanche en Fauré",
     date : "Dimanche 2 juin 2024",
     image: ,
@@ -176,6 +188,7 @@ export const evenements = [
     description: "",
   },*/
   {
+    d: "2024-06-22",
     title: "Fête de la Musique",
     date : "Samedi 22 juin 2024",
     image: evt220624,
@@ -186,7 +199,7 @@ export const evenements = [
   }
 ]
 
-export const Evenement = ({evenement}) =>
+export const Evenement = ({evenement, button=true}) =>
   <div className="col-12 sm:col-6 lg:col-4 xl:col-3 mb-6">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
       <div className="">
@@ -224,7 +237,7 @@ export const Evenement = ({evenement}) =>
             </div>
           </div>
         </div>
-        {evenement.url ?
+        {evenement.url && button ?
           <Link className="btn btn-primary w-full rounded-b-lg rounded-t-none before:rounded-b-lg before:rounded-t-none text-center overflow-visible" href={evenement.url} target="_blank">
             Réserver
           </Link> :
@@ -240,6 +253,14 @@ const Evenements = () =>
       <div className="container">
         <h1 className="h2 mb-8 text-center">
           Évènements à venir
+        </h1>
+        <div className="row">
+          {evenements.filter((evt) => new Date(Date.parse(evt.d)) >= today).map((evenement) =>
+            <Evenement key={evenement.title} evenement={evenement} />
+          )}
+        </div>
+        <h1 className="h2 mb-8 text-center">
+          Évènements passés
         </h1>
         <div className="row">
           {evenements.map((evenement) =>
