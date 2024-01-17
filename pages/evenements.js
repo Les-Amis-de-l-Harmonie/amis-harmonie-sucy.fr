@@ -255,14 +255,6 @@ const Evenements = () =>
           Évènements à venir
         </h1>
         <div className="row">
-          {evenements.filter((evt) => new Date(Date.parse(evt.d)) >= today).map((evenement) =>
-            <Evenement key={evenement.title} evenement={evenement} />
-          )}
-        </div>
-        <h1 className="h2 mb-8 text-center">
-          Évènements passés
-        </h1>
-        <div className="row">
           {evenements.map((evenement) =>
             <Evenement key={evenement.title} evenement={evenement} />
           )}
