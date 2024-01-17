@@ -5,6 +5,11 @@ import {Evenement, evenements} from "./evenements"
 
 import i7 from "../public/images/7.png"
 
+const today = new Date()
+today.setHours(0,0,0,0)
+const tomorrow = new Date(today)
+tomorrow.setDate(tomorrow.getDate() + 1)
+
 const Home = () => {
   return (
     <Base>
@@ -59,8 +64,18 @@ const Home = () => {
                 Évènements à venir
               </h2>
             </div>
-            {evenements.map((evenement) =>
+            {evenements.filter((evt) => new Date(Date.parse(evt.d)) >= today).map((evenement) =>
               <Evenement key={evenement.title} evenement={evenement} />
+            )}
+          </div>
+          <div className="row">
+            <div className="col-12">
+              <h2 className="h2 mb-8 text-center">
+                Évènements passés
+              </h2>
+            </div>
+            {evenements.filter((evt) => new Date(Date.parse(evt.d)) < today).reverse().map((evenement) =>
+              <Evenement key={evenement.title} evenement={evenement} button={false}/>
             )}
           </div>
         </div>
