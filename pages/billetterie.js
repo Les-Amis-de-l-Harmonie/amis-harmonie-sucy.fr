@@ -1,7 +1,18 @@
 import Base from "@layouts/Baseof";
 import {Evenement, evenements} from "./evenements"
 
-const Videos = () => 
+export const hasBilletterie = () => {
+  return Boolean(evenements.filter(isBilletterie).length)
+}
+
+const today = new Date()
+today.setHours(0,0,0,0)
+
+const isBilletterie = (evt) => {
+  return new Date(Date.parse(evt.d)) >= today && typeof evt.url !== "undefined"
+}
+
+const Videos = () =>
 <Base title={`Billetterie`}>
   <div className="section">
     <div className="container">
@@ -10,7 +21,7 @@ const Videos = () =>
       </h1>
       <div className="row justify-center">
         {evenements
-          .filter((evenement) => typeof evenement.url !== "undefined")
+          .filter(isBilletterie)
           .map((evenement) =>
           <Evenement key={evenement.title} evenement={evenement} />
         )}

@@ -6,6 +6,7 @@ import ThemeSwitcher from "@layouts/components/ThemeSwitcher";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
+import { hasBilletterie } from "../../pages/billetterie"
 
 const Header = () => {
   // distructuring the main menu from menu object
@@ -54,7 +55,14 @@ const Header = () => {
               id="nav-menu"
               className="navbar-nav w-full md:w-auto md:space-x-1 lg:flex xl:space-x-2"
             >
-              {main.map((menu, i) => (
+              {main
+                .filter((menu) => {
+                  if (menu.condition === "hasBilleterie" && !hasBilletterie()) {
+                    return false
+                  }
+                  return true
+                })
+                .map((menu, i) => (
                 <React.Fragment key={`menu-${i}`}>
                   {menu.hasChildren ? (
                     <li className="nav-item nav-dropdown group relative">

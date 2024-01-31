@@ -80,7 +80,7 @@ export const evenements = [
     lieu: "Parvis de l'église Saint-Martin, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
-  
+
   },
   {
     d: "2023-11-26",
