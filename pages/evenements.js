@@ -44,6 +44,17 @@ import evt220624 from "../public/images/evt220624.jpg"
 import evt210124 from "../public/images/evt210124.jpg"
 import evt260124 from "../public/images/evt260124.jpg"
 import evt2601241 from "../public/images/evt2601241.jpeg"
+import evt190324 from "../public/images/evt190324.jpg"
+import evt230324 from "../public/images/evt230324.jpg"
+import evt2303241 from "../public/images/evt2303241.jpg"
+import evt070424 from "../public/images/evt070424.jpg"
+import evt240424 from "../public/images/evt240424.jpg"
+import evt010524 from "../public/images/evt010524.jpg"
+import evt020624 from "../public/images/evt020624.jpg"
+import evtblanc from "../public/images/evtblanc.jpg"
+import evt290624 from "../public/images/evt290624.jpg"
+import evt060724 from "../public/images/evt060724.jpg"
+import evt150624 from "../public/images/evt150624.jpg"
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -158,14 +169,112 @@ export const evenements = [
     url: "https://www.vostickets.net/billet?id=SUCY_EN_BRIE"
   },
   {
+    d: "2024-03-19",
+    title: "Cérémonie des accords d'évian",
+    date : "Mardi 19 mars 2024",
+    image: evt190324,
+    heure: "A définir",
+    lieu: "Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "La journée nationale du souvenir et de recueillement à la mémoire des victimes civiles et militaires de la guerre d’Algérie et des combats en Tunisie et au Maroc a lieu le 19 mars.",
+    url: ""
+  },
+  {
+    d: "2024-03-23",
+    title: "Concert au Rond d'or",
+    date : "Samedi 23 mars 2024",
+    image: evt230324,
+    heure: "A définir",
+    lieu: "Rond d'or, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Déambulation musicale au Rond d'or de la Cité Verte de Sucy-en-Brie. Rejoignez-nous pour un moment festif !",
+    url: ""
+  },
+  {
+    d: "2024-03-23",
+    title: "Concert à la Résidence de la Cité Verte",
+    date : "Samedi 23 mars 2024",
+    image: evt2303241,
+    heure: "A définir",
+    lieu: "Maison de retraite de la Cité Verte, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "C'est aussi cela la mission de l'Harmonie Municipale, faire plaisir à tous les publics !",
+    url: ""
+  },
+  {
+    d: "2024-04-07",
+    title: "Concert Club de rugby Sucy",
+    date : "Dimanche 7 avril 2024",
+    image: evt070424,
+    heure: "A définir",
+    lieu: "Stade de rugby, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
+    url: ""
+  },
+  {
+    d: "2024-04-24",
+    title: "Cérémonie de la déportation",
+    date : "Mercredi 24 avril 2024",
+    image: evt240424,
+    heure: "A définir",
+    lieu: "Place de l’Église, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Le dernier dimanche d'avril est chaque année dédié à la célébration de la mémoire des victimes de la déportation dans les camps de concentration et d'extermination nazis lors la seconde guerre mondiale.",
+    url: ""
+  },
+  {
+    d: "2024-05-01",
+    title: "Concert ouverture des Sister Cities Games",
+    date : "Mercredi 1er mai 2024",
+    image: evt010524,
+    heure: "A définir",
+    lieu: "Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Sur la vague des JO Paris 2024, la Ville de Sucy-en-Brie organise les Sister Cities Games. Une rencontre sportive internationale entre les jeunes de Sucy et ceux de ses villes jumelles et villes amies autour de 4 sports olympiques.",
+    url: ""
+  },
+  {
+    d: "2024-05-05",
+    title: "Concert fermeture des Sister Cities Games",
+    date : "Dimanche 5 mai 2024",
+    image: evt010524,
+    heure: "A définir",
+    lieu: "Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Sur la vague des JO Paris 2024, la Ville de Sucy-en-Brie organise les Sister Cities Games. Une rencontre sportive internationale entre les jeunes de Sucy et ceux de ses villes jumelles et villes amies autour de 4 sports olympiques.",
+    url: ""
+  },
+  {
     d: "2024-05-08",
-    title: "Commémoration du 08 mai 1945",
-    date : "Mercredi 08 mai 2024",
+    title: "Commémoration du 8 mai 1945",
+    date : "Mercredi 8 mai 2024",
     image: evt080524,
     heure: "11H",
     lieu: "Parvis église Saint-Martin, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Mercredi 8 mai se tiendra la cérémonie du 79e anniversaire de la Victoire du 8 mai 1945."
+  },
+  {
+    d: "2024-06-02",
+    title: "Un dimanche en Fauré",
+    date : "Dimanche 2 juin 2024",
+    image: evt020624,
+    heure: "15H",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: " Une journée pour célébrer la musique française de Gabriel Fauré aux couleurs subtiles et fascinantes, empreinte de poésie et de spiritualité. ",
+  },
+  {
+    d: "2024-06-15",
+    title: "Concert sport et musique",
+    date : "Samedi 15 juin 2024",
+    image: evt150624,
+    heure: "A définir",
+    lieu: "Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "",
+    url: ""
   },
   {
     d: "2024-06-18",
@@ -177,16 +286,6 @@ export const evenements = [
     prix: "Gratuit",
     description: "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »"
   },
-  /*{
-    d: "2024-06-02",
-    title: "Un dimanche en Fauré",
-    date : "Dimanche 2 juin 2024",
-    image: ,
-    heure: "15H",
-    lieu: "Espace JMP, Sucy-en-Brie",
-    prix: "Gratuit",
-    description: "",
-  },*/
   {
     d: "2024-06-22",
     title: "Fête de la Musique",
@@ -196,6 +295,28 @@ export const evenements = [
     lieu: "Centre culturel, Sucy-en-Brie",
     prix: "Gratuit",
     description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"
+  },
+  {
+    d: "2024-06-29",
+    title: "Concert Résidence des Cèdres",
+    date : "Samedi 29 juin 2024",
+    image: evt290624,
+    heure: "A définir",
+    lieu: "Résidence des Cèdres, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Agréable rendez-vous musical annuel à la Résidence des Cèdres de Sucy-en-Brie auprès de nos seniors.",
+    url: ""
+  },
+  {
+    d: "2024-07-06",
+    title: "Spectacle de danse Art et Mouvement",
+    date : "Samedi 06 juillet 2024",
+    image: evt060724,
+    heure: "A définir",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Nous serons aux côtés de Art & Mouvement pour notre dernière prestation de la saison !",
+    url: ""
   }
 ]
 
