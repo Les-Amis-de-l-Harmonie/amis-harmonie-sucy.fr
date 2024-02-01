@@ -9,7 +9,7 @@ const today = new Date()
 today.setHours(0,0,0,0)
 
 const isBilletterie = (evt) => {
-  return new Date(Date.parse(evt.d)) >= today && typeof evt.url !== "undefined"
+  return new Date(Date.parse(evt.d)) >= today && typeof evt.url !== "undefined" && evt.url !== ""
 }
 
 const Videos = () =>
