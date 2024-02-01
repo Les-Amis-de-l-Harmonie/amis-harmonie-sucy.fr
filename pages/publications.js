@@ -28,6 +28,12 @@ const Posts = () => {
 
   useEffect(() => {
     setPosts([
+      "https://www.instagram.com/p/C2zBjmArIfJ/?img_index=1",
+      "https://www.instagram.com/p/C2r94ZboHEu/?img_index=1",
+      "https://www.instagram.com/p/C2hR_ckLVNq/",
+      "https://www.instagram.com/p/C2chL8ENre4/",
+      "https://www.instagram.com/p/C2Zb_cPrl9U/?img_index=1",
+      "https://www.instagram.com/p/C2R5lfGrOFW/",
       "https://www.instagram.com/p/C0mj0ShrL8j/",
       "https://www.instagram.com/p/C2K6iqfr_M5/",
       "https://www.instagram.com/reel/C2NieG7LoQ9/",
