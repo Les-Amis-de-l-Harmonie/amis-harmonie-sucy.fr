@@ -8,7 +8,7 @@ const capitalizeFirstLetter = (string) => {
 }
 
 // const url = "https://amis-harmonie-sucy.fr/api";
-const url = "https://script.google.com/macros/s/AKfycbyXsbpIpVQ9cb7xulgFv0h0L77iIcuvd8hZPfgyurZ0klP9gyqIy8REP8WNjQlN2A/exec"
+const url = "https://script.google.com/macros/s/AKfycbxgiXg25rWkddkGXqSgIIbvUzdv9ePKX_3lHKh4NeJNy7NG8xD0HZ7wZNj9WZfXUuI/exec"
 
 const LivreDorForm = ({callback}) => {
   const [disabled, setDisabled] = useState(false)
@@ -21,7 +21,8 @@ const LivreDorForm = ({callback}) => {
     setDisabled(true);
 
     grecaptcha.ready(() => {
-      grecaptcha.execute('6LfS9nEpAAAAAD_Ri6UvCBhiNl8ioNLpw7YUf6O2', {action: 'submit'}).then(async () => {
+      grecaptcha.execute('6LfS9nEpAAAAAD_Ri6UvCBhiNl8ioNLpw7YUf6O2', {action: 'submit'}).then(async (token) => {
+        data.append("token", token);
         const ret = await fetch(url, {
           method: "POST",
           body: data,
