@@ -36,9 +36,9 @@ const LivreDorForm = ({callback}) => {
   }
 
   if (!addComment) {
-    return <button className="btn btn-primary max-w-2xl w-full m-auto" onClick={() => setAddComment(true)}>Ajouter un commentaire au livre {`d'or`}</button>
+    return <button className="btn btn-primary max-w-2xl m-auto" onClick={() => setAddComment(true)}>Ajouter un commentaire au livre {`d'or`}</button>
   } else if (thankYou) {
-    return <div className="text-center">Merci pour votre commentaire !</div>
+    return <div className="text-center text-primary font-bold">Merci pour votre commentaire !</div>
   } else {
     return  <>
       <Script src="https://www.google.com/recaptcha/api.js?render=6LfS9nEpAAAAAD_Ri6UvCBhiNl8ioNLpw7YUf6O2" />
@@ -85,9 +85,9 @@ const LivreDorComments = ({update}) => {
                   month: 'long',
                   day: 'numeric',
                 }))}</Timeline.Time>
-              <Timeline.Title>{capitalizeFirstLetter(comment.fname)} {capitalizeFirstLetter(comment.lname)}</Timeline.Title>
+              <Timeline.Title className="text-primary font-medium">{capitalizeFirstLetter(comment.fname)} {capitalizeFirstLetter(comment.lname)}</Timeline.Title>
               <Timeline.Body>
-                {comment.comment}
+                {comment.comment.split('\n').map((str, i) => <p key={i}>{str}</p>)}
               </Timeline.Body>
             </Timeline.Content>
           </Timeline.Item>

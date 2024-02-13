@@ -5,7 +5,7 @@
       "url": "/"
     },
     {
-      "name": "A Propos",
+      "name": "À Propos",
       "hasChildren": true,
       "children": [
         {
@@ -48,6 +48,10 @@
       "name": "Billetterie",
       "url": "/billetterie",
       "condition": "hasBilleterie"
+    },
+    {
+      "name": "Livre d'Or",
+      "url": "/livre-or"
     },
     {
       "name": "Adhésion",

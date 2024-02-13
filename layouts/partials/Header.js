@@ -67,7 +67,7 @@ const Header = () => {
                   {menu.hasChildren ? (
                     <li className="nav-item nav-dropdown group relative">
                       <span
-                        className={`nav-link ${
+                        className={`nav-link !normal-case ${
                           menu.children
                             .map((c) => c.url)
                             .includes(router.asPath) && "active"
@@ -103,7 +103,7 @@ const Header = () => {
                     <li className="nav-item">
                       <Link
                         href={menu.url}
-                        className={`nav-link block ${
+                        className={`nav-link !normal-case block ${
                           router.asPath === menu.url && "active"
                         }`}
                       >
