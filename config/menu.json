@@ -1,8 +1,8 @@
 {
   "main": [
     {
-      "name": "Accueil",
-      "url": "/"
+      "name": "Évènements",
+      "url": "/#evenements"
     },
     {
       "name": "À Propos",
@@ -19,6 +19,11 @@
         {
           "name": "Partenaires",
           "url": "/partenaires"
+        },
+        {
+          "name": "Billetterie",
+          "url": "/billetterie",
+          "condition": "hasBilleterie"
         },
         {
           "name": "Contact",
@@ -39,15 +44,6 @@
           "url": "/publications"
         }
       ]
-    },
-    {
-      "name": "Évènements",
-      "url": "/#evenements"
-    },
-    {
-      "name": "Billetterie",
-      "url": "/billetterie",
-      "condition": "hasBilleterie"
     },
     {
       "name": "Livre d'Or",

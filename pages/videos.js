@@ -3,6 +3,7 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "ze4b6Br0qCI", title: "Thé Dansant 2024"},
     {id: "JKdJ5Ia9YZk", title: "Concert \"Musiques Traditionnelles\""},
     {id: "YbWBx3DkJrU", title: "Commémoration de l'Armistice de 1918 - 11 novembre 2023"},
     {id: "MJSRTO9_66c", title: "Brocante de Sucy-en-Brie 2023"},
