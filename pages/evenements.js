@@ -201,17 +201,17 @@ export const evenements = [
     description: "C'est aussi cela la mission de l'Harmonie Municipale, faire plaisir à tous les publics !",
     url: ""
   },
-  {
-    d: "2024-04-07",
-    title: "Concert Club de rugby Sucy",
-    date : "Dimanche 7 avril 2024",
-    image: evt070424,
-    heure: "A définir",
-    lieu: "Stade de rugby, Sucy-en-Brie",
-    prix: "Gratuit",
-    description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
-    url: ""
-  },
+  // {
+  //   d: "2024-04-07",
+  //   title: "Concert Club de rugby Sucy",
+  //   date : "Dimanche 7 avril 2024",
+  //   image: evt070424,
+  //   heure: "A définir",
+  //   lieu: "Stade de rugby, Sucy-en-Brie",
+  //   prix: "Gratuit",
+  //   description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
+  //   url: ""
+  // },
   {
     d: "2024-04-24",
     title: "Cérémonie de la déportation",
@@ -307,17 +307,17 @@ export const evenements = [
     description: "Agréable rendez-vous musical annuel à la Résidence des Cèdres de Sucy-en-Brie auprès de nos seniors.",
     url: ""
   },
-  {
-    d: "2024-07-06",
-    title: "Spectacle de danse Art et Mouvement",
-    date : "Samedi 06 juillet 2024",
-    image: evt060724,
-    heure: "A définir",
-    lieu: "Espace JMP, Sucy-en-Brie",
-    prix: "Gratuit",
-    description: "Nous serons aux côtés de Art & Mouvement pour notre dernière prestation de la saison !",
-    url: ""
-  }
+  // {
+  //   d: "2024-07-06",
+  //   title: "Spectacle de danse Art et Mouvement",
+  //   date : "Samedi 06 juillet 2024",
+  //   image: evt060724,
+  //   heure: "A définir",
+  //   lieu: "Espace JMP, Sucy-en-Brie",
+  //   prix: "Gratuit",
+  //   description: "Nous serons aux côtés de Art & Mouvement pour notre dernière prestation de la saison !",
+  //   url: ""
+  // }
 ]
 
 export const Evenement = ({evenement, button=true}) =>
