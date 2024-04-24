@@ -285,12 +285,12 @@ export const evenements = [
   {
     d: "2024-06-15",
     title: "Concert sport et musique",
-    date : "Samedi 15 juin 2024",
+    date : "Dimanche 16 juin 2024",
     image: evt150624,
-    heure: "A définir",
-    lieu: "Sucy-en-Brie",
+    heure: "14H30",
+    lieu: "Parc Omnisport, Sucy-en-Brie",
     prix: "Gratuit",
-    description: "",
+    description: "Animation musicale dans le cadre de la manifestation \"Je cours pour la culture\" ",
     url: ""
   },
   {
