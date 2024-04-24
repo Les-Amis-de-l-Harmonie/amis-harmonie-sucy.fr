@@ -55,6 +55,9 @@ import evtblanc from "../public/images/evtblanc.jpg"
 import evt290624 from "../public/images/evt290624.jpg"
 import evt060724 from "../public/images/evt060724.jpg"
 import evt150624 from "../public/images/evt150624.jpg"
+import evt090624 from "../public/images/evt090624.png"
+import museemusique from "../public/images/museemusique.jpg"
+import evt091124 from "../public/images/evt091124.jpg"
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -215,9 +218,9 @@ export const evenements = [
   {
     d: "2024-04-24",
     title: "Cérémonie de la déportation",
-    date : "Mercredi 24 avril 2024",
+    date : "Dimanche 28 avril 2024",
     image: evt240424,
-    heure: "A définir",
+    heure: "12H",
     lieu: "Place de l’Église, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Le dernier dimanche d'avril est chaque année dédié à la célébration de la mémoire des victimes de la déportation dans les camps de concentration et d'extermination nazis lors la seconde guerre mondiale.",
@@ -228,8 +231,8 @@ export const evenements = [
     title: "Concert ouverture des Sister Cities Games",
     date : "Mercredi 1er mai 2024",
     image: evt010524,
-    heure: "A définir",
-    lieu: "Sucy-en-Brie",
+    heure: "17H",
+    lieu: "Stade C.Arron, Sucy-en-brie",
     prix: "Gratuit",
     description: "Sur la vague des JO Paris 2024, la Ville de Sucy-en-Brie organise les Sister Cities Games. Une rencontre sportive internationale entre les jeunes de Sucy et ceux de ses villes jumelles et villes amies autour de 4 sports olympiques.",
     url: ""
@@ -239,8 +242,8 @@ export const evenements = [
     title: "Concert fermeture des Sister Cities Games",
     date : "Dimanche 5 mai 2024",
     image: evt010524,
-    heure: "A définir",
-    lieu: "Sucy-en-Brie",
+    heure: "17H",
+    lieu: "Stade C.Arron, Sucy-en-brie",
     prix: "Gratuit",
     description: "Sur la vague des JO Paris 2024, la Ville de Sucy-en-Brie organise les Sister Cities Games. Une rencontre sportive internationale entre les jeunes de Sucy et ceux de ses villes jumelles et villes amies autour de 4 sports olympiques.",
     url: ""
@@ -264,6 +267,20 @@ export const evenements = [
     lieu: "Espace JMP, Sucy-en-Brie",
     prix: "Gratuit",
     description: " Une journée pour célébrer la musique française de Gabriel Fauré aux couleurs subtiles et fascinantes, empreinte de poésie et de spiritualité. ",
+  },
+  {
+    d: "2024-06-09",
+    title: "Les trésors insolites du Musée",
+    date : "Dimanche 9 juin 2024",
+    image: evt090624,
+    heure: "13H",
+    lieu: "Musée de la Musique, Philarmonie de Paris",
+    prix: "10€",
+    description: " Nous vous proposons une sortie au Musée de la Musique (Philarmonie de Paris). Durant la visite (environ 1h30), un conférencier-musicologue vous guidera parmi une sélection de ses chefs-d’œuvre favoris. Il vous fera (re)découvrir les détails insolites d’instruments connus ou moins connus et vous révèlera leurs savoureux secrets. ",
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/musee-de-la-musique-09-juin-2024",
+    modal : {
+      image1: museemusique
+    }  
   },
   {
     d: "2024-06-15",
@@ -318,6 +335,17 @@ export const evenements = [
   //   description: "Nous serons aux côtés de Art & Mouvement pour notre dernière prestation de la saison !",
   //   url: ""
   // }
+  {
+    d: "2024-11-09",
+    title: "Concert Rencontre d'Harmonies",
+    date : "Samedi 09 novembre 2024",
+    image: evt091124,
+    heure: "14H",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Les  Amis de l'Harmonie en partenariat avec la Confédération Musicale de France (94) et la Ville de Sucy-en-Brie vous proposent une journée musicale dédiée aux orchestres d'harmonie. Pour l'occasion l'Harmonie Municipale de Sucy-en-Brie qui fêtera en 2027 ses 160 ans, accueillent l'Espérance Brévannaise et l'Harmonie du Conservatoire de Neuilly-sur-Marne. Au programme, 3 heures de musique et un final regroupant les 100 musiciens sur scène. ",
+    url: ""
+  }
 ]
 
 export const Evenement = ({evenement, button=true}) =>
