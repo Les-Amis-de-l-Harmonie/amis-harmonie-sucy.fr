@@ -35,7 +35,7 @@ const Home = () => {
                 
               </div>
               <p className="mt-4">
-              <i>"Tel qu&apos;il s&apos;est forgé à travers les siècles, l&apos;orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l&apos;humanité, car la Musique contribue à la communication et à la compréhension entre les peuples."</i>
+              <i>{"\"Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l'humanité, car la Musique contribue à la communication et à la compréhension entre les peuples.\""}</i>
               <span className=""> Riccardo Muti</span>
               </p>
               <Link
