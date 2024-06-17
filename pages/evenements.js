@@ -58,6 +58,9 @@ import evt150624 from "../public/images/evt150624.jpg"
 import evt090624 from "../public/images/evt090624.png"
 import museemusique from "../public/images/museemusique.jpg"
 import evt091124 from "../public/images/evt091124.jpg"
+import evt080924 from "../public/images/evt080924.png"
+
+
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -314,27 +317,26 @@ export const evenements = [
     description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"
   },
   {
-    d: "2024-06-29",
-    title: "Concert Résidence des Cèdres",
-    date : "Samedi 29 juin 2024",
-    image: evt290624,
+    d: "2024-09-08",
+    title: "Fête des associations",
+    date : "Dimanche 08 septembre 2024",
+    image: evt080924,
     heure: "A définir",
-    lieu: "Résidence des Cèdres, Sucy-en-Brie",
+    lieu: "Gymnase Montaleau, Sucy-en-Brie",
     prix: "Gratuit",
-    description: "Agréable rendez-vous musical annuel à la Résidence des Cèdres de Sucy-en-Brie auprès de nos seniors.",
-    url: ""
+    description: "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."
   },
-  // {
-  //   d: "2024-07-06",
-  //   title: "Spectacle de danse Art et Mouvement",
-  //   date : "Samedi 06 juillet 2024",
-  //   image: evt060724,
-  //   heure: "A définir",
-  //   lieu: "Espace JMP, Sucy-en-Brie",
-  //   prix: "Gratuit",
-  //   description: "Nous serons aux côtés de Art & Mouvement pour notre dernière prestation de la saison !",
-  //   url: ""
-  // }
+  {
+    d: "2024-09-15",
+    title: "Brocante de Sucy",
+    date : "Dimanche 15 septembre 2024",
+    image: evt170923,
+    heure: "A définir",
+    lieu: "Centre ville, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Un incontournable de notre rentrée : la brocante de Sucy-en-Brie ! Nous déambulerons dans les allées du Centre Ville, sur des rythmes festifs !"
+  },
+  
   {
     d: "2024-11-09",
     title: "Concert Rencontre d'Harmonies",

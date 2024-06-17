@@ -1,7 +1,7 @@
 import { markdownify } from "@lib/utils/textConverter";
 import shortcodes from "@shortcodes/all";
 import { MDXRemote } from "next-mdx-remote";
-import harmoniePng from "../public/images/harmonie.png";
+import harmoniePng from "../public/images/harmonie.jpg";
 import i from "../public/images/i.png";
 import ExportedImage from "next-image-export-optimizer";
 import { Carousel } from 'flowbite-react';

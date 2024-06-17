@@ -3,6 +3,7 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "BJ6ZsHqiZnQ", title: "Un dimanche en Fauré - Pavane & Pie Jesu"},
     {id: "1PtbOEhup-E", title: "Cérémonie d'ouverture des Sister Cities Games 2024"},
     {id: "L0YjfpQzHXI", title: "Virgule Musicale - Le Concert Impromptu"},
     {id: "ze4b6Br0qCI", title: "Thé Dansant 2024"},

@@ -3,7 +3,8 @@ import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import {Evenement, evenements} from "./evenements"
 
-import i7 from "../public/images/7.png"
+
+import home from "../public/images/home.png"
 
 const today = new Date()
 today.setHours(0,0,0,0)
@@ -29,13 +30,13 @@ const Home = () => {
           <div className="row flex-wrap-reverse items-center justify-center lg:flex-row">
             <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
               <div className="banner-title">
-                <h1>Association</h1>
-                <span>Les Amis de l&apos;Harmonie</span>
+              <span>Les amis de</span>
+                <h1>l&apos;Harmonie de Sucy-en-Brie</h1>
+                
               </div>
               <p className="mt-4">
-                Bienvenue sur le site officiel de l&apos;association
-                <br />
-                <b>Les Amis de l&apos;Harmonie</b> de Sucy-en-Brie !
+              <i>"Tel qu&apos;il s&apos;est forgé à travers les siècles, l&apos;orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l&apos;humanité, car la Musique contribue à la communication et à la compréhension entre les peuples."</i>
+              <span className=""> Riccardo Muti</span>
               </p>
               <Link
                 className="btn btn-primary mt-6"
@@ -47,7 +48,7 @@ const Home = () => {
             <div className="col-9 lg:col-6">
               <ExportedImage
                 className="mx-auto object-contain"
-                src={i7}
+                src={home}
                 sizes="50vw"
                 alt=""
               />
