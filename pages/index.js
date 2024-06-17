@@ -31,7 +31,7 @@ const Home = () => {
             <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
               <div className="banner-title">
               <span>Les amis de</span>
-                <h1>l&apos;Harmonie de Sucy-en-Brie</h1>
+                <h1>l&apos;Harmonie de <nobr>Sucy-en-Brie</nobr></h1>
                 
               </div>
               <p className="mt-4">
