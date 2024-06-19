@@ -311,7 +311,7 @@ export const evenements = [
     title: "Fête de la Musique",
     date : "Samedi 22 juin 2024",
     image: evt220624,
-    heure: "A définir",
+    heure: "19h30",
     lieu: "Centre culturel, Sucy-en-Brie",
     prix: "Gratuit",
     description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"
