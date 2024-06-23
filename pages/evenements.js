@@ -349,7 +349,7 @@ export const evenements = [
     url: ""
   },
   {
-    d: "2025-26-01",
+    d: "2025-01-26",
     title: "Thé Dansant 2025",
     date : "Dimanche 26 janvier 2025",
     image: evt260125,
