@@ -59,7 +59,7 @@ import evt090624 from "../public/images/evt090624.png"
 import museemusique from "../public/images/museemusique.jpg"
 import evt091124 from "../public/images/evt091124.jpg"
 import evt080924 from "../public/images/evt080924.png"
-
+import evt260125 from "../public/images/evt260125.png"
 
 
 import i1123_1 from "../public/images/1123_1.jpg"
@@ -347,7 +347,19 @@ export const evenements = [
     prix: "Gratuit",
     description: "Les  Amis de l'Harmonie en partenariat avec la Confédération Musicale de France (94) et la Ville de Sucy-en-Brie vous proposent une journée musicale dédiée aux orchestres d'harmonie. Pour l'occasion l'Harmonie Municipale de Sucy-en-Brie qui fêtera en 2027 ses 160 ans, accueillent l'Espérance Brévannaise et l'Harmonie du Conservatoire de Neuilly-sur-Marne. Au programme, 3 heures de musique et un final regroupant les 100 musiciens sur scène. ",
     url: ""
+  },
+  {
+    d: "2025-26-01",
+    title: "Thé Dansant 2025",
+    date : "Dimanche 26 janvier 2025",
+    image: evt260125,
+    heure: "14H",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "15-25€",
+    description: "Organisé en partenariat avec la ville de Sucy-en-Brie pour un moment dansant et festif avec toujours 2 orchestres aux styles différents et complémentaires pour mieux vous ravir. Au programme, l’Harmonie et ses 30 musiciens ainsi que le Picotango Orquesta, spécialisé dans le tango argentin." ,
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2025-sucy",
   }
+  
 ]
 
 export const Evenement = ({evenement, button=true}) =>
