@@ -24,4 +24,5 @@ L'harmonie a aussi à sa disposition une association « Les Amis de l'Harmonie �
 Les répétitions se déroulent tous les vendredis soirs de 19h30 à 21h30 à l'auditorium du conservatoire.
 
 Direction : David BRUNET
+
 Sous-direction : Marcel HAMON
