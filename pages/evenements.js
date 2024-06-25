@@ -60,7 +60,7 @@ import museemusique from "../public/images/museemusique.jpg"
 import evt091124 from "../public/images/evt091124.jpg"
 import evt080924 from "../public/images/evt080924.png"
 import evt260125 from "../public/images/evt260125.png"
-
+import evt270824 from "../public/images/evt270824.png"
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -315,6 +315,16 @@ export const evenements = [
     lieu: "Centre culturel, Sucy-en-Brie",
     prix: "Gratuit",
     description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"
+  },
+  {
+    d: "2024-09-08",
+    title: "Passage de la flamme Paralympique",
+    date : "Mardi 27 août 2024",
+    image: evt270824,
+    heure: "9h",
+    lieu: "Château de Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Du 25 au 28 août, la Flamme Paralympique, portée par près de 1000 éclaireurs, traversera une cinquantaine de villes dont deux dans le Val-de-Marne : Sucy et Valenton. Juste avant de finir son aventure à Paris pour la cérémonie d’ouverture des premiers jeux paralympiques d’été en France, le 28 août."
   },
   {
     d: "2024-09-08",
