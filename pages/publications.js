@@ -1,33 +1,35 @@
-import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState, memo } from 'react';
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState, memo } from "react";
 import Base from "@layouts/Baseof";
-import { InstagramEmbed } from 'react-social-media-embed';
-import VirtualScroller from 'virtual-scroller/react'
+import { InstagramEmbed } from "react-social-media-embed";
+import VirtualScroller from "virtual-scroller/react";
 
-const getColumnsCount= (container) => {
+const getColumnsCount = (container) => {
   if (container.getWidth() >= 1280) {
-    return 3
+    return 3;
   }
   if (container.getWidth() >= 768) {
-    return 2
+    return 2;
   }
-  return 1
-}
+  return 1;
+};
 
-const Post = ({ item: post }) =>
+const Post = ({ item: post }) => (
   <div className="col-12 mb-5 md:col-6 xl:col-4 text-center overflow-hidden">
-    <InstagramEmbed url={post} className="w-full"/>
+    <InstagramEmbed url={post} className="w-full" />
   </div>
+);
 
-const MemoPost = memo(Post)
+const MemoPost = memo(Post);
 
 const Posts = () => {
-  let [posts, setPosts] = useState([])
+  let [posts, setPosts] = useState([]);
 
-  const effectRan = useRef(false); 
-  
+  const effectRan = useRef(false);
+
   useEffect(() => {
     setPosts([
+      "https://www.instagram.com/p/C9ZUgVRBRyT/",
       "https://www.instagram.com/p/C81uJAFIGuj/?img_index=1",
       "https://www.instagram.com/p/C8y0bdlP5PX/",
       "https://www.instagram.com/p/C8iaRIHIznX/?img_index=1",
@@ -130,9 +132,8 @@ const Posts = () => {
       "https://www.instagram.com/p/CW0S_CSoOMl/",
       "https://www.instagram.com/p/CW0LJLOolL2/",
       "https://www.instagram.com/p/CWyZIBvIMWn/",
-      "https://www.instagram.com/p/CWyYSvAoP5u/"
-
-    ])
+      "https://www.instagram.com/p/CWyYSvAoP5u/",
+    ]);
 
     /*if (!effectRan.current) {
       const script = document.createElement("script")
@@ -144,15 +145,13 @@ const Posts = () => {
         effectRan.current = true;
       }
     }*/
-  }, [])
+  }, []);
 
   return (
     <Base title={`Publications`}>
       <div className="section">
         <div className="container">
-          <h1 className="h2 mb-8 text-center">
-          Publications
-          </h1>
+          <h1 className="h2 mb-8 text-center">Publications</h1>
           <div id="posts-row">
             <VirtualScroller
               items={posts}
@@ -171,6 +170,6 @@ const Posts = () => {
 
 const PostsWithoutSSR = dynamic(() => Promise.resolve(Posts), {
   ssr: false,
-})
+});
 
-export default PostsWithoutSSR
+export default PostsWithoutSSR;
