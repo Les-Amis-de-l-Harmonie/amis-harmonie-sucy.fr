@@ -30,6 +30,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Stéphane Carcenac</h5>
             <p>Président</p>
+            <p>Clarinettiste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -41,6 +42,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Brigitte Lemoine</h5>
             <p>Vice-présidente et secrétaire</p>
+            <p>Saxophoniste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -52,6 +54,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">David Brunet</h5>
             <p>Directeur musical</p>
+            <p>Chef d'orchestre de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -63,6 +66,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Maxime Leduc</h5>
             <p>Trésorier</p>
+            <p>Saxophoniste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -84,7 +88,8 @@ const Default = ({ data }) => {
               priority
             />
             <h5 className="text-primary">Estelle Debache</h5>
-            <p>Chargée de communication</p>
+            <p>Responsable communication</p>
+            <p>Percussionniste dans l'Harmonie</p>
           </div>
         </div>
       </div>

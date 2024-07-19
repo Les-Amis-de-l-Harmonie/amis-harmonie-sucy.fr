@@ -5,7 +5,7 @@ const Adhesion = () =>
     <div className="section">
       <div className="container">
         <h1 className="h2 mb-8 text-center">
-          Adhésion 2024
+          Adhésion 2024-2025
         </h1>
         <div className="row">
           <div className="col-12">
