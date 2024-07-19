@@ -13,7 +13,7 @@ const Adhesion = () =>
               Devenez un super fan de l&apos;Harmonie Municipale de Sucy-en-brie ! <br/>
               En adhérant à notre association &quot;Les Amis de l&apos;Harmonie&quot; vous nous aidez à mettre en place de beaux projets et à soutenir l&apos;Harmonie Municipale de Sucy-en-Brie.
               Vous pourrez également bénéficier de tarifs préférentiels sur certains de nos évènements. <br/>
-              L&apos;adhésion 2024 est valable du 01 janvier au 31 décembre 2024. <br/>
+              L&apos;adhésion 2024 est valable du 01 août 2024 au 31 juillet 2025. <br/>
 
 
               <br/> Une fois le paiement effectué vous receverez une confirmation par email.
@@ -24,7 +24,7 @@ const Adhesion = () =>
               id="haWidget"
               allowtransparency="true"
               scrolling="auto"
-              src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/adhesions/adhesion-2024/widget"
+              src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/adhesions/adhesion-2024-2025/widget"
               className="w-full h-[800px] border-none">
             </iframe>
           </div>
