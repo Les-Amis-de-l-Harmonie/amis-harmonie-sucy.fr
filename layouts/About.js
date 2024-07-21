@@ -7,6 +7,8 @@ import david from "../public/images/david.png";
 import stephane from "../public/images/stephane.png";
 import brigitte from "../public/images/brigitte.png";
 import josette from "../public/images/josette.png";
+import mario from "../public/images/mario.png";
+import andrea from "../public/images/andrea.png";
 import ExportedImage from "next-image-export-optimizer";
 
 const Default = ({ data }) => {
@@ -89,6 +91,30 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Estelle Debache</h5>
             <p>Responsable communication</p>
+            <p>Percussionniste dans l'Harmonie</p>
+          </div>
+          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <ExportedImage
+              className="mb-3"
+              src={mario}
+              sizes="33vw"
+              alt="mario"
+              priority
+            />
+            <h5 className="text-primary">Mario Nunes</h5>
+            <p></p>
+            <p>Parent d'un musicien de l'Harmonie</p>
+          </div>
+          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <ExportedImage
+              className="mb-3"
+              src={andrea}
+              sizes="33vw"
+              alt="andrea"
+              priority
+            />
+            <h5 className="text-primary">Andréa Rebelo</h5>
+            <p></p>
             <p>Percussionniste dans l'Harmonie</p>
           </div>
         </div>
