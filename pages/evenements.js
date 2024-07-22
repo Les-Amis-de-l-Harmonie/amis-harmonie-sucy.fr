@@ -69,6 +69,7 @@ import i0124_2 from "../public/images/0124_2.jpg"
 import thedansant20251 from "../public/images/thedansant20251.png"
 import thedansant20252 from "../public/images/thedansant20252.png"
 
+
 export const evenements = [
   {
     d: "2023-09-10",

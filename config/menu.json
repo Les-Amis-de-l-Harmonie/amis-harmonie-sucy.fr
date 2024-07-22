@@ -5,6 +5,11 @@
       "url": "/#evenements"
     },
     {
+      "name": "Billetterie",
+      "url": "/billetterie",
+      "condition": "hasBilleterie"
+    },
+    {
       "name": "À Propos",
       "hasChildren": true,
       "children": [
@@ -21,16 +26,12 @@
           "url": "/partenaires"
         },
         {
-          "name": "Billetterie",
-          "url": "/billetterie",
-          "condition": "hasBilleterie"
-        },
-        {
           "name": "Contact",
           "url": "/contact"
         }
       ]
     },
+   
     {
       "name": "Actualités",
       "hasChildren": true,
