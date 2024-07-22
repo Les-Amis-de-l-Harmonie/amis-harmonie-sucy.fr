@@ -66,6 +66,8 @@ import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
 import i0124_1 from "../public/images/0124_1.jpg"
 import i0124_2 from "../public/images/0124_2.jpg"
+import thedansant20251 from "../public/images/thedansant20251.png"
+import thedansant20252 from "../public/images/thedansant20252.png"
 
 export const evenements = [
   {
@@ -368,6 +370,10 @@ export const evenements = [
     prix: "15-25€",
     description: "Organisé en partenariat avec la ville de Sucy-en-Brie pour un moment dansant et festif avec toujours 2 orchestres aux styles différents et complémentaires pour mieux vous ravir. Au programme, l’Harmonie et ses 30 musiciens ainsi que le Picotango Orquesta, spécialisé dans le tango argentin." ,
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2025-sucy",
+    modal : {
+      image1: thedansant20251,
+      image2: thedansant20252
+    }
   }
   
 ]
