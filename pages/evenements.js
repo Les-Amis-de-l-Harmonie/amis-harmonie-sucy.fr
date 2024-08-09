@@ -326,7 +326,7 @@ export const evenements = [
     title: "Passage de la flamme Paralympique",
     date : "Mardi 27 août 2024",
     image: evt270824,
-    heure: "9h",
+    heure: "9H",
     lieu: "Château de Sucy-en-Brie",
     prix: "Gratuit",
     description: "Du 25 au 28 août, la Flamme Paralympique, portée par près de 1000 éclaireurs, traversera une cinquantaine de villes dont deux dans le Val-de-Marne : Sucy et Valenton. Juste avant de finir son aventure à Paris pour la cérémonie d’ouverture des premiers jeux paralympiques d’été en France, le 28 août."
@@ -336,7 +336,7 @@ export const evenements = [
     title: "Fête des associations",
     date : "Dimanche 08 septembre 2024",
     image: evt080924,
-    heure: "09h",
+    heure: "09H",
     lieu: "Gymnase Montaleau, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."
@@ -346,7 +346,7 @@ export const evenements = [
     title: "Brocante de Sucy",
     date : "Dimanche 15 septembre 2024",
     image: evt170923,
-    heure: "10h",
+    heure: "10H",
     lieu: "Centre ville, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Un incontournable de notre rentrée : la brocante de Sucy-en-Brie ! Nous déambulerons dans les allées du Centre Ville, sur des rythmes festifs !"
