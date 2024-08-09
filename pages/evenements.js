@@ -336,7 +336,7 @@ export const evenements = [
     title: "Fête des associations",
     date : "Dimanche 08 septembre 2024",
     image: evt080924,
-    heure: "A définir",
+    heure: "09h",
     lieu: "Gymnase Montaleau, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand."
@@ -346,7 +346,7 @@ export const evenements = [
     title: "Brocante de Sucy",
     date : "Dimanche 15 septembre 2024",
     image: evt170923,
-    heure: "A définir",
+    heure: "10h",
     lieu: "Centre ville, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Un incontournable de notre rentrée : la brocante de Sucy-en-Brie ! Nous déambulerons dans les allées du Centre Ville, sur des rythmes festifs !"
