@@ -65,6 +65,8 @@ import evt270824 from "../public/images/evt270824.png"
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
 import i0124_1 from "../public/images/0124_1.jpg"
+import rencontreharmonies1 from "../public/images/rencontreharmonies1.png"
+import rencontreharmonies2 from "../public/images/rencontreharmonies2.png"
 import i0124_2 from "../public/images/0124_2.jpg"
 import thedansant20251 from "../public/images/thedansant20251.png"
 import thedansant20252 from "../public/images/thedansant20252.png"
@@ -359,7 +361,11 @@ export const evenements = [
     lieu: "Espace JMP, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Les  Amis de l'Harmonie en partenariat avec la Confédération Musicale de France (94) et la Ville de Sucy-en-Brie vous proposent une journée musicale dédiée aux orchestres d'harmonie. Pour l'occasion l'Harmonie Municipale de Sucy-en-Brie qui fêtera en 2027 ses 160 ans, accueillent l'Espérance Brévannaise et l'Harmonie du Conservatoire de Neuilly-sur-Marne. Au programme, 3 heures de musique et un final regroupant les 100 musiciens sur scène. ",
-    url: ""
+    url: "",
+    modal : {
+      image1: rencontreharmonies1,
+      image2: rencontreharmonies2
+    }
   },
   {
     d: "2025-01-26",
