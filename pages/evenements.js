@@ -61,6 +61,9 @@ import evt091124 from "../public/images/evt091124.jpg"
 import evt080924 from "../public/images/evt080924.png"
 import evt260125 from "../public/images/evt260125.png"
 import evt270824 from "../public/images/evt270824.png"
+import evt260316 from "../public/images/evt260316.png"
+import ennio from "../public/images/ennio.png"
+
 
 import i1123_1 from "../public/images/1123_1.jpg"
 import i1123_2 from "../public/images/1123_2.jpg"
@@ -322,7 +325,7 @@ export const evenements = [
     description: "C'est maintenant un incontournable, la Ferme de Grand-Val a le plaisir de vous accueillir pour la Fête de la Musique. L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !"
   },
   {
-    d: "2024-09-08",
+    d: "2024-08-27",
     title: "Passage de la flamme Paralympique",
     date : "Mardi 27 août 2024",
     image: evt270824,
@@ -380,6 +383,21 @@ export const evenements = [
     modal : {
       image1: thedansant20251,
       image2: thedansant20252
+    }
+  },
+  {
+    d: "2025-03-16",
+    title: "Sortie 'Ennio Morricone et le cinéma Italien'",
+    date : "Dimanche 16 mars 2025",
+    image: evt260316,
+    heure: "16H",
+    lieu: "La Seine Musicale, Boulogne",
+    prix: "30€",
+    description: "Nous vous proposons d'aller ensemble à la Seine Musicale pour un concert fantastique autour d'Ennio Morricone et du cinéma Italien. 'Il était une fois dans l’Ouest', 'Le Bon, la Brute et le Truand' , 'Pour une poignée de dollars', 'Le Parrain', 'Le Clan des Siciliens'... Inscription en ligne jusqu’au 27 septembre. Réservé aux adhérents 2024-2025. Plus d'infos ci-dessous. " ,
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2025-sucy",
+    modal : {
+    image1: ennio,
+     
     }
   }
   

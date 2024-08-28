@@ -3,6 +3,8 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "dF3qZQ9EZxw", title: "Passage de la Flamme Paralympique"},
+    {id: "LUJZmqu1RhU", title: "Fête de la musique 2024"},
     {id: "BJ6ZsHqiZnQ", title: "Un dimanche en Fauré - Pavane & Pie Jesu"},
     {id: "1PtbOEhup-E", title: "Cérémonie d'ouverture des Sister Cities Games 2024"},
     {id: "L0YjfpQzHXI", title: "Virgule Musicale - Le Concert Impromptu"},
@@ -20,6 +22,8 @@ const Videos = () => {
     {id: "5ouK1KDKNF0", title: "\"The Best Of Beatles\""},
     {id: "XOiG6ri3xRw", title: "Concert \"Autour de la Méditerranée\""},
   ]
+
+
 
   return (
     <Base title={`Vidéos`}>
