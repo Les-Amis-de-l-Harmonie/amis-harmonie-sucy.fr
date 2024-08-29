@@ -9,6 +9,7 @@ import brigitte from "../public/images/brigitte.png";
 import josette from "../public/images/josette.png";
 import mario from "../public/images/mario.png";
 import andrea from "../public/images/andrea.png";
+import marcel from "../public/images/marcel.png";
 import ExportedImage from "next-image-export-optimizer";
 
 const Default = ({ data }) => {
@@ -105,6 +106,18 @@ const Default = ({ data }) => {
             <h5 className="text-primary">Stéphane Carcenac</h5>
             <p>Membre</p>
             <p>Clarinettiste dans l'Harmonie</p>
+          </div>
+          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <ExportedImage
+              className="mb-3"
+              src={marcel}
+              sizes="33vw"
+              alt="marcel"
+              priority
+            />
+            <h5 className="text-primary">Marcel Hamon</h5>
+            <p>Membre</p>
+            <p>Chef adjoint et percussionniste dans l'Harmonie</p>
           </div>
           
           
