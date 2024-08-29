@@ -25,26 +25,26 @@ const Default = ({ data }) => {
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={stephane}
+              src={maxime}
               sizes="33vw"
-              alt="stephane"
+              alt="maxime"
               priority
             />
-            <h5 className="text-primary">Stéphane Carcenac</h5>
-            <p>Président</p>
-            <p>Clarinettiste dans l'Harmonie</p>
+            <h5 className="text-primary">Maxime Leduc</h5>
+            <p>Président / Trésorier</p>
+            <p>Saxophoniste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={brigitte}
+              src={andrea}
               sizes="33vw"
-              alt="brigitte"
+              alt="andrea"
               priority
             />
-            <h5 className="text-primary">Brigitte Lemoine</h5>
-            <p>Vice-présidente et secrétaire</p>
-            <p>Saxophoniste dans l'Harmonie</p>
+            <h5 className="text-primary">Andréa Rebelo</h5>
+            <p>Vice-Présidente</p>
+            <p>Percussionniste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -61,25 +61,26 @@ const Default = ({ data }) => {
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={maxime}
+              src={brigitte}
               sizes="33vw"
-              alt="maxime"
+              alt="brigitte"
               priority
             />
-            <h5 className="text-primary">Maxime Leduc</h5>
-            <p>Trésorier</p>
+            <h5 className="text-primary">Brigitte Lemoine</h5>
+            <p>Secrétaire</p>
             <p>Saxophoniste dans l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={josette}
+              src={mario}
               sizes="33vw"
-              alt="josette"
+              alt="mario"
               priority
             />
-            <h5 className="text-primary">Josette Collomb</h5>
-            <p>Secrétaire adjointe</p>
+            <h5 className="text-primary">Mario Nunes</h5>
+            <p>Vice-Trésorier</p>
+            <p>Parent d'un musicien de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -96,27 +97,32 @@ const Default = ({ data }) => {
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={mario}
+              src={stephane}
               sizes="33vw"
-              alt="mario"
+              alt="stephane"
               priority
             />
-            <h5 className="text-primary">Mario Nunes</h5>
-            <p></p>
-            <p>Parent d'un musicien de l'Harmonie</p>
+            <h5 className="text-primary">Stéphane Carcenac</h5>
+            <p>Membre</p>
+            <p>Clarinettiste dans l'Harmonie</p>
           </div>
+          
+          
+          
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
-              src={andrea}
+              src={josette}
               sizes="33vw"
-              alt="andrea"
+              alt="josette"
               priority
             />
-            <h5 className="text-primary">Andréa Rebelo</h5>
-            <p></p>
-            <p>Percussionniste dans l'Harmonie</p>
+            <h5 className="text-primary">Josette Collomb</h5>
+            <p>Membre</p>
           </div>
+          
+          
+          
         </div>
       </div>
     </section>

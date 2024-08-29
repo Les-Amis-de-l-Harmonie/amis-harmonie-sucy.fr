@@ -394,7 +394,7 @@ export const evenements = [
     lieu: "La Seine Musicale, Boulogne",
     prix: "30€",
     description: "Nous vous proposons d'aller ensemble à la Seine Musicale pour un concert fantastique autour d'Ennio Morricone et du cinéma Italien. 'Il était une fois dans l’Ouest', 'Le Bon, la Brute et le Truand' , 'Pour une poignée de dollars', 'Le Parrain', 'Le Clan des Siciliens'... Inscription en ligne jusqu’au 27 septembre. Réservé aux adhérents 2024-2025. Plus d'infos ci-dessous. " ,
-    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2025-sucy",
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-ennio-morricone-et-le-cinema-italien",
     modal : {
     image1: ennio,
      
