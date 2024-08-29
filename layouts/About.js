@@ -33,7 +33,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Maxime Leduc</h5>
             <p>Président / Trésorier</p>
-            <p>Saxophoniste dans l'Harmonie</p>
+            <p>Saxophoniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -45,7 +45,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Andréa Rebelo</h5>
             <p>Vice-Présidente</p>
-            <p>Percussionniste dans l'Harmonie</p>
+            <p>Percussionniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -69,7 +69,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Brigitte Lemoine</h5>
             <p>Secrétaire</p>
-            <p>Saxophoniste dans l'Harmonie</p>
+            <p>Saxophoniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -93,7 +93,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Estelle Debache</h5>
             <p>Responsable communication</p>
-            <p>Percussionniste dans l'Harmonie</p>
+            <p>Percussionniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -105,7 +105,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Stéphane Carcenac</h5>
             <p>Membre</p>
-            <p>Clarinettiste dans l'Harmonie</p>
+            <p>Clarinettiste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -117,7 +117,7 @@ const Default = ({ data }) => {
             />
             <h5 className="text-primary">Marcel Hamon</h5>
             <p>Membre</p>
-            <p>Chef adjoint et percussionniste dans l'Harmonie</p>
+            <p>Chef adjoint et percussionniste de l'Harmonie</p>
           </div>
           
           
