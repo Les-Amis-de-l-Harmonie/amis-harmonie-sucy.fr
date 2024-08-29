@@ -43,7 +43,7 @@ const Default = ({ data }) => {
               alt="andrea"
               priority
             />
-            <h5 className="text-primary">Andréa Rebelo</h5>
+            <h5 className="text-primary">Andréa</h5>
             <p>Vice-Présidente</p>
             <p>Percussionniste de l'Harmonie</p>
           </div>
