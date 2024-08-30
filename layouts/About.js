@@ -131,7 +131,7 @@ const Default = ({ data }) => {
               priority
             />
             <h5 className="text-primary">Josette Collomb</h5>
-            <p>Membre</p>
+            <p>Membre et amie de l'Harmonie</p>
           </div>
           
           
