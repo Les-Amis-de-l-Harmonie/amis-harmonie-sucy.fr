@@ -4,15 +4,18 @@ description: "À Propos de l'Association"
 layout: about
 
 ---
+Chez "Les Amis de l'Harmonie", la passion pour la musique et la vie associative s'entrelacent pour créer une expérience musicale enrichissante et conviviale.
 
-Pour élargir son champ d'action et donner au public de plus en plus nombreux la possibilité de contribuer et de participer à la vie de l'harmonie, l'association **les Amis de l'harmonie** est créée. - J.O 06.08.2010
+Notre association se consacre avant tout à épauler l'Harmonie Municipale dans ses activités quotidiennes et lors de ses prestations publiques. Que ce soit lors des fêtes locales, des cérémonies patriotiques, ou encore des concerts que nous organisons, l'agenda de l'orchestre est toujours bien rempli. Cependant, notre soutien ne se limite pas à la scène; nous sommes également impliqués dans la logistique, la communication, la gestion administrative, et d'autres tâches essentielles qui facilitent le bon déroulement et l'évolution de l'orchestre.
 
-Cette association (loi 1901) a pour objet :
+Grâce à un bureau dynamique, un site internet interactif, et une présence active sur les réseaux sociaux, nous offrons une fenêtre ouverte sur l'Harmonie. Nous proposons également une variété d'événements exclusifs et d'avantages pour nos membres, tous tournés autour de la musique et de la culture, renforçant ainsi les liens.
 
-- D'aider l'Harmonie Municipale de Sucy-en-Brie dans l'organisation de manifestations festives en dehors de sa vocation première qui est d 'assurer sa participation dans toutes les manifestations organisées par la municipalité (fêtes locales ou patriotiques).
-- De rechercher les possibilités de se produire en public, en facilitant la mise en relation avec des organisateurs de concerts ou de festivals, en organisant d'autres formes de manifestations dans lesquelles, l'harmonie assurerait la prépondérance de l'animation.
-- De financer occasionnellement les musiciens extérieurs appelés en renfort.
-- D'établir des relations d'entraide et d'échanges avec d'autres orchestres.
-- Stimuler les rencontres inter génération entre jeunes musiciens, anciens musiciens et parents.
-- Offrir à l' harmonie et en particulier aux jeunes débutants la possibilité d'exercer leur talent en finançant une partie des investissements en matériel.
-- Participer à l'enregistrement et à la diffusion de CD ou autre Média ou tout autre action de nature à promouvoir le rayonnement de l'Harmonie.
+Adhérer à notre association, c'est rejoindre une famille musicale ! Vous pouvez dès maintenant devenir membre en ligne via notre site internet, où vous trouverez également l'agenda complet et toutes les informations pertinentes concernant l'Harmonie Municipale et les Amis de l'Harmonie.
+
+Venez, participez, et laissez la musique de l'Harmonie de Sucy-en-Brie vous inspirer et vous réunir!
+
+
+
+
+
+
