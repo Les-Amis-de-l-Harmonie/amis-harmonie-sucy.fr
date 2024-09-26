@@ -371,6 +371,17 @@ export const evenements = [
     }
   },
   {
+    d: "2024-11-11",
+    title: "Cérémonie du 11 novembre",
+    date : "11 novembre 2023",
+    image: evt111123,
+    heure: "11H",
+    lieu: "Parvis de l'église Saint-Martin, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
+
+  },
+  {
     d: "2025-01-26",
     title: "Thé Dansant 2025",
     date : "Dimanche 26 janvier 2025",
