@@ -373,12 +373,23 @@ export const evenements = [
   {
     d: "2024-11-11",
     title: "Cérémonie du 11 novembre",
-    date : "11 novembre 2023",
+    date : "Lundi 11 novembre 2023",
     image: evt111123,
     heure: "11H",
     lieu: "Parvis de l'église Saint-Martin, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
+
+  },
+  {
+    d: "2024-12-01",
+    title: "Banquet de l'amitié",
+    date : "24-30 novembre et 01 décembre",
+    image: evt191123,
+    heure: "A partir de 11H30",
+    lieu: "Espace JMP",
+    prix: "Gratuit",
+    description: "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
 
   },
   {
