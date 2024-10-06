@@ -386,7 +386,7 @@ export const evenements = [
     title: "Banquet de l'amitié",
     date : "24-30 novembre et 01 décembre",
     image: evt191123,
-    heure: "A partir de 11H30",
+    heure: "11H30",
     lieu: "Espace JMP",
     prix: "Gratuit",
     description: "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
