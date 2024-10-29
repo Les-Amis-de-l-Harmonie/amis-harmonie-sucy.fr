@@ -390,7 +390,7 @@ export const evenements = [
     lieu: "Espace JMP",
     prix: "Gratuit",
     description: "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-
+    url: "https://www.ville-sucy.fr/banquet2024",
   },
   {
     d: "2025-01-26",
