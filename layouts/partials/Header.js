@@ -6,7 +6,7 @@ import ThemeSwitcher from "@layouts/components/ThemeSwitcher";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import { hasBilletterie } from "../../pages/billetterie"
+import { hasBilletterie } from "../../pages/billetterie";
 
 const Header = () => {
   // distructuring the main menu from menu object
@@ -58,61 +58,61 @@ const Header = () => {
               {main
                 .filter((menu) => {
                   if (menu.condition === "hasBilleterie" && !hasBilletterie()) {
-                    return false
+                    return false;
                   }
-                  return true
+                  return true;
                 })
                 .map((menu, i) => (
-                <React.Fragment key={`menu-${i}`}>
-                  {menu.hasChildren ? (
-                    <li className="nav-item nav-dropdown group relative">
-                      <span
-                        className={`nav-link !normal-case ${
-                          menu.children
-                            .map((c) => c.url)
-                            .includes(router.asPath) && "active"
-                        } inline-flex items-center`}
-                      >
-                        {menu.name}
-                        <svg
-                          className="h-4 w-4 fill-current"
-                          viewBox="0 0 20 20"
+                  <React.Fragment key={`menu-${i}`}>
+                    {menu.hasChildren ? (
+                      <li className="nav-item nav-dropdown group relative">
+                        <span
+                          className={`nav-link !normal-case ${
+                            menu.children
+                              .map((c) => c.url)
+                              .includes(router.asPath) && "active"
+                          } inline-flex items-center`}
                         >
-                          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
-                      </span>
-                      <ul className="nav-dropdown-list hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
-                        {menu.children.map((child, i) => (
-                          <li
-                            className="nav-dropdown-item"
-                            key={`children-${i}`}
+                          {menu.name}
+                          <svg
+                            className="h-4 w-4 fill-current"
+                            viewBox="0 0 20 20"
                           >
-                            <Link
-                              href={child.url}
-                              className={`nav-dropdown-link block ${
-                                router.asPath === child.url && "active"
-                              }`}
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                          </svg>
+                        </span>
+                        <ul className="nav-dropdown-list hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
+                          {menu.children.map((child, i) => (
+                            <li
+                              className="nav-dropdown-item"
+                              key={`children-${i}`}
                             >
-                              {child.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ) : (
-                    <li className="nav-item">
-                      <Link
-                        href={menu.url}
-                        className={`nav-link !normal-case block ${
-                          router.asPath === menu.url && "active"
-                        }`}
-                      >
-                        {menu.name}
-                      </Link>
-                    </li>
-                  )}
-                </React.Fragment>
-              ))}
+                              <Link
+                                href={child.url}
+                                className={`nav-dropdown-link block ${
+                                  router.asPath === child.url && "active"
+                                }`}
+                              >
+                                {child.name}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ) : (
+                      <li className="nav-item">
+                        <Link
+                          href={menu.url}
+                          className={`nav-link !normal-case block ${
+                            router.asPath === menu.url && "active"
+                          }`}
+                        >
+                          {menu.name}
+                        </Link>
+                      </li>
+                    )}
+                  </React.Fragment>
+                ))}
             </ul>
             {/* header social */}
             <Social source={socical} className="socials" />
@@ -142,50 +142,6 @@ const Header = () => {
       {showMenu && (
         <div className="header-backdrop absolute top-0 left-0 h-[100vh] w-full bg-black/50 lg:hidden"></div>
       )}
-      <ul class="guirlande">
-	<li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-  <li></li>
-</ul>
     </header>
   );
 };
