@@ -456,7 +456,6 @@ export const evenements = [
     prix: "2€",
     description:
       "Thibaut est un chef d’orchestre de renommée internationale qui parcourt le monde. Lorsqu’il apprend qu’il a été adopté, il découvre l’existence d’un frère, Jimmy, employé de cantine scolaire et qui joue du trombone dans une fanfare du nord de la France. En apparence tout les sépare, sauf l’amour de la musique. ",
-    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/seance-cinema-en-fanfare",
   },
   {
     d: "2025-01-26",
@@ -484,7 +483,6 @@ export const evenements = [
     prix: "30€",
     description:
       "Nous vous proposons d'aller ensemble à la Seine Musicale pour un concert fantastique autour d'Ennio Morricone et du cinéma Italien. 'Il était une fois dans l’Ouest', 'Le Bon, la Brute et le Truand' , 'Pour une poignée de dollars', 'Le Parrain', 'Le Clan des Siciliens'... Inscription en ligne jusqu’au 27 septembre. Réservé aux adhérents 2024-2025. Plus d'infos ci-dessous. ",
-    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-ennio-morricone-et-le-cinema-italien",
     modal: {
       image1: ennio,
     },
