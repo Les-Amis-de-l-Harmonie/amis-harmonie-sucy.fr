@@ -474,6 +474,17 @@ export const evenements = [
     },
   },
   {
+    d: "2025-02-09",
+    title: "Fête de la Saint-Vincent",
+    date: "Dimanche 09 février 2025",
+    image: evt210124,
+    heure: "12H15",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Privé",
+    description:
+      "Depuis le Moyen-Age, chaque 22 janvier, vignerons, famille, voisins, amis parfois venus de loin, participent aux festivités organisées pour célébrer la Saint-Vincent.",
+  },
+  {
     d: "2025-03-16",
     title: "Sortie 'Ennio Morricone et le cinéma Italien'",
     date: "Dimanche 16 mars 2025",
@@ -486,6 +497,40 @@ export const evenements = [
     modal: {
       image1: ennio,
     },
+  },
+  {
+    d: "2025-03-29",
+    title: "Carnaval",
+    date: "Samedi 23 mars 2024",
+    image: evt230324,
+    heure: "A définir",
+    lieu: "Rond d'or, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Déambulation musicale au Rond d'or de la Cité Verte de Sucy-en-Brie. Rejoignez-nous pour un moment festif !",
+    url: "",
+  },
+  {
+    d: "2025-04-06",
+    title: "Concert Club de rugby Sucy",
+    date : "Dimanche 6 avril 2025",
+    image: evt070424,
+    heure: "A définir",
+    lieu: "Stade de rugby, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
+    url: ""
+  },
+  {
+    d: "2025-05-08",
+    title: "Commémoration du 8 mai 1945",
+    date: "Jeudi 8 mai 2025",
+    image: evt080524,
+    heure: "11H",
+    lieu: "Parvis église Saint-Martin, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Mercredi 8 mai se tiendra la cérémonie du 80e anniversaire de la Victoire du 8 mai 1945.",
   },
 ];
 
