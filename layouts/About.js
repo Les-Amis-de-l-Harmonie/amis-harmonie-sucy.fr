@@ -67,18 +67,7 @@ const Default = ({ data }) => {
               alt="brigitte"
               priority
             />
-            <h5 className="text-primary">Brigitte Lemoine</h5>
-            <p>Secrétaire</p>
-            <p>Saxophoniste de l'Harmonie</p>
-          </div>
-          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
-            <ExportedImage
-              className="mb-3"
-              src={mario}
-              sizes="33vw"
-              alt="mario"
-              priority
-            />
+            
             <h5 className="text-primary">Mario Nunes</h5>
             <p>Vice-Trésorier</p>
             <p>Parent d'un musicien de l'Harmonie</p>
