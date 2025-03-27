@@ -72,7 +72,6 @@ const Default = ({ data }) => {
             <p>Parent d'un musicien de l'Harmonie</p>
           </div>
           
-          </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
@@ -109,8 +108,9 @@ const Default = ({ data }) => {
             <p>Membre</p>
             <p>Chef adjoint et percussionniste de l'Harmonie</p>
           </div>  
-        </div>
-    </section>
+          </div>
+          </div>
+        </section>
   );
 };
 
