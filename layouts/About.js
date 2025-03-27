@@ -108,16 +108,8 @@ const Default = ({ data }) => {
             <h5 className="text-primary">Marcel Hamon</h5>
             <p>Membre</p>
             <p>Chef adjoint et percussionniste de l'Harmonie</p>
-          </div>
-          
-          
-          
-          
-          
-          
-          
+          </div>  
         </div>
-      </div>
     </section>
   );
 };
