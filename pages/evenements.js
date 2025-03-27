@@ -503,7 +503,7 @@ export const evenements = [
     d: "2025-03-29",
     title: "Carnaval",
     date: "Samedi 29 mars 2024",
-    image: evt290324,
+    image: evt290325,
     heure: "15h",
     lieu: "Parvis de l'école de la Cité Verte, Sucy-en-Brie",
     prix: "Gratuit",
