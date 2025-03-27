@@ -104,6 +104,7 @@ import thedansant20252 from "../public/images/thedansant20252.png";
 
 import evt211224 from "../public/images/evt211224.png";
 import evt290325 from "../public/images/evt290325.png";
+import evt2903252 from "../public/images/evt2903252.png";
 
 export const evenements = [
   {
@@ -509,6 +510,18 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Déambulation musicale, avec la Batucada de l'Harmonie Municipale + concert de l'orchestre. Rejoignez-nous pour un moment festif !",
+    url: "",
+  },
+  {
+    d: "2025-03-29",
+    title: "Concert Résidence de la Cité Verte",
+    date: "Samedi 29 mars 2024",
+    image: evt2903252,
+    heure: "16h",
+    lieu: "Résidence de la Cité Verte, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Comme chaque année nous viendrons animer le goûter de nos ainés, avec un petit concert festif.",
     url: "",
   },
   {
