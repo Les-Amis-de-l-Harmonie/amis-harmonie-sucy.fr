@@ -111,18 +111,7 @@ const Default = ({ data }) => {
           
           
           
-          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
-            <ExportedImage
-              className="mb-3"
-              src={josette}
-              sizes="33vw"
-              alt="josette"
-              priority
-            />
-            <h5 className="text-primary">Josette Collomb</h5>
-            <p>Membre</p>
-            <p>Amie de l'Harmonie</p>
-          </div>
+          
           
           
           
