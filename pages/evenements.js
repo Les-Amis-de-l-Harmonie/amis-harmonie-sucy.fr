@@ -103,6 +103,7 @@ import thedansant20251 from "../public/images/thedansant20251.png";
 import thedansant20252 from "../public/images/thedansant20252.png";
 
 import evt211224 from "../public/images/evt211224.png";
+import evt290325 from "../public/images/evt290325.png";
 
 export const evenements = [
   {
@@ -501,13 +502,13 @@ export const evenements = [
   {
     d: "2025-03-29",
     title: "Carnaval",
-    date: "Samedi 23 mars 2024",
-    image: evt230324,
-    heure: "A définir",
-    lieu: "Rond d'or, Sucy-en-Brie",
+    date: "Samedi 29 mars 2024",
+    image: evt290324,
+    heure: "15h",
+    lieu: "Parvis de l'école de la Cité Verte, Sucy-en-Brie",
     prix: "Gratuit",
     description:
-      "Déambulation musicale au Rond d'or de la Cité Verte de Sucy-en-Brie. Rejoignez-nous pour un moment festif !",
+      "Déambulation musicale, avec la Batucada de l'Harmonie Municipale + concert de l'orchestre. Rejoignez-nous pour un moment festif !",
     url: "",
   },
   {
