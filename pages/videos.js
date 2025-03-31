@@ -3,6 +3,7 @@ import Youtube from "@shortcodes/Youtube"
 
 const Videos = () => {
   const videos = [
+    {id: "iZwfSjflbKA&t", title: "Thé Dansant 2025"},
     {id: "dF3qZQ9EZxw", title: "Passage de la Flamme Paralympique"},
     {id: "LUJZmqu1RhU", title: "Fête de la musique 2024"},
     {id: "BJ6ZsHqiZnQ", title: "Un dimanche en Fauré - Pavane & Pie Jesu"},
