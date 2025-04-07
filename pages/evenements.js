@@ -105,6 +105,8 @@ import thedansant20252 from "../public/images/thedansant20252.png";
 import evt211224 from "../public/images/evt211224.png";
 import evt290325 from "../public/images/evt290325.png";
 import evt2903252 from "../public/images/evt2903252.png";
+import evt110425 from "../public/images/evt110425.png";
+
 
 export const evenements = [
   {
@@ -533,6 +535,17 @@ export const evenements = [
     lieu: "Stade de rugby, Sucy-en-Brie",
     prix: "Gratuit",
     description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
+    url: ""
+  },
+  {
+    d: "2025-04-11",
+    title: "Répétition ouverte",
+    date : "Vendredi 11 avril 2025",
+    image: evt110424,
+    heure: "20h",
+    lieu: "Conservatoire, Sucy-en-Brie",
+    prix: "Gratuit",
+    description: "🎶 Plongez dans les coulisses de la musique ! 🎶 L’Harmonie Municipale de Sucy-en-Brie vous ouvre les portes de sa répétition ! Venez vivre un moment unique et découvrir comment se prépare un concert, dans une ambiance conviviale et passionnée.",
     url: ""
   },
   {
