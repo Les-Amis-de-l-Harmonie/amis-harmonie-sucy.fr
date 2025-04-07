@@ -541,7 +541,7 @@ export const evenements = [
     d: "2025-04-11",
     title: "Répétition ouverte",
     date : "Vendredi 11 avril 2025",
-    image: evt110424,
+    image: evt110425,
     heure: "20h",
     lieu: "Conservatoire, Sucy-en-Brie",
     prix: "Gratuit",
