@@ -92,7 +92,6 @@ import evt260125 from "../public/images/evt260125.png";
 import evt270824 from "../public/images/evt270824.png";
 import evt260316 from "../public/images/evt260316.png";
 import ennio from "../public/images/ennio.png";
-
 import i1123_1 from "../public/images/1123_1.jpg";
 import i1123_2 from "../public/images/1123_2.jpg";
 import i0124_1 from "../public/images/0124_1.jpg";
@@ -101,11 +100,16 @@ import rencontreharmonies2 from "../public/images/rencontreharmonies2.png";
 import i0124_2 from "../public/images/0124_2.jpg";
 import thedansant20251 from "../public/images/thedansant20251.png";
 import thedansant20252 from "../public/images/thedansant20252.png";
-
 import evt211224 from "../public/images/evt211224.png";
 import evt290325 from "../public/images/evt290325.png";
 import evt2903252 from "../public/images/evt2903252.png";
 import evt110425 from "../public/images/evt110425.png";
+import williams from "../public/images/williams.png";
+import evt280925 from "../public/images/evt280925.png";
+import evt150625 from "../public/images/evt150625.png";
+import evt280625 from "../public/images/evt280625.png";
+import evt2806251 from "../public/images/evt2806251.png";
+
 
 
 export const evenements = [
@@ -558,6 +562,79 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Mercredi 8 mai se tiendra la cérémonie du 80e anniversaire de la Victoire du 8 mai 1945.",
+  },
+  {
+    d: "2025-06-15",
+    title: "Bal traditionnel",
+    date: "Dimanche 15 juin 2025",
+    image: evt150625,
+    heure: "15h30",
+    lieu: "Gloriette, Parc des Sports, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Venez danser ! 3 orchestres rien que pour vous, dont l'Harmonie Municipale de Sucy-en-Brie, dans un joli cadre verdoyant !",
+  },
+  {
+    d: "2025-06-18",
+    title: "Commémoration du 18 juin 1940",
+    date: "Mercredi 18 juin 2025",
+    image: evt180624,
+    heure: "19H",
+    lieu: "Esplanade Château Montaleau, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Alors en déplacement à Londres et refusant la défaite de la France, le Général de Gaulle prend la parole sur la radio britannique, la BBC, et lance son célèbre appel à poursuivre le combat pour une France Libre : « Quoi qu’il arrive, la flamme de la résistance ne doit pas s’éteindre et ne s’éteindra pas »",
+  },
+  {
+    d: "2025-06-21",
+    title: "Fête de la Musique",
+    date: "Samedi 21 juin 2025",
+    image: evt220624,
+    heure: "A venir",
+    lieu: "A venir",
+    prix: "Gratuit",
+    description:
+      "L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !",
+  },
+  {
+    d: "2025-06-28",
+    title: "Concert Résidence des Cèdres",
+    date: "Samedi 28 juin 2025",
+    image: evt280625,
+    heure: "A venir",
+    lieu: "Résidence des Cèdres, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Comme chaque année nous viendrons animer le goûter de nos ainés, avec un petit concert festif pour clôturer cette belle saison musicale.",
+    url: "",
+  },
+  {
+    d: "2025-06-28",
+    title: "Barbecue de fin d'année",
+    date: "Samedi 28 juin 2025",
+    image: evt2806251,
+    heure: "18H",
+    lieu: "Salle de la tête de cheval, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Réservé aux adhérents et aux musiciens. On clôture l'année musicale par notre traditionnel BBQ ! Venez nombreux pour ce moment de partage ! Chacun apporte ce qu'il souhaite. ",
+    url: "",
+  },
+  
+  {
+    d: "2025-09-28",
+    title: "Sortie 'John Williams, du classique au cinéma'",
+    date: "Dimanche 28 septembre 2025",
+    image: evt280925,
+    heure: "16H",
+    lieu: "La Seine Musicale, Boulogne",
+    prix: "38€",
+    description:
+      "Nous vous proposons d'aller ensemble à la Seine Musicale pour un concert fantastique autour de John Williams. De Star Wars à E.T. en passant par les mélodies ensorcelantes d’Harry Potter, John Williams a transformé la musique de film en une véritable symphonie, puisant son inspiration chez les grands compositeurs classiques.  Inscription en ligne jusqu’au 15 juin. Réservé aux adhérents 2025-2026. Plus d'infos ci-dessous. ",
+    modal: {
+      image1: williams,
+    },
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-john-williams-du-classique-au-cinema"
   },
 ];
 
