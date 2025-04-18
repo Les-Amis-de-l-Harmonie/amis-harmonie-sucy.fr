@@ -612,7 +612,7 @@ export const evenements = [
     d: "2025-06-28",
     title: "Barbecue de fin d'année",
     date: "Samedi 28 juin 2025",
-    image: evt2806251,
+    image: evt280625,
     heure: "18H",
     lieu: "Salle de la tête de cheval, Sucy-en-Brie",
     prix: "Gratuit",
