@@ -105,7 +105,7 @@ import evt290325 from "../public/images/evt290325.png";
 import evt2903252 from "../public/images/evt2903252.png";
 import evt110425 from "../public/images/evt110425.png";
 import williams from "../public/images/williams.png";
-import evt280925 from "../public/images/evt280925.png";
+import evt280925 from "../public/images/evt280925.jpg";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
