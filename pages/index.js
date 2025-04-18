@@ -2,9 +2,12 @@ import Base from "@layouts/Baseof";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import {Evenement, evenements} from "./evenements"
+import { Carousel } from "flowbite-react";
 
-
-import home from "../public/images/home.png"
+import home1 from "../public/images/home1.jpg"
+import home2 from "../public/images/home2.jpg"
+import home3 from "../public/images/home3.jpg"
+import home4 from "../public/images/home4.jpg"
 
 const today = new Date()
 today.setHours(0,0,0,0)
@@ -15,7 +18,7 @@ const Home = () => {
   return (
     <Base>
       {/* Banner */}
-      <section className="section banner relative pb-0">
+      <section className="section banner relative pb-0 pt-4 lg:pt-0">
         <ExportedImage
           className="absolute bottom-0 left-0 z-[-1] w-full"
           src={"/images/banner-bg-shape.svg"}
@@ -32,7 +35,7 @@ const Home = () => {
               <div className="banner-title">
               <span>Les amis de</span>
                 <h1>l&apos;Harmonie de <nobr>Sucy-en-Brie</nobr></h1>
-                
+
               </div>
               <p className="mt-4">
               <i>{"\"Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l'humanité, car la Musique contribue à la communication et à la compréhension entre les peuples.\""}</i>
@@ -45,13 +48,20 @@ const Home = () => {
                 En savoir plus
               </Link>
             </div>
-            <div className="col-9 lg:col-6">
-              <ExportedImage
-                className="mx-auto object-contain"
-                src={home}
-                sizes="50vw"
-                alt=""
-              />
+            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:col-6">
+              <div className="w-[360px] lg:w-full h-full">
+                <Carousel slideInterval={1000} indicators={false} leftControl=" " rightControl=" ">
+                  {[home1, home2, home3, home4].map((image, i) =>
+                    <ExportedImage
+                      className="mx-auto object-contain"
+                      src={image}
+                      sizes="50vw"
+                      key="i"
+                      alt=""
+                    />
+                  )}
+                </Carousel>
+              </div>
             </div>
           </div>
 
@@ -66,7 +76,7 @@ const Home = () => {
               </h2>
             </div>
             {evenements.filter((evt) => new Date(Date.parse(evt.d)) >= today).map((evenement) =>
-              <Evenement key={evenement.title} evenement={evenement} />
+              <Evenement key={`${evenement.d}-${evenement.title}`} evenement={evenement} />
             )}
           </div>
           <div className="row">
@@ -76,7 +86,7 @@ const Home = () => {
               </h2>
             </div>
             {evenements.filter((evt) => new Date(Date.parse(evt.d)) < today).reverse().map((evenement) =>
-              <Evenement key={evenement.title} evenement={evenement} button={false}/>
+              <Evenement key={`${evenement.d}-${evenement.title}`} evenement={evenement} button={false}/>
             )}
           </div>
         </div>
