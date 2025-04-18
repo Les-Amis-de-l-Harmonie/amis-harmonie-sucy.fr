@@ -625,14 +625,14 @@ export const evenements = [
     d: "2025-09-28",
     title: "Sortie 'John Williams, du classique au cinéma'",
     date: "Dimanche 28 septembre 2025",
-    image: evt2809251,
+    image: evt280925,
     heure: "16H",
     lieu: "La Seine Musicale, Boulogne",
     prix: "38€",
     description:
       "Nous vous proposons d'aller ensemble à la Seine Musicale pour un concert fantastique autour de John Williams. De Star Wars à E.T. en passant par les mélodies ensorcelantes d’Harry Potter, John Williams a transformé la musique de film en une véritable symphonie, puisant son inspiration chez les grands compositeurs classiques.  Inscription en ligne jusqu’au 15 juin. Réservé aux adhérents 2025-2026. Plus d'infos ci-dessous. ",
     modal: {
-      image1: williams,
+      image1: evt2809251,
     },
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-john-williams-du-classique-au-cinema"
   },
