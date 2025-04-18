@@ -108,7 +108,7 @@ import evt2809251 from "../public/images/evt2809251.jpg";
 import evt280925 from "../public/images/evt280925.png";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
-import evt280625 from "../public/images/evt280625.png";
+import evt2806251 from "../public/images/evt2806251.png";
 
 
 
@@ -612,7 +612,7 @@ export const evenements = [
     d: "2025-06-28",
     title: "Barbecue de fin d'année",
     date: "Samedi 28 juin 2025",
-    image: evt280625,
+    image: evt2806251,
     heure: "18H",
     lieu: "Salle de la tête de cheval, Sucy-en-Brie",
     prix: "Gratuit",
