@@ -104,11 +104,11 @@ import evt211224 from "../public/images/evt211224.png";
 import evt290325 from "../public/images/evt290325.png";
 import evt2903252 from "../public/images/evt2903252.png";
 import evt110425 from "../public/images/evt110425.png";
-import williams from "../public/images/williams.png";
+import evt2809251 from "../public/images/evt2809251.jpg";
 import evt280925 from "../public/images/evt280925.png";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
-import evt280625 from "../public/images/evt280625.jpg";
+import evt280625 from "../public/images/evt280625.png";
 
 
 
@@ -625,7 +625,7 @@ export const evenements = [
     d: "2025-09-28",
     title: "Sortie 'John Williams, du classique au cinéma'",
     date: "Dimanche 28 septembre 2025",
-    image: evt280925,
+    image: evt2809251,
     heure: "16H",
     lieu: "La Seine Musicale, Boulogne",
     prix: "38€",
