@@ -590,8 +590,8 @@ export const evenements = [
     title: "Fête de la Musique",
     date: "Samedi 21 juin 2025",
     image: evt220624,
-    heure: "A venir",
-    lieu: "A venir",
+    heure: "18h",
+    lieu: "Ferme du Grand-Val",
     prix: "Gratuit",
     description:
       "L'Harmonie sortira pour l'occasion son répertoire festif ! Venez nombreux !",
@@ -599,9 +599,9 @@ export const evenements = [
   {
     d: "2025-06-28",
     title: "Concert Résidence des Cèdres",
-    date: "Samedi 28 juin 2025",
+    date: "Samedi 22 juin 2025",
     image: evt280625,
-    heure: "A venir",
+    heure: "15h",
     lieu: "Résidence des Cèdres, Sucy-en-Brie",
     prix: "Gratuit",
     description:
