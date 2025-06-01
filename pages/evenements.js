@@ -572,7 +572,7 @@ export const evenements = [
     lieu: "Gloriette, Parc des Sports, Sucy-en-Brie",
     prix: "Gratuit",
     description:
-      "Venez danser ! 3 orchestres rien que pour vous, dont l'Harmonie Municipale de Sucy-en-Brie, dans un joli cadre verdoyant !",
+      "Venez danser ! 3 orchestres rien que pour vous, Korr an Noz, l'Ensemble instrumental d'Agnès Friberg et l'Harmonie Municipale de Sucy-en-Brie, dans un joli cadre verdoyant !",
   },
   {
     d: "2025-06-18",
