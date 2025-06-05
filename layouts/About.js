@@ -10,6 +10,7 @@ import josette from "../public/images/josette.png";
 import mario from "../public/images/mario.png";
 import andrea from "../public/images/andrea.png";
 import marcel from "../public/images/marcel.png";
+import carole from "../public/images/carole.png";
 import ExportedImage from "next-image-export-optimizer";
 
 const Default = ({ data }) => {
@@ -107,7 +108,19 @@ const Default = ({ data }) => {
             <h5 className="text-primary">Marcel Hamon</h5>
             <p>Membre</p>
             <p>Chef adjoint et percussionniste de l'Harmonie</p>
-          </div>  
+          </div>
+          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <ExportedImage
+              className="mb-3"
+              src={carole}
+              sizes="33vw"
+              alt="carole"
+              priority
+            />
+            <h5 className="text-primary">Carole Siméone</h5>
+            <p>Membre</p>
+            <p>Saxophoniste de l'Harmonie</p>
+          </div>    
           </div>
           </div>
         </section>
