@@ -568,7 +568,7 @@ export const evenements = [
     title: "Bal traditionnel",
     date: "Dimanche 15 juin 2025",
     image: evt150625,
-    heure: "15h30",
+    heure: "15h",
     lieu: "Gloriette, Parc des Sports, Sucy-en-Brie",
     prix: "Gratuit",
     description:
