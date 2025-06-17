@@ -109,7 +109,7 @@ import evt280925 from "../public/images/evt280925.png";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
-
+import evt010226 from "../public/images/evt010226.png";
 
 
 export const evenements = [
@@ -636,6 +636,19 @@ export const evenements = [
     },
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-john-williams-du-classique-au-cinema"
   },
+  {
+    d: "2026-02-01",
+    title: "Thé Dansant 2026",
+    date: "Dimanche 01 février 2026",
+    image: evt010226,
+    heure: "14H",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "15-25€",
+    description:
+      "Organisé en partenariat avec la ville de Sucy-en-Brie pour un moment dansant et festif avec toujours 2 orchestres aux styles différents et complémentaires pour mieux vous ravir. Au programme, l’Harmonie et ses 30 musiciens ainsi que le Picotango Orquesta, spécialisé dans le tango argentin.",
+    url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
+    
+  }
 ];
 
 export const Evenement = ({ evenement, button = true }) => (
