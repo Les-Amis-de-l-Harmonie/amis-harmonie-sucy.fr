@@ -109,7 +109,8 @@ import evt280925 from "../public/images/evt280925.png";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
-import evt010226 from "../public/images/evt010226.png";
+import evt010226 from "../public/images/evt010226.png"; 
+
 
 
 export const evenements = [
