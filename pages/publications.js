@@ -26,9 +26,10 @@ const Posts = () => {
   let [posts, setPosts] = useState([]);
 
   const effectRan = useRef(false);
-  
+
   useEffect(() => {
     setPosts([
+      "https://www.instagram.com/p/DLef4ewIw4h/?img_index=1",
       "https://www.instagram.com/p/DLMnhu0IRzA/",
       "https://www.instagram.com/p/DLFBnxwIFEQ/",
       "https://www.instagram.com/p/DLC1t5Bolw8/",
