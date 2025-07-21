@@ -33,7 +33,7 @@ const Default = ({ data }) => {
               priority
             />
             <h5 className="text-primary">Maxime Leduc</h5>
-            <p>Président / Trésorier</p>
+            <p>Président</p>
             <p>Saxophoniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
@@ -59,6 +59,18 @@ const Default = ({ data }) => {
             <h5 className="text-primary">David Brunet</h5>
             <p>Directeur musical</p>
             <p>Chef d'orchestre de l'Harmonie</p>
+          </div>
+          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <ExportedImage
+              className="mb-3"
+              src={carole}
+              sizes="33vw"
+              alt="carole"
+              priority
+            />
+            <h5 className="text-primary">Carole Siméone</h5>
+            <p>Trésorière</p>
+            <p>Saxophoniste de l'Harmonie</p>
           </div>
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -109,18 +121,7 @@ const Default = ({ data }) => {
             <p>Membre</p>
             <p>Chef adjoint et percussionniste de l'Harmonie</p>
           </div>
-          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
-            <ExportedImage
-              className="mb-3"
-              src={carole}
-              sizes="33vw"
-              alt="carole"
-              priority
-            />
-            <h5 className="text-primary">Carole Siméone</h5>
-            <p>Membre</p>
-            <p>Saxophoniste de l'Harmonie</p>
-          </div>    
+              
           </div>
           </div>
         </section>
