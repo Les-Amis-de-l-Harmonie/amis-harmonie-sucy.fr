@@ -110,6 +110,8 @@ import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
 import evt010226 from "../public/images/evt010226.png"; 
+import evt070925 from "../public/images/evt070925.png"; 
+import evt210925 from "../public/images/evt210925.png"; 
 
 
 
@@ -621,6 +623,28 @@ export const evenements = [
       "Réservé aux adhérents et aux musiciens. On clôture l'année musicale par notre traditionnel BBQ ! Venez nombreux pour ce moment de partage ! Chacun apporte ce qu'il souhaite. ",
     url: "",
   },
+  {
+    d: "2025-09-07",
+    title: "Fête des associations",
+    date: "Dimanche 07 septembre 2024",
+    image: evt070925,
+    heure: "09H30",
+    lieu: "Espace JMP, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand.",
+  },
+  {
+    d: "2025-09-21",
+    title: "Brocante de Sucy",
+    date: "Dimanche 21 septembre 2025",
+    image: evt210925,
+    heure: "10H",
+    lieu: "Centre ville, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Un incontournable de notre rentrée : la brocante de Sucy-en-Brie ! Nous déambulerons dans les allées du Centre Ville, sur des rythmes festifs !",
+  },
   
   {
     d: "2025-09-28",
@@ -636,6 +660,17 @@ export const evenements = [
       image1: evt2809251,
     },
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/concert-john-williams-du-classique-au-cinema"
+  },
+  {
+    d: "2025-11-11",
+    title: "Cérémonie du 11 novembre",
+    date: "Mardi 11 novembre 2025",
+    image: evt111123,
+    heure: "11H",
+    lieu: "Parvis de l'église Saint-Martin, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
   },
   {
     d: "2026-02-01",
