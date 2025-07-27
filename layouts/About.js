@@ -23,6 +23,13 @@ const Default = ({ data }) => {
         <div className="content">
           <MDXRemote {...mdxContent} components={shortcodes} />
         </div>
+         <div>
+          <a href="https://drive.google.com/file/d/1hG9ppax_pNDczalp60psIq7C070SKsgk/view?usp=sharing">Statuts de l'association</a>
+          <br/>
+          <a href="https://drive.google.com/file/d/1tVo5Wgq7rWl2-KrCjhxo3E6SUfO_8qRM/view?usp=drive_link">Réglement intérieur de l'association</a>
+          <br/>
+          <br/>
+          </div>
         <div className="row text-center md:max-w-[1000px] md:m-auto justify-center">
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
@@ -123,8 +130,11 @@ const Default = ({ data }) => {
           </div>
               
           </div>
+          
           </div>
+         
         </section>
+        
   );
 };
 
