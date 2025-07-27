@@ -24,7 +24,7 @@ const Adhesion = () =>
               id="haWidget"
               allowtransparency="true"
               scrolling="auto"
-              src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/adhesions/adhesion-2024-2025/widget"
+              src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/adhesions/adhesion-2025-2026/widget"
               className="w-full h-[800px] border-none">
             </iframe>
           </div>
