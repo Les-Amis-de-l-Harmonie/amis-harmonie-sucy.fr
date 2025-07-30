@@ -29,6 +29,7 @@ const Default = ({ data }) => {
           <a href="https://drive.google.com/file/d/1tVo5Wgq7rWl2-KrCjhxo3E6SUfO_8qRM/view?usp=drive_link">Réglement intérieur de l'association</a>
           <br/>
           <br/>
+          <br/>
           </div>
         <div className="row text-center md:max-w-[1000px] md:m-auto justify-center">
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
