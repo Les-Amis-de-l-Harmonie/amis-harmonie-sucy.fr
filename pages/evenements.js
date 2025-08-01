@@ -626,7 +626,7 @@ export const evenements = [
   {
     d: "2025-09-07",
     title: "Fête des associations",
-    date: "Dimanche 07 septembre 2024",
+    date: "Dimanche 07 septembre 2025",
     image: evt070925,
     heure: "09H30",
     lieu: "Espace JMP, Sucy-en-Brie",
