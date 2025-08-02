@@ -7,7 +7,7 @@ import cmf from "../public/images/logo-cmf.png";
 import confrerie from "../public/images/logo-confrerie.jpeg";
 import cmfvdm from "../public/images/logo-cmf-vdm.jpeg";
 import k from "../public/images/logo-k.png";
-
+import graindevent from "../public/images/graindevent.png";
 import ExportedImage from "next-image-export-optimizer";
 
 const p1 = "L'association \"Les Amis de l'Harmonie\" a la chance d'être soutenue par la Ville de Sucy-en-Brie, l'association \"Kifékoi?\", la Confrérie des Côteaux de Sucy, l'association \"Sucy Loisirs Accueil\", l'association \"Le Club Montaleau\" et la confédération musicale de France.";
@@ -34,6 +34,14 @@ const Partenaires = () =>
                   src={sucy}
                   sizes="17vw"
                   alt="sucy"
+                />
+              </div>
+              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+                <ExportedImage
+                  className="mb-3 w-full"
+                  src={graindevent}
+                  sizes="17vw"
+                  alt="graindevent"
                 />
               </div>
               <div className="flex col-6 sm:col-4 md:col-2 items-center">

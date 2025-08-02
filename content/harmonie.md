@@ -5,6 +5,7 @@ layout: harmonie
 banner1: "**Venez renforcer l'harmonie municipale !**"
 banner2: L'orchestre est ouvert à tous les musiciens pratiquant un instrument à vent ou jouant des percussions quel que soit son âge et à partir du moment où il peut justifier d'un niveau lui permettant de s'intégrer facilement à l'orchestre.
 banner3: Pour les élèves du conservatoire, l'harmonie municipale devient obligatoire pour une validation de leur scolarité à partir du 3ième Cycle. Elle leur permet aussi de bénéficier d'une réduction de 50 % sur leur scolarité.
+banner4: Aussi, grâce au partenariat signé avec l'association "Les Amis de l'Harmonie", tous les musiciens de l'orchestre bénéficient de -50% à l'atelier Grain de Vent, luthier basé à Sucy-en-Brie.
 
 ---
 

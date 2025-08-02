@@ -77,7 +77,8 @@ const Default = ({ data }) => {
           <div className="col-12 md:col-9 text-center md:text-left text-white md:pl-16 py-6 md:py-10">
             {markdownify(banner1, "p", "pb-6")}
             {markdownify(banner2, "p", "pb-6")}
-            {markdownify(banner3, "p", "")}
+            {markdownify(banner3, "p", "pb-6")}
+            {markdownify(banner4, "p", "")}
           </div>
 
         </div>
