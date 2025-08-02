@@ -2,6 +2,7 @@ import { markdownify } from "@lib/utils/textConverter";
 import shortcodes from "@shortcodes/all";
 import { MDXRemote } from "next-mdx-remote";
 import harmoniePng from "../public/images/harmonie.jpg";
+import harmoniePng1 from "../public/images/harmonie25.png";
 import i from "../public/images/i.png";
 import ExportedImage from "next-image-export-optimizer";
 import { Carousel } from 'flowbite-react';
@@ -51,7 +52,7 @@ const Default = ({ data }) => {
         {markdownify(title, "h1", "h2 mb-8 text-center")}
         <ExportedImage
           className=""
-          src={harmoniePng}
+          src={harmoniePng1}
           sizes="100vw"
           alt="banner-harmonie"
           priority
