@@ -24,6 +24,8 @@ const Default = ({ data }) => {
           <MDXRemote {...mdxContent} components={shortcodes} />
         </div>
          <div>
+          <a href="https://drive.google.com/file/d/1rVXEI46FWbo0NTyN9MzTsuIL0zYR1HGp/view?usp=sharing">Plaquette de présentation de l'association</a>
+          <br/>
           <a href="https://drive.google.com/file/d/1hG9ppax_pNDczalp60psIq7C070SKsgk/view?usp=sharing">Statuts de l'association</a>
           <br/>
           <a href="https://drive.google.com/file/d/1tVo5Wgq7rWl2-KrCjhxo3E6SUfO_8qRM/view?usp=drive_link">Réglement intérieur de l'association</a>
