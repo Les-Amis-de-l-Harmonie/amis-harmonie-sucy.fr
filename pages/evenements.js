@@ -111,7 +111,9 @@ import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
 import evt010226 from "../public/images/evt010226.png"; 
 import evt070925 from "../public/images/evt070925.png"; 
-import evt210925 from "../public/images/evt210925.png"; 
+import evt210925 from "../public/images/evt210925.png";
+import thedansant20261 from "../public/images/thedansant20261.png";
+import thedansant20262 from "../public/images/thedansant20262.png"; 
 
 
 
@@ -683,7 +685,10 @@ export const evenements = [
     description:
       "Organisé en partenariat avec la ville de Sucy-en-Brie pour un moment dansant et festif avec toujours 2 orchestres aux styles différents et complémentaires pour mieux vous ravir. Au programme, l’Harmonie et ses 30 musiciens ainsi que le Picotango Orquesta, spécialisé dans le tango argentin.",
     url: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
-    
+    modal: {
+      image1: thedansant20261,
+      image2: thedansant20262,
+    },
   }
 ];
 
