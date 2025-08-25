@@ -117,6 +117,7 @@ import thedansant20262 from "../public/images/thedansant20262.png";
 import evt221125 from "../public/images/evt221125.png";
 import evt231125 from "../public/images/evt231125.png";
 import evt291125 from "../public/images/evt291125.png";
+import evt080925 from "../public/images/evt080925.png";
 
 
 
@@ -641,6 +642,17 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand.",
+  },
+   {
+    d: "2025-09-08",
+    title: "Assemblée générale ordinaire",
+    date: "Lundi 08 septembre 2025",
+    image: evt080925,
+    heure: "18H30",
+    lieu: "Maison des association, Sucy-en-Brie",
+    prix: "Gratuit",
+    description:
+      "L’AGO permettra de faire le bilan du premier semestre de l’année 2025, d’approuver les comptes, de fixer les orientations pour l’année à venir, et de renouveler le conseil d’administration. L'AGO est réservée aux adhérents 2025-2026 de l'association.",
   },
   {
     d: "2025-09-21",
