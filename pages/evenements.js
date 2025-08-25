@@ -114,6 +114,12 @@ import evt070925 from "../public/images/evt070925.png";
 import evt210925 from "../public/images/evt210925.png";
 import thedansant20261 from "../public/images/thedansant20261.png";
 import thedansant20262 from "../public/images/thedansant20262.png"; 
+import evt221125 from "../public/images/evt221125.png";
+import evt231125 from "../public/images/evt231125.png";
+import evt291125 from "../public/images/evt291125.png";
+
+
+
 
 
 
@@ -673,6 +679,42 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
+  },
+   {
+    d: "2025-11-22",
+    title: "Banquet de l'amitié",
+    date: "Date à venir",
+    image: evt221125,
+    heure: "11H30",
+    lieu: "Espace JMP",
+    prix: "Gratuit",
+    description:
+      "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
+    url: "https://www.ville-sucy.fr/",
+  },
+   {
+    d: "2025-11-23",
+    title: "Banquet de l'amitié",
+    date: "Date à venir",
+    image: evt231125,
+    heure: "11H30",
+    lieu: "Espace JMP",
+    prix: "Gratuit",
+    description:
+      "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
+    url: "https://www.ville-sucy.fr/",
+  },
+   {
+    d: "2025-11-29",
+    title: "Banquet de l'amitié",
+    date: "Date à venir",
+    image: evt291125,
+    heure: "11H30",
+    lieu: "Espace JMP",
+    prix: "Gratuit",
+    description:
+      "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
+    url: "https://www.ville-sucy.fr/",
   },
   {
     d: "2026-02-01",
