@@ -702,7 +702,6 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-    url: "https://www.ville-sucy.fr/",
   },
    {
     d: "2025-11-23",
@@ -714,7 +713,6 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-    url: "https://www.ville-sucy.fr/",
   },
    {
     d: "2025-11-29",
@@ -726,7 +724,6 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-    url: "https://www.ville-sucy.fr/",
   },
   {
     d: "2026-02-01",
