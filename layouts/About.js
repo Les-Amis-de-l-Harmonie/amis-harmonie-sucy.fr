@@ -107,18 +107,7 @@ const Default = ({ data }) => {
             <p>Responsable communication</p>
             <p>Percussionniste de l'Harmonie</p>
           </div>
-          <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
-            <ExportedImage
-              className="mb-3"
-              src={stephane}
-              sizes="33vw"
-              alt="stephane"
-              priority
-            />
-            <h5 className="text-primary">Stéphane Carcenac</h5>
-            <p>Membre</p>
-            <p>Clarinettiste de l'Harmonie</p>
-          </div>
+          
           <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
             <ExportedImage
               className="mb-3"
