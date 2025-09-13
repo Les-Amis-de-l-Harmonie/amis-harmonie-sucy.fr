@@ -118,6 +118,7 @@ import evt221125 from "../public/images/evt221125.png";
 import evt231125 from "../public/images/evt231125.png";
 import evt291125 from "../public/images/evt291125.png";
 import evt080925 from "../public/images/evt080925.png";
+import evt111025 from "../public/images/evt111025.png";
 
 
 
@@ -680,6 +681,17 @@ export const evenements = [
       image1: evt2809251,
     },
 
+  },
+  {
+    d: "2025-10-11",
+    title: "Centenaire d'une Sucycienne",
+    date: "Samedi 11 octobre 2025",
+    image: evt111025,
+    heure: "13H15",
+    lieu: "Sucy-en-Brie",
+    prix: "Privé",
+    description:
+      "L'Harmonie Municipale participera aux 100 ans d'une Sucycienne ! L’Harmonie Municipale aura le plaisir de prendre part à un événement rare et émouvant : le centenaire d’une habitante de Sucy. Parce que la musique saura toujours rassembler les générations et accompagner les grands moments de la vie, nous serons présents pour offrir une touche musicale à cette célébration unique. Un rendez-vous que nous ne voudrions manquer sous aucun prétexte !",
   },
   {
     d: "2025-11-11",
