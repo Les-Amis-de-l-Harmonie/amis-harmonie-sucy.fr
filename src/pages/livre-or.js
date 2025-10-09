@@ -1,7 +1,9 @@
 import Base from "../components/Layout";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
-import { Textarea, FloatingLabel, Spinner, Timeline } from "flowbite-react";
+import { Textarea } from "@layouts/components/ui/textarea";
+import { Input } from "@layouts/components/ui/input";
+import { Label } from "@layouts/components/ui/label";
 import Script from "next/script";
 
 const capitalizeFirstLetter = (string) => {
@@ -65,29 +67,39 @@ const LivreDorForm = ({ callback }) => {
           onSubmit={submit}
         >
           <div className="grid grid-flow-col justify-stretch space-x-4">
-            <FloatingLabel
-              disabled={disabled}
-              name="email"
-              variant="outlined"
-              required
-              label="Votre email"
-              type="email"
-              helperText="Votre email ne sera pas publié."
-            />
-            <FloatingLabel
-              disabled={disabled}
-              name="lname"
-              variant="outlined"
-              required
-              label="Votre nom"
-            />
-            <FloatingLabel
-              disabled={disabled}
-              name="fname"
-              variant="outlined"
-              required
-              label="Votre prénom"
-            />
+            <div>
+              <Label htmlFor="email">Votre email</Label>
+              <Input
+                id="email"
+                disabled={disabled}
+                name="email"
+                type="email"
+                required
+              />
+              <p className="text-sm text-muted-foreground">
+                Votre email ne sera pas publié.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="lname">Votre nom</Label>
+              <Input
+                id="lname"
+                disabled={disabled}
+                name="lname"
+                type="text"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="fname">Votre prénom</Label>
+              <Input
+                id="fname"
+                disabled={disabled}
+                name="fname"
+                type="text"
+                required
+              />
+            </div>
           </div>
           <div>
             <Textarea
@@ -122,21 +134,21 @@ const LivreDorComments = ({ update }) => {
   if (comments.length === 0) {
     return (
       <div className="max-w-2xl m-auto">
-        <Spinner />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
       </div>
     );
   } else {
     return (
-      <Timeline className="max-w-2xl m-auto">
+      <div className="max-w-2xl m-auto space-y-4">
         {comments
           .sort((a, b) => {
             return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
           })
           .map((comment, i) => (
-            <Timeline.Item key={i}>
-              <Timeline.Point />
-              <Timeline.Content>
-                <Timeline.Time>
+            <div key={i} className="flex">
+              <div className="w-4 h-4 bg-primary rounded-full mt-2 mr-4 flex-shrink-0"></div>
+              <div>
+                <div className="text-sm text-muted-foreground">
                   {capitalizeFirstLetter(
                     new Date(comment.date).toLocaleDateString("fr-FR", {
                       weekday: "long",
@@ -145,20 +157,20 @@ const LivreDorComments = ({ update }) => {
                       day: "numeric",
                     }),
                   )}
-                </Timeline.Time>
-                <Timeline.Title className="text-primary font-medium">
+                </div>
+                <div className="text-primary font-medium">
                   {capitalizeFirstLetter(comment.fname)}{" "}
                   {capitalizeFirstLetter(comment.lname)}
-                </Timeline.Title>
-                <Timeline.Body>
+                </div>
+                <div>
                   {comment.comment.split("\n").map((str, i) => (
                     <p key={i}>{str}</p>
                   ))}
-                </Timeline.Body>
-              </Timeline.Content>
-            </Timeline.Item>
+                </div>
+              </div>
+            </div>
           ))}
-      </Timeline>
+      </div>
     );
   }
 };

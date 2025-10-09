@@ -1,7 +1,13 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
 import Link from "next/link";
-import { Modal } from "flowbite-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@layouts/components/ui/dialog";
 import ExportedImage from "next-image-export-optimizer";
 import {
   IoTimeOutline,
@@ -20,42 +26,42 @@ const EvenementModal = ({ evenement }) => {
       >
         En savoir +
       </b>
-      <Modal
-        dismissible
-        show={openModal === true}
-        onClose={() => setOpenModal(false)}
-      >
-        <Modal.Header className="text-center">{evenement.title}</Modal.Header>
-        <Modal.Body>
-          <ExportedImage
-            sizes="50vw"
-            quality="90"
-            src={evenement.modal.image1}
-            alt=""
-            className="mb-3"
-          />
-          {evenement.modal.image2 && (
+      <Dialog open={openModal} onOpenChange={setOpenModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center">{evenement.title}</DialogTitle>
+          </DialogHeader>
+          <div>
             <ExportedImage
               sizes="50vw"
               quality="90"
-              src={evenement.modal.image2}
+              src={evenement.modal.image1}
               alt=""
               className="mb-3"
             />
-          )}
-        </Modal.Body>
-        <Modal.Footer className="text-center">
-          {evenement.url && (
-            <Link
-              className="btn btn-primary mx-auto"
-              href={evenement.url}
-              target="_blank"
-            >
-              Réserver
-            </Link>
-          )}
-        </Modal.Footer>
-      </Modal>
+            {evenement.modal.image2 && (
+              <ExportedImage
+                sizes="50vw"
+                quality="90"
+                src={evenement.modal.image2}
+                alt=""
+                className="mb-3"
+              />
+            )}
+          </div>
+          <DialogFooter className="text-center">
+            {evenement.url && (
+              <Link
+                className="btn btn-primary mx-auto"
+                href={evenement.url}
+                target="_blank"
+              >
+                Réserver
+              </Link>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
@@ -804,7 +810,7 @@ export const Evenement = ({ evenement, button = true }) => (
             Réserver
           </Link>
         ) : (
-          <div className="h-[3rem]"></div>
+          <div className="h-12"></div>
         )}
       </div>
     </div>

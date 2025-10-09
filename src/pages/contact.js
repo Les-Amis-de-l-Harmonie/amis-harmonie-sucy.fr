@@ -3,33 +3,36 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { FaEnvelope, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
 import Layout from "../components/Layout";
-import { Label, TextInput, Button, Textarea } from "flowbite-react";
+import { Label } from "@layouts/components/ui/label";
+import { Input } from "@layouts/components/ui/input";
+import { Button } from "@layouts/components/ui/button";
+import { Textarea } from "@layouts/components/ui/textarea";
 
 const InnerForm = () => (
   <div className="flex max-w-md flex-col gap-4 mx-auto">
     <div>
       <div className="mb-2 block">
-        <Label htmlFor="small" value="Nom" />
+        <Label htmlFor="nom">Nom</Label>
       </div>
-      <TextInput sizing="sm" type="text" name="nom" required />
+      <Input id="nom" type="text" name="nom" required />
     </div>
     <div>
       <div className="mb-2 block">
-        <Label htmlFor="small" value="Prénom" />
+        <Label htmlFor="prénom">Prénom</Label>
       </div>
-      <TextInput sizing="sm" type="text" name="prénom" required />
+      <Input id="prénom" type="text" name="prénom" required />
     </div>
     <div>
       <div className="mb-2 block">
-        <Label htmlFor="small" value="Email" />
+        <Label htmlFor="email">Email</Label>
       </div>
-      <TextInput sizing="sm" type="email" name="email" required />
+      <Input id="email" type="email" name="email" required />
     </div>
     <div>
       <div className="mb-2 block">
-        <Label htmlFor="large" value="Votre Message" />
+        <Label htmlFor="message">Votre Message</Label>
       </div>
-      <Textarea sizing="sm" type="text" name="message" required />
+      <Textarea id="message" name="message" required />
     </div>
     <div className="h-captcha" data-captcha="true"></div>
     <Button type="submit" className="bg-primary">

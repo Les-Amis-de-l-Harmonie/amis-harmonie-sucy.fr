@@ -88,7 +88,7 @@ const Footer = () => {
   return (
     <footer className="py-16 relative mt-12 pt-3 pb-3">
       <ExportedImage
-        className="-z-[1] object-cover object-left md:object-top"
+        className="-z-1 object-cover object-left md:object-top"
         src="/images/footer-bg-shape.svg"
         alt="footer background"
         fill={true}

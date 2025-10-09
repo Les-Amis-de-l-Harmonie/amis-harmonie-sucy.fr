@@ -2,12 +2,14 @@ import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import { Evenement, evenements } from "./evenements";
-import { Carousel } from "flowbite-react";
+import { useState, useEffect } from "react";
 
 import home1 from "../../public/images/home1.jpg";
 import home2 from "../../public/images/home2.jpg";
 import home3 from "../../public/images/home3.jpg";
 import home4 from "../../public/images/home4.jpg";
+
+const images = [home1, home2, home3, home4];
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -15,6 +17,15 @@ const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 
 const Home = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % images.length);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Layout>
       {/* Banner */}
@@ -57,37 +68,12 @@ const Home = () => {
             </div>
             <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:w-1/2">
               <div className="w-[360px] lg:w-full h-full">
-                <Carousel
-                  slideInterval={1000}
-                  indicators={false}
-                  leftControl=" "
-                  rightControl=" "
-                >
-                  <ExportedImage
-                    className="mx-auto object-contain"
-                    src={home1}
-                    sizes="50vw"
-                    alt=""
-                  />
-                  <ExportedImage
-                    className="mx-auto object-contain"
-                    src={home2}
-                    sizes="50vw"
-                    alt=""
-                  />
-                  <ExportedImage
-                    className="mx-auto object-contain"
-                    src={home3}
-                    sizes="50vw"
-                    alt=""
-                  />
-                  <ExportedImage
-                    className="mx-auto object-contain"
-                    src={home4}
-                    sizes="50vw"
-                    alt=""
-                  />
-                </Carousel>
+                <ExportedImage
+                  className="mx-auto object-contain"
+                  src={images[currentSlide]}
+                  sizes="50vw"
+                  alt=""
+                />
               </div>
             </div>
           </div>

@@ -3,7 +3,7 @@ import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 
 const Youtube = ({ id, title, ...rest }) => {
   return (
-    <div className="overflow-hidden rounded">
+    <div className="overflow-hidden rounded-sm">
       <LiteYouTubeEmbed id={id} title={title} {...rest} />
     </div>
   );

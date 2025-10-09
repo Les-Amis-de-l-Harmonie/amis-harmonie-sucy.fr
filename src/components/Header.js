@@ -118,7 +118,7 @@ const Header = () => {
         </div>
         <div className="flex items-center space-x-4 xl:space-x-8">
           <div
-            className={`fixed right-0 top-0 z-10 mx-0 h-[100vh] w-full max-w-[400px] items-center border-l border-l-dark bg-body p-6 transition-transform duration-300 ease-in-out lg:static lg:flex lg:h-auto lg:w-auto lg:max-w-full lg:space-x-4 lg:border-l-0 lg:bg-transparent lg:p-0 xl:space-x-8 ${
+            className={`fixed right-0 top-0 z-10 mx-0 h-screen w-full max-w-[400px] items-center border-l border-l-dark bg-body p-6 transition-transform duration-300 ease-in-out lg:static lg:flex lg:h-auto lg:w-auto lg:max-w-full lg:space-x-4 lg:border-l-0 lg:bg-transparent lg:p-0 xl:space-x-8 ${
               !showMenu && "translate-x-full"
             } lg:flex lg:translate-x-0`}
           >
@@ -143,7 +143,7 @@ const Header = () => {
                   {menu.hasChildren ? (
                     <li className="mb-5 text-left lg:mb-0 mr-0 group relative">
                       <span
-                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 !normal-case ${
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! ${
                           menu.children
                             .map((c) => c.url)
                             .includes(router.asPath) && "bg-primary text-white"
@@ -157,7 +157,7 @@ const Header = () => {
                           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                         </svg>
                       </span>
-                      <ul className="pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
+                      <ul className="pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow-sm hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
                         {menu.children.map((child, i) => (
                           <li className="mb-1.5" key={`children-${i}`}>
                             <Link
@@ -177,7 +177,7 @@ const Header = () => {
                     <li className="mb-5 text-left lg:mb-0">
                       <Link
                         href={menu.url}
-                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 !normal-case block ${
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! block ${
                           router.asPath === menu.url && "bg-primary text-white"
                         }`}
                       >
@@ -216,7 +216,7 @@ const Header = () => {
         </div>
       </nav>
       {showMenu && (
-        <div className="header-backdrop absolute top-0 left-0 h-[100vh] w-full bg-black/50 lg:hidden"></div>
+        <div className="header-backdrop absolute top-0 left-0 h-screen w-full bg-black/50 lg:hidden"></div>
       )}
     </header>
   );

@@ -12,8 +12,12 @@
     "start": "next start"
   },
   "dependencies": {
-    "flowbite": "^3.1.2",
-    "flowbite-react": "^0.12.9",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.545.0",
     "next": "15.5.4",
     "next-image-export-optimizer": "^1.19.0",
     "next-sitemap": "^4.2.3",
@@ -23,12 +27,14 @@
     "react-icons": "^5.5.0",
     "react-lite-youtube-embed": "^2.5.6",
     "react-social-media-embed": "^2.5.18",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7",
     "virtual-scroller": "^1.13.1"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.19",
-    "autoprefixer": "^10.4.21",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "eslint": "9.37.0",
@@ -39,6 +45,6 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "sass": "^1.93.2",
     "sharp": "^0.34.4",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^4.1.14"
   }
 }

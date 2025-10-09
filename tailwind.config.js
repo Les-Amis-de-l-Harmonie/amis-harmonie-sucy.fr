@@ -14,11 +14,7 @@ let fontSecondaryType = "sans-serif";
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   important: true,
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/flowbite-react/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     screens: {
       sm: "540px",
@@ -60,9 +56,4 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/typography"),
-    require("@tailwindcss/forms"),
-    require("flowbite/plugin"),
-  ],
 };
