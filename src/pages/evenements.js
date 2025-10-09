@@ -752,7 +752,7 @@ export const evenements = [
 ];
 
 export const Evenement = ({ evenement, button = true }) => (
-  <div className="col-12 sm:col-6 lg:col-4 xl:col-3 mb-6">
+  <div className="w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 mb-6">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md">
       <div className="">
         <ExportedImage
@@ -784,12 +784,12 @@ export const Evenement = ({ evenement, button = true }) => (
           <div className="text-center text-primary font-bold text-md relative bg-white w-fit mx-auto px-1">
             {evenement.date}
           </div>
-          <div className="row px-12 pt-3 text-xs">
-            <div className="col-6 text-center">
+          <div className="flex flex-wrap px-12 pt-3 text-xs">
+            <div className="w-1/2 text-center">
               <IoTimeOutline size="2em" className="mx-auto" />
               {evenement.heure}
             </div>
-            <div className="col-6 text-center">
+            <div className="w-1/2 text-center">
               <IoCardOutline size="2em" className="mx-auto" />
               {evenement.prix}
             </div>

@@ -25,12 +25,12 @@ const Partenaires = () => (
           Partenaires
         </h1>
         <div className="flex flex-wrap">
-          <div className="col-12 ">
+          <div className="w-full ">
             <h6 className="text-primary">ILS NOUS SOUTIENNENT !</h6>
           </div>
-          <div className="col-12">
+          <div className="w-full">
             <div className="flex flex-wrap justify-center">
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={sucy}
@@ -38,7 +38,7 @@ const Partenaires = () => (
                   alt="sucy"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={graindevent}
@@ -46,7 +46,7 @@ const Partenaires = () => (
                   alt="graindevent"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={kifekoi}
@@ -54,7 +54,7 @@ const Partenaires = () => (
                   alt="kifekoi"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full px-6"
                   src={confrerie}
@@ -62,7 +62,7 @@ const Partenaires = () => (
                   alt="confrerie"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={sla}
@@ -70,7 +70,7 @@ const Partenaires = () => (
                   alt="sla"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={cmontaleau}
@@ -78,7 +78,7 @@ const Partenaires = () => (
                   alt="montaleau"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full px-6"
                   src={k}
@@ -86,7 +86,7 @@ const Partenaires = () => (
                   alt="kacontremoun"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full px-6"
                   src={cmf}
@@ -94,7 +94,7 @@ const Partenaires = () => (
                   alt="cmf"
                 />
               </div>
-              <div className="flex col-6 sm:col-4 md:col-2 items-center">
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
                 <ExportedImage
                   className="mb-3 w-full"
                   src={cmfvdm}
@@ -104,13 +104,13 @@ const Partenaires = () => (
               </div>
             </div>
           </div>
-          <div className="col-12 mt-32">
+          <div className="w-full mt-32">
             <h6 className="text-primary">
               ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?
             </h6>
             <p>{p2}</p>
           </div>
-          <div className="col-12">
+          <div className="w-full">
             <iframe
               id="haWidget"
               allowtransparency="true"

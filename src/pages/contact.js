@@ -93,17 +93,17 @@ const Contact = () => {
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-wrap">
-            <div className="col-12">
+            <div className="w-full">
               <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 {title}
               </h2>
             </div>
-            <div className="col-12">
+            <div className="w-full">
               <ContactForm />
             </div>
 
             {phone && (
-              <div className="md:col-6 lg:col-4">
+              <div className="md:w-1/2 lg:w-1/3">
                 <Link
                   href={`tel:${phone}`}
                   className="my-4 flex h-[100px] items-center justify-center
@@ -115,7 +115,7 @@ const Contact = () => {
               </div>
             )}
             {mail && (
-              <div className="md:col-6 lg:col-6">
+              <div className="md:w-1/2 lg:w-1/2">
                 <Link
                   href={`mailto:${mail}`}
                   className="my-4 flex h-[100px] items-center justify-center

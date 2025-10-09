@@ -73,8 +73,8 @@ const Harmonie = () => {
             <p>Direction : David BRUNET</p>
             <p>Sous-direction : Marcel HAMON</p>
           </div>
-          <div className="row rounded-2xl bg-primary mt-16">
-            <div className="col-12 md:col-3 md:my-6 px-16 px-10 py-6 md:py-10 border-b-4 md:border-b-0 md:border-r-4">
+          <div className="flex flex-wrap rounded-2xl bg-primary mt-16">
+            <div className="w-full md:w-1/4 md:my-6 px-16 px-10 py-6 md:py-10 border-b-4 md:border-b-0 md:border-r-4">
               <ExportedImage
                 className="w-[100px] h-auto md:w-[500px] mx-auto"
                 src={i}
@@ -83,7 +83,7 @@ const Harmonie = () => {
                 priority
               />
             </div>
-            <div className="col-12 md:col-9 text-center md:text-left text-white md:pl-16 py-6 md:py-10">
+            <div className="w-full md:w-3/4 text-center md:text-left text-white md:pl-16 py-6 md:py-10">
               <p className="pb-6">
                 <strong>Venez renforcer l'harmonie municipale !</strong>
               </p>

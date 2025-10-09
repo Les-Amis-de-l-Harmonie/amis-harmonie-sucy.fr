@@ -70,8 +70,8 @@ const About = () => {
             <br />
             <br />
           </div>
-          <div className="row text-center md:max-w-[1000px] md:m-auto justify-center">
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+          <div className="flex flex-wrap text-center md:max-w-[1000px] md:m-auto justify-center">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={maxime}
@@ -83,7 +83,7 @@ const About = () => {
               <p>Président</p>
               <p>Saxophoniste de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={andrea}
@@ -95,7 +95,7 @@ const About = () => {
               <p>Vice-Présidente</p>
               <p>Percussionniste de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={david}
@@ -107,7 +107,7 @@ const About = () => {
               <p>Directeur musical</p>
               <p>Chef d'orchestre de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={carole}
@@ -119,7 +119,7 @@ const About = () => {
               <p>Trésorière</p>
               <p>Saxophoniste de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={mario}
@@ -131,7 +131,7 @@ const About = () => {
               <p>Trésorier adjoint</p>
               <p>Parent d'un musicien de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={estelle}
@@ -143,7 +143,7 @@ const About = () => {
               <p>Responsable communication</p>
               <p>Percussionniste de l'Harmonie</p>
             </div>
-            <div className="col-12 sm:col-6 md:col-4 md:max-w-[275px] mb-3">
+            <div className="w-full sm:w-1/2 md:w-1/3 md:max-w-[275px] mb-3">
               <ExportedImage
                 className="mb-3"
                 src={marcel}

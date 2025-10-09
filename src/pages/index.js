@@ -30,8 +30,8 @@ const Home = () => {
         />
 
         <div className="mx-auto max-w-[1320px]">
-          <div className="row flex-wrap-reverse items-center justify-center lg:flex-row">
-            <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
+          <div className="flex flex-wrap-reverse items-center justify-center lg:flex-row">
+            <div className="mt-12 text-center lg:mt-0 lg:text-left lg:w-1/2">
               <div>
                 <span className="font-bold text-dark lg:text-[55px]">
                   Les amis de
@@ -55,7 +55,7 @@ const Home = () => {
                 En savoir plus
               </Link>
             </div>
-            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:col-6">
+            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:w-1/2">
               <div className="w-[360px] lg:w-full h-full">
                 <Carousel
                   slideInterval={1000}
@@ -95,8 +95,8 @@ const Home = () => {
       </section>
       <section className="py-16" id="evenements">
         <div className="mx-auto max-w-[1320px]">
-          <div className="row">
-            <div className="col-12">
+          <div className="flex flex-wrap">
+            <div className="w-full">
               <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 Évènements à venir
               </h2>
@@ -110,8 +110,8 @@ const Home = () => {
                 />
               ))}
           </div>
-          <div className="row">
-            <div className="col-12">
+          <div className="flex flex-wrap">
+            <div className="w-full">
               <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 Évènements passés
               </h2>

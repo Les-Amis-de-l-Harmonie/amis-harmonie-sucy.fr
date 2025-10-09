@@ -41,11 +41,11 @@ const Videos = () => {
           <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
             Vidéos
           </h1>
-          <div className="row">
+          <div className="flex flex-wrap">
             {videos.map((video) => (
               <div
                 key={video.id}
-                className="col-12 mb-5 px-12 md:col-6 text-center"
+                className="w-full mb-5 px-12 md:w-1/2 text-center"
               >
                 <Youtube id={video.id} title={video.title} />
                 <b>{video.title}</b>

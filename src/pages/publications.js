@@ -15,7 +15,7 @@ const getColumnsCount = (container) => {
 };
 
 const Post = ({ item: post }) => (
-  <div className="col-12 mb-5 md:col-6 xl:col-4 text-center overflow-hidden">
+  <div className="w-full mb-5 md:w-1/2 xl:w-1/3 text-center overflow-hidden">
     <InstagramEmbed url={post} className="w-full" />
   </div>
 );
@@ -228,7 +228,7 @@ const Posts = () => {
               itemComponent={MemoPost}
               getColumnsCount={getColumnsCount}
             />
-            {/*<div className="col-12">
+            {/*<div className="w-full">
               <div className='sk-instagram-feed' data-embed-id='173898'></div>
             </div>*/}
           </div>

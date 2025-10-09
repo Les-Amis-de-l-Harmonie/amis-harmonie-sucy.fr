@@ -5,7 +5,7 @@ const InnerPagination = ({ posts, date }) => {
   const orderedPosts = sortByDate(posts);
   const lastIndex = orderedPosts.length - 1;
   const postIndex = orderedPosts.findIndex(
-    (post) => post.frontmatter.date == date
+    (post) => post.frontmatter.date == date,
   );
   const next = postIndex == 0 ? undefined : orderedPosts[postIndex - 1].slug;
   const prev =
@@ -22,10 +22,10 @@ const InnerPagination = ({ posts, date }) => {
   );
 
   return (
-    <div className="row">
-      <span className="col">{prevButton}</span>
-      <span className="col-8" />
-      <span className="col">{nextButton}</span>
+    <div className="flex flex-wrap">
+      <span className="flex-1">{prevButton}</span>
+      <span className="w-2/3" />
+      <span className="flex-1">{nextButton}</span>
     </div>
   );
 };

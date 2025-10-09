@@ -8,7 +8,7 @@ const Adhesion = () => (
           Adhésion 2025-2026
         </h1>
         <div className="flex flex-wrap">
-          <div className="col-12">
+          <div className="w-full">
             <p>
               Devenez un super fan de l&apos;Harmonie Municipale de Sucy-en-brie
               ! <br />
@@ -23,7 +23,7 @@ const Adhesion = () => (
               confirmation par email.
             </p>
           </div>
-          <div className="col-12 mt-12">
+          <div className="w-full mt-12">
             <iframe
               id="haWidget"
               allowtransparency="true"
