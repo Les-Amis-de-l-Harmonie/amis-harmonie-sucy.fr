@@ -1,17 +1,13 @@
-import TwSizeIndicator from "@components/TwSizeIndicator";
-import config from "@config/config.json";
 import { Head, Html, Main, NextScript } from "next/document";
 
 const Document = () => {
-  // destructuring items from config object
-  const { favicon } = config.site;
   return (
-    <Html lang="en">
+    <Html lang="fr">
       <Head>
         {/* favicon */}
-        <link rel="shortcut icon" href={favicon} />
+        <link rel="shortcut icon" href="/images/favicon.png" />
         {/* theme meta */}
-        <meta name="theme-name" content="geeky-nextjs" />
+        <meta name="theme-name" content="amis-harmonie" />
         <meta name="msapplication-TileColor" content="#000000" />
         <meta
           name="theme-color"
@@ -26,7 +22,6 @@ const Document = () => {
       </Head>
       <body>
         <Main />
-        <TwSizeIndicator />
         <NextScript />
       </body>
     </Html>

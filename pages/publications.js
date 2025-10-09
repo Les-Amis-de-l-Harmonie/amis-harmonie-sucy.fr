@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, memo } from "react";
-import Base from "@layouts/Baseof";
+import Layout from "../components/Layout";
 import { InstagramEmbed } from "react-social-media-embed";
 import VirtualScroller from "virtual-scroller/react";
 
@@ -216,7 +216,7 @@ const Posts = () => {
   }, []);
 
   return (
-    <Base title={`Publications`}>
+    <Layout title={`Publications`}>
       <div className="section">
         <div className="container">
           <h1 className="h2 mb-8 text-center">Publications</h1>
@@ -232,7 +232,7 @@ const Posts = () => {
           </div>
         </div>
       </div>
-    </Base>
+    </Layout>
   );
 };
 

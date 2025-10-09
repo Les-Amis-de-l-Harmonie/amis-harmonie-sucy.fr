@@ -1,4 +1,4 @@
-import Base from "@layouts/Baseof";
+import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import { Evenement, evenements } from "./evenements";
@@ -16,7 +16,7 @@ tomorrow.setDate(tomorrow.getDate() + 1);
 
 const Home = () => {
   return (
-    <Base>
+    <Layout>
       {/* Banner */}
       <section className="section banner relative pb-0 pt-4 lg:pt-0">
         <ExportedImage
@@ -120,7 +120,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-    </Base>
+    </Layout>
   );
 };
 

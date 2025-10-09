@@ -1,23 +1,20 @@
-import NotFound from "@layouts/404";
-import Base from "@layouts/Baseof";
-import { getRegularPage } from "@lib/contentParser";
+import Layout from "../components/Layout";
 
-const notFound = ({ data }) => {
+const notFound = () => {
   return (
-    <Base>
-      <NotFound data={data} />
-    </Base>
+    <Layout title="Page not found" description="Page not found">
+      <section className="section">
+        <div className="container">
+          <div className="row">
+            <div className="col-12">
+              <h1 className="h1 mb-4 text-center">404</h1>
+              <p className="text-center">Page not found</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Layout>
   );
-};
-
-// get 404 page data
-export const getStaticProps = async () => {
-  const notFoundData = await getRegularPage("404");
-  return {
-    props: {
-      data: notFoundData,
-    },
-  };
 };
 
 export default notFound;

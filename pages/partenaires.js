@@ -1,4 +1,5 @@
-import Base from "@layouts/Baseof";
+import Base from "../components/Layout";
+import Layout from "../components/Layout";
 import sucy from "../public/images/logo-sucy.png";
 import sla from "../public/images/logo-sla.png";
 import cmontaleau from "../public/images/logo-clubmontaleau.jpeg";
@@ -10,21 +11,20 @@ import k from "../public/images/logo-k.png";
 import graindevent from "../public/images/graindevent.png";
 import ExportedImage from "next-image-export-optimizer";
 
-const p1 = "L'association \"Les Amis de l'Harmonie\" a la chance d'être soutenue par la Ville de Sucy-en-Brie, l'association \"Kifékoi?\", la Confrérie des Côteaux de Sucy, l'association \"Sucy Loisirs Accueil\", l'association \"Le Club Montaleau\" et la confédération musicale de France.";
+const p1 =
+  'L\'association "Les Amis de l\'Harmonie" a la chance d\'être soutenue par la Ville de Sucy-en-Brie, l\'association "Kifékoi?", la Confrérie des Côteaux de Sucy, l\'association "Sucy Loisirs Accueil", l\'association "Le Club Montaleau" et la confédération musicale de France.';
 
-const p2 = "L’aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !";
+const p2 =
+  "L’aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !";
 
-const Partenaires = () =>
-  <Base title={`Partenaires`}>
+const Partenaires = () => (
+  <Layout title={`Partenaires`}>
     <div className="section">
       <div className="container">
-        <h1 className="h2 mb-8 text-center ">
-          Partenaires
-        </h1>
+        <h1 className="h2 mb-8 text-center ">Partenaires</h1>
         <div className="row">
           <div className="col-12 ">
             <h6 className="text-primary">ILS NOUS SOUTIENNENT !</h6>
-
           </div>
           <div className="col-12">
             <div className="row justify-center">
@@ -103,15 +103,23 @@ const Partenaires = () =>
             </div>
           </div>
           <div className="col-12 mt-32">
-            <h6 className="text-primary">ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?</h6>
+            <h6 className="text-primary">
+              ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?
+            </h6>
             <p>{p2}</p>
           </div>
           <div className="col-12">
-            <iframe id="haWidget" allowtransparency="true" src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget" className="w-full h-[1300px] b-none" />
+            <iframe
+              id="haWidget"
+              allowtransparency="true"
+              src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget"
+              className="w-full h-[1300px] b-none"
+            />
           </div>
         </div>
       </div>
     </div>
-  </Base>
+  </Layout>
+);
 
 export default Partenaires;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Base from "@layouts/Baseof";
+import Layout from "../components/Layout";
 import Link from "next/link";
 import { Modal } from "flowbite-react";
 import ExportedImage from "next-image-export-optimizer";
@@ -109,21 +109,16 @@ import evt280925 from "../public/images/evt280925.png";
 import evt150625 from "../public/images/evt150625.png";
 import evt280625 from "../public/images/evt280625.png";
 import evt2806251 from "../public/images/evt2806251.png";
-import evt010226 from "../public/images/evt010226.png"; 
-import evt070925 from "../public/images/evt070925.png"; 
+import evt010226 from "../public/images/evt010226.png";
+import evt070925 from "../public/images/evt070925.png";
 import evt210925 from "../public/images/evt210925.png";
 import thedansant20261 from "../public/images/thedansant20261.png";
-import thedansant20262 from "../public/images/thedansant20262.png"; 
+import thedansant20262 from "../public/images/thedansant20262.png";
 import evt221125 from "../public/images/evt221125.png";
 import evt231125 from "../public/images/evt231125.png";
 import evt291125 from "../public/images/evt291125.png";
 import evt080925 from "../public/images/evt080925.png";
 import evt111025 from "../public/images/evt111025.png";
-
-
-
-
-
 
 export const evenements = [
   {
@@ -546,24 +541,26 @@ export const evenements = [
   {
     d: "2025-04-06",
     title: "Concert Club de rugby Sucy",
-    date : "Dimanche 6 avril 2025",
+    date: "Dimanche 6 avril 2025",
     image: evt070424,
     heure: "A définir",
     lieu: "Stade de rugby, Sucy-en-Brie",
     prix: "Gratuit",
-    description: "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
-    url: ""
+    description:
+      "Nous serons auprès du club de rugby de Sucy-en-Brie afin de les soutenir en musique !",
+    url: "",
   },
   {
     d: "2025-04-11",
     title: "Répétition ouverte",
-    date : "Vendredi 11 avril 2025",
+    date: "Vendredi 11 avril 2025",
     image: evt110425,
     heure: "20h",
     lieu: "Conservatoire, Sucy-en-Brie",
     prix: "Gratuit",
-    description: "🎶 Plongez dans les coulisses de la musique ! 🎶 L’Harmonie Municipale de Sucy-en-Brie vous ouvre les portes de sa répétition ! Venez vivre un moment unique et découvrir comment se prépare un concert, dans une ambiance conviviale et passionnée.",
-    url: ""
+    description:
+      "🎶 Plongez dans les coulisses de la musique ! 🎶 L’Harmonie Municipale de Sucy-en-Brie vous ouvre les portes de sa répétition ! Venez vivre un moment unique et découvrir comment se prépare un concert, dans une ambiance conviviale et passionnée.",
+    url: "",
   },
   {
     d: "2025-05-08",
@@ -644,7 +641,7 @@ export const evenements = [
     description:
       "Profitez du concert de l'Harmonie Municipale de Sucy-en-Brie et venez nous rencontrer sur notre stand.",
   },
-   {
+  {
     d: "2025-09-08",
     title: "Assemblée générale ordinaire",
     date: "Lundi 08 septembre 2025",
@@ -666,7 +663,7 @@ export const evenements = [
     description:
       "Un incontournable de notre rentrée : la brocante de Sucy-en-Brie ! Nous déambulerons dans les allées du Centre Ville, sur des rythmes festifs !",
   },
-  
+
   {
     d: "2025-09-28",
     title: "Sortie 'John Williams, du classique au cinéma'",
@@ -680,7 +677,6 @@ export const evenements = [
     modal: {
       image1: evt2809251,
     },
-
   },
   {
     d: "2025-10-11",
@@ -704,7 +700,7 @@ export const evenements = [
     description:
       "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
   },
-   {
+  {
     d: "2025-11-22",
     title: "Banquet de l'amitié",
     date: "Date à venir",
@@ -715,7 +711,7 @@ export const evenements = [
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
   },
-   {
+  {
     d: "2025-11-23",
     title: "Banquet de l'amitié",
     date: "Date à venir",
@@ -726,7 +722,7 @@ export const evenements = [
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
   },
-   {
+  {
     d: "2025-11-29",
     title: "Banquet de l'amitié",
     date: "Date à venir",
@@ -752,7 +748,7 @@ export const evenements = [
       image1: thedansant20261,
       image2: thedansant20262,
     },
-  }
+  },
 ];
 
 export const Evenement = ({ evenement, button = true }) => (
@@ -764,6 +760,7 @@ export const Evenement = ({ evenement, button = true }) => (
           sizes="50vw"
           src={evenement.image}
           alt={evenement.title}
+          loading="lazy"
         />
         <h5 className="text-xl text-center tracking-tight text-gray-900 dark:text-white pt-6 pb-1 py-3">
           {evenement.title}
@@ -815,7 +812,7 @@ export const Evenement = ({ evenement, button = true }) => (
 );
 
 const Evenements = () => (
-  <Base title={`Évènements`}>
+  <Layout title={`Évènements`}>
     <div className="section">
       <div className="container">
         <h1 className="h2 mb-8 text-center">Évènements à venir</h1>
@@ -826,7 +823,7 @@ const Evenements = () => (
         </div>
       </div>
     </div>
-  </Base>
+  </Layout>
 );
 
 export default Evenements;
