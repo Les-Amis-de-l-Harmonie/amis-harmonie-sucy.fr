@@ -1,8 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
-import harmoniePng1 from "../public/images/harmonie25.png";
-import i from "../public/images/i.png";
+import harmoniePng1 from "../../public/images/harmonie25.png";
+import i from "../../public/images/i.png";
 
 const Harmonie = () => {
   return (

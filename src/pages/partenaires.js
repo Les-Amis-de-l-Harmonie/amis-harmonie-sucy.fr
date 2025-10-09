@@ -1,14 +1,14 @@
 import Base from "../components/Layout";
 import Layout from "../components/Layout";
-import sucy from "../public/images/logo-sucy.png";
-import sla from "../public/images/logo-sla.png";
-import cmontaleau from "../public/images/logo-clubmontaleau.jpeg";
-import kifekoi from "../public/images/logo-kifekoi.png";
-import cmf from "../public/images/logo-cmf.png";
-import confrerie from "../public/images/logo-confrerie.jpeg";
-import cmfvdm from "../public/images/logo-cmf-vdm.jpeg";
-import k from "../public/images/logo-k.png";
-import graindevent from "../public/images/graindevent.png";
+import sucy from "../../public/images/logo-sucy.png";
+import sla from "../../public/images/logo-sla.png";
+import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
+import kifekoi from "../../public/images/logo-kifekoi.png";
+import cmf from "../../public/images/logo-cmf.png";
+import confrerie from "../../public/images/logo-confrerie.jpeg";
+import cmfvdm from "../../public/images/logo-cmf-vdm.jpeg";
+import k from "../../public/images/logo-k.png";
+import graindevent from "../../public/images/graindevent.png";
 import ExportedImage from "next-image-export-optimizer";
 
 const p1 =

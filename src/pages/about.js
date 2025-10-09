@@ -1,13 +1,13 @@
 /* eslint-disable react/no-unescaped-entities */
 import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
-import estelle from "../public/images/estelle.png";
-import maxime from "../public/images/maxime.png";
-import david from "../public/images/david.png";
-import mario from "../public/images/mario.png";
-import andrea from "../public/images/andrea.png";
-import marcel from "../public/images/marcel.png";
-import carole from "../public/images/carole.png";
+import estelle from "../../public/images/estelle.png";
+import maxime from "../../public/images/maxime.png";
+import david from "../../public/images/david.png";
+import mario from "../../public/images/mario.png";
+import andrea from "../../public/images/andrea.png";
+import marcel from "../../public/images/marcel.png";
+import carole from "../../public/images/carole.png";
 
 const About = () => {
   return (

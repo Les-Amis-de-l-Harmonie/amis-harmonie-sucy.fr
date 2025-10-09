@@ -4,10 +4,10 @@ import Link from "next/link";
 import { Evenement, evenements } from "./evenements";
 import { Carousel } from "flowbite-react";
 
-import home1 from "../public/images/home1.jpg";
-import home2 from "../public/images/home2.jpg";
-import home3 from "../public/images/home3.jpg";
-import home4 from "../public/images/home4.jpg";
+import home1 from "../../public/images/home1.jpg";
+import home2 from "../../public/images/home2.jpg";
+import home3 from "../../public/images/home3.jpg";
+import home4 from "../../public/images/home4.jpg";
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
