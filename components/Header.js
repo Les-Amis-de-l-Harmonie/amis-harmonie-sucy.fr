@@ -111,14 +111,14 @@ const Header = () => {
   }, [showMenu]);
 
   return (
-    <header className="header">
-      <nav className="navbar container px-1 sm:px-8">
+    <header className="top-0 z-50 border-b bg-body py-2 dark:border-darkmode-border dark:bg-darkmode-body">
+      <nav className="relative flex flex-wrap items-center justify-between mx-auto max-w-[1320px] px-1 sm:px-8">
         <div className="order-0">
           <Logo />
         </div>
         <div className="flex items-center space-x-4 xl:space-x-8">
           <div
-            className={`collapse-menu ${
+            className={`fixed right-0 top-0 z-10 mx-0 h-[100vh] w-full max-w-[400px] items-center border-l border-l-dark bg-body p-6 transition-transform duration-300 ease-in-out dark:bg-darkmode-body lg:static lg:flex lg:h-auto lg:w-auto lg:max-w-full lg:space-x-4 lg:border-l-0 lg:bg-transparent lg:p-0 xl:space-x-8 ${
               !showMenu && "translate-x-full"
             } lg:flex lg:translate-x-0`}
           >
@@ -136,17 +136,17 @@ const Header = () => {
             </button>
             <ul
               id="nav-menu"
-              className="navbar-nav w-full md:w-auto md:space-x-1 lg:flex xl:space-x-2"
+              className="mt-16 lg:mt-0 w-full md:w-auto md:space-x-1 lg:flex xl:space-x-2"
             >
               {main.map((menu, i) => (
                 <React.Fragment key={`menu-${i}`}>
                   {menu.hasChildren ? (
-                    <li className="nav-item nav-dropdown group relative">
+                    <li className="mb-5 text-left lg:mb-0 mr-0 group relative">
                       <span
-                        className={`nav-link !normal-case ${
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white dark:text-darkmode-light md:px-3 md:py-3 lg:text-center xl:px-5 !normal-case ${
                           menu.children
                             .map((c) => c.url)
-                            .includes(router.asPath) && "active"
+                            .includes(router.asPath) && "bg-primary text-white"
                         } inline-flex items-center`}
                       >
                         {menu.name}
@@ -157,16 +157,14 @@ const Header = () => {
                           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                         </svg>
                       </span>
-                      <ul className="nav-dropdown-list hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
+                      <ul className="pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow dark:border-darkmode-border dark:bg-black hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
                         {menu.children.map((child, i) => (
-                          <li
-                            className="nav-dropdown-item"
-                            key={`children-${i}`}
-                          >
+                          <li className="mb-1.5" key={`children-${i}`}>
                             <Link
                               href={child.url}
-                              className={`nav-dropdown-link block ${
-                                router.asPath === child.url && "active"
+                              className={`min-w-[100px] rounded py-2.5 px-3.5 text-[13.5px] font-semibold text-dark transition hover:bg-primary/10 hover:text-primary dark:text-darkmode-light block ${
+                                router.asPath === child.url &&
+                                "bg-primary/10 text-primary"
                               }`}
                             >
                               {child.name}
@@ -176,11 +174,11 @@ const Header = () => {
                       </ul>
                     </li>
                   ) : (
-                    <li className="nav-item">
+                    <li className="mb-5 text-left lg:mb-0">
                       <Link
                         href={menu.url}
-                        className={`nav-link !normal-case block ${
-                          router.asPath === menu.url && "active"
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white dark:text-darkmode-light md:px-3 md:py-3 lg:text-center xl:px-5 !normal-case block ${
+                          router.asPath === menu.url && "bg-primary text-white"
                         }`}
                       >
                         {menu.name}
@@ -191,7 +189,10 @@ const Header = () => {
               ))}
             </ul>
             {/* header social */}
-            <Social source={social} className="socials" />
+            <Social
+              source={social}
+              className="mx-3 flex items-center justify-center space-x-3 px-4 lg:justify-start lg:border-x 2xl:space-x-4"
+            />
           </div>
           <button
             onClick={() => setShowMenu(!showMenu)}

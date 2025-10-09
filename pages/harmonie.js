@@ -10,9 +10,9 @@ const Harmonie = () => {
       title="L'Harmonie Municipale de Sucy-en-Brie"
       description="L'Harmonie Municipale de Sucy-en-Brie"
     >
-      <section className="section">
-        <div className="container">
-          <h2 className="h2 mb-8 text-center">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px]">
+          <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
             L'Harmonie Municipale de Sucy-en-Brie
           </h2>
           <ExportedImage

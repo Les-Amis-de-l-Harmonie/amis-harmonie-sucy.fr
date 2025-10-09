@@ -19,14 +19,17 @@ function CustomForm({ status, message, onValidated }) {
       <form action="#" className="py-6" onSubmit={handleSubmit}>
         <fieldset className="relative">
           <input
-            className="newsletter-input form-input h-12 w-full rounded-3xl border-none bg-theme-light px-5 py-3 pr-12 text-dark placeholder:text-xs dark:bg-darkmode-theme-dark"
+            className="h-12 w-full rounded-3xl border-none bg-theme-light px-5 py-3 pr-12 text-dark placeholder:text-xs dark:bg-darkmode-theme-dark border-0 border-b border-border bg-transparent px-0 placeholder:text-xs placeholder:text-light focus:border-primary focus:ring-transparent dark:border-darkmode-border dark:text-darkmode-light dark:placeholder:text-darkmode-light"
             type="text"
             placeholder="Type And Hit Enter"
             onChange={(e) => setEmail(e.target.value)}
           />
           <FaEnvelope className="absolute top-1/2 right-5 -translate-y-1/2 text-xl transition duration-75" />
         </fieldset>
-        <button className="d-block  btn btn-primary mt-4 w-full" type="submit">
+        <button
+          className="block font-secondary inline-block border px-8 py-2.5 font-bold transition bg-primary text-white rounded-[50px] relative border-0 overflow-hidden h-12 mt-4 w-full"
+          type="submit"
+        >
           Sign In
         </button>
       </form>

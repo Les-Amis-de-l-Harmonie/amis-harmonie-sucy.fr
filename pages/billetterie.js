@@ -19,10 +19,12 @@ const isBilletterie = (evt) => {
 
 const Videos = () => (
   <Layout title={`Billetterie`}>
-    <div className="section">
-      <div className="container">
-        <h1 className="h2 mb-8 text-center">Billetterie</h1>
-        <div className="row justify-center">
+    <div className="py-16">
+      <div className="mx-auto max-w-[1320px]">
+        <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+          Billetterie
+        </h1>
+        <div className="flex flex-wrap justify-center">
           {evenements.filter(isBilletterie).map((evenement) => (
             <Evenement key={evenement.title} evenement={evenement} />
           ))}

@@ -1,0 +1,9 @@
+@tailwind base;
+
+body {
+  @apply bg-body font-primary font-normal leading-relaxed text-text;
+}
+
+@tailwind components;
+
+@tailwind utilities;

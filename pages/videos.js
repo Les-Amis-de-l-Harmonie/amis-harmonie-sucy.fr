@@ -36,9 +36,11 @@ const Videos = () => {
 
   return (
     <Layout title={`Vidéos`}>
-      <div className="section">
-        <div className="container">
-          <h1 className="h2 mb-8 text-center">Vidéos</h1>
+      <div className="py-16">
+        <div className="mx-auto max-w-[1320px]">
+          <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+            Vidéos
+          </h1>
           <div className="row">
             {videos.map((video) => (
               <div

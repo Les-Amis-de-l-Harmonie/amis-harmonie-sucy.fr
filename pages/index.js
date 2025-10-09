@@ -18,7 +18,7 @@ const Home = () => {
   return (
     <Layout>
       {/* Banner */}
-      <section className="section banner relative pb-0 pt-4 lg:pt-0">
+      <section className="py-16 relative pb-0 pt-4 lg:pt-0">
         <ExportedImage
           className="absolute bottom-0 left-0 z-[-1] w-full"
           src={"/images/banner-bg-shape.svg"}
@@ -29,12 +29,14 @@ const Home = () => {
           placeholder="empty"
         />
 
-        <div className="container">
+        <div className="mx-auto max-w-[1320px]">
           <div className="row flex-wrap-reverse items-center justify-center lg:flex-row">
             <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
-              <div className="banner-title">
-                <span>Les amis de</span>
-                <h1>
+              <div>
+                <span className="font-bold text-dark dark:text-darkmode-light lg:text-[55px]">
+                  Les amis de
+                </span>
+                <h1 className="font-secondary font-bold text-black dark:text-darkmode-light text-h1-sm md:text-h1 leading-[1] lg:text-[72px]">
                   l&apos;Harmonie de <nobr>Sucy-en-Brie</nobr>
                 </h1>
               </div>
@@ -46,7 +48,10 @@ const Home = () => {
                 </i>
                 <span className=""> Riccardo Muti</span>
               </p>
-              <Link className="btn btn-primary mt-6" href="/about">
+              <Link
+                className="font-secondary inline-block border px-8 py-2.5 font-bold transition bg-primary text-white rounded-[50px] relative border-0 overflow-hidden h-12 mt-6"
+                href="/about"
+              >
                 En savoir plus
               </Link>
             </div>
@@ -88,11 +93,13 @@ const Home = () => {
           </div>
         </div>
       </section>
-      <section className="section" id="evenements">
-        <div className="container">
+      <section className="py-16" id="evenements">
+        <div className="mx-auto max-w-[1320px]">
           <div className="row">
             <div className="col-12">
-              <h2 className="h2 mb-8 text-center">Évènements à venir</h2>
+              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+                Évènements à venir
+              </h2>
             </div>
             {evenements
               .filter((evt) => new Date(Date.parse(evt.d)) >= today)
@@ -105,7 +112,9 @@ const Home = () => {
           </div>
           <div className="row">
             <div className="col-12">
-              <h2 className="h2 mb-8 text-center">Évènements passés</h2>
+              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+                Évènements passés
+              </h2>
             </div>
             {evenements
               .filter((evt) => new Date(Date.parse(evt.d)) < today)

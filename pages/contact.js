@@ -90,11 +90,13 @@ const Contact = () => {
 
   return (
     <Layout title={title} description={description} meta_title={title}>
-      <section className="section">
-        <div className="container">
-          <div className="row">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px]">
+          <div className="flex flex-wrap">
             <div className="col-12">
-              <h2 className="h2 mb-8 text-center">{title}</h2>
+              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+                {title}
+              </h2>
             </div>
             <div className="col-12">
               <ContactForm />

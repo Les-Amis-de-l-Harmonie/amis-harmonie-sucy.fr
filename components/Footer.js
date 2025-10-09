@@ -86,14 +86,14 @@ const Footer = () => {
     website: "",
   };
   return (
-    <footer className="section relative mt-12 pt-3 pb-3">
+    <footer className="py-16 relative mt-12 pt-3 pb-3">
       <ExportedImage
         className="-z-[1] object-cover object-left md:object-top"
         src="/images/footer-bg-shape.svg"
         alt="footer background"
         fill={true}
       />
-      <div className="container text-center">
+      <div className="mx-auto max-w-[1320px] text-center">
         <div className="mb-6 inline-flex">
           <Logo />
         </div>
@@ -113,7 +113,10 @@ const Footer = () => {
         </ul>
         {/* social icons */}
         <div className="inline-flex">
-          <Social source={social} className="socials mb-12 justify-center" />
+          <Social
+            source={social}
+            className="mx-3 flex items-center justify-center space-x-3 px-4 lg:justify-start lg:border-x 2xl:space-x-4 mb-12 justify-center"
+          />
         </div>
       </div>
     </footer>

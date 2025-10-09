@@ -12,10 +12,12 @@ import carole from "../public/images/carole.png";
 const About = () => {
   return (
     <Layout title="L'Association" description="À Propos de l'Association">
-      <section className="section">
-        <div className="container">
-          <h2 className="h2 mb-8 text-center">L'Association</h2>
-          <div className="content">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px]">
+          <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+            L'Association
+          </h2>
+          <div className="prose max-w-none prose-headings:mt-[.5em] prose-headings:mb-[.9em] prose-headings:font-bold prose-headings:text-dark prose-headings:dark:text-white prose-h1:text-h1-sm md:prose-h1:text-h1 prose-h2:text-h2-sm md:prose-h2:text-h2 prose-h3:text-h3-sm md:prose-h3:text-h3 prose-hr:border-border prose-hr:dark:border-darkmode-border prose-p:text-base prose-p:text-text prose-p:dark:text-darkmode-light prose-blockquote:mb-12 prose-blockquote:rounded prose-blockquote:border-0 prose-blockquote:bg-theme-light prose-blockquote:py-1 prose-blockquote:px-12 prose-blockquote:not-italic prose-blockquote:dark:bg-theme-dark prose-blockquote:lg:px-16 prose-code:px-1 prose-code:text-primary prose-pre:rounded prose-img:rounded prose-table:rounded prose-strong:text-dark prose-strong:dark:text-darkmode-light prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-li:text-text prose-li:dark:text-darkmode-light prose-table:overflow-hidden prose-table:border prose-table:border-border prose-table:dark:border-darkmode-border prose-thead:border-border prose-thead:bg-theme-light prose-th:py-4 prose-th:px-4 prose-th:text-dark prose-thead:dark:border-darkmode-border prose-thead:dark:bg-theme-dark prose-th:dark:text-darkmode-light prose-tr:border-border prose-tr:dark:border-darkmode-border prose-td:px-3 prose-td:py-4 prose-td:dark:text-darkmode-light prose-li:marker:dark:text-darkmode-light">
             <p>
               Chez "Les Amis de l'Harmonie", la passion pour la musique et la
               vie associative s'entrelacent pour créer une expérience musicale

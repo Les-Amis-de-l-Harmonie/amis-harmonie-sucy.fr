@@ -2,10 +2,12 @@ import Layout from "../components/Layout";
 
 const Adhesion = () => (
   <Layout title={`Adhésion`}>
-    <div className="section">
-      <div className="container">
-        <h1 className="h2 mb-8 text-center">Adhésion 2025-2026</h1>
-        <div className="row">
+    <div className="py-16">
+      <div className="mx-auto max-w-[1320px]">
+        <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+          Adhésion 2025-2026
+        </h1>
+        <div className="flex flex-wrap">
           <div className="col-12">
             <p>
               Devenez un super fan de l&apos;Harmonie Municipale de Sucy-en-brie

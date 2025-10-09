@@ -813,10 +813,12 @@ export const Evenement = ({ evenement, button = true }) => (
 
 const Evenements = () => (
   <Layout title={`Évènements`}>
-    <div className="section">
-      <div className="container">
-        <h1 className="h2 mb-8 text-center">Évènements à venir</h1>
-        <div className="row">
+    <div className="py-16">
+      <div className="mx-auto max-w-[1320px]">
+        <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+          Évènements à venir
+        </h1>
+        <div className="flex flex-wrap">
           {evenements.map((evenement) => (
             <Evenement key={evenement.title} evenement={evenement} />
           ))}

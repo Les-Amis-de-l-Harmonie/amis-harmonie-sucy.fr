@@ -19,15 +19,17 @@ const p2 =
 
 const Partenaires = () => (
   <Layout title={`Partenaires`}>
-    <div className="section">
-      <div className="container">
-        <h1 className="h2 mb-8 text-center ">Partenaires</h1>
-        <div className="row">
+    <div className="py-16">
+      <div className="mx-auto max-w-[1320px]">
+        <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center ">
+          Partenaires
+        </h1>
+        <div className="flex flex-wrap">
           <div className="col-12 ">
             <h6 className="text-primary">ILS NOUS SOUTIENNENT !</h6>
           </div>
           <div className="col-12">
-            <div className="row justify-center">
+            <div className="flex flex-wrap justify-center">
               <div className="flex col-6 sm:col-4 md:col-2 items-center">
                 <ExportedImage
                   className="mb-3 w-full"

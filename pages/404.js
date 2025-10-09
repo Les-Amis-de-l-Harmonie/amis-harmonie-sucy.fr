@@ -3,11 +3,13 @@ import Layout from "../components/Layout";
 const notFound = () => {
   return (
     <Layout title="Page not found" description="Page not found">
-      <section className="section">
-        <div className="container">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px]">
           <div className="row">
             <div className="col-12">
-              <h1 className="h1 mb-4 text-center">404</h1>
+              <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h1-sm md:text-h1 mb-4 text-center">
+                404
+              </h1>
               <p className="text-center">Page not found</p>
             </div>
           </div>

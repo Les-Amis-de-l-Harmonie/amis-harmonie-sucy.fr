@@ -77,6 +77,7 @@ const Social = ({ source, className }) => {
             href={facebook}
             target="_blank"
             rel="noopener noreferrer nofollow"
+            className="inline-block px-2 py-1 text-lg text-dark hover:text-primary dark:text-darkmode-light dark:hover:text-primary"
           >
             <IoLogoFacebook />
           </a>

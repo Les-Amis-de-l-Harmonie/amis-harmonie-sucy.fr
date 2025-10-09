@@ -219,7 +219,9 @@ const Posts = () => {
     <Layout title={`Publications`}>
       <div className="section">
         <div className="container">
-          <h1 className="h2 mb-8 text-center">Publications</h1>
+          <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+            Publications
+          </h1>
           <div id="posts-row">
             <VirtualScroller
               items={posts}
