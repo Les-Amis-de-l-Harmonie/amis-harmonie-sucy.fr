@@ -7,7 +7,7 @@ const notFound = () => {
         <div className="mx-auto max-w-[1320px]">
           <div className="row">
             <div className="col-12">
-              <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h1-sm md:text-h1 mb-4 text-center">
+              <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 mb-4 text-center">
                 404
               </h1>
               <p className="text-center">Page not found</p>

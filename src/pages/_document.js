@@ -14,11 +14,6 @@ const Document = () => {
           media="(prefers-color-scheme: light)"
           content="#fff"
         />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: dark)"
-          content="#000"
-        />
       </Head>
       <body>
         <Main />

@@ -171,7 +171,7 @@ const Page = () => {
       <div className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-col gap-8">
-            <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h1-sm md:text-h1 text-center">
+            <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 text-center">
               Livre d&apos;Or
             </h1>
             <LivreDorForm callback={setNewRow} />

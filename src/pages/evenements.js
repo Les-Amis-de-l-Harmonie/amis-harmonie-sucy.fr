@@ -753,7 +753,7 @@ export const evenements = [
 
 export const Evenement = ({ evenement, button = true }) => (
   <div className="col-12 sm:col-6 lg:col-4 xl:col-3 mb-6">
-    <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
+    <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md">
       <div className="">
         <ExportedImage
           className="rounded-t-lg"
@@ -762,14 +762,14 @@ export const Evenement = ({ evenement, button = true }) => (
           alt={evenement.title}
           loading="lazy"
         />
-        <h5 className="text-xl text-center tracking-tight text-gray-900 dark:text-white pt-6 pb-1 py-3">
+        <h5 className="text-xl text-center tracking-tight text-gray-900 pt-6 pb-1 py-3">
           {evenement.title}
         </h5>
         <div className="text-center text-xs text-primary">
           <IoLocationOutline size="1em" className="inline mb-1 mr-1" />
           {evenement.lieu}
         </div>
-        <p className="font-normal text-center text-sm text-gray-700 dark:text-gray-400 pt-4 px-6">
+        <p className="font-normal text-center text-sm text-gray-700 pt-4 px-6">
           {evenement.description}
         </p>
         {typeof evenement.modal !== "undefined" && (
@@ -781,7 +781,7 @@ export const Evenement = ({ evenement, button = true }) => (
       <div>
         <div className="relative my-4">
           <div className="border-b-2 mt-3 absolute w-full"></div>
-          <div className="text-center text-primary font-bold text-md relative bg-white dark:bg-gray-800 w-fit mx-auto px-1">
+          <div className="text-center text-primary font-bold text-md relative bg-white w-fit mx-auto px-1">
             {evenement.date}
           </div>
           <div className="row px-12 pt-3 text-xs">
@@ -815,7 +815,7 @@ const Evenements = () => (
   <Layout title={`Évènements`}>
     <div className="py-16">
       <div className="mx-auto max-w-[1320px]">
-        <h1 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+        <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
           Évènements à venir
         </h1>
         <div className="flex flex-wrap">

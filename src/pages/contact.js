@@ -94,7 +94,7 @@ const Contact = () => {
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-wrap">
             <div className="col-12">
-              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+              <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 {title}
               </h2>
             </div>
@@ -110,9 +110,7 @@ const Contact = () => {
                rounded border border-border p-4 text-primary dark:border-darkmode-border"
                 >
                   <FaUserAlt />
-                  <p className="ml-1.5 text-lg font-bold text-dark dark:text-darkmode-light">
-                    {phone}
-                  </p>
+                  <p className="ml-1.5 text-lg font-bold text-dark">{phone}</p>
                 </Link>
               </div>
             )}
@@ -124,23 +122,8 @@ const Contact = () => {
                rounded border border-border p-4 text-primary dark:border-darkmode-border"
                 >
                   <FaEnvelope />
-                  <p className="ml-1.5 text-lg font-bold text-dark dark:text-darkmode-light">
-                    {mail}
-                  </p>
+                  <p className="ml-1.5 text-lg font-bold text-dark">{mail}</p>
                 </Link>
-              </div>
-            )}
-            {location && (
-              <div className="md:col-6 lg:col-6">
-                <span
-                  className="my-4 flex h-[100px] items-center justify-center
-               rounded border border-border p-4 text-primary dark:border-darkmode-border"
-                >
-                  <FaMapMarkerAlt />
-                  <p className="ml-1.5 text-lg font-bold text-dark dark:text-darkmode-light">
-                    {location}
-                  </p>
-                </span>
               </div>
             )}
           </div>

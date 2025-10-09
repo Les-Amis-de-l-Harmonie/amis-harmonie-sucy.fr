@@ -20,7 +20,10 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-gtm-module": "^2.0.11",
-    "react-icons": "^4.10.1"
+    "react-icons": "^4.10.1",
+    "react-lite-youtube-embed": "^2.5.6",
+    "react-social-media-embed": "^2.5.18",
+    "virtual-scroller": "^1.13.1"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.4",

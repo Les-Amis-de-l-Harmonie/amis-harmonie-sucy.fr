@@ -19,7 +19,7 @@ function CustomForm({ status, message, onValidated }) {
       <form action="#" className="py-6" onSubmit={handleSubmit}>
         <fieldset className="relative">
           <input
-            className="h-12 w-full rounded-3xl border-none bg-theme-light px-5 py-3 pr-12 text-dark placeholder:text-xs dark:bg-darkmode-theme-dark border-0 border-b border-border bg-transparent px-0 placeholder:text-xs placeholder:text-light focus:border-primary focus:ring-transparent dark:border-darkmode-border dark:text-darkmode-light dark:placeholder:text-darkmode-light"
+            className="h-12 w-full rounded-3xl border-none bg-theme-light px-5 py-3 pr-12 text-dark placeholder:text-xs border-0 border-b border-border bg-transparent px-0 placeholder:text-xs placeholder:text-light focus:border-primary focus:ring-transparent"
             type="text"
             placeholder="Type And Hit Enter"
             onChange={(e) => setEmail(e.target.value)}

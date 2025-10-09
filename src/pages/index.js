@@ -33,10 +33,10 @@ const Home = () => {
           <div className="row flex-wrap-reverse items-center justify-center lg:flex-row">
             <div className="mt-12 text-center lg:mt-0 lg:text-left lg:col-6">
               <div>
-                <span className="font-bold text-dark dark:text-darkmode-light lg:text-[55px]">
+                <span className="font-bold text-dark lg:text-[55px]">
                   Les amis de
                 </span>
-                <h1 className="font-secondary font-bold text-black dark:text-darkmode-light text-h1-sm md:text-h1 leading-[1] lg:text-[72px]">
+                <h1 className="font-secondary font-bold text-black text-h1-sm md:text-h1 leading-[1] lg:text-[72px]">
                   l&apos;Harmonie de <nobr>Sucy-en-Brie</nobr>
                 </h1>
               </div>
@@ -97,7 +97,7 @@ const Home = () => {
         <div className="mx-auto max-w-[1320px]">
           <div className="row">
             <div className="col-12">
-              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+              <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 Évènements à venir
               </h2>
             </div>
@@ -112,7 +112,7 @@ const Home = () => {
           </div>
           <div className="row">
             <div className="col-12">
-              <h2 className="font-secondary font-bold leading-tight text-black dark:text-darkmode-light text-h2-sm md:text-h2 mb-8 text-center">
+              <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 Évènements passés
               </h2>
             </div>

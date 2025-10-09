@@ -13,7 +13,6 @@ let fontSecondaryType = "sans-serif";
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "class",
   important: true,
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx}",
@@ -42,17 +41,6 @@ module.exports = {
         light: "#999",
         "theme-light": "#f2f2f2",
         "theme-dark": "#1a202c",
-        darkmode: {
-          text: "#a4a4a4",
-          light: "#fff",
-          dark: "#ddd",
-          primary: "#A5B3E1",
-          secondary: "#A5B3E1",
-          body: "#111",
-          border: "#636363",
-          "theme-light": "#f4f7f7",
-          "theme-dark": "#383848",
-        },
       },
       fontSize: {
         base: font_base + "px",
