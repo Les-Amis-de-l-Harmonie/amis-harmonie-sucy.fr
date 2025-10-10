@@ -113,7 +113,7 @@ const Partenaires = () => (
           <div className="w-full">
             <iframe
               id="haWidget"
-              allowtransparency="true"
+              allowTransparency
               src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget"
               className="w-full h-[1300px] b-none"
             />
