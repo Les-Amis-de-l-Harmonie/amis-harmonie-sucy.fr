@@ -1,10 +1,20 @@
+import React from "react";
 import Social from "./Social";
 import ExportedImage from "next-image-export-optimizer";
 import Logo from "./Logo";
 import Link from "next/link";
 
-const Footer = () => {
-  const footer = [
+interface FooterItem {
+  name: string;
+  url: string;
+}
+
+interface SocialLinks {
+  [key: string]: string;
+}
+
+const Footer: React.FC = () => {
+  const footer: FooterItem[] = [
     {
       name: "Accueil",
       url: "/",
@@ -51,7 +61,7 @@ const Footer = () => {
     },
   ];
 
-  const social = {
+  const social: SocialLinks = {
     facebook: "https://www.facebook.com/HarmonieMunicipaleDeSucy/",
     stackoverflow: "",
     twitter: "",
@@ -87,6 +97,7 @@ const Footer = () => {
   };
   return (
     <footer className="py-16 relative mt-12 pt-3 pb-3">
+      {/* @ts-ignore */}
       <ExportedImage
         className="-z-1 object-cover object-left md:object-top"
         src="/images/footer-bg-shape.svg"

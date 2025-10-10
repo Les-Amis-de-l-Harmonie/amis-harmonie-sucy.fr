@@ -1,4 +1,5 @@
 import Layout from "../components/Layout";
+import { NextPage } from "next";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 import { Evenement, evenements } from "./evenements";
@@ -16,8 +17,8 @@ today.setHours(0, 0, 0, 0);
 const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 
-const Home = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+const Home: NextPage = () => {
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,7 +49,8 @@ const Home = () => {
                   Les amis de
                 </span>
                 <h1 className="font-secondary font-bold text-black text-h1-sm md:text-h1 leading-[1] lg:text-[72px]">
-                  l&apos;Harmonie de <nobr>Sucy-en-Brie</nobr>
+                  l&apos;Harmonie de{" "}
+                  <span style={{ whiteSpace: "nowrap" }}>Sucy-en-Brie</span>
                 </h1>
               </div>
               <p className="mt-4">

@@ -1,4 +1,4 @@
-import config from "@config/config.json";
+import React from "react";
 import {
   IoLogoFacebook,
   IoLogoLinkedin,
@@ -6,9 +6,20 @@ import {
   IoLogoTwitter,
 } from "react-icons/io5";
 
-const Share = ({ title, description, slug, className }) => {
-  // destructuring items from config object
-  const { base_url } = config.site;
+interface ShareProps {
+  title: string;
+  description: string;
+  slug: string;
+  className?: string;
+}
+
+const Share: React.FC<ShareProps> = ({
+  title,
+  description,
+  slug,
+  className,
+}) => {
+  const base_url = "/";
 
   return (
     <ul className={`${className}`}>
@@ -18,7 +29,6 @@ const Share = ({ title, description, slug, className }) => {
           href={`https://facebook.com/sharer/sharer.php?u=${base_url}/${slug}`}
           target="_blank"
           rel="noreferrer noopener"
-          button="true"
         >
           <IoLogoFacebook />
         </a>
@@ -29,7 +39,6 @@ const Share = ({ title, description, slug, className }) => {
           href={`https://twitter.com/intent/tweet/?text=${title}&amp;url=${base_url}/${slug}`}
           target="_blank"
           rel="noreferrer noopener"
-          button="true"
         >
           <IoLogoTwitter />
         </a>
@@ -50,7 +59,6 @@ const Share = ({ title, description, slug, className }) => {
           href={`https://pinterest.com/pin/create/button/?url=${base_url}/${slug}&media=&description=${description}`}
           target="_blank"
           rel="noreferrer noopener"
-          button="true"
         >
           <IoLogoPinterest />
         </a>

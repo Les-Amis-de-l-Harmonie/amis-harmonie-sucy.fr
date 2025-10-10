@@ -43,11 +43,11 @@ const InnerForm = () => (
 
 const ContactForm = () => {
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const form = useRef();
+  const form = useRef<HTMLFormElement>(null);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.target);
+    const formData = new FormData(event.target as HTMLFormElement);
 
     formData.append("access_key", "62e852e9-5271-4d0e-bcf1-5af0abc0b750");
 
@@ -65,7 +65,7 @@ const ContactForm = () => {
     const result = await response.json();
     if (result.success) {
       setShowConfirmation(true);
-      form.current.reset();
+      form.current?.reset();
     }
   }
 

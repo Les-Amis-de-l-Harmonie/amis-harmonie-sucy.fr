@@ -1,3 +1,4 @@
+import React from "react";
 import {
   IoLogoFacebook,
   IoLogoInstagram,
@@ -6,7 +7,20 @@ import {
   IoHeart,
 } from "react-icons/io5";
 
-const Social = ({ source, className }) => {
+interface SocialLinks {
+  facebook?: string;
+  instagram?: string;
+  youtube?: string;
+  email?: string;
+  don?: string;
+}
+
+interface SocialProps {
+  source: SocialLinks;
+  className?: string;
+}
+
+const Social: React.FC<SocialProps> = ({ source, className }) => {
   const { facebook, instagram, youtube, email, don } = source;
   return (
     <ul className={className}>

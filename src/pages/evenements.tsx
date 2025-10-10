@@ -9,13 +9,27 @@ import {
   DialogFooter,
 } from "@layouts/components/ui/dialog";
 import ExportedImage from "next-image-export-optimizer";
+import { StaticImageData } from "next/image";
 import {
-  IoTimeOutline,
+  IoCalendarOutline,
   IoLocationOutline,
+  IoTimeOutline,
   IoCardOutline,
 } from "react-icons/io5";
 
-const EvenementModal = ({ evenement }) => {
+interface EvenementType {
+  title: string;
+  date: string;
+  description: string;
+  image: string | StaticImageData;
+  url?: string;
+  modal?: any;
+  heure?: string;
+  lieu?: string;
+  prix?: string;
+}
+
+const EvenementModal = ({ evenement }: { evenement: EvenementType }) => {
   const [openModal, setOpenModal] = useState(false);
 
   return (
@@ -27,26 +41,31 @@ const EvenementModal = ({ evenement }) => {
         En savoir +
       </b>
       <Dialog open={openModal} onOpenChange={setOpenModal}>
+        {/* @ts-ignore */}
         <DialogContent className="max-w-3xl">
+          {/* @ts-ignore */}
           <DialogHeader>
+            {/* @ts-ignore */}
             <DialogTitle className="text-center">{evenement.title}</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-scroll">
-            <ExportedImage
-              sizes="50vw"
-              quality="90"
-              src={evenement.modal.image1}
-              alt=""
-              className="mb-3"
-            />
-            {evenement.modal.image2 && (
-              <ExportedImage
-                sizes="50vw"
-                quality="90"
-                src={evenement.modal.image2}
-                alt=""
-                className="mb-3"
-              />
+            {evenement.modal && (
+              <>
+                <ExportedImage
+                  sizes="50vw"
+                  src={evenement.modal.image1}
+                  alt=""
+                  className="mb-3"
+                />
+                {evenement.modal.image2 && (
+                  <ExportedImage
+                    sizes="50vw"
+                    src={evenement.modal.image2}
+                    alt=""
+                    className="mb-3"
+                  />
+                )}
+              </>
             )}
           </div>
           <DialogFooter className="text-center">
@@ -123,6 +142,7 @@ import evt291125 from "../../public/images/evt291125.png";
 import evt080925 from "../../public/images/evt080925.png";
 import evt111025 from "../../public/images/evt111025.png";
 
+// @ts-ignore
 export const evenements = [
   {
     d: "2023-09-10",
@@ -754,7 +774,13 @@ export const evenements = [
   },
 ];
 
-export const Evenement = ({ evenement, button = true }) => (
+export const Evenement = ({
+  evenement,
+  button = true,
+}: {
+  evenement: EvenementType;
+  button?: boolean;
+}) => (
   <div className="w-full">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md">
       <div className="">

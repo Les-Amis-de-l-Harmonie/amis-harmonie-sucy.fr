@@ -9,7 +9,12 @@ export const hasBilletterie = () => {
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-const isBilletterie = (evt) => {
+interface EventItem {
+  d: string;
+  url?: string;
+}
+
+const isBilletterie = (evt: EventItem): boolean => {
   return (
     new Date(Date.parse(evt.d)) >= today &&
     typeof evt.url !== "undefined" &&

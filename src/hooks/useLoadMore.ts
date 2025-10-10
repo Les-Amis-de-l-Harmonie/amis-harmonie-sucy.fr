@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 // const { loadedItems, loadItemsHandler, loadItemsFinished } = useLoadMore(filteredWebsites,6,mounted);
 // returns {loadedItems, loadItemsHandler, loadItemsFinished}
 
-const useLoadMore = (items, loadPerClick, mounted) => {
-  const [loadedItems, setLoadedItems] = useState([]);
-  const [next, setNext] = useState(loadPerClick);
+const useLoadMore = <T>(items: T[], loadPerClick: number, mounted: boolean) => {
+  const [loadedItems, setLoadedItems] = useState<T[]>([]);
+  const [next, setNext] = useState<number>(loadPerClick);
 
-  const loadItems = (start, end) => {
+  const loadItems = (start: number, end: number) => {
     const slicedItems = items.slice(start, end);
     setLoadedItems([...loadedItems, ...slicedItems]);
   };

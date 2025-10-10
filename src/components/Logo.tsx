@@ -1,7 +1,12 @@
+import React from "react";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
 
-const Logo = ({ src }) => {
+interface LogoProps {
+  src?: string;
+}
+
+const Logo: React.FC<LogoProps> = ({ src }) => {
   const logo = "/images/logo.png";
   const logo_width = "100";
   const logo_height = "100";

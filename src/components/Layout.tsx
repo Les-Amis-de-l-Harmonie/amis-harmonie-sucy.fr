@@ -1,8 +1,19 @@
+import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import Head from "next/head";
 
-const Layout = ({
+interface LayoutProps {
+  title?: string;
+  meta_title?: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  canonical?: string;
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({
   title,
   meta_title,
   description,
@@ -25,8 +36,8 @@ const Layout = ({
           {meta_title
             ? meta_title
             : title
-            ? title
-            : "Les Amis de l'Harmonie de Sucy"}
+              ? title
+              : "Les Amis de l'Harmonie de Sucy"}
         </title>
 
         {/* canonical url */}
@@ -51,8 +62,8 @@ const Layout = ({
             meta_title
               ? meta_title
               : title
-              ? title
-              : "Les Amis de l'Harmonie de Sucy"
+                ? title
+                : "Les Amis de l'Harmonie de Sucy"
           }
         />
 
@@ -71,8 +82,8 @@ const Layout = ({
             meta_title
               ? meta_title
               : title
-              ? title
-              : "Les Amis de l'Harmonie de Sucy"
+                ? title
+                : "Les Amis de l'Harmonie de Sucy"
           }
         />
 

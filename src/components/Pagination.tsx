@@ -2,7 +2,17 @@ import Link from "next/link";
 import React from "react";
 import { BsArrowRightShort, BsArrowLeftShort } from "react-icons/bs";
 
-const Pagination = ({ section, currentPage, totalPages }) => {
+interface PaginationProps {
+  section?: string;
+  currentPage: number;
+  totalPages: number;
+}
+
+const Pagination: React.FC<PaginationProps> = ({
+  section,
+  currentPage,
+  totalPages,
+}) => {
   const indexPageLink = currentPage === 2;
   const hasPrevPage = currentPage > 1;
   const hasNextPage = totalPages > currentPage;

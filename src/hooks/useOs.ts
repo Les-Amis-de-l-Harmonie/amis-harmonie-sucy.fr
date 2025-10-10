@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 // const macOS = useOs()
 // returns true/false
 
-const useOs = () => {
+const useOs = (): boolean => {
   // get Os
-  const [os, setOs] = useState(false);
+  const [os, setOs] = useState<boolean>(false);
   useEffect(() => {
     setOs(navigator.platform.indexOf("Mac") > -1);
   }, []);

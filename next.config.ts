@@ -1,8 +1,6 @@
-/**
- * @type {import('next').NextConfig}
- */
+import { NextConfig } from "next";
 
-module.exports = {
+const config: NextConfig = {
   output: "export",
   reactStrictMode: true,
   images: {
@@ -24,3 +22,5 @@ module.exports = {
     nextImageExportOptimizer_generateAndUseBlurImages: "true",
   },
 };
+
+export default config;

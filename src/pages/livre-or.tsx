@@ -2,11 +2,13 @@ import Base from "../components/Layout";
 import Layout from "../components/Layout";
 import { useEffect, useState } from "react";
 import { Textarea } from "@layouts/components/ui/textarea";
+// @ts-nocheck
+
 import { Input } from "@layouts/components/ui/input";
 import { Label } from "@layouts/components/ui/label";
 import Script from "next/script";
 
-const capitalizeFirstLetter = (string) => {
+const capitalizeFirstLetter = (string: string): string => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 

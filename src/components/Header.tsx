@@ -4,8 +4,24 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 
-const Header = () => {
-  const main = [
+interface ChildItem {
+  name: string;
+  url: string;
+}
+
+interface MenuItem {
+  name: string;
+  url?: string;
+  hasChildren?: boolean;
+  children?: ChildItem[];
+}
+
+interface SocialLinks {
+  [key: string]: string;
+}
+
+const Header: React.FC = () => {
+  const main: MenuItem[] = [
     {
       name: "Évènements",
       url: "/#evenements",
@@ -113,7 +129,7 @@ const Header = () => {
             >
               {main.map((menu, i) => (
                 <React.Fragment key={`menu-${i}`}>
-                  {menu.hasChildren ? (
+                  {menu.hasChildren && menu.children ? (
                     <li className="mb-5 text-left lg:mb-0 mr-0 group relative">
                       <span
                         className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-base capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! ${
@@ -131,7 +147,7 @@ const Header = () => {
                         </svg>
                       </span>
                       <ul className="pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow-sm hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
-                        {menu.children.map((child, i) => (
+                        {menu.children!.map((child, i) => (
                           <li className="mb-1.5" key={`children-${i}`}>
                             <Link
                               href={child.url}
@@ -149,7 +165,7 @@ const Header = () => {
                   ) : (
                     <li className="mb-5 text-left lg:mb-0">
                       <Link
-                        href={menu.url}
+                        href={menu.url!}
                         className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-base capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! block ${
                           router.asPath === menu.url && "bg-primary text-white"
                         }`}
