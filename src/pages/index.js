@@ -41,8 +41,8 @@ const Home = () => {
         />
 
         <div className="mx-auto max-w-[1320px]">
-          <div className="flex items-center justify-center lg:flex-row gap-8">
-            <div className="mt-12 text-center lg:mt-0 lg:text-left lg:basis-1/2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 lg:px-8 gap-8">
+            <div className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center">
               <div>
                 <span className="font-bold text-dark lg:text-[55px]">
                   Les amis de
@@ -60,18 +60,18 @@ const Home = () => {
                 <span className=""> Riccardo Muti</span>
               </p>
               <Link
-                className="font-secondary inline-block border px-8 py-2.5 font-bold transition bg-primary text-white rounded-[50px] relative border-0 overflow-hidden h-12 mt-6"
+                className="w-44 mx-auto lg:mx-0 font-secondary inline-block border px-8 py-2.5 font-bold transition bg-primary text-white rounded-[50px] relative border-0 overflow-hidden h-12 mt-6"
                 href="/about"
               >
                 En savoir plus
               </Link>
             </div>
-            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:basis-1/2 pt-4">
-              <div className="relative w-[360px] lg:w-full h-full overflow-hidden">
+            <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
+              <div className="relative w-[360px] lg:w-full h-full mx-auto overflow-hidden">
                 {images.map((image, index) => (
                   <ExportedImage
                     key={index}
-                    className="absolute inset-0 object-contain transition-transform duration-1000 ease-in-out"
+                    className="absolute inset-0 object-contain transition-transform duration-1000 ease-in-out rounded-xl"
                     src={image}
                     sizes="50vw"
                     alt=""
@@ -85,14 +85,14 @@ const Home = () => {
           </div>
         </div>
       </section>
-      <section className="py-16" id="evenements">
-        <div className="mx-auto max-w-[1320px]">
-          <div className="flex flex-wrap gap-4">
-            <div className="w-full">
-              <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
-                Évènements à venir
-              </h2>
-            </div>
+      <section className="py-8" id="evenements">
+        <div className="mx-auto max-w-[1320px] flex flex-col gap-8">
+          <div className="w-full">
+            <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 text-center">
+              Évènements à venir
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {evenements
               .filter((evt) => new Date(Date.parse(evt.d)) >= today)
               .map((evenement) => (
@@ -102,12 +102,12 @@ const Home = () => {
                 />
               ))}
           </div>
-          <div className="flex flex-wrap">
-            <div className="w-full">
-              <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
-                Évènements passés
-              </h2>
-            </div>
+          <div className="w-full">
+            <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 text-center">
+              Évènements passés
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {evenements
               .filter((evt) => new Date(Date.parse(evt.d)) < today)
               .reverse()

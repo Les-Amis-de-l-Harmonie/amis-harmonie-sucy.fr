@@ -62,37 +62,10 @@ const Header = () => {
 
   const social = {
     facebook: "https://www.facebook.com/HarmonieMunicipaleDeSucy/",
-    stackoverflow: "",
-    twitter: "",
     instagram: "https://www.instagram.com/harmoniemunicipaledesucy/",
     youtube: "https://youtube.com/@HarmonieMunicipaledeSucy",
-    linkedin: "",
-    github: "",
-    gitlab: "",
-    discord: "",
-    slack: "",
-    medium: "",
-    codepen: "",
-    bitbucket: "",
-    dribbble: "",
-    behance: "",
-    pinterest: "",
-    soundcloud: "",
-    tumblr: "",
-    reddit: "",
-    vk: "",
-    whatsapp: "",
-    snapchat: "",
-    vimeo: "",
-    tiktok: "",
-    foursquare: "",
-    rss: "",
     email: "contact@amis-harmonie-sucy.fr",
     don: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1",
-    phone: "",
-    address: "",
-    skype: "",
-    website: "",
   };
 
   // states declaration
@@ -143,7 +116,7 @@ const Header = () => {
                   {menu.hasChildren ? (
                     <li className="mb-5 text-left lg:mb-0 mr-0 group relative">
                       <span
-                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! ${
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-base capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! ${
                           menu.children
                             .map((c) => c.url)
                             .includes(router.asPath) && "bg-primary text-white"
@@ -177,7 +150,7 @@ const Header = () => {
                     <li className="mb-5 text-left lg:mb-0">
                       <Link
                         href={menu.url}
-                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-[13.5px] capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! block ${
+                        className={`rounded-[30px] px-6 py-2.5 text-left font-secondary text-base capitalize text-dark transition hover:bg-primary hover:text-white md:px-3 md:py-3 lg:text-center xl:px-5 normal-case! block ${
                           router.asPath === menu.url && "bg-primary text-white"
                         }`}
                       >
@@ -191,7 +164,7 @@ const Header = () => {
             {/* header social */}
             <Social
               source={social}
-              className="mx-3 flex items-center justify-center space-x-3 px-4 lg:justify-start lg:border-x 2xl:space-x-4"
+              className="mx-3 flex items-center justify-center space-x-3 px-4 lg:justify-start"
             />
           </div>
           <button

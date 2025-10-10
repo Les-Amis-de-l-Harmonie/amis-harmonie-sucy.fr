@@ -9,11 +9,6 @@ const Document = () => {
         {/* theme meta */}
         <meta name="theme-name" content="amis-harmonie" />
         <meta name="msapplication-TileColor" content="#000000" />
-        <meta
-          name="theme-color"
-          media="(prefers-color-scheme: light)"
-          content="#fff"
-        />
       </Head>
       <body>
         <Main />

@@ -10,7 +10,7 @@
 
 @layer base {
   body {
-    @apply bg-body font-primary font-normal leading-relaxed text-text;
+    @apply bg-white font-primary font-normal leading-relaxed text-gray-600;
   }
 }
 
@@ -101,7 +101,7 @@
 
   --popover-foreground: oklch(0.145 0 0);
 
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.772 0.0678 271.55);
 
   --primary-foreground: oklch(0.985 0 0);
 

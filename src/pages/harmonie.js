@@ -23,7 +23,7 @@ const Harmonie = () => {
             priority
             placeholder="empty"
           />
-          <div className="content">
+          <div className="flex flex-col gap-3 pt-4 px-6">
             <p>
               L'harmonie municipale de Sucy-en-Brie s'inscrit dans une longue
               tradition d'orchestres amateurs apparus à la fin du XIXe siècle.
@@ -83,7 +83,7 @@ const Harmonie = () => {
                 priority
               />
             </div>
-            <div className="w-full md:w-3/4 text-center md:text-left text-white md:pl-16 py-6 md:py-10">
+            <div className="w-full md:w-3/4 text-center md:text-left text-white md:pl-16 py-6 md:py-10 pr-6">
               <p className="pb-6">
                 <strong>Venez renforcer l'harmonie municipale !</strong>
               </p>

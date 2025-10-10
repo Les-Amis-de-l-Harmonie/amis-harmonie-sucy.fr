@@ -27,11 +27,11 @@ const EvenementModal = ({ evenement }) => {
         En savoir +
       </b>
       <Dialog open={openModal} onOpenChange={setOpenModal}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="text-center">{evenement.title}</DialogTitle>
           </DialogHeader>
-          <div>
+          <div className="overflow-y-scroll">
             <ExportedImage
               sizes="50vw"
               quality="90"
@@ -52,7 +52,7 @@ const EvenementModal = ({ evenement }) => {
           <DialogFooter className="text-center">
             {evenement.url && (
               <Link
-                className="btn btn-primary mx-auto"
+                className="bg-primary text-white rounded-4xl py-3 px-12 mx-auto font-bold"
                 href={evenement.url}
                 target="_blank"
               >
@@ -86,9 +86,6 @@ import evt070424 from "../../public/images/evt070424.jpg";
 import evt240424 from "../../public/images/evt240424.jpg";
 import evt010524 from "../../public/images/evt010524.jpg";
 import evt020624 from "../../public/images/evt020624.jpg";
-import evtblanc from "../../public/images/evtblanc.jpg";
-import evt290624 from "../../public/images/evt290624.jpg";
-import evt060724 from "../../public/images/evt060724.jpg";
 import evt150624 from "../../public/images/evt150624.jpg";
 import evt090624 from "../../public/images/evt090624.png";
 import museemusique from "../../public/images/museemusique.jpg";
@@ -758,7 +755,7 @@ export const evenements = [
 ];
 
 export const Evenement = ({ evenement, button = true }) => (
-  <div className="w-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 mb-6">
+  <div className="w-full">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md">
       <div className="">
         <ExportedImage
@@ -803,7 +800,7 @@ export const Evenement = ({ evenement, button = true }) => (
         </div>
         {evenement.url && button ? (
           <Link
-            className="btn btn-primary w-full rounded-b-lg rounded-t-none before:rounded-b-lg before:rounded-t-none text-center overflow-visible"
+            className="inline-block w-full rounded-b-lg rounded-t-none text-center overflow-visible bg-primary text-white h-12 pt-3 font-bold"
             href={evenement.url}
             target="_blank"
           >

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 
 import Link from "next/link";
-import { FaEnvelope, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
+import { FaEnvelope, FaPhoneAlt } from "react-icons/fa";
 import Layout from "../components/Layout";
 import { Label } from "@layouts/components/ui/label";
 import { Input } from "@layouts/components/ui/input";
@@ -86,7 +86,7 @@ const ContactForm = () => {
 const Contact = () => {
   const title = "Contactez-nous";
   const description = "Contactez-nous";
-  const phone = "";
+  const phone = "07 83 51 17 41";
   const mail = "contact@amis-harmonie-sucy.fr";
   const location =
     "Les Amis de l'Harmonie - Maison des associations - 14 Rue du Clos de Pacy, 94370 Sucy-en-Brie";
@@ -95,7 +95,7 @@ const Contact = () => {
     <Layout title={title} description={description} meta_title={title}>
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">
-          <div className="flex flex-wrap">
+          <div className="flex flex-wrap gap-4">
             <div className="w-full">
               <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 {title}
@@ -106,19 +106,19 @@ const Contact = () => {
             </div>
 
             {phone && (
-              <div className="md:w-1/2 lg:w-1/3">
+              <div className="grow">
                 <Link
                   href={`tel:${phone}`}
                   className="my-4 flex h-[100px] items-center justify-center
                rounded border border-border p-4 text-primary dark:border-darkmode-border"
                 >
-                  <FaUserAlt />
+                  <FaPhoneAlt />
                   <p className="ml-1.5 text-lg font-bold text-dark">{phone}</p>
                 </Link>
               </div>
             )}
             {mail && (
-              <div className="md:w-1/2 lg:w-1/2">
+              <div className="grow">
                 <Link
                   href={`mailto:${mail}`}
                   className="my-4 flex h-[100px] items-center justify-center
