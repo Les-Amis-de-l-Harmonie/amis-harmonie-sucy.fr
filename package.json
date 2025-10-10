@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && next-sitemap",
-    "export": "npm run build && next export && next-image-export-optimizer",
+    "export": "npm run build && next-image-export-optimizer",
     "lint": "next lint",
     "start": "next start"
   },

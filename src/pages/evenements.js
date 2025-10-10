@@ -758,7 +758,7 @@ export const evenements = [
 ];
 
 export const Evenement = ({ evenement, button = true }) => (
-  <div className="w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 mb-6">
+  <div className="w-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4 mb-6">
     <div className="h-full flex flex-auto flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-md">
       <div className="">
         <ExportedImage

@@ -22,7 +22,7 @@ const Home = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % images.length);
-    }, 1000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -41,8 +41,8 @@ const Home = () => {
         />
 
         <div className="mx-auto max-w-[1320px]">
-          <div className="flex flex-wrap-reverse items-center justify-center lg:flex-row">
-            <div className="mt-12 text-center lg:mt-0 lg:text-left lg:w-1/2">
+          <div className="flex items-center justify-center lg:flex-row gap-8">
+            <div className="mt-12 text-center lg:mt-0 lg:text-left lg:basis-1/2">
               <div>
                 <span className="font-bold text-dark lg:text-[55px]">
                   Les amis de
@@ -66,14 +66,20 @@ const Home = () => {
                 En savoir plus
               </Link>
             </div>
-            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:w-1/2">
-              <div className="w-[360px] lg:w-full h-full">
-                <ExportedImage
-                  className="mx-auto object-contain"
-                  src={images[currentSlide]}
-                  sizes="50vw"
-                  alt=""
-                />
+            <div className="h-[360px] w-[360px] lg:w-none lg:h-[640px] lg:basis-1/2 pt-4">
+              <div className="relative w-[360px] lg:w-full h-full overflow-hidden">
+                {images.map((image, index) => (
+                  <ExportedImage
+                    key={index}
+                    className="absolute inset-0 object-contain transition-transform duration-1000 ease-in-out"
+                    src={image}
+                    sizes="50vw"
+                    alt=""
+                    style={{
+                      transform: `translateX(${(index - currentSlide) * 100}%)`,
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -81,7 +87,7 @@ const Home = () => {
       </section>
       <section className="py-16" id="evenements">
         <div className="mx-auto max-w-[1320px]">
-          <div className="flex flex-wrap">
+          <div className="flex flex-wrap gap-4">
             <div className="w-full">
               <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
                 Évènements à venir
