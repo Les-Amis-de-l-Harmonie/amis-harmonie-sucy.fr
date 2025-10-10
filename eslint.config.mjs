@@ -14,6 +14,7 @@ const compat = new FlatCompat({
 
 export default defineConfig([
   {
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
     extends: compat.extends("next/core-web-vitals"),
   },
 ]);

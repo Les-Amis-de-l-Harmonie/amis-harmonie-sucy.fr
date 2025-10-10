@@ -23,11 +23,12 @@ const LivreDorForm = ({ callback }) => {
 
   const submit = async (e) => {
     e.preventDefault();
+    // @ts-ignore
     const data = new URLSearchParams(new FormData(e.target));
     setDisabled(true);
 
-    grecaptcha.ready(() => {
-      grecaptcha
+    (window as any).grecaptcha.ready(() => {
+      (window as any).grecaptcha
         .execute("6LfS9nEpAAAAAD_Ri6UvCBhiNl8ioNLpw7YUf6O2", {
           action: "submit",
         })
