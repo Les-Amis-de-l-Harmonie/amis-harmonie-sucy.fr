@@ -7,17 +7,17 @@
 - Dev server: `npm run dev` (Next.js development mode)
 - Production start: `npm run start` (Next.js production server)
 - Static export: `npm run export` (build + export + image optimization)
-- Tests: No scripts in package.json. If Jest/Vitest present, use `npx jest path/to/test.js` for single test; search codebase for test files.
+- Tests: No test scripts in package.json. Playwright detected in dependencies; search for test files or use `npx playwright test` if present.
 
 ## Code Style Guidelines
 
-- Language: JavaScript (no TypeScript); ES6+ syntax.
-- Components: Functional React components with hooks (useState, useEffect, etc.).
-- Imports: Relative for local files; absolute with @ aliases (e.g., `@layouts/Baseof`); group by type (React, next, local).
-- Formatting: Prettier with Tailwind plugin; 2-space indent, single quotes, trailing commas.
+- Language: TypeScript with React; strict: false in tsconfig.
+- Components: Functional React components with hooks; TypeScript interfaces for props.
+- Imports: Absolute with @ aliases (@layouts/_, @components/_, @hooks/_, @lib/_); relative for local files; group by type (React, next, external, local).
+- Formatting: Prettier with Tailwind plugin; 2-space indent, single quotes, trailing commas; EditorConfig enforced.
 - Naming: PascalCase for components/files; camelCase for variables/functions; kebab-case for CSS classes (Tailwind).
-- Error Handling: Try-catch for async ops; log errors with console.error; no unhandled promises.
-- Styling: Primary Tailwind CSS; SCSS for custom utilities/components in /styles/.
-- Conventions: Follow Next.js patterns (pages router); no inline styles; optimize images with ExportedImage.
-- Linting: Enforce via ESLint; no unused vars/imports; accessible code (core-web-vitals).
-- Other: No emojis/comments unless requested; mimic existing patterns in layouts/ and pages/.
+- Types: Use TypeScript interfaces/types; NextPage for page components; React.FC optional.
+- Error Handling: Try-catch for async ops; console.error for logging; no unhandled promises.
+- Styling: Primary Tailwind CSS with class-variance-authority; no inline styles; optimize images with ExportedImage/next-image-export-optimizer.
+- Conventions: Next.js pages router; Radix UI components in @layouts/components/ui/; no emojis/comments unless requested.
+- Linting: ESLint with next/core-web-vitals; no unused vars/imports; accessible code enforced.
