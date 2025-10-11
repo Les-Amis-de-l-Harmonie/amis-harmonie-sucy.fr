@@ -3,6 +3,7 @@ import Social from "./Social";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
+import useWindow from "../hooks/useWindow";
 
 interface ChildItem {
   name: string;
@@ -86,9 +87,14 @@ const Header: React.FC = () => {
 
   // states declaration
   const [showMenu, setShowMenu] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState<{ [key: number]: boolean }>(
+    {},
+  );
 
   // Router
   const router = useRouter();
+
+  const isMobile = useWindow() < 768;
 
   //stop scrolling when nav is open
   useEffect(() => {
@@ -96,6 +102,7 @@ const Header: React.FC = () => {
       document.body.classList.add("menu-open");
     } else {
       document.body.classList.remove("menu-open");
+      setOpenSubmenus({});
     }
   }, [showMenu]);
 
@@ -137,6 +144,15 @@ const Header: React.FC = () => {
                             .map((c) => c.url)
                             .includes(router.asPath) && "bg-primary text-white"
                         } inline-flex items-center`}
+                        onClick={
+                          isMobile
+                            ? () =>
+                                setOpenSubmenus((prev) => ({
+                                  ...prev,
+                                  [i]: !prev[i],
+                                }))
+                            : undefined
+                        }
                       >
                         {menu.name}
                         <svg
@@ -146,7 +162,9 @@ const Header: React.FC = () => {
                           <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                         </svg>
                       </span>
-                      <ul className="pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow-sm hidden transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100">
+                      <ul
+                        className={`pt-1.5 z-10 rounded-lg border border-transparent bg-body shadow-sm ${openSubmenus[i] ? "block" : "hidden"} transition-all duration-300 group-hover:top-[46px] group-hover:block md:invisible md:absolute md:top-[60px] md:block md:opacity-0 md:group-hover:visible md:group-hover:opacity-100`}
+                      >
                         {menu.children!.map((child, i) => (
                           <li className="mb-1.5" key={`children-${i}`}>
                             <Link
