@@ -2,20 +2,10 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, memo } from "react";
 import Layout from "../components/Layout";
 import { InstagramEmbed } from "react-social-media-embed";
-import VirtualScroller from "virtual-scroller/react";
-
-const getColumnsCount = (container) => {
-  if (container.getWidth() >= 1280) {
-    return 3;
-  }
-  if (container.getWidth() >= 768) {
-    return 2;
-  }
-  return 1;
-};
+import { BsArrowRightShort, BsArrowLeftShort } from "react-icons/bs";
 
 const Post = ({ item: post }) => (
-  <div className="w-full mb-5 md:w-1/2 xl:w-1/3 text-center overflow-hidden">
+  <div className="w-full mb-5 text-center overflow-hidden">
     <InstagramEmbed url={post} className="w-full" />
   </div>
 );
@@ -24,6 +14,8 @@ const MemoPost = memo(Post);
 
 const Posts = () => {
   let [posts, setPosts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 9;
 
   const effectRan = useRef(false);
 
@@ -216,6 +208,20 @@ const Posts = () => {
     }*/
   }, []);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPosts = posts.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const hasPrevPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
   return (
     <Layout title={`Publications`}>
       <div className="section">
@@ -223,16 +229,77 @@ const Posts = () => {
           <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
             Publications
           </h1>
-          <div id="posts-row">
-            <VirtualScroller
-              items={posts}
-              itemComponent={MemoPost}
-              getColumnsCount={getColumnsCount}
-            />
-            {/*<div className="w-full">
-              <div className='sk-instagram-feed' data-embed-id='173898'></div>
-            </div>*/}
+          <div id="posts-row" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {currentPosts.map((post) => (
+              <MemoPost key={post} item={post} />
+            ))}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <nav className="item-center mb-4 flex justify-center space-x-1 lg:space-x-2" aria-label="Pagination">
+              {/* Previous Button */}
+              {hasPrevPage ? (
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="flex items-center rounded-full px-2 py-1 text-3xl font-bold leading-none text-dark hover:bg-gray-100 cursor-pointer transition-colors"
+                >
+                  <>
+                    <BsArrowLeftShort />
+                    <span className="ml-3 text-lg">Précédent</span>
+                  </>
+                </button>
+              ) : (
+                <span className="flex items-center rounded-full px-2 py-1 text-3xl font-bold text-dark opacity-50 cursor-not-allowed">
+                  <>
+                    <BsArrowLeftShort />
+                    <span className="ml-3 text-lg">Précédent</span>
+                  </>
+                </span>
+              )}
+
+              {/* Page Numbers */}
+              <div className="hidden md:flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`inline-flex h-[38px] w-[38px] items-center justify-center rounded-full px-4 py-1 font-secondary text-lg font-bold leading-none transition-colors cursor-pointer ${
+                      pageNum === currentPage
+                        ? "bg-primary text-white"
+                        : "text-dark hover:bg-gray-200"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
+
+              {/* Next Button */}
+              {hasNextPage ? (
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="ml-4 flex items-center rounded-full px-2 py-1 text-3xl font-bold leading-none text-dark hover:bg-gray-100 cursor-pointer transition-colors"
+                >
+                  <>
+                    <span className="mr-3 text-lg">Suivant</span>
+                    <BsArrowRightShort />
+                  </>
+                </button>
+              ) : (
+                <span className="ml-4 flex items-center rounded-full px-2 py-1 text-3xl font-bold text-dark opacity-50 cursor-not-allowed">
+                  <>
+                    <span className="mr-3 text-lg">Suivant</span>
+                    <BsArrowRightShort />
+                  </>
+                </span>
+              )}
+            </nav>
+          )}
+
+          {/*<div className="w-full">
+            <div className='sk-instagram-feed' data-embed-id='173898'></div>
+          </div>*/}
         </div>
       </div>
     </Layout>
