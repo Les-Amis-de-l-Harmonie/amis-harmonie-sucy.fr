@@ -119,7 +119,7 @@ const TheDansant2026 = () => {
               pas cet événement incontournable d&apos;Île-de-France, où la
               musique célèbre la vie !
               <br/><br/>
-              Sous le charme du tango, un couple de danseurs professionnels vous guidera, pas à pas, lors d'une initiation, dans l’apprentissage de cette danse aussi exigeante qu’élégante.   
+              Sous le charme du tango, un couple de danseurs professionnels vous guidera, pas à pas, lors d&apos;une initiation, dans l’apprentissage de cette danse aussi exigeante qu’élégante.   
               <br/><br/>
               Verre de pétillant, pâtisserie et un fruit offert. 🥂🍰🍊
             </p>
