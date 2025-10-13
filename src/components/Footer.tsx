@@ -20,38 +20,6 @@ const Footer: React.FC = () => {
       url: "/",
     },
     {
-      name: "L'Association",
-      url: "/about",
-    },
-    {
-      name: "L'Harmonie",
-      url: "/harmonie",
-    },
-    {
-      name: "Partenaires",
-      url: "/partenaires",
-    },
-    {
-      name: "Vidéos",
-      url: "/videos",
-    },
-    {
-      name: "Publications",
-      url: "/publications",
-    },
-    {
-      name: "Évènements",
-      url: "/#evenements",
-    },
-    {
-      name: "Billetterie",
-      url: "/billetterie",
-    },
-    {
-      name: "Adhésion",
-      url: "/adhesion",
-    },
-    {
       name: "Contact",
       url: "/contact",
     },

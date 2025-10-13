@@ -6,6 +6,7 @@ import Youtube from "../components/Youtube";
 import thedansant20261 from "../../public/images/thedansant20261.png";
 import thedansant20262 from "../../public/images/thedansant20262.png";
 import logoSucy from "../../public/images/logo-sucy.png";
+import boulangerie from "../../public/images/boulangerie.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
@@ -45,13 +46,22 @@ const flyerImages = [
   { src: thedansant20262, alt: "Flyer Thé Dansant 2026 - Part 2" },
 ];
 
-const partners = [
+const villepartners = [
   { src: logoSucy, alt: "Ville de Sucy-en-Brie", link: "https://www.ville-sucy.fr/" },
+
+];
+const assopartners = [
   { src: kifekoi, alt: "kifekoi", link: "https://kifekoisucy.fr/" },
   { src: confrerie, alt: "confrerie", link: "https://confrerie-sucy.fr/" },
   { src: sla, alt: "sla", link: "https://sla-sucy.fr/" },
   { src: cmontaleau, alt: "montaleau", link: "http://www.club-montaleau.fr/" },
+
+];
+
+const commercepartners = [
+  { src: boulangerie, alt: "boulangerie saint honoré", link: "https://share.google/y1oaJVB9eWm6SO3Jt" },
   { src: beperfect, alt: "beperfect", link: "https://www.planity.com/be-perfect-sucy-en-brie-94370" },
+
 ];
 
 const TheDansant2026 = () => {
@@ -65,9 +75,7 @@ const TheDansant2026 = () => {
             <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 mb-8">
               Thé Dansant 2026
             </h1>
-            <h2 className="font-secondary font-bold leading-tight text-black md:text-h5">
-              Dimanche 01 février 2026 - 14H - Sucy-en-Brie
-            </h2>
+            
             </div>
             <div>
             <Link
@@ -75,7 +83,7 @@ const TheDansant2026 = () => {
               target="_blank"
               className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
             >
-              Réserver maintenant
+              Réservation
             </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 mb-8 w-full">
@@ -93,9 +101,9 @@ const TheDansant2026 = () => {
 
           {/* Description */}
           <section className="mb-12">
-            <h2 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
+            <h3 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
               À propos de l&apos;événement
-            </h2>
+            </h3>
             <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
               Plongez dans une journée inoubliable de danse et de musique au
               cœur de Sucy-en-Brie ! Organisé en partenariat avec la ville, ce
@@ -110,6 +118,10 @@ const TheDansant2026 = () => {
               partager des moments de joie en famille ou entre amis. Ne manquez
               pas cet événement incontournable d&apos;Île-de-France, où la
               musique célèbre la vie !
+              <br/><br/>
+              Sous le charme du tango, un couple de danseurs professionnels vous guidera, pas à pas, lors d'une initiation, dans l’apprentissage de cette danse aussi exigeante qu’élégante.   
+              <br/><br/>
+              Verre de pétillant, pâtisserie et un fruit offert. 🥂🍰🍊
             </p>
           </section>
 
@@ -120,7 +132,7 @@ const TheDansant2026 = () => {
               target="_blank"
               className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
             >
-              Réserver maintenant
+              Réservation
             </Link>
           </section>
 
@@ -139,29 +151,73 @@ const TheDansant2026 = () => {
           
 
           {/* Partners */}
-          <section>
-            <h2 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
+          <section className="mb-12 flex flex-col gap-8">
+            <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
               Nos partenaires
-            </h2>
+            </h3>
             <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive.
-              <br/><br/>Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau) bénéficient d’un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage.
-              <br/><br/>Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
-              Leurs dons permettront d’organiser, pour la première fois, une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés.
-              <br/><br/>
+              Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive.   
             </p>
             <div className="flex flex-wrap justify-center gap-8">
-              {partners.map((partner) => (
+              {villepartners.map((villepartner) => (
                             <Link
-              href={partner.link}
-              key={partner.alt}
+              href={villepartner.link}
+              key={villepartner.alt}
               target="_blank"
               className=""
-            >
+            > 
+              <ExportedImage
+                  
+                  src={villepartner.src}
+                  alt={villepartner.alt}
+                  className="h-16 w-auto"
+                  sizes="100px"
+                />
+                </Link>
+              ))}
+            </div>
+           
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
+              Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau et tous les clubs de danse) bénéficient d’un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage.
+              
+            </p>
+            <div className="flex flex-wrap justify-center gap-8">
+              {assopartners.map((assopartner) => (
+                            <Link
+              href={assopartner.link}
+              key={assopartner.alt}
+              target="_blank"
+              className=""
+            > 
 <ExportedImage
                   
-                  src={partner.src}
-                  alt={partner.alt}
+                  src={assopartner.src}
+                  alt={assopartner.alt}
+                  className="h-16 w-auto"
+                  sizes="100px"
+                />
+                </Link>
+              ))}
+            </div>
+
+            
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
+              Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
+              Leurs dons permettront d’organiser pour la première fois une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés.
+              
+            </p>
+            <div className="flex flex-wrap justify-center gap-8">
+              {commercepartners.map((commercepartner) => (
+                            <Link
+              href={commercepartner.link}
+              key={commercepartner.alt}
+              target="_blank"
+              className=""
+            > 
+<ExportedImage
+                  
+                  src={commercepartner.src}
+                  alt={commercepartner.alt}
                   className="h-16 w-auto"
                   sizes="100px"
                 />
@@ -169,8 +225,12 @@ const TheDansant2026 = () => {
               ))}
             </div>
           </section>
+
           {/* Photos */}
           <section className="mb-12">
+             <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
+              Photos
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {photos.map((photo) => (
                 <div key={photo.alt} className="w-full aspect-3/2">
@@ -183,6 +243,16 @@ const TheDansant2026 = () => {
                 </div>
               ))}
             </div>
+          </section>
+          {/* Reservation Button */}
+          <section className="text-center mb-12">
+            <Link
+              href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
+              target="_blank"
+              className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+            >
+              Réservation
+            </Link>
           </section>
         </div>
       </div>

@@ -23,14 +23,27 @@ interface SocialLinks {
 
 const Header: React.FC = () => {
   const main: MenuItem[] = [
+    
     {
       name: "Évènements",
-      url: "/#evenements",
+      hasChildren: true,
+      children: [
+        {
+          name: "Évènements",
+          url: "/#evenements",
+        },
+        {
+          name: "Billetterie",
+          url: "/billetterie",
+        },
+      ],
     },
+    
     {
-      name: "Billetterie",
-      url: "/billetterie",
+      name: "Thé Dansant",
+      url: "/the-dansant",
     },
+
     {
       name: "À Propos",
       hasChildren: true,
