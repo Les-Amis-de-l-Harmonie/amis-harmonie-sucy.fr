@@ -5,15 +5,54 @@ import Youtube from "../components/Youtube";
 
 import thedansant20261 from "../../public/images/thedansant20261.png";
 import thedansant20262 from "../../public/images/thedansant20262.png";
-import evt010226 from "../../public/images/evt010226.png";
-import rencontreharmonies1 from "../../public/images/rencontreharmonies1.png";
-import rencontreharmonies2 from "../../public/images/rencontreharmonies2.png";
 import logoSucy from "../../public/images/logo-sucy.png";
-import logoCmf from "../../public/images/logo-cmf.png";
 import sla from "../../public/images/logo-sla.png";
+import beperfect from "../../public/images/beperfect.jpg";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
 import kifekoi from "../../public/images/logo-kifekoi.png";
 import confrerie from "../../public/images/logo-confrerie.jpeg";
+import thedansant1 from "../../public/images/thedansant1.jpg";
+import thedansant2 from "../../public/images/thedansant2.jpg";
+import thedansant3 from "../../public/images/thedansant3.jpg";
+import thedansant4 from "../../public/images/thedansant4.jpg";
+import thedansant5 from "../../public/images/thedansant5.jpg";
+import thedansant6 from "../../public/images/thedansant6.jpg";
+import thedansant7 from "../../public/images/thedansant7.jpg";
+import thedansant8 from "../../public/images/thedansant8.jpg";
+import thedansant9 from "../../public/images/thedansant9.jpg";
+import thedansant10 from "../../public/images/thedansant10.jpg";
+import thedansant11 from "../../public/images/thedansant11.jpg";
+import thedansant12 from "../../public/images/thedansant12.jpg";
+
+const photos = [
+  { src: thedansant1, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant2, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant3, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant4, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant5, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant6, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant7, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant8, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant9, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant10, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant11, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant12, alt: "Thé Dansant Sucy-en-Brie" },
+
+];
+
+const flyerImages = [
+  { src: thedansant20261, alt: "Flyer Thé Dansant 2026 - Part 1" },
+  { src: thedansant20262, alt: "Flyer Thé Dansant 2026 - Part 2" },
+];
+
+const partners = [
+  { src: logoSucy, alt: "Ville de Sucy-en-Brie", link: "https://www.ville-sucy.fr/" },
+  { src: kifekoi, alt: "kifekoi", link: "https://kifekoisucy.fr/" },
+  { src: confrerie, alt: "confrerie", link: "https://confrerie-sucy.fr/" },
+  { src: sla, alt: "sla", link: "https://sla-sucy.fr/" },
+  { src: cmontaleau, alt: "montaleau", link: "http://www.club-montaleau.fr/" },
+  { src: beperfect, alt: "beperfect", link: "https://www.planity.com/be-perfect-sucy-en-brie-94370" },
+];
 
 const TheDansant2026 = () => {
   return (
@@ -21,26 +60,34 @@ const TheDansant2026 = () => {
       <div className="py-16">
         <div className="mx-auto max-w-[1320px] px-4">
           {/* Title and Flyer */}
-          <section className="text-center mb-12">
+          <section className="text-center mb-12 flex flex-col gap-8">
+            <div>
             <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 mb-8">
-              Le plus Grand Thé Dansant d&apos;Ile-de-France
+              Thé Dansant 2026
             </h1>
-            <h2 className="font-secondary font-bold leading-tight text-black md:text-h3 mb-8">
+            <h2 className="font-secondary font-bold leading-tight text-black md:text-h5">
               Dimanche 01 février 2026 - 14H - Sucy-en-Brie
             </h2>
-            <div className="flex justify-center gap-4 mb-8 w-full">
-              <ExportedImage
-                src={thedansant20261}
-                alt="Flyer Thé Dansant 2026 - Part 1"
-                className="rounded-lg shadow-md w-full"
-                // sizes="50vw"
-              />
-              <ExportedImage
-                src={thedansant20262}
-                alt="Flyer Thé Dansant 2026 - Part 2"
-                className="rounded-lg shadow-md w-full"
-                // sizes="50vw"
-              />
+            </div>
+            <div>
+            <Link
+              href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
+              target="_blank"
+              className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+            >
+              Réserver maintenant
+            </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 mb-8 w-full">
+              {flyerImages.map((flyer) => (
+                <ExportedImage
+                  key={flyer.alt}
+                  src={flyer.src}
+                  alt={flyer.alt}
+                  className="rounded-lg shadow-md"
+                  // sizes="50vw"
+                />
+              ))}
             </div>
           </section>
 
@@ -79,85 +126,62 @@ const TheDansant2026 = () => {
 
           {/* YouTube Video */}
           <section className="mb-12">
-            <h2 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
-              Revivez le Thé Dansant 2025
-            </h2>
-            <div className="flex justify-center">
-              <div className="w-full max-w-2xl">
+            <div className="grid gird-col-1 md:grid-cols-2 gap-8 justify-center">
+              <div>
                 <Youtube id="iZwfSjflbKA" title="Thé Dansant 2025" />
+              </div>
+              <div>
+                <Youtube id="ze4b6Br0qCI" title="Thé Dansant 2024" />
               </div>
             </div>
           </section>
 
-          {/* Photos */}
-          <section className="mb-12">
-            <h2 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
-              Photos de l&apos;évènement
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ExportedImage
-                src={evt010226}
-                alt="Événement 2026"
-                className="rounded-lg shadow-md"
-                sizes="33vw"
-              />
-              <ExportedImage
-                src={rencontreharmonies1}
-                alt="Rencontre d'Harmonies 1"
-                className="rounded-lg shadow-md"
-                sizes="33vw"
-              />
-              <ExportedImage
-                src={rencontreharmonies2}
-                alt="Rencontre d'Harmonies 2"
-                className="rounded-lg shadow-md"
-                sizes="33vw"
-              />
-            </div>
-          </section>
+          
 
           {/* Partners */}
           <section>
             <h2 className="font-secondary font-bold text-h2-sm md:text-h2 mb-4 text-center">
               Nos partenaires
             </h2>
-            <div className="flex justify-center gap-8">
-              <ExportedImage
-                src={logoSucy}
-                alt="Ville de Sucy-en-Brie"
-                className="h-16 w-auto"
-                sizes="100px"
-              />
-              <ExportedImage
-                src={logoCmf}
-                alt="Confédération Musicale de France"
-                className="h-16 w-auto"
-                sizes="100px"
-              />
-              <ExportedImage
-                className="h-16 w-auto"
-                src={kifekoi}
-                sizes="100px"
-                alt="kifekoi"
-              />
-              <ExportedImage
-                className="h-16 w-auto"
-                src={confrerie}
-                sizes="100px"
-                alt="confrerie"
-              />
-              <ExportedImage
-                className="h-16 w-auto"
-                src={sla}
-                sizes="100px"
-                alt="sla"
-              />
-              <ExportedImage
-                className="h-16 w-auto"
-                src={cmontaleau}
-                sizes="100px"
-                alt="montaleau"
-              />
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
+              Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive.
+              <br/><br/>Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau) bénéficient d’un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage.
+              <br/><br/>Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
+              Leurs dons permettront d’organiser, pour la première fois, une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés.
+              <br/><br/>
+            </p>
+            <div className="flex flex-wrap justify-center gap-8">
+              {partners.map((partner) => (
+                            <Link
+              href={partner.link}
+              key={partner.alt}
+              target="_blank"
+              className=""
+            >
+<ExportedImage
+                  
+                  src={partner.src}
+                  alt={partner.alt}
+                  className="h-16 w-auto"
+                  sizes="100px"
+                />
+                </Link>
+              ))}
+            </div>
+          </section>
+          {/* Photos */}
+          <section className="mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <div key={photo.alt} className="w-full aspect-3/2">
+                  <ExportedImage
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="rounded-lg shadow-md object-cover w-full h-full"
+                    sizes="33vw"
+                  />
+                </div>
+              ))}
             </div>
           </section>
         </div>
