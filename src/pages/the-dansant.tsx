@@ -67,7 +67,7 @@ const commercepartners = [
 const TheDansant2026 = () => {
   return (
     <Layout title="Thé Dansant - Dimanche 01 février 2026 - 14H">
-      <div className="py-16">
+      <div className="pt-16">
         <div className="mx-auto max-w-[1320px] px-4">
           {/* Title and Flyer */}
           <section className="text-center mb-12 flex flex-col gap-8">
@@ -138,17 +138,15 @@ const TheDansant2026 = () => {
 
           {/* YouTube Video */}
           <section className="mb-12">
-            <div className="grid gird-col-1 md:grid-cols-2 gap-8 justify-center">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
+              <div className="w-full">
                 <Youtube id="iZwfSjflbKA" title="Thé Dansant 2025" />
               </div>
-              <div>
+              <div className="w-full">
                 <Youtube id="ze4b6Br0qCI" title="Thé Dansant 2024" />
               </div>
             </div>
           </section>
-
-          
 
           {/* Partners */}
           <section className="mb-12 flex flex-col gap-8">
@@ -245,7 +243,7 @@ const TheDansant2026 = () => {
             </div>
           </section>
           {/* Reservation Button */}
-          <section className="text-center mb-12">
+          <section className="text-center">
             <Link
               href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
               target="_blank"
