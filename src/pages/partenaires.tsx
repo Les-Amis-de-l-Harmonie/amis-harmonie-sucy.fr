@@ -5,6 +5,8 @@ import sla from "../../public/images/logo-sla.png";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
 import kifekoi from "../../public/images/logo-kifekoi.png";
 import cmf from "../../public/images/logo-cmf.png";
+import oiseau from "../../public/images/oiseau.jpg";
+import beperfect from "../../public/images/beperfect.jpg";
 import confrerie from "../../public/images/logo-confrerie.jpeg";
 import cmfvdm from "../../public/images/logo-cmf-vdm.jpeg";
 import k from "../../public/images/logo-k.png";
@@ -98,6 +100,22 @@ const Partenaires = () => (
                 <ExportedImage
                   className="mb-3 w-full"
                   src={cmfvdm}
+                  sizes="17vw"
+                  alt="cmf-vdm"
+                />
+              </div>
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
+                <ExportedImage
+                  className="mb-3 w-full"
+                  src={oiseau}
+                  sizes="17vw"
+                  alt="cmf-vdm"
+                />
+              </div>
+              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
+                <ExportedImage
+                  className="mb-3 w-full"
+                  src={beperfect}
                   sizes="17vw"
                   alt="cmf-vdm"
                 />
