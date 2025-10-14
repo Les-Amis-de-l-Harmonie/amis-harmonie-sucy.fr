@@ -13,7 +13,7 @@ const About = () => {
   return (
     <Layout title="L'Association" description="À Propos de l'Association">
       <section className="py-16">
-        <div className="mx-auto max-w-[1320px]">
+        <div className="mx-auto max-w-[1320px] px-4">
           <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
             L'Association
           </h2>
