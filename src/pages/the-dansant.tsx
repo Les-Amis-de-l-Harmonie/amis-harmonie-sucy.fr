@@ -38,7 +38,6 @@ const photos = [
   { src: thedansant10, alt: "Thé Dansant Sucy-en-Brie" },
   { src: thedansant11, alt: "Thé Dansant Sucy-en-Brie" },
   { src: thedansant12, alt: "Thé Dansant Sucy-en-Brie" },
-
 ];
 
 const flyerImages = [
@@ -47,21 +46,30 @@ const flyerImages = [
 ];
 
 const villepartners = [
-  { src: logoSucy, alt: "Ville de Sucy-en-Brie", link: "https://www.ville-sucy.fr/" },
-
+  {
+    src: logoSucy,
+    alt: "Ville de Sucy-en-Brie",
+    link: "https://www.ville-sucy.fr/",
+  },
 ];
 const assopartners = [
   { src: kifekoi, alt: "kifekoi", link: "https://kifekoisucy.fr/" },
   { src: confrerie, alt: "confrerie", link: "https://confrerie-sucy.fr/" },
   { src: sla, alt: "sla", link: "https://sla-sucy.fr/" },
   { src: cmontaleau, alt: "montaleau", link: "http://www.club-montaleau.fr/" },
-
 ];
 
 const commercepartners = [
-  { src: boulangerie, alt: "boulangerie saint honoré", link: "https://share.google/y1oaJVB9eWm6SO3Jt" },
-  { src: beperfect, alt: "beperfect", link: "https://www.planity.com/be-perfect-sucy-en-brie-94370" },
-
+  {
+    src: boulangerie,
+    alt: "boulangerie saint honoré",
+    link: "https://share.google/y1oaJVB9eWm6SO3Jt",
+  },
+  {
+    src: beperfect,
+    alt: "beperfect",
+    link: "https://www.planity.com/be-perfect-sucy-en-brie-94370",
+  },
 ];
 
 const TheDansant2026 = () => {
@@ -72,19 +80,18 @@ const TheDansant2026 = () => {
           {/* Title and Flyer */}
           <section className="text-center mb-12 flex flex-col gap-8">
             <div>
-            <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 mb-8">
-              Thé Dansant 2026
-            </h1>
-            
+              <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 mb-8">
+                Thé Dansant 2026
+              </h1>
             </div>
             <div>
-            <Link
-              href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
-              target="_blank"
-              className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
-            >
-              Réservation
-            </Link>
+              <Link
+                href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
+                target="_blank"
+                className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+              >
+                Réservation
+              </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 mb-8 w-full">
               {flyerImages.map((flyer) => (
@@ -118,10 +125,18 @@ const TheDansant2026 = () => {
               partager des moments de joie en famille ou entre amis. Ne manquez
               pas cet événement incontournable d&apos;Île-de-France, où la
               musique célèbre la vie !
-              <br/><br/>
-              Sous le charme du tango, un couple de danseurs professionnels vous guidera, pas à pas, lors d&apos;une initiation, dans l’apprentissage de cette danse aussi exigeante qu’élégante.   
-              <br/><br/>
+              <br />
+              <br />
+              Sous le charme du tango, un couple de danseurs professionnels vous
+              guidera, pas à pas, lors d&apos;une initiation, dans
+              l’apprentissage de cette danse aussi exigeante qu’élégante.
+              <br />
+              <br />
               Verre de pétillant, pâtisserie et un fruit offert. 🥂🍰🍊
+            </p>
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto mt-8 bg-yellow-200">
+              NOUVEAU : buvette sur place et tombola (2€/ticket, 4 achetés = 1
+              offert)
             </p>
           </section>
 
@@ -154,71 +169,75 @@ const TheDansant2026 = () => {
               Nos partenaires
             </h3>
             <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive.   
+              Cet événement est organisé en partenariat avec la Ville de
+              Sucy-en-Brie, dont le soutien et l’engagement rendent possible la
+              tenue de cette belle journée festive.
             </p>
             <div className="flex flex-wrap justify-center gap-8">
               {villepartners.map((villepartner) => (
-                            <Link
-              href={villepartner.link}
-              key={villepartner.alt}
-              target="_blank"
-              className=""
-            > 
-              <ExportedImage
-                  
-                  src={villepartner.src}
-                  alt={villepartner.alt}
-                  className="h-16 w-auto"
-                  sizes="100px"
-                />
-                </Link>
-              ))}
-            </div>
-           
-            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau et tous les clubs de danse) bénéficient d’un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage.
-              
-            </p>
-            <div className="flex flex-wrap justify-center gap-8">
-              {assopartners.map((assopartner) => (
-                            <Link
-              href={assopartner.link}
-              key={assopartner.alt}
-              target="_blank"
-              className=""
-            > 
-<ExportedImage
-                  
-                  src={assopartner.src}
-                  alt={assopartner.alt}
-                  className="h-16 w-auto"
-                  sizes="100px"
-                />
+                <Link
+                  href={villepartner.link}
+                  key={villepartner.alt}
+                  target="_blank"
+                  className=""
+                >
+                  <ExportedImage
+                    src={villepartner.src}
+                    alt={villepartner.alt}
+                    className="h-16 w-auto"
+                    sizes="100px"
+                  />
                 </Link>
               ))}
             </div>
 
-            
             <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
-              Leurs dons permettront d’organiser pour la première fois une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés.
-              
+              Les adhérents des associations partenaires (SLA, Kifekoi?, La
+              Confrérie des Coteaux, Le Club Montaleau et tous les clubs de
+              danse) bénéficient d’un tarif préférentiel pour le Thé Dansant,
+              symbole de notre collaboration et de notre volonté de favoriser la
+              convivialité et le partage.
+            </p>
+            <div className="flex flex-wrap justify-center gap-8">
+              {assopartners.map((assopartner) => (
+                <Link
+                  href={assopartner.link}
+                  key={assopartner.alt}
+                  target="_blank"
+                  className=""
+                >
+                  <ExportedImage
+                    src={assopartner.src}
+                    alt={assopartner.alt}
+                    className="h-16 w-auto"
+                    sizes="100px"
+                  />
+                </Link>
+              ))}
+            </div>
+
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
+              Nous remercions chaleureusement les entreprises et commerçants
+              Sucyciens, dont la participation et la générosité contribuent à
+              faire de cette journée un moment unique. Leurs dons permettront
+              d’organiser pour la première fois une tombola, une belle occasion
+              pour nous de valoriser les acteurs locaux et de mettre en lumière
+              leur engagement à nos côtés.
             </p>
             <div className="flex flex-wrap justify-center gap-8">
               {commercepartners.map((commercepartner) => (
-                            <Link
-              href={commercepartner.link}
-              key={commercepartner.alt}
-              target="_blank"
-              className=""
-            > 
-<ExportedImage
-                  
-                  src={commercepartner.src}
-                  alt={commercepartner.alt}
-                  className="h-16 w-auto"
-                  sizes="100px"
-                />
+                <Link
+                  href={commercepartner.link}
+                  key={commercepartner.alt}
+                  target="_blank"
+                  className=""
+                >
+                  <ExportedImage
+                    src={commercepartner.src}
+                    alt={commercepartner.alt}
+                    className="h-16 w-auto"
+                    sizes="100px"
+                  />
                 </Link>
               ))}
             </div>
@@ -226,7 +245,7 @@ const TheDansant2026 = () => {
 
           {/* Photos */}
           <section className="mb-12">
-             <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
+            <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
               Photos
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
