@@ -164,17 +164,7 @@ const TheDansant2026 = () => {
             </RippleButton>
           </section>
 
-          {/* YouTube Video */}
-          <section className="mb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
-              <div className="w-full">
-                <Youtube id="iZwfSjflbKA" title="Thé Dansant 2025" />
-              </div>
-              <div className="w-full">
-                <Youtube id="ze4b6Br0qCI" title="Thé Dansant 2024" />
-              </div>
-            </div>
-          </section>
+          
 
           {/* Partners */}
           <section className="mb-12 flex flex-col gap-8">
@@ -204,30 +194,7 @@ const TheDansant2026 = () => {
               ))}
             </div>
 
-            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Les adhérents des associations partenaires (SLA, Kifekoi?, La
-              Confrérie des Coteaux, Le Club Montaleau et tous les clubs de
-              danse) bénéficient d’un tarif préférentiel pour le Thé Dansant,
-              symbole de notre collaboration et de notre volonté de favoriser la
-              convivialité et le partage.
-            </p>
-            <div className="flex flex-wrap justify-center gap-8">
-              {assopartners.map((assopartner) => (
-                <Link
-                  href={assopartner.link}
-                  key={assopartner.alt}
-                  target="_blank"
-                  className=""
-                >
-                  <ExportedImage
-                    src={assopartner.src}
-                    alt={assopartner.alt}
-                    className="h-16 w-auto"
-                    sizes="100px"
-                  />
-                </Link>
-              ))}
-            </div>
+            
 
             <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
               Nous remercions chaleureusement les entreprises et commerçants
@@ -254,13 +221,48 @@ const TheDansant2026 = () => {
                 </Link>
               ))}
             </div>
+            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
+              Les adhérents des associations partenaires (SLA, Kifekoi?, La
+              Confrérie des Coteaux, Le Club Montaleau et tous les clubs de
+              danse) bénéficient d’un tarif préférentiel pour le Thé Dansant,
+              symbole de notre collaboration et de notre volonté de favoriser la
+              convivialité et le partage.
+            </p>
+            <div className="flex flex-wrap justify-center gap-8">
+              {assopartners.map((assopartner) => (
+                <Link
+                  href={assopartner.link}
+                  key={assopartner.alt}
+                  target="_blank"
+                  className=""
+                >
+                  <ExportedImage
+                    src={assopartner.src}
+                    alt={assopartner.alt}
+                    className="h-16 w-auto"
+                    sizes="100px"
+                  />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* YouTube Video */}
+          <section className="mb-12">
+           
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
+              <div className="w-full">
+                <Youtube id="iZwfSjflbKA" title="Thé Dansant 2025" />
+              </div>
+              <div className="w-full">
+                <Youtube id="ze4b6Br0qCI" title="Thé Dansant 2024" />
+              </div>
+            </div>
           </section>
 
           {/* Photos */}
           <section className="mb-12">
-            <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
-              Photos
-            </h3>
+      
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {photos.map((photo) => (
                 <div key={photo.alt} className="w-full aspect-3/2">
