@@ -1,12 +1,14 @@
 import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
 import Link from "next/link";
+import { RippleButton } from "../components/ui/shadcn-io/ripple-button";
 import Youtube from "../components/Youtube";
 
 import thedansant20261 from "../../public/images/thedansant20261.png";
 import thedansant20262 from "../../public/images/thedansant20262.png";
 import logoSucy from "../../public/images/logo-sucy.png";
 import boulangerie from "../../public/images/boulangerie.jpg";
+import oiseau from "../../public/images/oiseau.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
@@ -70,6 +72,11 @@ const commercepartners = [
     alt: "beperfect",
     link: "https://www.planity.com/be-perfect-sucy-en-brie-94370",
   },
+  {
+    src: oiseau,
+    alt: "oiseaumoqueur",
+    link: "https://www.sucyofcourses.fr/l-oiseau-moqueur",
+  },
 ];
 
 const TheDansant2026 = () => {
@@ -85,13 +92,16 @@ const TheDansant2026 = () => {
               </h1>
             </div>
             <div>
-              <Link
-                href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
-                target="_blank"
-                className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+              <RippleButton
+                onClick={() =>
+                  window.open(
+                    "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
+                    "_blank",
+                  )
+                }
               >
                 Réservation
-              </Link>
+              </RippleButton>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 mb-8 w-full">
               {flyerImages.map((flyer) => (
@@ -142,13 +152,16 @@ const TheDansant2026 = () => {
 
           {/* Reservation Button */}
           <section className="text-center mb-12">
-            <Link
-              href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
-              target="_blank"
-              className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+            <RippleButton
+              onClick={() =>
+                window.open(
+                  "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
+                  "_blank",
+                )
+              }
             >
               Réservation
-            </Link>
+            </RippleButton>
           </section>
 
           {/* YouTube Video */}
@@ -263,13 +276,16 @@ const TheDansant2026 = () => {
           </section>
           {/* Reservation Button */}
           <section className="text-center">
-            <Link
-              href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
-              target="_blank"
-              className="inline-block bg-primary text-white rounded-4xl py-3 px-12 font-bold text-lg hover:bg-primary-dark transition"
+            <RippleButton
+              onClick={() =>
+                window.open(
+                  "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
+                  "_blank",
+                )
+              }
             >
               Réservation
-            </Link>
+            </RippleButton>
           </section>
         </div>
       </div>

@@ -185,7 +185,7 @@ const Page = () => {
     <Layout title={`Livre d'Or`}>
       <div className="py-16">
         <div className="mx-auto max-w-[1320px]">
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 px-4">
             <h1 className="font-secondary font-bold leading-tight text-black text-h1-sm md:text-h1 text-center">
               Livre d&apos;Or
             </h1>

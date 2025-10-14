@@ -1,7 +1,8 @@
 import Layout from "../components/Layout";
 import { NextPage } from "next";
 import ExportedImage from "next-image-export-optimizer";
-import Link from "next/link";
+import { useRouter } from 'next/router';
+import { RippleButton } from "../components/ui/shadcn-io/ripple-button";
 import { Evenement, evenements } from "./evenements";
 import { useState, useEffect } from "react";
 
@@ -18,6 +19,7 @@ const tomorrow = new Date(today);
 tomorrow.setDate(tomorrow.getDate() + 1);
 
 const Home: NextPage = () => {
+  const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState<number>(0);
 
   useEffect(() => {
@@ -53,7 +55,7 @@ const Home: NextPage = () => {
                   <span style={{ whiteSpace: "nowrap" }}>Sucy-en-Brie</span>
                 </h1>
               </div>
-              <p className="mt-4">
+              <p className="mt-4 px-4">
                 <i>
                   {
                     "\"Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l'humanité, car la Musique contribue à la communication et à la compréhension entre les peuples.\""
@@ -61,12 +63,13 @@ const Home: NextPage = () => {
                 </i>
                 <span className=""> Riccardo Muti</span>
               </p>
-              <Link
-                className="w-44 mx-auto lg:mx-0 font-secondary inline-block border px-8 py-2.5 font-bold transition bg-primary text-white rounded-[50px] relative border-0 overflow-hidden h-12 mt-6"
-                href="/about"
+              <div className="py-4">
+              <RippleButton
+                onClick={() => router.push('/about')}
               >
                 En savoir plus
-              </Link>
+              </RippleButton>
+              </div>
             </div>
             <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
               <div className="relative w-[360px] lg:w-full h-full mx-auto overflow-hidden">

@@ -24,7 +24,7 @@ const Partenaires = () => (
         <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center ">
           Partenaires
         </h1>
-        <div className="flex flex-wrap">
+        <div className="flex flex-wrap px-4">
           <div className="w-full ">
             <h6 className="text-primary">ILS NOUS SOUTIENNENT !</h6>
           </div>
