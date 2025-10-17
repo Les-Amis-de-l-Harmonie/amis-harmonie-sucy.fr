@@ -724,21 +724,10 @@ export const evenements = [
       "Commémoration de l'Armistice de 1918 et de tous les morts pour la France.",
   },
   {
-    d: "2025-11-22",
-    title: "Banquet de l'amitié",
-    date: "Date à venir",
-    image: evt221125,
-    heure: "11H30",
-    lieu: "Espace JMP",
-    prix: "Gratuit",
-    description:
-      "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-  },
-  {
     d: "2025-11-23",
     title: "Banquet de l'amitié",
-    date: "Date à venir",
-    image: evt231125,
+    date: "Dimanche 23 novembre 2025",
+    image: evt221125,
     heure: "11H30",
     lieu: "Espace JMP",
     prix: "Gratuit",
@@ -748,7 +737,18 @@ export const evenements = [
   {
     d: "2025-11-29",
     title: "Banquet de l'amitié",
-    date: "Date à venir",
+    date: "Samedi 29 novembre 2025",
+    image: evt231125,
+    heure: "11H30",
+    lieu: "Espace JMP",
+    prix: "Gratuit",
+    description:
+      "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
+    },
+  {
+    d: "2025-11-30",
+    title: "Banquet de l'amitié",
+    date: "Dimanche 30 novembre 2025",
     image: evt291125,
     heure: "11H30",
     lieu: "Espace JMP",
