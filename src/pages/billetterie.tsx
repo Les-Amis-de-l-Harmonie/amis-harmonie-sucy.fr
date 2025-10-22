@@ -1,4 +1,3 @@
-import Base from "../components/Layout";
 import Layout from "../components/Layout";
 import { Evenement, evenements } from "./evenements";
 
@@ -31,8 +30,11 @@ const Videos = () => (
         </h1>
         <div className="flex flex-wrap px-2 gap-4 justify-center">
           {evenements.filter(isBilletterie).map((evenement) => (
-            <div className="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-              <Evenement key={evenement.title} evenement={evenement} />
+            <div
+              key={evenement.title}
+              className="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+            >
+              <Evenement evenement={evenement} />
             </div>
           ))}
         </div>
