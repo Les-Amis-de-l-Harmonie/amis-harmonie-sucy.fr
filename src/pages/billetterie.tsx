@@ -29,9 +29,11 @@ const Videos = () => (
         <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
           Billetterie
         </h1>
-        <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="flex flex-wrap px-2 gap-4 justify-center">
           {evenements.filter(isBilletterie).map((evenement) => (
-            <Evenement key={evenement.title} evenement={evenement} />
+            <div className="basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+              <Evenement key={evenement.title} evenement={evenement} />
+            </div>
           ))}
         </div>
       </div>
