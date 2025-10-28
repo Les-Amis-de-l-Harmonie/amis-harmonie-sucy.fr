@@ -31,37 +31,10 @@ const Footer: React.FC = () => {
 
   const social: SocialLinks = {
     facebook: "https://www.facebook.com/HarmonieMunicipaleDeSucy/",
-    stackoverflow: "",
-    twitter: "",
     instagram: "https://www.instagram.com/harmoniemunicipaledesucy/",
     youtube: "https://youtube.com/@HarmonieMunicipaledeSucy",
-    linkedin: "",
-    github: "",
-    gitlab: "",
-    discord: "",
-    slack: "",
-    medium: "",
-    codepen: "",
-    bitbucket: "",
-    dribbble: "",
-    behance: "",
-    pinterest: "",
-    soundcloud: "",
-    tumblr: "",
-    reddit: "",
-    vk: "",
-    whatsapp: "",
-    snapchat: "",
-    vimeo: "",
-    tiktok: "",
-    foursquare: "",
-    rss: "",
     email: "contact@amis-harmonie-sucy.fr",
     don: "https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1",
-    phone: "",
-    address: "",
-    skype: "",
-    website: "",
   };
   return (
     <footer className="py-16 relative mt-12 pt-3 pb-3">
@@ -94,7 +67,7 @@ const Footer: React.FC = () => {
         <div className="inline-flex">
           <Social
             source={social}
-            className="mx-3 flex items-center justify-center space-x-3 px-4 lg:justify-start lg:border-x 2xl:space-x-4 mb-12 justify-center"
+            className="mx-3 flex items-center space-x-3 px-4 lg:justify-start lg:border-x 2xl:space-x-4 mb-12 justify-center"
           />
         </div>
       </div>
