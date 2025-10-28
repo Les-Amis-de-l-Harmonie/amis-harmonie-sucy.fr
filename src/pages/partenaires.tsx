@@ -1,24 +1,20 @@
-import Base from "../components/Layout";
 import Layout from "../components/Layout";
-import sucy from "../../public/images/logo-sucy.png";
-import sla from "../../public/images/logo-sla.png";
-import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
-import kifekoi from "../../public/images/logo-kifekoi.png";
-import cmf from "../../public/images/logo-cmf.png";
-import oiseau from "../../public/images/oiseau.jpg";
-import beperfect from "../../public/images/beperfect.jpg";
-import isabelle from "../../public/images/logoisabelle.jpg";
-import confrerie from "../../public/images/logo-confrerie.jpeg";
-import cmfvdm from "../../public/images/logo-cmf-vdm.jpeg";
-import k from "../../public/images/logo-k.png";
-import graindevent from "../../public/images/graindevent.png";
 import ExportedImage from "next-image-export-optimizer";
 
-const p1 =
-  'L\'association "Les Amis de l\'Harmonie" a la chance d\'être soutenue par la Ville de Sucy-en-Brie, l\'association "Kifékoi?", la Confrérie des Côteaux de Sucy, l\'association "Sucy Loisirs Accueil", l\'association "Le Club Montaleau" et la confédération musicale de France.';
-
-const p2 =
-  "L’aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !";
+const partners = [
+  { src: "/images/logo-sucy.png", alt: "Ville de Sucy-en-Brie" },
+  { src: "/images/graindevent.png", alt: "Grain de Vent" },
+  { src: "/images/logo-kifekoi.png", alt: "Kifékoi?" },
+  { src: "/images/logo-confrerie.jpeg", alt: "Confrérie des Côteaux de Sucy", px: true },
+  { src: "/images/logo-sla.png", alt: "Sucy Loisirs Accueil" },
+  { src: "/images/logo-clubmontaleau.jpeg", alt: "Le Club Montaleau" },
+  { src: "/images/logo-k.png", alt: "K à contre moun", px: true },
+  { src: "/images/logo-cmf.png", alt: "Confédération Musicale de France", px: true },
+  { src: "/images/logo-cmf-vdm.jpeg", alt: "CMF Val-de-Marne" },
+  { src: "/images/oiseau.jpg", alt: "Oiseau" },
+  { src: "/images/beperfect.jpg", alt: "Be Perfect" },
+  { src: "/images/logoisabelle.jpg", alt: "Isabelle" },
+];
 
 const Partenaires = () => (
   <Layout title={`Partenaires`}>
@@ -32,117 +28,35 @@ const Partenaires = () => (
             <h6 className="text-primary">ILS NOUS SOUTIENNENT !</h6>
           </div>
           <div className="w-full">
-            <div className="flex flex-wrap justify-center">
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={sucy}
-                  sizes="17vw"
-                  alt="sucy"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={graindevent}
-                  sizes="17vw"
-                  alt="graindevent"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={kifekoi}
-                  sizes="17vw"
-                  alt="kifekoi"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full px-6"
-                  src={confrerie}
-                  sizes="17vw"
-                  alt="confrerie"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={sla}
-                  sizes="17vw"
-                  alt="sla"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={cmontaleau}
-                  sizes="17vw"
-                  alt="montaleau"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full px-6"
-                  src={k}
-                  sizes="17vw"
-                  alt="kacontremoun"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full px-6"
-                  src={cmf}
-                  sizes="17vw"
-                  alt="cmf"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={cmfvdm}
-                  sizes="17vw"
-                  alt="cmf-vdm"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={oiseau}
-                  sizes="17vw"
-                  alt="cmf-vdm"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={beperfect}
-                  sizes="17vw"
-                  alt="cmf-vdm"
-                />
-              </div>
-              <div className="flex w-1/2 sm:w-1/3 md:w-1/6 items-center">
-                <ExportedImage
-                  className="mb-3 w-full"
-                  src={isabelle}
-                  sizes="17vw"
-                  alt="cmf-vdm"
-                />
-              </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              {partners.map((partner, index) => (
+                <div key={index} className="flex w-1/2 sm:w-1/3 md:w-1/8 items-center">
+                  <ExportedImage
+                    className={`mb-3 w-full ${partner.px ? 'px-6' : ''}`}
+                    src={partner.src}
+                    width={200}
+                    height={200}
+                    sizes="17vw"
+                    alt={partner.alt}
+                  />
+                </div>
+              ))}
             </div>
           </div>
           <div className="w-full mt-32">
             <h6 className="text-primary">
               ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?
             </h6>
-            <p>{p2}</p>
+            <p>
+              {"L’aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !"}
+            </p>
           </div>
           <div className="w-full">
             <iframe
               id="haWidget"
               allowTransparency
               src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget"
-              className="w-full h-[1300px] b-none"
+              className="w-full h-[1300px] border-none"
             />
           </div>
         </div>
