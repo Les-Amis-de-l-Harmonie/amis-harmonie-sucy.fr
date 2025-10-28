@@ -1,83 +1,15 @@
 import Layout from "../components/Layout";
 import ExportedImage from "next-image-export-optimizer";
-import Link from "next/link";
-import { RippleButton } from "../components/ui/shadcn-io/ripple-button";
 import Youtube from "../components/Youtube";
-
-import thedansant20261 from "../../public/images/thedansant20261.png";
-import thedansant20262 from "../../public/images/thedansant20262.png";
-import logoSucy from "../../public/images/logo-sucy.png";
-import boulangerie from "../../public/images/boulangerie.jpg";
-import oiseau from "../../public/images/oiseau.jpg";
-import sla from "../../public/images/logo-sla.png";
-import beperfect from "../../public/images/beperfect.jpg";
-import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
-import kifekoi from "../../public/images/logo-kifekoi.png";
-import confrerie from "../../public/images/logo-confrerie.jpeg";
-import thedansant1 from "../../public/images/thedansant1.jpg";
-import thedansant2 from "../../public/images/thedansant2.jpg";
-import thedansant3 from "../../public/images/thedansant3.jpg";
-import thedansant4 from "../../public/images/thedansant4.jpg";
-import thedansant5 from "../../public/images/thedansant5.jpg";
-import thedansant6 from "../../public/images/thedansant6.jpg";
-import thedansant7 from "../../public/images/thedansant7.jpg";
-import thedansant8 from "../../public/images/thedansant8.jpg";
-import thedansant9 from "../../public/images/thedansant9.jpg";
-import thedansant10 from "../../public/images/thedansant10.jpg";
-import thedansant11 from "../../public/images/thedansant11.jpg";
-import thedansant12 from "../../public/images/thedansant12.jpg";
-
-const photos = [
-  { src: thedansant1, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant2, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant3, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant4, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant5, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant6, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant7, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant8, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant9, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant10, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant11, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant12, alt: "Thé Dansant Sucy-en-Brie" },
-];
-
-const flyerImages = [
-  { src: thedansant20261, alt: "Flyer Thé Dansant 2026 - Part 1" },
-  { src: thedansant20262, alt: "Flyer Thé Dansant 2026 - Part 2" },
-];
-
-const villepartners = [
-  {
-    src: logoSucy,
-    alt: "Ville de Sucy-en-Brie",
-    link: "https://www.ville-sucy.fr/",
-  },
-];
-const assopartners = [
-  { src: kifekoi, alt: "kifekoi", link: "https://kifekoisucy.fr/" },
-  { src: confrerie, alt: "confrerie", link: "https://confrerie-sucy.fr/" },
-  { src: sla, alt: "sla", link: "https://sla-sucy.fr/" },
-  { src: cmontaleau, alt: "montaleau", link: "http://www.club-montaleau.fr/" },
-];
-
-const commercepartners = [
-  {
-    src: boulangerie,
-    alt: "boulangerie saint honoré",
-    link: "https://share.google/y1oaJVB9eWm6SO3Jt",
-  },
-  {
-    src: beperfect,
-    alt: "beperfect",
-    link: "https://www.planity.com/be-perfect-sucy-en-brie-94370",
-  },
-  {
-    src: oiseau,
-    alt: "oiseaumoqueur",
-    link: "https://www.sucyofcourses.fr/l-oiseau-moqueur",
-  },
-];
+import EventReservationButton from "../components/EventReservationButton";
+import PartnersSection from "../components/PartnersSection";
+import {
+  photos,
+  flyerImages,
+  villepartners,
+  assopartners,
+  commercepartners,
+} from "../constants/theDansantData";
 
 const TheDansant2026 = () => {
   return (
@@ -92,16 +24,7 @@ const TheDansant2026 = () => {
               </h1>
             </div>
             <div>
-              <RippleButton
-                onClick={() =>
-                  window.open(
-                    "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
-                    "_blank",
-                  )
-                }
-              >
-                Réservation
-              </RippleButton>
+              <EventReservationButton />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 justify-center gap-4 mb-8 w-full">
               {flyerImages.map((flyer) => (
@@ -152,104 +75,35 @@ const TheDansant2026 = () => {
 
           {/* Reservation Button */}
           <section className="text-center mb-12">
-            <RippleButton
-              onClick={() =>
-                window.open(
-                  "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
-                  "_blank",
-                )
-              }
-            >
-              Réservation
-            </RippleButton>
+            <EventReservationButton />
           </section>
-
-          
 
           {/* Partners */}
           <section className="mb-12 flex flex-col gap-8">
             <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
               Nos partenaires
             </h3>
-            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Cet événement est organisé en partenariat avec la Ville de
-              Sucy-en-Brie, dont le soutien et l’engagement rendent possible la
-              tenue de cette belle journée festive.
-            </p>
-            <div className="flex flex-wrap justify-center gap-8">
-              {villepartners.map((villepartner) => (
-                <Link
-                  href={villepartner.link}
-                  key={villepartner.alt}
-                  target="_blank"
-                  className=""
-                >
-                  <ExportedImage
-                    src={villepartner.src}
-                    alt={villepartner.alt}
-                    className="h-16 w-auto"
-                    sizes="100px"
-                  />
-                </Link>
-              ))}
-            </div>
+            <PartnersSection
+              title="Ville de Sucy-en-Brie"
+              description="Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive."
+              partners={villepartners}
+            />
 
-            
+            <PartnersSection
+              title="Commerçants partenaires"
+              description="Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique. Leurs dons permettront d'organiser pour la première fois une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés."
+              partners={commercepartners}
+            />
 
-            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Nous remercions chaleureusement les entreprises et commerçants
-              Sucyciens, dont la participation et la générosité contribuent à
-              faire de cette journée un moment unique. Leurs dons permettront
-              d’organiser pour la première fois une tombola, une belle occasion
-              pour nous de valoriser les acteurs locaux et de mettre en lumière
-              leur engagement à nos côtés.
-            </p>
-            <div className="flex flex-wrap justify-center gap-8">
-              {commercepartners.map((commercepartner) => (
-                <Link
-                  href={commercepartner.link}
-                  key={commercepartner.alt}
-                  target="_blank"
-                  className=""
-                >
-                  <ExportedImage
-                    src={commercepartner.src}
-                    alt={commercepartner.alt}
-                    className="h-16 w-auto"
-                    sizes="100px"
-                  />
-                </Link>
-              ))}
-            </div>
-            <p className="text-lg text-gray-700 text-center max-w-4xl mx-auto">
-              Les adhérents des associations partenaires (SLA, Kifekoi?, La
-              Confrérie des Coteaux, Le Club Montaleau et tous les clubs de
-              danse) bénéficient d’un tarif préférentiel pour le Thé Dansant,
-              symbole de notre collaboration et de notre volonté de favoriser la
-              convivialité et le partage.
-            </p>
-            <div className="flex flex-wrap justify-center gap-8">
-              {assopartners.map((assopartner) => (
-                <Link
-                  href={assopartner.link}
-                  key={assopartner.alt}
-                  target="_blank"
-                  className=""
-                >
-                  <ExportedImage
-                    src={assopartner.src}
-                    alt={assopartner.alt}
-                    className="h-16 w-auto"
-                    sizes="100px"
-                  />
-                </Link>
-              ))}
-            </div>
+            <PartnersSection
+              title="Associations partenaires"
+              description="Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau et tous les clubs de danse) bénéficient d'un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage."
+              partners={assopartners}
+            />
           </section>
 
           {/* YouTube Video */}
           <section className="mb-12">
-           
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center">
               <div className="w-full">
                 <Youtube id="iZwfSjflbKA" title="Thé Dansant 2025" />
@@ -262,7 +116,6 @@ const TheDansant2026 = () => {
 
           {/* Photos */}
           <section className="mb-12">
-      
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {photos.map((photo) => (
                 <div key={photo.alt} className="w-full aspect-3/2">
@@ -278,16 +131,7 @@ const TheDansant2026 = () => {
           </section>
           {/* Reservation Button */}
           <section className="text-center">
-            <RippleButton
-              onClick={() =>
-                window.open(
-                  "https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie",
-                  "_blank",
-                )
-              }
-            >
-              Réservation
-            </RippleButton>
+            <EventReservationButton />
           </section>
         </div>
       </div>
