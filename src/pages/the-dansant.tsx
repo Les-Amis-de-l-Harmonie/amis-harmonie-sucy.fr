@@ -93,7 +93,9 @@ const TheDansant2026 = () => {
               title="Commerçants partenaires"
               description="Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique. Leurs dons permettront d'organiser pour la première fois une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés."
               partners={commercepartners}
+              
             />
+         
 
             <PartnersSection
               title="Associations partenaires"
