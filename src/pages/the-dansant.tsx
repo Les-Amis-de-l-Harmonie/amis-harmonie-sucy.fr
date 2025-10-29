@@ -83,20 +83,39 @@ const TheDansant2026 = () => {
             <h3 className="font-secondary font-bold text-h2-sm md:text-h2 text-center">
               Nos partenaires
             </h3>
+            
             <PartnersSection
               title="Ville de Sucy-en-Brie"
               description="Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l’engagement rendent possible la tenue de cette belle journée festive."
               partners={villepartners}
             />
-
+            <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
+              Commerçants
+            </h6>
             <PartnersSection
               title="Commerçants partenaires"
               description="Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique. Leurs dons permettront d'organiser pour la première fois une tombola, une belle occasion pour nous de valoriser les acteurs locaux et de mettre en lumière leur engagement à nos côtés."
               partners={commercepartners}
               
             />
-         
-
+            <div className="flex flex-wrap justify-center gap-8 text-purple-700 font-bold ">
+              <a href="https://www.facebook.com/p/Les-Petits-Plats-de-Chlo%C3%A9-0650082824-100077768149167/">Les Petits Plats de Chloé</a>
+              <a href="https://lesproduitsdemathilde.fr/">Les produits de Mathilde</a>
+              <a href="https://cordonnerie-leperreux.fr/fr/page/cordonnerie-de-sucy">Cordonnerie Sucy</a>
+              <a href="https://cavepetitverdot.fr/">Le Petit Verdot</a>
+              <a href="https://www.facebook.com/p/Le-Quercy-Bar-Brasserie-Restaurant-100063781620749/?locale=fr_FR">Le Quercy</a>
+              <a href="https://www.facebook.com/tomatecerisesucy/">Tomate Cerise</a>
+              <a href="https://www.facebook.com/Stefoptique">Opticien Stef' Optique</a>
+              <a href="https://www.instagram.com/lebonbonchocolat/">Le Bonbon Chocolat</a>
+              <a href="https://www.institut-sucyenbrie.guinot.com/">Guinot beauté</a>
+              <a href="https://lesyeuxdoria-sucy-en-brie.monopticien.com/">Les Yeux d'Oria</a>
+              <a href="https://mendielaoptique-sucyenbrie.monopticien.com/">Mendiela Optique</a>
+              <a href="">La terrasse 94</a>
+              <a href="https://www.planity.com/klyc-styl-94370-sucy-en-brie">Klyc Styl</a>
+            </div>
+            <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
+              Associations
+            </h6>
             <PartnersSection
               title="Associations partenaires"
               description="Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau et tous les clubs de danse) bénéficient d'un tarif préférentiel pour le Thé Dansant, symbole de notre collaboration et de notre volonté de favoriser la convivialité et le partage."
