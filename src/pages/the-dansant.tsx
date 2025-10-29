@@ -112,6 +112,10 @@ const TheDansant2026 = () => {
               <a href="https://mendielaoptique-sucyenbrie.monopticien.com/">Mendiela Optique</a>
               <a href="">La terrasse 94</a>
               <a href="https://www.planity.com/klyc-styl-94370-sucy-en-brie">Klyc Styl</a>
+              <a href="https://bodyminute.com/instituts/sucy-en-brie-3455/">Body Minute</a>
+              <a href="https://www.facebook.com/latelier.sucy?rdid=HkbKOckpafzN0zdn&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2FPvzuovuuVE3v9ui1%2F#">L'atelier</a>
+
+
             </div>
             <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
               Associations
