@@ -9,6 +9,23 @@ import andrea from "../../public/images/andrea.png";
 import marcel from "../../public/images/marcel.png";
 import carole from "../../public/images/carole.png";
 
+import thedansant1 from "../../public/images/thedansant1.jpg";
+import thedansant2 from "../../public/images/thedansant2.jpg";
+import thedansant3 from "../../public/images/thedansant3.jpg";
+
+import { StaticImageData } from "next/image";
+
+export interface Photo {
+  src: StaticImageData;
+  alt: string;
+}
+
+export const photos: Photo[] = [
+  { src: thedansant1, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant2, alt: "Thé Dansant Sucy-en-Brie" },
+  { src: thedansant3, alt: "Thé Dansant Sucy-en-Brie" },
+];
+
 const About = () => {
   return (
     <Layout title="L'Association" description="À Propos de l'Association">
@@ -154,6 +171,20 @@ const About = () => {
               <h5 className="text-primary">Marcel Hamon</h5>
               <p>Membre</p>
               <p>Chef adjoint et percussionniste de l'Harmonie</p>
+            </div>
+          </div>
+          <div className="mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <div key={photo.alt} className="w-full aspect-3/2">
+                  <ExportedImage
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="rounded-lg shadow-md object-cover w-full h-full"
+                    sizes="33vw"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
