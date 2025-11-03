@@ -220,20 +220,26 @@ const Posts = () => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const hasPrevPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
 
   return (
-    <Layout title={`Publications`}>
+    <Layout
+      title="Publications - Harmonie de Sucy-en-Brie"
+      description="Suivez l'actualité de l'Harmonie Municipale de Sucy-en-Brie sur nos réseaux sociaux. Découvrez nos publications Instagram avec des photos de concerts, répétitions, événements et coulisses de l'orchestre. Plongez dans la vie musicale de Sucy-en-Brie et partagez nos moments festifs avec la communauté des Amis de l'Harmonie."
+    >
       <div className="section">
         <div className="container">
           <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
             Publications
           </h1>
-          <div id="posts-row" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div
+            id="posts-row"
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+          >
             {currentPosts.map((post) => (
               <MemoPost key={post} item={post} />
             ))}
@@ -241,7 +247,10 @@ const Posts = () => {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <nav className="item-center mb-4 flex justify-center space-x-1 lg:space-x-2" aria-label="Pagination">
+            <nav
+              className="item-center mb-4 flex justify-center space-x-1 lg:space-x-2"
+              aria-label="Pagination"
+            >
               {/* Previous Button */}
               {hasPrevPage ? (
                 <button
@@ -264,19 +273,21 @@ const Posts = () => {
 
               {/* Page Numbers */}
               <div className="hidden md:flex items-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`inline-flex h-[38px] w-[38px] items-center justify-center rounded-full px-4 py-1 font-secondary text-lg font-bold leading-none transition-colors cursor-pointer ${
-                      pageNum === currentPage
-                        ? "bg-primary text-white"
-                        : "text-dark hover:bg-gray-200"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`inline-flex h-[38px] w-[38px] items-center justify-center rounded-full px-4 py-1 font-secondary text-lg font-bold leading-none transition-colors cursor-pointer ${
+                        pageNum === currentPage
+                          ? "bg-primary text-white"
+                          : "text-dark hover:bg-gray-200"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ),
+                )}
               </div>
 
               {/* Next Button */}

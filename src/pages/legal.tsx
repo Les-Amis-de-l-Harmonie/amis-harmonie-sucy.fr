@@ -3,7 +3,10 @@ import Layout from "../components/Layout";
 
 const Legal = () => {
   return (
-    <Layout title="Mentions Légales" description="Mentions Légales">
+    <Layout
+      title="Mentions Légales - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Consultez les mentions légales du site officiel de l'association Les Amis de l'Harmonie de Sucy-en-Brie. Informations sur l'édition, l'hébergement, le directeur de publication, les données personnelles et nos coordonnées. Conformément à la loi, nous respectons la confidentialité et la protection des données de nos visiteurs et membres."
+    >
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">

@@ -50,8 +50,6 @@ import asso38 from "../../public/images/38asso.jpg";
 import asso39 from "../../public/images/39asso.jpg";
 import asso40 from "../../public/images/40asso.jpg";
 
-
-
 import { StaticImageData } from "next/image";
 
 export interface Photo {
@@ -59,10 +57,12 @@ export interface Photo {
   alt: string;
 }
 
-
 const About = () => {
   return (
-    <Layout title="L'Association" description="À Propos de l'Association">
+    <Layout
+      title="À propos - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Découvrez l'association Les Amis de l'Harmonie de Sucy-en-Brie, dédiée à soutenir l'orchestre municipal. Apprenez-en plus sur notre mission, notre équipe dynamique composée de musiciens passionnés et de bénévoles, et comment nous contribuons au rayonnement culturel de Sucy-en-Brie à travers des événements musicaux, des partenariats et une communauté engagée. Rejoignez-nous pour célébrer la musique classique et populaire !"
+    >
       <section className="py-16">
         <div className="mx-auto max-w-[1320px] px-4">
           <h2 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
@@ -267,9 +267,6 @@ export const photos: Photo[] = [
   { src: asso38, alt: "" },
   { src: asso39, alt: "" },
   { src: asso40, alt: "" },
-
-
 ];
-
 
 export default About;

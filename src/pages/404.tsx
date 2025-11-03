@@ -2,7 +2,10 @@ import Layout from "../components/Layout";
 
 const notFound = () => {
   return (
-    <Layout title="Page not found" description="Page not found">
+    <Layout
+      title="Page Introuvable - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Désolé, la page que vous cherchez n'existe pas sur le site des Amis de l'Harmonie de Sucy-en-Brie. Retournez à l'accueil pour découvrir nos événements musicaux, concerts et actualités de l'orchestre municipal."
+    >
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-wrap">

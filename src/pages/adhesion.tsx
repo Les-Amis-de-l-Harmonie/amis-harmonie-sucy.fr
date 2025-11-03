@@ -1,7 +1,10 @@
 import Layout from "../components/Layout";
 
 const Adhesion = () => (
-  <Layout title={`Adhésion`}>
+  <Layout
+    title="Adhésion - Les Amis de l'Harmonie de Sucy-en-Brie"
+    description="Devenez membre de l'association Les Amis de l'Harmonie de Sucy-en-Brie et soutenez l'orchestre municipal. Bénéficiez de tarifs préférentiels sur nos événements musicaux, participez à notre communauté passionnée et contribuez au développement de la musique à Sucy-en-Brie. L'adhésion annuelle est simple et accessible, rejoignez-nous pour une année riche en concerts, thé dansant et moments conviviaux !"
+  >
     <div className="py-16">
       <div className="mx-auto max-w-[1320px] px-4">
         <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">

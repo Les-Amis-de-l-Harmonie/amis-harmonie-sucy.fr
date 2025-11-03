@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({
   canonical,
   children,
 }) => {
-  const meta_author = "Les Amis de l'Harmonie";
+  const meta_author = "Les Amis de l'Harmonie de Sucy-en-Brie";
   const meta_description =
     "Site officiel de l'association Les Amis de l'Harmonie de Sucy-en-Brie.";
   const base_url = "/";
@@ -37,7 +37,7 @@ const Layout: React.FC<LayoutProps> = ({
             ? meta_title
             : title
               ? title
-              : "Les Amis de l'Harmonie de Sucy"}
+              : "Les Amis de l'Harmonie de Sucy-en-Brie"}
         </title>
 
         {/* canonical url */}

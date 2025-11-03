@@ -22,7 +22,10 @@ const isBilletterie = (evt: EventItem): boolean => {
 };
 
 const Videos = () => (
-  <Layout title={`Billetterie`}>
+  <Layout
+    title="Billetterie - Événements de l'Harmonie de Sucy-en-Brie"
+    description="Réservez vos places pour les événements musicaux de l'Harmonie Municipale de Sucy-en-Brie. Découvrez notre billetterie en ligne pour concerts, thé dansant, spectacles et autres manifestations culturelles. Profitez de tarifs préférentiels pour les adhérents et vivez des moments uniques de musique classique et populaire dans une ambiance conviviale à Sucy-en-Brie."
+  >
     <div className="py-16">
       <div className="mx-auto max-w-[1320px]">
         <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">

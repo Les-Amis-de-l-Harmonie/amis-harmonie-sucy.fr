@@ -1,7 +1,7 @@
 import Layout from "../components/Layout";
 import { NextPage } from "next";
 import ExportedImage from "next-image-export-optimizer";
-import { useRouter } from 'next/router';
+import { useRouter } from "next/router";
 import { RippleButton } from "../components/ui/shadcn-io/ripple-button";
 import { Evenement, evenements } from "./evenements";
 import { useState, useEffect } from "react";
@@ -30,7 +30,10 @@ const Home: NextPage = () => {
   }, []);
 
   return (
-    <Layout>
+    <Layout
+      title="Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Découvrez l'association Les Amis de l'Harmonie de Sucy-en-Brie : soutenez l'orchestre, consultez les événements musicaux et rejoignez notre communauté passionnée de musique classique."
+    >
       {/* Banner */}
       <section className="py-16 relative pb-0 pt-4 lg:pt-0">
         <ExportedImage
@@ -64,11 +67,9 @@ const Home: NextPage = () => {
                 <span className=""> Riccardo Muti</span>
               </p>
               <div className="py-4">
-              <RippleButton
-                onClick={() => router.push('/about')}
-              >
-                En savoir plus
-              </RippleButton>
+                <RippleButton onClick={() => router.push("/about")}>
+                  En savoir plus
+                </RippleButton>
               </div>
             </div>
             <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
