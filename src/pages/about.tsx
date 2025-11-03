@@ -49,8 +49,6 @@ import asso37 from "../../public/images/37asso.jpg";
 
 
 
-
-
 import { StaticImageData } from "next/image";
 
 export interface Photo {
