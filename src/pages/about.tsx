@@ -44,6 +44,9 @@ import asso32 from "../../public/images/32asso.jpg";
 import asso33 from "../../public/images/33asso.jpg";
 import asso34 from "../../public/images/34asso.jpg";
 import asso35 from "../../public/images/35asso.jpg";
+import asso36 from "../../public/images/36asso.jpg";
+import asso37 from "../../public/images/37asso.jpg";
+
 
 
 
@@ -257,7 +260,10 @@ export const photos: Photo[] = [
   { src: asso32, alt: "" },
   { src: asso33, alt: "" },
   { src: asso34, alt: "" },
-  //{ src: asso35, alt: "" },
+  { src: asso35, alt: "" },
+  { src: asso36, alt: "" },
+  { src: asso37, alt: "" },
+
 
 ];
 
