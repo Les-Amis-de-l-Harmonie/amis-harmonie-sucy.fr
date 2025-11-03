@@ -46,6 +46,9 @@ import asso34 from "../../public/images/34asso.jpg";
 import asso35 from "../../public/images/35asso.jpg";
 import asso36 from "../../public/images/36asso.jpg";
 import asso37 from "../../public/images/37asso.jpg";
+import asso38 from "../../public/images/38asso.jpg";
+import asso39 from "../../public/images/39asso.jpg";
+import asso40 from "../../public/images/40asso.jpg";
 
 
 
@@ -225,6 +228,8 @@ const About = () => {
 };
 
 export const photos: Photo[] = [
+  { src: asso29, alt: "" },
+  { src: asso28, alt: "" },
   { src: asso1, alt: "" },
   { src: asso2, alt: "" },
   { src: asso3, alt: "" },
@@ -251,8 +256,6 @@ export const photos: Photo[] = [
   { src: asso25, alt: "" },
   { src: asso26, alt: "" },
   { src: asso27, alt: "" },
-  { src: asso28, alt: "" },
-  { src: asso29, alt: "" },
   { src: asso30, alt: "" },
   { src: asso31, alt: "" },
   { src: asso32, alt: "" },
@@ -261,6 +264,9 @@ export const photos: Photo[] = [
   { src: asso35, alt: "" },
   { src: asso36, alt: "" },
   { src: asso37, alt: "" },
+  { src: asso38, alt: "" },
+  { src: asso39, alt: "" },
+  { src: asso40, alt: "" },
 
 
 ];
