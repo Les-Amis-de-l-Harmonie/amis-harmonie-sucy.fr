@@ -9,9 +9,44 @@ import andrea from "../../public/images/andrea.png";
 import marcel from "../../public/images/marcel.png";
 import carole from "../../public/images/carole.png";
 
-import thedansant1 from "../../public/images/thedansant1.jpg";
-import thedansant2 from "../../public/images/thedansant2.jpg";
-import thedansant3 from "../../public/images/thedansant3.jpg";
+import asso1 from "../../public/images/1asso.png";
+import asso2 from "../../public/images/2asso.jpg";
+import asso3 from "../../public/images/3asso.jpg";
+import asso4 from "../../public/images/4asso.jpg";
+import asso5 from "../../public/images/5asso.jpg";
+import asso6 from "../../public/images/6asso.jpg";
+import asso7 from "../../public/images/7asso.jpg";
+import asso8 from "../../public/images/8asso.jpg";
+import asso9 from "../../public/images/9asso.jpg";
+import asso10 from "../../public/images/10asso.jpg";
+import asso11 from "../../public/images/11asso.jpg";
+import asso12 from "../../public/images/12asso.jpg";
+import asso13 from "../../public/images/13asso.jpg";
+import asso14 from "../../public/images/14asso.jpg";
+import asso15 from "../../public/images/15asso.jpg";
+import asso16 from "../../public/images/16asso.jpg";
+import asso17 from "../../public/images/17asso.jpg";
+import asso18 from "../../public/images/18asso.jpg";
+import asso19 from "../../public/images/19asso.jpg";
+import asso20 from "../../public/images/20asso.jpg";
+import asso21 from "../../public/images/21asso.jpg";
+import asso22 from "../../public/images/22asso.jpg";
+import asso23 from "../../public/images/23asso.jpg";
+import asso24 from "../../public/images/24asso.jpg";
+import asso25 from "../../public/images/25asso.jpg";
+import asso26 from "../../public/images/26asso.jpg";
+import asso27 from "../../public/images/27asso.jpg";
+import asso28 from "../../public/images/28asso.jpg";
+import asso29 from "../../public/images/29asso.jpg";
+import asso30 from "../../public/images/30asso.jpg";
+import asso31 from "../../public/images/31asso.jpg";
+import asso32 from "../../public/images/32asso.jpg";
+import asso33 from "../../public/images/33asso.jpg";
+import asso34 from "../../public/images/34asso.jpg";
+import asso35 from "../../public/images/35asso.jpg";
+
+
+
 
 import { StaticImageData } from "next/image";
 
@@ -20,11 +55,6 @@ export interface Photo {
   alt: string;
 }
 
-export const photos: Photo[] = [
-  { src: thedansant1, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant2, alt: "Thé Dansant Sucy-en-Brie" },
-  { src: thedansant3, alt: "Thé Dansant Sucy-en-Brie" },
-];
 
 const About = () => {
   return (
@@ -192,5 +222,44 @@ const About = () => {
     </Layout>
   );
 };
+
+export const photos: Photo[] = [
+  { src: asso1, alt: "" },
+  { src: asso2, alt: "" },
+  { src: asso3, alt: "" },
+  { src: asso4, alt: "" },
+  { src: asso5, alt: "" },
+  { src: asso6, alt: "" },
+  { src: asso8, alt: "" },
+  { src: asso9, alt: "" },
+  { src: asso10, alt: "" },
+  { src: asso11, alt: "" },
+  { src: asso12, alt: "" },
+  { src: asso13, alt: "" },
+  { src: asso14, alt: "" },
+  { src: asso15, alt: "" },
+  { src: asso16, alt: "" },
+  { src: asso17, alt: "" },
+  { src: asso18, alt: "" },
+  { src: asso19, alt: "" },
+  { src: asso20, alt: "" },
+  { src: asso21, alt: "" },
+  { src: asso22, alt: "" },
+  { src: asso23, alt: "" },
+  { src: asso24, alt: "" },
+  { src: asso25, alt: "" },
+  { src: asso26, alt: "" },
+  { src: asso27, alt: "" },
+  { src: asso28, alt: "" },
+  { src: asso29, alt: "" },
+  { src: asso30, alt: "" },
+  { src: asso31, alt: "" },
+  { src: asso32, alt: "" },
+  { src: asso33, alt: "" },
+  { src: asso34, alt: "" },
+  //{ src: asso35, alt: "" },
+
+];
+
 
 export default About;
