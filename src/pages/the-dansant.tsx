@@ -13,7 +13,10 @@ import {
 
 const TheDansant2026 = () => {
   return (
-    <Layout title="Thé Dansant - Dimanche 01 février 2026 - 14H">
+    <Layout
+      title="Thé Dansant 2026 - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Réservez pour le Thé Dansant 2026 organisé par l'assocaitions les Amis de l'Harmonie de Sucy-en-Brie. Une journée de danse et musique avec deux orchestres exceptionnels pour 4 heures de rythmes variés : valses, tangos et plus. Initiation au tango, verre offert, pâtisserie et tombola. Événement incontournable à Sucy-en-Brie pour amateurs de musique et danse."
+    >
       <div className="pt-16">
         <div className="mx-auto max-w-[1320px] px-4">
           {/* Title and Flyer */}

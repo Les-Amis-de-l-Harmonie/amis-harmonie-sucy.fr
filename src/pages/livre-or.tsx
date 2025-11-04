@@ -182,7 +182,10 @@ const Page = () => {
   const [newRow, setNewRow] = useState(false);
 
   return (
-    <Layout title={`Livre d'Or`}>
+    <Layout
+      title="Livre d'Or - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Laissez votre commentaire dans notre livre d'or et partagez vos impressions sur les événements musicaux de l'Harmonie Municipale de Sucy-en-Brie. Découvrez les témoignages de notre communauté passionnée par la musique classique et populaire. Votre avis compte pour nous aider à améliorer nos concerts, thé dansant et autres manifestations culturelles à Sucy-en-Brie."
+    >
       <div className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-col gap-8 px-4">

@@ -45,8 +45,6 @@ import harmonie43 from "../../public/images/harmonie43.jpg";
 import harmonie44 from "../../public/images/harmonie44.jpg";
 import harmonie45 from "../../public/images/harmonie45.png";
 
-
-
 import { StaticImageData } from "next/image";
 
 export interface Photo {
@@ -96,8 +94,8 @@ export const photos: Photo[] = [
 const Harmonie = () => {
   return (
     <Layout
-      title="L'Harmonie Municipale de Sucy-en-Brie"
-      description="L'Harmonie Municipale de Sucy-en-Brie"
+      title="L'Harmonie Municipale - Sucy-en-Brie"
+      description="Découvrez l'Harmonie Municipale de Sucy-en-Brie, un orchestre d'harmonie amateur composé de 35 musiciens passionnés. Fondée il y a plus de 160 ans, elle anime la vie culturelle locale avec des concerts variés, des cérémonies patriotiques et des événements festifs. Apprenez-en plus sur son répertoire éclectique, ses répétitions hebdomadaires et comment rejoindre cette formation musicale emblématique de Sucy-en-Brie."
     >
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">

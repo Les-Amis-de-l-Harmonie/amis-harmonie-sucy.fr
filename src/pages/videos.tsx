@@ -4,8 +4,8 @@ import Youtube from "../components/Youtube";
 
 const Videos = () => {
   const videos = [
-      { id: "n13yE9CTxYU", title: "Bamboléooooo !" },
-      { id: "iZwfSjflbKA", title: "Thé Dansant 2025" },
+    { id: "n13yE9CTxYU", title: "Bamboléooooo !" },
+    { id: "iZwfSjflbKA", title: "Thé Dansant 2025" },
     { id: "dF3qZQ9EZxw", title: "Passage de la Flamme Paralympique" },
     { id: "LUJZmqu1RhU", title: "Fête de la musique 2024" },
     { id: "BJ6ZsHqiZnQ", title: "Un dimanche en Fauré - Pavane & Pie Jesu" },
@@ -36,7 +36,10 @@ const Videos = () => {
   ];
 
   return (
-    <Layout title={`Vidéos`}>
+    <Layout
+      title="Vidéos - Harmonie Municipale de Sucy-en-Brie"
+      description="Regardez les vidéos des performances de l'Harmonie Municipale de Sucy-en-Brie : concerts, thé dansant, cérémonies, fête de la musique et événements spéciaux. Découvrez le talent de nos musiciens à travers des extraits de spectacles variés, de musique classique à populaire, capturant l'âme de Sucy-en-Brie."
+    >
       <div className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">

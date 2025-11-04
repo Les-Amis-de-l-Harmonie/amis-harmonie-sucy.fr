@@ -92,7 +92,10 @@ const Contact = () => {
     "Les Amis de l'Harmonie - Maison des associations - 14 Rue du Clos de Pacy, 94370 Sucy-en-Brie";
 
   return (
-    <Layout title={title} description={description} meta_title={title}>
+    <Layout
+      title="Contact - Les Amis de l'Harmonie de Sucy-en-Brie"
+      description="Contactez l'association Les Amis de l'Harmonie de Sucy-en-Brie pour toute question sur nos événements musicaux, adhésion, partenariats ou suggestions. Trouvez nos coordonnées téléphoniques, email et adresse postale à Sucy-en-Brie. Nous sommes à votre écoute pour vous aider à découvrir et soutenir l'orchestre municipal et ses activités culturelles."
+    >
       <section className="py-16">
         <div className="mx-auto max-w-[1320px]">
           <div className="flex flex-wrap gap-4">

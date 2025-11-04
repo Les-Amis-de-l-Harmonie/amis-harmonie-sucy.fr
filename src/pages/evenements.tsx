@@ -744,7 +744,7 @@ export const evenements = [
     prix: "Gratuit",
     description:
       "Profitez de ce moment convivial agrémenté d'un repas et d'un spectacle, l'Harmonie Municipale sera présente comme chaque année ! Les banquets de l’Amitié, sont organisés pour les seniors de 65 ans et plus. Evènement organisé par la Maison des Seniors de Sucy-en-Brie.",
-    },
+  },
   {
     d: "2025-11-30",
     title: "Banquet de l'amitié",
@@ -841,7 +841,10 @@ export const Evenement = ({
 );
 
 const Evenements = () => (
-  <Layout title={`Évènements`}>
+  <Layout
+    title="Événements - Harmonie Municipale de Sucy-en-Brie"
+    description="Découvrez tous les événements musicaux organisés par l'Harmonie Municipale de Sucy-en-Brie et l'association Les Amis de l'Harmonie. Consultez notre calendrier des concerts, thé dansant, cérémonies, spectacles et manifestations culturelles à venir et passées. Réservez vos places en ligne et rejoignez notre communauté pour vivre des moments uniques de musique classique, populaire et festive à Sucy-en-Brie."
+  >
     <div className="py-16">
       <div className="mx-auto max-w-[1320px]">
         <h1 className="font-secondary font-bold leading-tight text-black text-h2-sm md:text-h2 mb-8 text-center">
