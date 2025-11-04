@@ -14,6 +14,8 @@ const partners = [
   { src: "/images/oiseau.jpg", alt: "Oiseau" },
   { src: "/images/beperfect.jpg", alt: "Be Perfect" },
   { src: "/images/logoisabelle.jpg", alt: "Isabelle" },
+  { src: "/images/arbre.png", alt: "L'Arbre ô jeux" },
+
 ];
 
 const Partenaires = () => (

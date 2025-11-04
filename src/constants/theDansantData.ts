@@ -6,6 +6,7 @@ import oiseau from "../../public/images/oiseau.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
 import isabelle from "../../public/images/logoisabelle.jpg";
+import arbre from "../../public/images/arbre.png";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
 import kifekoi from "../../public/images/logo-kifekoi.png";
 import confrerie from "../../public/images/logo-confrerie.jpeg";
@@ -71,6 +72,11 @@ export const assopartners: Partner[] = [
 ];
 
 export const commercepartners: Partner[] = [
+  {
+    src: arbre,
+    alt: "L'Arbre ô jeux",
+    link: "https://www.larbreojeux.fr/",
+  },
   {
     src: boulangerie,
     alt: "boulangerie saint honoré",
