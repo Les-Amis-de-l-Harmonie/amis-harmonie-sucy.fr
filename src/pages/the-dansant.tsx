@@ -142,6 +142,12 @@ const TheDansant2026 = () => {
               <a href="https://www.facebook.com/latelier.sucy?rdid=HkbKOckpafzN0zdn&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2FPvzuovuuVE3v9ui1%2F#">
                 L&apos;atelier
               </a>
+              <a href="https://www.facebook.com/p/La-Station-Sucy-100093120762211/?locale=fr_FR">
+                La Station
+              </a>
+              <a href="https://share.google/G7RHKMqn2DMoVfFTI">
+                Tabac du fort
+              </a>
             </div>
             <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
               Associations
