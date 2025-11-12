@@ -146,10 +146,10 @@ const TheDansant2026 = () => {
                 La Station
               </a>
               <a href="https://www.naturopathevaldemarne.com/">
-                C'est Bien
+                C&apos;est Bien
               </a>
               <a href="https://www.mine-or.com/">
-                Mine d'or
+                Mine d&apos;or
               </a>
               
             </div>
