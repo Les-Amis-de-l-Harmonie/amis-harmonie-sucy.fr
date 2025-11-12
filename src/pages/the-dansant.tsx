@@ -145,6 +145,12 @@ const TheDansant2026 = () => {
               <a href="https://www.facebook.com/p/La-Station-Sucy-100093120762211/?locale=fr_FR">
                 La Station
               </a>
+              <a href="https://www.naturopathevaldemarne.com/">
+                C'est Bien
+              </a>
+              <a href="https://www.mine-or.com/">
+                Mine d'or
+              </a>
               
             </div>
             <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
