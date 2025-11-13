@@ -6,6 +6,7 @@ import oiseau from "../../public/images/oiseau.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
 import isabelle from "../../public/images/logoisabelle.jpg";
+import minedor from "../../public/images/minedor.png";
 import arbre from "../../public/images/arbre.png";
 import cmontaleau from "../../public/images/logo-clubmontaleau.jpeg";
 import kifekoi from "../../public/images/logo-kifekoi.png";
@@ -96,5 +97,10 @@ export const commercepartners: Partner[] = [
     src: isabelle,
     alt: "isabellechaussures",
     link: "https://www.facebook.com/chaussuresisabelle94/?locale=fr_FR",
+  },
+  {
+    src: minedor,
+    alt: "minedor",
+    link: "https://www.mine-or.com/",
   },
 ];

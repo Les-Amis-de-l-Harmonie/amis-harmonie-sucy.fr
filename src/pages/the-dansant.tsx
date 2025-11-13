@@ -148,9 +148,7 @@ const TheDansant2026 = () => {
               <a href="https://www.naturopathevaldemarne.com/">
                 C&apos;est Bien
               </a>
-              <a href="https://www.mine-or.com/">
-                Mine d&apos;or
-              </a>
+              
               
             </div>
             <h6 className="font-secondary font-bold text-h6-sm md:text-h6 text-center">
