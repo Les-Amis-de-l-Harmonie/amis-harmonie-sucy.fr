@@ -2,6 +2,7 @@ import thedansant20261 from "../../public/images/thedansant20261.png";
 import thedansant20262 from "../../public/images/thedansant20262.png";
 import logoSucy from "../../public/images/logo-sucy.png";
 import boulangerie from "../../public/images/boulangerie.jpg";
+import madeinsens from "../../public/images/madeinsens.jpg";
 import oiseau from "../../public/images/oiseau.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
@@ -102,5 +103,10 @@ export const commercepartners: Partner[] = [
     src: minedor,
     alt: "minedor",
     link: "https://www.mine-or.com/",
+  },
+  {
+    src: madeinsens,
+    alt: "madeinsens",
+    link: "https://madeinsens.com/",
   },
 ];
