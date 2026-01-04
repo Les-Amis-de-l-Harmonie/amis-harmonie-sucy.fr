@@ -6,6 +6,7 @@ import madeinsens from "../../public/images/madeinsens.jpg";
 import oiseau from "../../public/images/oiseau.jpg";
 import sla from "../../public/images/logo-sla.png";
 import beperfect from "../../public/images/beperfect.jpg";
+import logoRCP from "../../public/images/logoRCP.jpg";
 import isabelle from "../../public/images/logoisabelle.jpg";
 import minedor from "../../public/images/minedor.png";
 import arbre from "../../public/images/arbre.png";
@@ -108,5 +109,10 @@ export const commercepartners: Partner[] = [
     src: madeinsens,
     alt: "madeinsens",
     link: "https://madeinsens.com/",
+  },
+  {
+    src: logoRCP,
+    alt: "Rucher Clos Pacot",
+    link: "https://www.instagram.com/rucherclospacot",
   },
 ];
