@@ -3,11 +3,11 @@ import { env } from "cloudflare:workers";
 const CACHE_VERSION_KEY = "cache_version";
 const CACHE_TTL = 60 * 60 * 24;
 
-const DEPLOYMENT_VERSION = Date.now().toString(36);
+const BUILD_VERSION = import.meta.env.BUILD_VERSION || "dev";
 
 export async function getCacheVersion(): Promise<string> {
   const dataVersion = await env.CACHE.get(CACHE_VERSION_KEY) || "0";
-  return `${DEPLOYMENT_VERSION}-${dataVersion}`;
+  return `${BUILD_VERSION}-${dataVersion}`;
 }
 
 export async function invalidateCache(): Promise<void> {

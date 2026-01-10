@@ -47,14 +47,19 @@ export function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/50 transition-colors">
+    <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <a href="/" className="flex-shrink-0">
             <img
               src="/images/logo.png"
               alt="Les Amis de l'Harmonie de Sucy"
-              className="h-16 w-auto"
+              className="h-16 w-auto dark:hidden"
+            />
+            <img
+              src="/images/logo-dark.png"
+              alt="Les Amis de l'Harmonie de Sucy"
+              className="h-16 w-auto hidden dark:block"
             />
           </a>
 
@@ -83,7 +88,7 @@ export function Header() {
                       openDropdown === item.label ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2"
                     }`}
                   >
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 py-2 border border-gray-100 dark:border-gray-700">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 border border-gray-100 dark:border-gray-700">
                       {item.children.map((child) => (
                         <a
                           key={child.label}

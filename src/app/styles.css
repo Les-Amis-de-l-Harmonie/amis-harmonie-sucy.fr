@@ -1,33 +1,13 @@
 @import "tailwindcss";
 
-/* Custom theme for Amis de l'Harmonie */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  /* Colors - Primary (unchanged across themes) */
   --color-primary: #a5b3e2;
   --color-primary-dark: #8b9bcc;
   --color-primary-light: #c5d0f0;
-  
-  /* Light mode semantic colors */
-  --color-text: #0a0a0a;
-  --color-text-muted: #6b7280;
-  --color-bg: #fafafa;
-  --color-bg-secondary: #ffffff;
-  --color-border: #e5e7eb;
-  --color-dark-blue: #101828;
-  
-  /* Font families */
   --font-sans: "Raleway", sans-serif;
   --font-heading: "Merriweather Sans", sans-serif;
-}
-
-/* Dark mode color overrides */
-.dark {
-  --color-text: #fafafa;
-  --color-text-muted: #9ca3af;
-  --color-bg: #0f0f0f;
-  --color-bg-secondary: #1a1a1a;
-  --color-border: #2d2d2d;
-  --color-dark-blue: #e5e7eb;
 }
 
 html {
@@ -36,19 +16,14 @@ html {
 
 body {
   font-family: var(--font-sans);
-  color: var(--color-text);
-  background-color: var(--color-bg);
   line-height: 1.6;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
   font-weight: 700;
-  color: var(--color-dark-blue);
 }
 
-/* Custom button styles */
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
@@ -62,7 +37,6 @@ h1, h2, h3, h4 {
   background-color: var(--color-primary-dark);
 }
 
-/* Event card reserve button */
 .btn-reserve {
   background-color: var(--color-primary);
   color: white;
@@ -73,7 +47,6 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 
-/* Timeline for guestbook */
 .timeline-line {
   position: relative;
 }
@@ -88,7 +61,6 @@ h1, h2, h3, h4 {
   background-color: var(--color-primary);
 }
 
-/* Dropdown menu styles */
 .dropdown-menu {
   opacity: 0;
   visibility: hidden;

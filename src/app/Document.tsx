@@ -97,10 +97,10 @@ export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className="bg-bg text-text font-[Raleway,sans-serif] transition-colors duration-300">
+      <body className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-[Raleway,sans-serif] transition-colors duration-300">
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();`,
+            __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();`,
           }}
         />
         <div id="root">{children}</div>

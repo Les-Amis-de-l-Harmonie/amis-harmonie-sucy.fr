@@ -19,7 +19,12 @@ export function Footer() {
               <img
                 src="/images/logo.png"
                 alt="Les Amis de l'Harmonie de Sucy"
-                className="h-20 w-auto mb-6"
+                className="h-20 w-auto mb-6 dark:hidden"
+              />
+              <img
+                src="/images/logo-dark.png"
+                alt="Les Amis de l'Harmonie de Sucy"
+                className="h-20 w-auto mb-6 hidden dark:block"
               />
             </a>
 

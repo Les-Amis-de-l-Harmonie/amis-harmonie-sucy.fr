@@ -7,6 +7,7 @@ import {
   Mail, 
   LogOut 
 } from "lucide-react";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -25,7 +26,7 @@ const navItems = [
 export function AdminLayout({ children, email }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
-      <nav className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/50 border-b border-gray-200 dark:border-gray-800">
+      <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -48,6 +49,7 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <span className="text-sm text-gray-500 dark:text-gray-400">{email}</span>
               <a
                 href="/admin/logout"
