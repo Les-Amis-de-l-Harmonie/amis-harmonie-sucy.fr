@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://amis-harmonie-sucy.fr/sitemap.xml

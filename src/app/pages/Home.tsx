@@ -1,0 +1,150 @@
+import { Suspense } from "react";
+import { env } from "cloudflare:workers";
+import { EventCard } from "../components/EventCard";
+import { HomeSlideshow } from "./HomeClient";
+import type { Event } from "@/db/types";
+
+function isEventPast(dateStr: string): boolean {
+  const eventDate = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return eventDate < today;
+}
+
+async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
+  const results = await env.DB.prepare(
+    "SELECT * FROM events ORDER BY date DESC"
+  ).all<Event>();
+
+  const events = results.results || [];
+  return {
+    upcoming: events.filter((e) => !isEventPast(e.date)),
+    past: events.filter((e) => isEventPast(e.date)),
+  };
+}
+
+function HeroSection() {
+  return (
+    <section className="relative py-16 pb-0 pt-4 lg:pt-0 overflow-hidden">
+      <img
+        src="/images/banner-bg-shape.svg"
+        alt=""
+        className="absolute bottom-0 left-0 z-[-1] w-full"
+      />
+      <div className="mx-auto max-w-[1320px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:px-8 gap-8">
+          <div className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center">
+            <div>
+              <span className="font-bold text-gray-800 lg:text-[55px]">
+                Les amis de
+              </span>
+              <h1 className="font-['Merriweather_Sans'] font-bold text-black text-4xl md:text-5xl leading-[1] lg:text-[72px]">
+                l'Harmonie de{" "}
+                <span style={{ whiteSpace: "nowrap" }}>Sucy-en-Brie</span>
+              </h1>
+            </div>
+            <p className="mt-4 px-4 text-gray-600">
+              <i>
+                "Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l'humanité, car la Musique contribue à la communication et à la compréhension entre les peuples."
+              </i>
+              <span className="ml-2 text-[#a5b3e2] font-medium">Riccardo Muti</span>
+            </p>
+            <div className="py-4">
+              <a
+                href="/about"
+                className="inline-flex items-center justify-center px-8 py-3 bg-[#a5b3e2] text-white rounded-full font-medium hover:bg-[#8b9bcc] transition-colors"
+              >
+                En savoir plus
+              </a>
+            </div>
+          </div>
+          <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
+            <div className="relative w-[360px] lg:w-full h-full mx-auto overflow-hidden">
+              <HomeSlideshow />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+async function EventsSection() {
+  const { upcoming, past } = await getEvents();
+
+  return (
+    <section id="evenements" className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {upcoming.length > 0 && (
+          <div className="mb-16">
+            <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-[#101828] mb-8 text-center">
+              Évènements à venir
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {upcoming.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {past.length > 0 && (
+          <div>
+            <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-[#101828] mb-8 text-center">
+              Évènements passés
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {past.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {upcoming.length === 0 && past.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">
+              Aucun évènement pour le moment. Revenez bientôt !
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EventsLoading() {
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-gray-100 rounded-xl h-96"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function Home() {
+  return (
+    <>
+      <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
+      <meta name="description" content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté." />
+      <meta property="og:title" content="Les Amis de l'Harmonie de Sucy-en-Brie" />
+      <meta property="og:description" content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux." />
+      <meta property="og:url" content="https://amis-harmonie-sucy.fr/" />
+      <link rel="canonical" href="https://amis-harmonie-sucy.fr/" />
+      <HeroSection />
+      <Suspense fallback={<EventsLoading />}>
+        <EventsSection />
+      </Suspense>
+    </>
+  );
+}

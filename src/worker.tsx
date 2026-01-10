@@ -1,0 +1,131 @@
+import { render, route, layout, prefix } from "rwsdk/router";
+import { defineApp } from "rwsdk/worker";
+
+import { Document } from "@/app/Document";
+import { Layout } from "@/app/Layout";
+import { setCommonHeaders } from "@/app/headers";
+import { Home } from "@/app/pages/Home";
+import { TheDansant } from "@/app/pages/TheDansant";
+import { Billetterie } from "@/app/pages/Billetterie";
+import { About } from "@/app/pages/About";
+import { Harmonie } from "@/app/pages/Harmonie";
+import { Partenaires } from "@/app/pages/Partenaires";
+import { Contact } from "@/app/pages/Contact";
+import { Videos } from "@/app/pages/Videos";
+import { Publications } from "@/app/pages/Publications";
+import { LivreOr } from "@/app/pages/LivreOr";
+import { Adhesion } from "@/app/pages/Adhesion";
+import { Legal } from "@/app/pages/Legal";
+import { handleContactSubmission } from "@/app/api/contact";
+import { handleGuestbookSubmission } from "@/app/api/guestbook";
+import { handleMagicLinkRequest, handleMagicLinkVerify, handleLogout, verifySession } from "@/app/api/auth";
+import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi } from "@/app/api/admin-crud";
+import { handleImageUpload } from "@/app/api/upload";
+import { handleImageServing } from "@/app/api/images";
+import { AdminLoginPage } from "@/app/admin/Login";
+import { 
+  AdminDashboardPage, 
+  AdminEventsPage, 
+  AdminVideosPage, 
+  AdminPublicationsPage, 
+  AdminGuestbookPage, 
+  AdminContactPage 
+} from "@/app/admin/pages";
+
+export type AppContext = {};
+
+async function adminAuthMiddleware({ request }: { request: Request }) {
+  const session = await verifySession(request);
+  if (!session) {
+    const url = new URL(request.url);
+    return Response.redirect(new URL("/admin/login", url.origin).toString());
+  }
+  return { email: session.email };
+}
+
+export default defineApp([
+  setCommonHeaders(),
+  ({ ctx }) => {
+    ctx;
+  },
+  
+  route("/api/contact", {
+    post: ({ request }: { request: Request }) => handleContactSubmission(request),
+  }),
+  
+  route("/api/guestbook", {
+    post: ({ request }: { request: Request }) => handleGuestbookSubmission(request),
+  }),
+
+  route("/api/auth/magic-link", {
+    post: ({ request }: { request: Request }) => handleMagicLinkRequest(request),
+  }),
+
+  route("/api/admin/events", ({ request }: { request: Request }) => handleEventsApi(request)),
+  route("/api/admin/videos", ({ request }: { request: Request }) => handleVideosApi(request)),
+  route("/api/admin/publications", ({ request }: { request: Request }) => handlePublicationsApi(request)),
+  route("/api/admin/guestbook", ({ request }: { request: Request }) => handleGuestbookApi(request)),
+  route("/api/admin/contact", ({ request }: { request: Request }) => handleContactApi(request)),
+  route("/api/admin/upload", ({ request }: { request: Request }) => handleImageUpload(request)),
+  
+  route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
+
+  route("/admin/verify", ({ request }: { request: Request }) => handleMagicLinkVerify(request)),
+  
+  route("/admin/logout", ({ request }: { request: Request }) => handleLogout(request)),
+  
+  render(Document, [
+    layout(Layout, [
+      route("/", Home),
+      route("/the-dansant", TheDansant),
+      route("/billetterie", Billetterie),
+      route("/about", About),
+      route("/harmonie", Harmonie),
+      route("/partenaires", Partenaires),
+      route("/contact", Contact),
+      route("/videos", Videos),
+      route("/publications", Publications),
+      route("/livre-or", LivreOr),
+      route("/adhesion", Adhesion),
+      route("/legal", Legal),
+    ]),
+    
+    route("/admin/login", () => <AdminLoginPage />),
+    
+    route("/admin", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminDashboardPage email={auth.email} />;
+    }),
+
+    route("/admin/events", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminEventsPage email={auth.email} />;
+    }),
+
+    route("/admin/videos", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminVideosPage email={auth.email} />;
+    }),
+
+    route("/admin/publications", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminPublicationsPage email={auth.email} />;
+    }),
+
+    route("/admin/guestbook", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminGuestbookPage email={auth.email} />;
+    }),
+
+    route("/admin/contact", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminContactPage email={auth.email} />;
+    }),
+  ]),
+]);

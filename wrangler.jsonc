@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "amis-harmonie",
+  "main": "src/worker.tsx",
+  "compatibility_date": "2025-08-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+
+  "routes": [
+    { "pattern": "preview.amis-harmonie-sucy.fr", "custom_domain": true }
+  ],
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "public"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "amis-harmonie-db",
+      "database_id": "edcd3386-ec43-4362-a9e1-ef929123d1a1"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "amis-harmonie-images"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  }
+}
