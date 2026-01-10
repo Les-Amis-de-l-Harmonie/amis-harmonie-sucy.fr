@@ -17,10 +17,10 @@ async function EventsList() {
   if (events.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-600 dark:text-gray-400 text-lg">
           Aucun évènement avec billetterie disponible pour le moment.
         </p>
-        <p className="text-gray-500 mt-2">Revenez bientôt !</p>
+        <p className="text-gray-500 dark:text-gray-500 mt-2">Revenez bientôt !</p>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export function Billetterie() {
       <div className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-[#101828]">
+            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
               Billetterie
             </h1>
           </div>
@@ -55,7 +55,7 @@ export function Billetterie() {
             fallback={
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl h-96 animate-pulse" />
+                  <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-96 animate-pulse" />
                 ))}
               </div>
             }

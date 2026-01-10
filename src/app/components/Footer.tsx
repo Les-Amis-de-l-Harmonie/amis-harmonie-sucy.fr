@@ -12,7 +12,7 @@ export function Footer() {
         />
       </div>
 
-      <div className="relative bg-[#f5f5f5] pt-16 pb-8">
+      <div className="relative bg-gray-100 dark:bg-gray-900 pt-16 pb-8 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center text-center">
             <a href="/">
@@ -24,19 +24,19 @@ export function Footer() {
             </a>
 
             <nav className="flex flex-wrap justify-center gap-6 mb-8">
-              <a href="/" className="text-[#333] hover:text-[#a5b3e2] transition-colors">
+              <a href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
                 Accueil
               </a>
-              <a href="/contact" className="text-[#333] hover:text-[#a5b3e2] transition-colors">
+              <a href="/contact" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
                 Contact
               </a>
-              <a href="/legal" className="text-[#333] hover:text-[#a5b3e2] transition-colors">
+              <a href="/legal" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
                 Mentions Légales
               </a>
             </nav>
 
             <div className="mb-8">
-              <SocialIcons className="[&_a]:text-[#333] [&_a:hover]:text-[#a5b3e2]" iconSize={24} />
+              <SocialIcons className="[&_a]:text-gray-700 dark:[&_a]:text-gray-300 [&_a:hover]:text-primary" iconSize={24} />
             </div>
           </div>
         </div>

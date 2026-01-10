@@ -26,13 +26,13 @@ function GuestbookEntryCard({ entry }: { entry: GuestbookEntry }) {
 
   return (
     <div className="mb-8">
-      <p className="text-sm text-gray-500 mb-2">{capitalizedDate}</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{capitalizedDate}</p>
       <Card className="border-0 shadow-md">
         <CardContent className="p-6">
-          <h3 className="font-['Merriweather_Sans'] text-[#101828] mb-3">
+          <h3 className="font-['Merriweather_Sans'] text-gray-900 dark:text-gray-100 mb-3">
             <span className="font-bold">{entry.first_name}</span> {entry.last_name}
           </h3>
-          <p className="text-gray-600 whitespace-pre-line">{entry.message}</p>
+          <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line">{entry.message}</p>
         </CardContent>
       </Card>
     </div>
@@ -68,7 +68,7 @@ function AddEntryForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <Label htmlFor="first_name" className="text-gray-700">
+          <Label htmlFor="first_name" className="text-gray-700 dark:text-gray-300">
             Prénom *
           </Label>
           <Input
@@ -79,7 +79,7 @@ function AddEntryForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="last_name" className="text-gray-700">
+          <Label htmlFor="last_name" className="text-gray-700 dark:text-gray-300">
             Nom *
           </Label>
           <Input
@@ -92,7 +92,7 @@ function AddEntryForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div className="space-y-1">
-        <Label htmlFor="message" className="text-gray-700">
+        <Label htmlFor="message" className="text-gray-700 dark:text-gray-300">
           Message *
         </Label>
         <Textarea
@@ -128,9 +128,9 @@ export function LivreOrClient({ entries }: { entries: GuestbookEntry[] }) {
           </DialogTrigger>
           <DialogContent className="rounded-2xl">
             <DialogHeader>
-              <DialogTitle className="font-['Merriweather_Sans'] text-2xl font-bold text-[#101828]">
-                Laisser un message
-              </DialogTitle>
+            <DialogTitle className="font-['Merriweather_Sans'] text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Laisser un message
+            </DialogTitle>
             </DialogHeader>
             <AddEntryForm
               onSuccess={() => {
@@ -144,7 +144,7 @@ export function LivreOrClient({ entries }: { entries: GuestbookEntry[] }) {
 
       {entries.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 text-lg">Soyez le premier à laisser un message !</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">Soyez le premier à laisser un message !</p>
         </div>
       ) : (
         <div className="max-w-2xl mx-auto">

@@ -68,12 +68,12 @@ export function VideosAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Vidéos</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Vidéos</h1>
         <Button onClick={() => { setEditing({ title: "", youtube_id: "" }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle vidéo
         </Button>
@@ -114,7 +114,7 @@ export function VideosAdminClient() {
               ))}
               {videos.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-gray-500">Aucune vidéo</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune vidéo</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -140,7 +140,7 @@ export function VideosAdminClient() {
                   onChange={(e) => setEditing({ ...editing, youtube_id: e.target.value })}
                   placeholder="dQw4w9WgXcQ"
                 />
-                <p className="text-xs text-gray-500">L'ID se trouve dans l'URL: youtube.com/watch?v=<strong>ID_ICI</strong></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: youtube.com/watch?v=<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong></p>
               </div>
             </div>
           )}

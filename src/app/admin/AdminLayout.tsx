@@ -24,13 +24,13 @@ const navItems = [
 
 export function AdminLayout({ children, email }: AdminLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+      <nav className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/50 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <a href="/admin" className="text-xl font-bold text-[#a5b3e2]">
+                <a href="/admin" className="text-xl font-bold text-primary">
                   Admin
                 </a>
               </div>
@@ -39,7 +39,7 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
                   <a
                     key={item.href}
                     href={item.href}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#a5b3e2] hover:bg-gray-50 rounded-md transition-colors"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors"
                   >
                     <item.icon className="w-4 h-4 mr-2" />
                     {item.label}
@@ -48,10 +48,10 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">{email}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{email}</span>
               <a
                 href="/admin/logout"
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Déconnexion
@@ -61,13 +61,13 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
         </div>
       </nav>
 
-      <div className="sm:hidden bg-white border-b px-4 py-2 overflow-x-auto">
+      <div className="sm:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-2 overflow-x-auto">
         <div className="flex space-x-2">
           {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#a5b3e2] hover:bg-gray-50 rounded-md whitespace-nowrap"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md whitespace-nowrap"
             >
               <item.icon className="w-4 h-4 mr-1" />
               {item.label}

@@ -54,7 +54,7 @@ export function TheDansant() {
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/the-dansant" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-['Merriweather_Sans'] text-3xl font-bold text-[#101828] mb-6 text-center">
+          <h1 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
             Thé Dansant 2026
           </h1>
 
@@ -63,7 +63,7 @@ export function TheDansant() {
             href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-8 py-3 bg-gradient-to-r from-[#a5b3e2] to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-primary to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             Réservation
           </a>
@@ -75,20 +75,20 @@ export function TheDansant() {
         </div>
 
         <section className="mb-12">
-          <h3 className="font-['Merriweather_Sans'] text-xl font-bold text-[#101828] mb-4">
+          <h3 className="font-['Merriweather_Sans'] text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             À propos de l'événement
           </h3>
-          <div className="prose prose-gray max-w-none">
-            <p className="text-gray-600 mb-4">
+          <div className="prose prose-gray dark:prose-invert max-w-none">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Plongez dans une journée inoubliable de danse et de musique au cœur de Sucy-en-Brie ! Organisé en partenariat avec la ville, ce Thé Dansant emblématique réunit deux orchestres exceptionnels pour plus de 4 heures de rythmes enivrants. L'Harmonie Municipale, avec ses 30 talentueux musiciens, vous emportera dans un répertoire festif et varié, tandis que le Picotango Orquesta, maître du tango argentin passionné, fera vibrer vos pas de danse avec élégance et sensualité. Que vous soyez amateur de valses traditionnelles ou de tangos enflammés, cette fusion unique de styles vous ravira et créera une atmosphère magique, parfaite pour partager des moments de joie en famille ou entre amis. Ne manquez pas cet événement incontournable d'Île-de-France, où la musique célèbre la vie !
             </p>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Sous le charme du tango, un couple de danseurs professionnels vous guidera, pas à pas, lors d'une initiation, dans l'apprentissage de cette danse aussi exigeante qu'élégante.
             </p>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Verre de pétillant, pâtisserie et un fruit offert. 🥂🍰🍊
             </p>
-            <p className="text-gray-600 font-medium">
+            <p className="text-gray-600 dark:text-gray-400 font-medium">
               NOUVEAU : buvette sur place et tombola (2€/ticket, 4 achetés = 1 offert)
             </p>
           </div>
@@ -99,17 +99,17 @@ export function TheDansant() {
             href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-8 py-3 bg-gradient-to-r from-[#a5b3e2] to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-primary to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             Réservation
           </a>
         </div>
 
         <section className="mb-12">
-          <h3 className="font-['Merriweather_Sans'] text-xl font-bold text-[#101828] mb-4">
+          <h3 className="font-['Merriweather_Sans'] text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Nos partenaires
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Cet événement est organisé en partenariat avec la Ville de Sucy-en-Brie, dont le soutien et l'engagement rendent possible la tenue de cette belle journée festive.
           </p>
           <div className="flex justify-center mb-8">
@@ -118,32 +118,32 @@ export function TheDansant() {
             </a>
           </div>
 
-          <h6 className="font-['Merriweather_Sans'] font-bold text-[#a5b3e2] mb-4">Commerçants</h6>
-          <p className="text-gray-600 mb-6 text-sm">
+          <h6 className="font-['Merriweather_Sans'] font-bold text-primary mb-4">Commerçants</h6>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
             Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
           </p>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-4">
             {commercants.map((c, i) => (
-              <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+              <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
                 <img src={c.image} alt={c.name} className="max-h-16 w-auto object-contain" />
               </a>
             ))}
           </div>
           <div className="flex flex-wrap justify-center gap-4 mb-8">
             {commercantsText.map((c, i) => (
-              <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="text-[#a5b3e2] hover:underline text-sm">
+              <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
                 {c.name}
               </a>
             ))}
           </div>
 
-          <h6 className="font-['Merriweather_Sans'] font-bold text-[#a5b3e2] mb-4">Associations</h6>
-          <p className="text-gray-600 mb-6 text-sm">
+          <h6 className="font-['Merriweather_Sans'] font-bold text-primary mb-4">Associations</h6>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
             Les adhérents des associations partenaires (SLA, Kifekoi?, La Confrérie des Coteaux, Le Club Montaleau et tous les clubs de danse) bénéficient d'un tarif préférentiel.
           </p>
           <div className="grid grid-cols-4 gap-4 mb-8">
             {associations.map((a, i) => (
-              <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+              <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
                 <img src={a.image} alt={a.name} className="max-h-16 w-auto object-contain" />
               </a>
             ))}
@@ -172,7 +172,7 @@ export function TheDansant() {
             href="https://www.helloasso.com/associations/les-amis-de-l-harmonie/evenements/the-dansant-2026-sucy-en-brie"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-8 py-3 bg-gradient-to-r from-[#a5b3e2] to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-primary to-[#e8b4c8] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             Réservation
           </a>

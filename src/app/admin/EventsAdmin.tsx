@@ -278,13 +278,13 @@ export function EventsAdminClient() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Chargement...</div>;
+    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Événements</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Événements</h1>
         <Button onClick={handleNew}>
           <Plus className="w-4 h-4 mr-2" />
           Nouvel événement
@@ -315,7 +315,7 @@ export function EventsAdminClient() {
                       <TableCell>{event.price || "-"}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          isPast ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-600"
+                          isPast ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300" : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
                         }`}>
                           {isPast ? "Passé" : "À venir"}
                         </span>
@@ -333,7 +333,7 @@ export function EventsAdminClient() {
                 })}
               {events.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     Aucun événement
                   </TableCell>
                 </TableRow>
@@ -528,7 +528,7 @@ export function EventsAdminClient() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">Zoom:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Zoom:</span>
             <input
               type="range"
               min={1}
@@ -540,7 +540,7 @@ export function EventsAdminClient() {
             />
           </div>
 
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             L'image sera automatiquement redimensionnée et compressée (800x800 max, JPEG 85%).
           </p>
 

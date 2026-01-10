@@ -25,17 +25,17 @@ export function Partenaires() {
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/partenaires" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-['Merriweather_Sans'] text-3xl font-bold text-[#101828] mb-8 text-center">
+          <h1 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
             Partenaires
           </h1>
 
-          <h6 className="font-['Merriweather_Sans'] text-lg font-bold text-[#a5b3e2] mb-8 text-center">
+          <h6 className="font-['Merriweather_Sans'] text-lg font-bold text-primary mb-8 text-center">
             ILS NOUS SOUTIENNENT !
           </h6>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             {partners.map((partner, i) => (
-              <div key={i} className="flex items-center justify-center p-4">
+              <div key={i} className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg">
                 <img
                   src={partner.image}
                   alt={partner.name}
@@ -46,11 +46,11 @@ export function Partenaires() {
             ))}
           </div>
 
-          <h6 className="font-['Merriweather_Sans'] text-lg font-bold text-[#a5b3e2] mb-4 text-center">
+          <h6 className="font-['Merriweather_Sans'] text-lg font-bold text-primary mb-4 text-center">
             ET SI, VOUS AUSSI, VOUS NOUS SOUTENIEZ ?
           </h6>
 
-          <p className="text-gray-600 text-center mb-8">
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
             L'aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !
           </p>
 

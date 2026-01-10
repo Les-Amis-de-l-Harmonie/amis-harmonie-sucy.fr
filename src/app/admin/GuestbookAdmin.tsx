@@ -69,12 +69,12 @@ export function GuestbookAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Livre d'Or</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Livre d'Or</h1>
         <Button onClick={() => { setEditing({ first_name: "", last_name: "", message: "", date: new Date().toISOString().split('T')[0] }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle entrée
         </Button>
@@ -109,7 +109,7 @@ export function GuestbookAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-gray-500">Aucune entrée</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune entrée</TableCell>
                 </TableRow>
               )}
             </TableBody>

@@ -27,7 +27,7 @@ export function Videos() {
       <div className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-[#101828]">
+            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
               Vidéos
             </h1>
           </div>
@@ -36,7 +36,7 @@ export function Videos() {
             fallback={
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl aspect-video animate-pulse" />
+                  <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl aspect-video animate-pulse" />
                 ))}
               </div>
             }

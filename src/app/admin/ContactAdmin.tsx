@@ -43,12 +43,12 @@ export function ContactAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Messages de contact</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Messages de contact</h1>
       </div>
 
       <Card>
@@ -84,7 +84,7 @@ export function ContactAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">Aucun message</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucun message</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -100,16 +100,16 @@ export function ContactAdminClient() {
           {viewing && (
             <div className="space-y-4 py-4">
               <div>
-                <p className="text-sm font-medium text-gray-500">Email</p>
-                <a href={`mailto:${viewing.email}`} className="text-[#a5b3e2] hover:underline">{viewing.email}</a>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                <a href={`mailto:${viewing.email}`} className="text-primary hover:underline">{viewing.email}</a>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Date</p>
-                <p>{new Date(viewing.created_at).toLocaleString('fr-FR')}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</p>
+                <p className="text-gray-900 dark:text-gray-100">{new Date(viewing.created_at).toLocaleString('fr-FR')}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Message</p>
-                <p className="whitespace-pre-wrap bg-gray-50 p-4 rounded-md">{viewing.message}</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Message</p>
+                <p className="whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-4 rounded-md text-gray-900 dark:text-gray-100">{viewing.message}</p>
               </div>
             </div>
           )}

@@ -68,12 +68,12 @@ export function PublicationsAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Publications Instagram</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Publications Instagram</h1>
         <Button onClick={() => { setEditing({ instagram_post_id: "" }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle publication
         </Button>
@@ -117,7 +117,7 @@ export function PublicationsAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-gray-500">Aucune publication</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune publication</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -139,7 +139,7 @@ export function PublicationsAdminClient() {
                   onChange={(e) => setEditing({ ...editing, instagram_post_id: e.target.value })}
                   placeholder="DSSKC1CCBKx"
                 />
-                <p className="text-xs text-gray-500">L'ID se trouve dans l'URL: instagram.com/p/<strong>ID_ICI</strong>/</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: instagram.com/p/<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong>/</p>
               </div>
             </div>
           )}

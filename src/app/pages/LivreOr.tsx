@@ -27,7 +27,7 @@ export function LivreOr() {
       <div className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-[#101828]">
+            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
               Livre d'Or
             </h1>
           </div>
@@ -36,7 +36,7 @@ export function LivreOr() {
             fallback={
               <div className="max-w-2xl mx-auto space-y-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl h-32 animate-pulse" />
+                  <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-32 animate-pulse" />
                 ))}
               </div>
             }

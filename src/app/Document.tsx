@@ -97,7 +97,12 @@ export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className="bg-[#fafafa] text-[#0a0a0a] font-[Raleway,sans-serif]">
+      <body className="bg-bg text-text font-[Raleway,sans-serif] transition-colors duration-300">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();`,
+          }}
+        />
         <div id="root">{children}</div>
         <script>import("/src/client.tsx")</script>
       </body>

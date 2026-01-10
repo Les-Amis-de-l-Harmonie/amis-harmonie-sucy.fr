@@ -33,14 +33,14 @@ export async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Tableau de bord</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Tableau de bord</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {cards.map((card) => (
           <a key={card.href} href={card.href} className="block">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card className="hover:shadow-lg dark:hover:shadow-gray-900/70 transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   {card.title}
                 </CardTitle>
                 <div className={`p-2 rounded-lg ${card.color}`}>
@@ -48,7 +48,7 @@ export async function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{card.count}</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{card.count}</div>
               </CardContent>
             </Card>
           </a>
@@ -56,31 +56,31 @@ export async function AdminDashboard() {
       </div>
 
       <div className="mt-12">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Actions rapides</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Actions rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <a 
             href="/admin/events?action=new"
-            className="p-4 bg-white rounded-lg border hover:border-[#a5b3e2] hover:shadow-md transition-all"
+            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary hover:shadow-md dark:hover:shadow-gray-900/50 transition-all"
           >
-            <Calendar className="w-6 h-6 text-[#a5b3e2] mb-2" />
-            <h3 className="font-medium">Nouvel événement</h3>
-            <p className="text-sm text-gray-500">Ajouter un événement au calendrier</p>
+            <Calendar className="w-6 h-6 text-primary mb-2" />
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Nouvel événement</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ajouter un événement au calendrier</p>
           </a>
           <a 
             href="/admin/videos?action=new"
-            className="p-4 bg-white rounded-lg border hover:border-[#a5b3e2] hover:shadow-md transition-all"
+            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary hover:shadow-md dark:hover:shadow-gray-900/50 transition-all"
           >
-            <Video className="w-6 h-6 text-[#a5b3e2] mb-2" />
-            <h3 className="font-medium">Nouvelle vidéo</h3>
-            <p className="text-sm text-gray-500">Ajouter une vidéo YouTube</p>
+            <Video className="w-6 h-6 text-primary mb-2" />
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Nouvelle vidéo</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ajouter une vidéo YouTube</p>
           </a>
           <a 
             href="/admin/publications?action=new"
-            className="p-4 bg-white rounded-lg border hover:border-[#a5b3e2] hover:shadow-md transition-all"
+            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary hover:shadow-md dark:hover:shadow-gray-900/50 transition-all"
           >
-            <Instagram className="w-6 h-6 text-[#a5b3e2] mb-2" />
-            <h3 className="font-medium">Nouvelle publication</h3>
-            <p className="text-sm text-gray-500">Ajouter un post Instagram</p>
+            <Instagram className="w-6 h-6 text-primary mb-2" />
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Nouvelle publication</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ajouter un post Instagram</p>
           </a>
         </div>
       </div>

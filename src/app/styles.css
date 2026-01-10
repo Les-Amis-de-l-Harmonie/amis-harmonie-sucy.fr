@@ -2,13 +2,17 @@
 
 /* Custom theme for Amis de l'Harmonie */
 @theme {
-  /* Colors */
+  /* Colors - Primary (unchanged across themes) */
   --color-primary: #a5b3e2;
   --color-primary-dark: #8b9bcc;
   --color-primary-light: #c5d0f0;
+  
+  /* Light mode semantic colors */
   --color-text: #0a0a0a;
   --color-text-muted: #6b7280;
   --color-bg: #fafafa;
+  --color-bg-secondary: #ffffff;
+  --color-border: #e5e7eb;
   --color-dark-blue: #101828;
   
   /* Font families */
@@ -16,7 +20,16 @@
   --font-heading: "Merriweather Sans", sans-serif;
 }
 
-/* Base styles */
+/* Dark mode color overrides */
+.dark {
+  --color-text: #fafafa;
+  --color-text-muted: #9ca3af;
+  --color-bg: #0f0f0f;
+  --color-bg-secondary: #1a1a1a;
+  --color-border: #2d2d2d;
+  --color-dark-blue: #e5e7eb;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -26,6 +39,7 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4 {

@@ -48,7 +48,7 @@ export function AdminLoginClient() {
   const errorParam = urlParams?.get("error");
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 flex items-center justify-center p-4 transition-colors">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Administration</CardTitle>
@@ -58,7 +58,7 @@ export function AdminLoginClient() {
         </CardHeader>
         <CardContent>
           {errorParam && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-md text-sm">
               {errorParam === "invalid_token" && "Le lien de connexion est invalide ou a déjà été utilisé."}
               {errorParam === "expired_token" && "Le lien de connexion a expiré. Veuillez en demander un nouveau."}
               {errorParam === "server_error" && "Une erreur serveur est survenue. Veuillez réessayer."}
@@ -88,8 +88,8 @@ export function AdminLoginClient() {
             <div
               className={`mt-4 p-3 rounded-md text-sm ${
                 message.type === "success"
-                  ? "bg-green-50 border border-green-200 text-green-700"
-                  : "bg-red-50 border border-red-200 text-red-700"
+                  ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
+                  : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
               }`}
             >
               {message.text}
@@ -97,13 +97,13 @@ export function AdminLoginClient() {
           )}
 
           {debugLink && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-700 mb-2">
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
                 <strong>Mode développement:</strong> Cliquez sur le lien ci-dessous pour vous connecter
               </p>
               <a
                 href={debugLink}
-                className="text-blue-600 underline text-sm break-all"
+                className="text-blue-600 dark:text-blue-400 underline text-sm break-all"
               >
                 {debugLink}
               </a>
