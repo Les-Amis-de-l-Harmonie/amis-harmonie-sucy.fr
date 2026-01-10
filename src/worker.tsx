@@ -31,6 +31,7 @@ import {
   AdminGuestbookPage, 
   AdminContactPage 
 } from "@/app/admin/pages";
+import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 
 export type AppContext = {};
 
@@ -43,7 +44,7 @@ async function adminAuthMiddleware({ request }: { request: Request }) {
   return { email: session.email };
 }
 
-export default defineApp([
+const app = defineApp([
   setCommonHeaders(),
   ({ ctx }) => {
     ctx;
@@ -129,3 +130,24 @@ export default defineApp([
     }),
   ]),
 ]);
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+    
+    if (shouldCachePath(url.pathname) && request.method === "GET") {
+      const cached = await getCachedResponse(request);
+      if (cached) {
+        return cached;
+      }
+    }
+    
+    const response = await app.fetch(request, env, ctx);
+    
+    if (shouldCachePath(url.pathname) && request.method === "GET") {
+      return cacheResponse(request, response);
+    }
+    
+    return response;
+  },
+};

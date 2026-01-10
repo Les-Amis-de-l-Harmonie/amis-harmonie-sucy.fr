@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
+import { invalidateCache } from "@/lib/cache";
 
 async function checkAuth(request: Request): Promise<Response | null> {
   const session = await verifySession(request);
@@ -49,6 +50,7 @@ export async function handleEventsApi(request: Request): Promise<Response> {
         data.details_link || null,
         data.reservation_link || null
       ).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -76,6 +78,7 @@ export async function handleEventsApi(request: Request): Promise<Response> {
         data.reservation_link || null,
         id
       ).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -89,6 +92,7 @@ export async function handleEventsApi(request: Request): Promise<Response> {
         });
       }
       await env.DB.prepare("DELETE FROM events WHERE id = ?").bind(id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -133,6 +137,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
       const result = await env.DB.prepare(
         "INSERT INTO videos (title, youtube_id, thumbnail) VALUES (?, ?, ?)"
       ).bind(data.title, data.youtube_id, data.thumbnail || null).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -149,6 +154,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
       await env.DB.prepare(
         "UPDATE videos SET title = ?, youtube_id = ?, thumbnail = ? WHERE id = ?"
       ).bind(data.title, data.youtube_id, data.thumbnail || null, id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -162,6 +168,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
         });
       }
       await env.DB.prepare("DELETE FROM videos WHERE id = ?").bind(id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -206,6 +213,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
       const result = await env.DB.prepare(
         "INSERT INTO publications (instagram_post_id) VALUES (?)"
       ).bind(data.instagram_post_id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -222,6 +230,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
       await env.DB.prepare(
         "UPDATE publications SET instagram_post_id = ? WHERE id = ?"
       ).bind(data.instagram_post_id, id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -235,6 +244,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
         });
       }
       await env.DB.prepare("DELETE FROM publications WHERE id = ?").bind(id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -279,6 +289,7 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
       const result = await env.DB.prepare(
         "INSERT INTO guestbook (first_name, last_name, message, date) VALUES (?, ?, ?, ?)"
       ).bind(data.first_name, data.last_name, data.message, data.date).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -295,6 +306,7 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
       await env.DB.prepare(
         "UPDATE guestbook SET first_name = ?, last_name = ?, message = ?, date = ? WHERE id = ?"
       ).bind(data.first_name, data.last_name, data.message, data.date, id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -308,6 +320,7 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
         });
       }
       await env.DB.prepare("DELETE FROM guestbook WHERE id = ?").bind(id).run();
+      await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });

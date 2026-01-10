@@ -30,6 +30,13 @@
     }
   ],
 
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "a562f79648854fb9a3682a8ebef86289"
+    }
+  ],
+
   "observability": {
     "enabled": true
   }

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { invalidateCache } from "@/lib/cache";
 
 export async function handleGuestbookSubmission(request: Request): Promise<Response> {
   if (request.method !== "POST") {
@@ -22,6 +23,8 @@ export async function handleGuestbookSubmission(request: Request): Promise<Respo
     )
       .bind(firstName, lastName, message, today)
       .run();
+
+    await invalidateCache();
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
