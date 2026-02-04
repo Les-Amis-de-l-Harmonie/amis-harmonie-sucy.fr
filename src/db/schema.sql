@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS videos (
   title TEXT NOT NULL,
   youtube_id TEXT NOT NULL,
   thumbnail TEXT,
+  is_short INTEGER DEFAULT 0,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

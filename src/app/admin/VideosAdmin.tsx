@@ -74,7 +74,7 @@ export function VideosAdminClient() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Vidéos</h1>
-        <Button onClick={() => { setEditing({ title: "", youtube_id: "" }); setDialogOpen(true); }}>
+        <Button onClick={() => { setEditing({ title: "", youtube_id: "", is_short: 0 }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle vidéo
         </Button>
       </div>
@@ -141,6 +141,16 @@ export function VideosAdminClient() {
                   placeholder="dQw4w9WgXcQ"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: youtube.com/watch?v=<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong></p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="is_short"
+                  checked={editing.is_short === 1}
+                  onChange={(e) => setEditing({ ...editing, is_short: e.target.checked ? 1 : 0 })}
+                  className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                />
+                <Label htmlFor="is_short" className="cursor-pointer">YouTube Short (format vertical 9:16)</Label>
               </div>
             </div>
           )}
