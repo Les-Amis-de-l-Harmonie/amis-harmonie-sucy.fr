@@ -153,9 +153,9 @@ export function TheDansant() {
         <TheDansantClient />
 
         <section className="mb-12">
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {galleryImages.map((src, i) => (
-              <div key={i} className="aspect-square overflow-hidden rounded-lg">
+              <div key={i} className="w-full aspect-[3/2] overflow-hidden rounded-lg">
                 <img
                   src={src}
                   alt={`Thé Dansant photo ${i + 1}`}

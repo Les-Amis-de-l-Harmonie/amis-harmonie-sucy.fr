@@ -2,48 +2,51 @@ import { SocialIcons } from "./SocialIcons";
 
 export function Footer() {
   return (
-    <footer className="relative mt-auto">
-      <div className="relative">
-        <img
-          src="/images/footer-bg-shape.svg"
-          alt=""
-          className="absolute top-0 left-0 w-full h-auto pointer-events-none"
-          style={{ transform: "translateY(-99%)" }}
-        />
-      </div>
+    <footer className="py-16 relative mt-12 pt-3 pb-3">
+      <img
+        src="/images/footer-bg-shape.svg"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover object-left md:object-top -z-[1] dark:opacity-20"
+      />
+      <div className="mx-auto max-w-[1320px] text-center">
+        <div className="mb-6 inline-flex">
+          <a href="/">
+            <img
+              src="/images/logo.png"
+              alt="Les Amis de l'Harmonie de Sucy"
+              className="h-20 w-auto dark:hidden"
+            />
+            <img
+              src="/images/logo-dark.png"
+              alt="Les Amis de l'Harmonie de Sucy"
+              className="h-20 w-auto hidden dark:block"
+            />
+          </a>
+        </div>
 
-      <div className="relative bg-gray-100 dark:bg-gray-900 pt-16 pb-8 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center text-center">
-            <a href="/">
-              <img
-                src="/images/logo.png"
-                alt="Les Amis de l'Harmonie de Sucy"
-                className="h-20 w-auto mb-6 dark:hidden"
-              />
-              <img
-                src="/images/logo-dark.png"
-                alt="Les Amis de l'Harmonie de Sucy"
-                className="h-20 w-auto mb-6 hidden dark:block"
-              />
+        <ul className="mb-12 mt-6 flex-wrap space-x-2 lg:space-x-4">
+          <li className="inline-block">
+            <a href="/" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+              Accueil
             </a>
+          </li>
+          <li className="inline-block">
+            <a href="/contact" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+              Contact
+            </a>
+          </li>
+          <li className="inline-block">
+            <a href="/legal" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+              Mentions Légales
+            </a>
+          </li>
+        </ul>
 
-            <nav className="flex flex-wrap justify-center gap-6 mb-8">
-              <a href="/" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                Accueil
-              </a>
-              <a href="/contact" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                Contact
-              </a>
-              <a href="/legal" className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                Mentions Légales
-              </a>
-            </nav>
-
-            <div className="mb-8">
-              <SocialIcons className="[&_a]:text-gray-700 dark:[&_a]:text-gray-300 [&_a:hover]:text-primary" iconSize={24} />
-            </div>
-          </div>
+        <div className="inline-flex mb-12">
+          <SocialIcons
+            className="flex items-center space-x-3 px-4 justify-center lg:border-x lg:border-gray-300 dark:lg:border-gray-600"
+            iconSize={24}
+          />
         </div>
       </div>
     </footer>

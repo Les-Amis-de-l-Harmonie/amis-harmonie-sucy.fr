@@ -54,14 +54,13 @@ export function Partenaires() {
             L'aboutissement et la réussite de ces nombreux projets reposent aussi sur votre engagement à nos côtés et nous vous en sommes très reconnaissants. Par ce petit geste, vous permettez à nos beaux projets de voir le jour !
           </p>
 
-          <div className="flex justify-center">
+          <div className="w-full">
             <iframe
               id="haWidget"
               allowTransparency={true}
-              scrolling="auto"
               src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget"
-              style={{ width: "100%", maxWidth: "500px", height: "450px", border: "none" }}
-              loading="lazy"
+              className="w-full border-none"
+              style={{ height: "1300px" }}
               title="Formulaire de don HelloAsso"
             />
           </div>

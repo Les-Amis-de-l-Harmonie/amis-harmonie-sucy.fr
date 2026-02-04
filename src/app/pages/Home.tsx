@@ -73,14 +73,14 @@ async function EventsSection() {
   const { upcoming, past } = await getEvents();
 
   return (
-    <section id="evenements" className="py-16 bg-white dark:bg-gray-900 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="evenements" className="py-8">
+      <div className="mx-auto max-w-[1320px] flex flex-col gap-8">
         {upcoming.length > 0 && (
           <div className="mb-16">
             <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
               Évènements à venir
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {upcoming.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
@@ -93,7 +93,7 @@ async function EventsSection() {
             <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
               Évènements passés
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {past.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}

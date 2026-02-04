@@ -1,4 +1,16 @@
 export function Harmonie() {
+  const photos = [
+    "harmonie44.jpg", "harmonie43.jpg", "harmonie45.png", "harmonie40.png",
+    "harmonie8.jpg", "harmonie9.jpg", "harmonie10.jpg", "harmonie11.jpg",
+    "harmonie12.jpg", "harmonie13.jpg", "harmonie14.jpg", "harmonie15.jpg",
+    "harmonie16.jpeg", "harmonie17.png", "harmonie18.jpg", "harmonie19.jpg",
+    "harmonie20.jpg", "harmonie21.jpg", "harmonie22.jpg", "harmonie23.jpg",
+    "harmonie25.jpg", "harmonie26.jpg", "harmonie7.jpg", "harmonie27.jpg",
+    "harmonie29.jpg", "harmonie30.jpg", "harmonie31.jpg", "harmonie32.jpg",
+    "harmonie33.jpg", "harmonie34.jpg", "harmonie35.jpg", "harmonie37.jpg",
+    "harmonie38.png", "harmonie39.png", "harmonie41.jpg", "harmonie42.png",
+  ];
+
   return (
     <>
       <title>L'Harmonie Municipale | Les Amis de l'Harmonie de Sucy</title>
@@ -7,9 +19,9 @@ export function Harmonie() {
       <meta property="og:description" content="Découvrez l'Harmonie Municipale de Sucy-en-Brie, orchestre de 35 musiciens." />
       <meta property="og:url" content="https://amis-harmonie-sucy.fr/harmonie" />
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/harmonie" />
-      <div className="py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px] px-4">
+          <h2 className="font-['Merriweather_Sans'] text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
             L'Harmonie Municipale de Sucy-en-Brie
           </h2>
 
@@ -17,65 +29,80 @@ export function Harmonie() {
             <img
               src="/images/harmonie25.png"
               alt="L'Harmonie Municipale de Sucy-en-Brie"
-              className="w-full rounded-xl shadow-lg"
-              loading="lazy"
+              className="w-full"
             />
           </div>
 
-          <div className="prose prose-gray dark:prose-invert max-w-none mb-12">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <div className="flex flex-col gap-3 pt-4 mb-12">
+            <p className="text-gray-600 dark:text-gray-400">
               L'harmonie municipale de Sucy-en-Brie s'inscrit dans une longue tradition d'orchestres amateurs apparus à la fin du XIXe siècle. Elle fêtera ses 160 ans en 2027.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Aujourd'hui fort de ses 35 musiciens, elle se veut un outil municipal d'animation au service des territoires qui composent notre commune.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Son répertoire éclectique lui permet de s'adresser à tous les publics quel que soit le cadre ; officiel pour les cérémonies, concerts de la saison culturelle et associatif, avec les fêtes de quartier, d'école…
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Elle accueille essentiellement des musiciens amateurs et parfois en renfort, à certaines occasions, des musiciens professionnels professeurs au conservatoire.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Son orchestre est composé principalement des instruments de la famille des vents et des percussions.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Sont représentées, les familles des flûtes traversières, des clarinettes, des saxophones (soprano, alto, ténor, baryton), des trompettes, trombones, euphoniums et tubas. Sans oublier la grande famille des percussions avec la batterie, les percussions traditionnelles et les percussions d'orchestre. Et comme il faut toujours une exception qui confirme la règle, nous avons la chance de compter parmi nous une contrebasse.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               L'harmonie a aussi à sa disposition une association « Les Amis de l'Harmonie » regroupant tous ceux qui souhaitent soutenir et participer au rayonnement de notre orchestre, dans et en dehors du cadre municipal. Elle organise le thé-dansant et régulièrement des déplacements culturels et musicaux en région et bientôt à l'étranger.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-400">
               Les répétitions se déroulent tous les vendredis soirs de 19h30 à 21h30 à l'auditorium du conservatoire.
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
-              <strong className="text-gray-900 dark:text-gray-100">Direction :</strong> David BRUNET
-            </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              <strong className="text-gray-900 dark:text-gray-100">Sous-direction :</strong> Marcel HAMON
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Direction : David BRUNET</p>
+            <p className="text-gray-600 dark:text-gray-400">Sous-direction : Marcel HAMON</p>
           </div>
 
-          <div className="bg-primary/10 dark:bg-primary/20 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <img src="/images/info-icon.png" alt="" className="w-12 h-12 flex-shrink-0" loading="lazy" />
-              <div>
-                <h3 className="font-['Merriweather_Sans'] font-bold text-gray-900 dark:text-gray-100 mb-2">
-                  Venez renforcer l'harmonie municipale !
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  L'orchestre est ouvert à tous les musiciens pratiquant un instrument à vent ou jouant des percussions quel que soit son âge et à partir du moment où il peut justifier d'un niveau lui permettant de s'intégrer facilement à l'orchestre.
-                </p>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  Pour les élèves du conservatoire, l'harmonie municipale devient obligatoire pour une validation de leur scolarité à partir du 3ième Cycle. Elle leur permet aussi de bénéficier d'une réduction de 50 % sur leur scolarité.
-                </p>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Aussi, grâce au partenariat signé avec l'association "Les Amis de l'Harmonie", tous les musiciens de l'orchestre bénéficient de -50% à l'atelier Grain de Vent, luthier basé à Sucy-en-Brie.
-                </p>
-              </div>
+          <div className="flex flex-wrap rounded-2xl bg-primary mt-16 mb-16">
+            <div className="w-full md:w-1/4 md:my-6 px-10 py-6 md:py-10 border-b-4 border-white/30 md:border-b-0 md:border-r-4">
+              <img
+                className="w-[100px] h-auto md:w-full mx-auto"
+                src="/images/i.png"
+                alt="Information"
+                loading="lazy"
+              />
+            </div>
+            <div className="w-full md:w-3/4 text-center md:text-left text-white md:pl-16 py-6 md:py-10 px-4">
+              <p className="pb-6">
+                <strong>Venez renforcer l'harmonie municipale !</strong>
+              </p>
+              <p className="pb-6">
+                L'orchestre est ouvert à tous les musiciens pratiquant un instrument à vent ou jouant des percussions quel que soit son âge et à partir du moment où il peut justifier d'un niveau lui permettant de s'intégrer facilement à l'orchestre.
+              </p>
+              <p className="pb-6">
+                Pour les élèves du conservatoire, l'harmonie municipale devient obligatoire pour une validation de leur scolarité à partir du 3ième Cycle. Elle leur permet aussi de bénéficier d'une réduction de 50 % sur leur scolarité.
+              </p>
+              <p>
+                Aussi, grâce au partenariat signé avec l'association "Les Amis de l'Harmonie", tous les musiciens de l'orchestre bénéficient de -50% à l'atelier Grain de Vent, luthier basé à Sucy-en-Brie.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <div key={photo} className="w-full aspect-[3/2]">
+                  <img
+                    src={`/images/${photo}`}
+                    alt=""
+                    className="rounded-lg shadow-md object-cover w-full h-full"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </>
   );
 }

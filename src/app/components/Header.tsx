@@ -17,9 +17,9 @@ const navItems: NavItem[] = [
     children: [
       { label: "Évènements", href: "/#evenements" },
       { label: "Billetterie", href: "/billetterie" },
-      { label: "Thé Dansant", href: "/the-dansant" },
     ],
   },
+  { label: "Thé Dansant", href: "/the-dansant" },
   {
     label: "À Propos",
     href: "/about",

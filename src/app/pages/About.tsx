@@ -12,6 +12,14 @@ export function About() {
     { name: "Marcel Hamon", role: "Membre", description: "Chef adjoint et percussionniste de l'Harmonie", image: "/images/team/marcel.png" },
   ];
 
+  const photos = [
+    "29asso.jpg", "28asso.jpg", "10asso.jpg", "2asso.jpg", "3asso.jpg", "4asso.jpg", "5asso.jpg", "6asso.jpg",
+    "8asso.jpg", "9asso.jpg", "11asso.jpg", "12asso.jpg", "13asso.jpg", "14asso.jpg", "15asso.jpg", "16asso.jpg",
+    "17asso.jpg", "18asso.jpg", "19asso.jpg", "20asso.jpg", "21asso.jpg", "22asso.jpg", "23asso.jpg", "1asso.png",
+    "24asso.jpg", "25asso.jpg", "26asso.jpg", "27asso.jpg", "30asso.jpg", "31asso.jpg", "32asso.jpg", "33asso.jpg",
+    "34asso.jpg", "35asso.jpg", "36asso.jpg", "37asso.jpg", "38asso.jpg", "39asso.jpg", "40asso.jpg",
+  ];
+
   return (
     <>
       <title>{pageTitle}</title>
@@ -20,28 +28,29 @@ export function About() {
       <meta property="og:description" content={pageDescription} />
       <meta property="og:url" content="https://amis-harmonie-sucy.fr/about" />
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/about" />
-      <div className="py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+      <section className="py-16">
+        <div className="mx-auto max-w-[1320px] px-4">
+          <h2 className="font-['Merriweather_Sans'] text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
             L'Association
           </h2>
 
-        <div className="prose prose-gray dark:prose-invert max-w-none mb-12">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Chez "Les Amis de l'Harmonie", la passion pour la musique et la vie associative s'entrelacent pour créer une expérience musicale enrichissante et conviviale.
-          </p>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Notre association se consacre avant tout à épauler l'Harmonie Municipale dans ses activités quotidiennes et lors de ses prestations publiques. Que ce soit lors des fêtes locales, des cérémonies patriotiques, ou encore des concerts que nous organisons, l'agenda de l'orchestre est toujours bien rempli. Cependant, notre soutien ne se limite pas à la scène; nous sommes également impliqués dans la logistique, la communication, la gestion administrative, et d'autres tâches essentielles qui facilitent le bon déroulement et l'évolution de l'orchestre.
-          </p>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Grâce à un bureau dynamique, un site internet interactif, et une présence active sur les réseaux sociaux, nous offrons une fenêtre ouverte sur l'Harmonie. Nous proposons également une variété d'événements exclusifs et d'avantages pour nos membres, tous tournés autour de la musique et de la culture, renforçant ainsi les liens.
-          </p>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Adhérer à notre association, c'est rejoindre une famille musicale ! Vous pouvez dès maintenant devenir membre en ligne via notre site internet, où vous trouverez également l'agenda complet et toutes les informations pertinentes concernant l'Harmonie Municipale et les Amis de l'Harmonie.
-          </p>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Venez, participez, et laissez la musique de l'Harmonie de Sucy-en-Brie vous inspirer et vous réunir!
-          </p>
+          <div className="prose prose-gray dark:prose-invert max-w-none mb-8">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Chez "Les Amis de l'Harmonie", la passion pour la musique et la vie associative s'entrelacent pour créer une expérience musicale enrichissante et conviviale.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Notre association se consacre avant tout à épauler l'Harmonie Municipale dans ses activités quotidiennes et lors de ses prestations publiques. Que ce soit lors des fêtes locales, des cérémonies patriotiques, ou encore des concerts que nous organisons, l'agenda de l'orchestre est toujours bien rempli. Cependant, notre soutien ne se limite pas à la scène; nous sommes également impliqués dans la logistique, la communication, la gestion administrative, et d'autres tâches essentielles qui facilitent le bon déroulement et l'évolution de l'orchestre.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Grâce à un bureau dynamique, un site internet interactif, et une présence active sur les réseaux sociaux, nous offrons une fenêtre ouverte sur l'Harmonie. Nous proposons également une variété d'événements exclusifs et d'avantages pour nos membres, tous tournés autour de la musique et de la culture, renforçant ainsi les liens.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Adhérer à notre association, c'est rejoindre une famille musicale ! Vous pouvez dès maintenant devenir membre en ligne via notre site internet, où vous trouverez également l'agenda complet et toutes les informations pertinentes concernant l'Harmonie Municipale et les Amis de l'Harmonie.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              Venez, participez, et laissez la musique de l'Harmonie de Sucy-en-Brie vous inspirer et vous réunir!
+            </p>
+          </div>
 
           <div className="mb-12">
             <a href="https://drive.google.com/file/d/1rVXEI46FWbo0NTyN9MzTsuIL0zYR1HGp/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline block">
@@ -54,29 +63,39 @@ export function About() {
               Réglement intérieur de l'association
             </a>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member, i) => (
-            <div key={i} className="text-center">
-              <div className="w-32 h-32 mx-auto mb-3 overflow-hidden rounded-full">
+          <div className="flex flex-wrap text-center md:max-w-[1000px] md:mx-auto justify-center mb-16">
+            {teamMembers.map((member, i) => (
+              <div key={i} className="w-full sm:w-1/2 md:w-1/3 max-w-[275px] mb-6 px-2">
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-full h-full object-cover"
+                  className="mb-3 w-full"
                   loading="lazy"
                 />
+                <h5 className="text-primary font-bold">{member.name}</h5>
+                <p className="text-gray-700 dark:text-gray-300">{member.role}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{member.description}</p>
               </div>
-              <h5 className="font-['Merriweather_Sans'] font-bold text-gray-900 dark:text-gray-100">
-                {member.name}
-              </h5>
-              <p className="text-primary text-sm">{member.role}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">{member.description}</p>
+            ))}
+          </div>
+
+          <div className="mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <div key={photo} className="w-full aspect-[3/2]">
+                  <img
+                    src={`/images/${photo}`}
+                    alt=""
+                    className="rounded-lg shadow-md object-cover w-full h-full"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
     </>
   );
 }
