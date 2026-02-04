@@ -60,7 +60,7 @@ export function Partenaires() {
               allowTransparency={true}
               src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/formulaires/1/widget"
               className="w-full border-none"
-              style={{ height: "1300px" }}
+              style={{ height: "900px" }}
               title="Formulaire de don HelloAsso"
             />
           </div>

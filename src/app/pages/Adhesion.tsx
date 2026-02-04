@@ -7,10 +7,10 @@ export function Adhesion() {
       <meta property="og:description" content="Rejoignez Les Amis de l'Harmonie de Sucy-en-Brie ! Adhérez à notre association." />
       <meta property="og:url" content="https://amis-harmonie-sucy.fr/adhesion" />
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/adhesion" />
-      <div className="py-12">
+      <div className="py-6">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+          <div className="text-center mb-6">
+            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Adhésion 2025-2026
             </h1>
             <div className="text-gray-600 dark:text-gray-400 space-y-2 max-w-2xl mx-auto">
@@ -32,7 +32,7 @@ export function Adhesion() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-gray-900/50 overflow-hidden">
             <iframe
               src="https://www.helloasso.com/associations/les-amis-de-l-harmonie/adhesions/adhesion-2025-2026/widget"
-              className="w-full min-h-[700px] border-0"
+              className="w-full min-h-[800px] border-0"
               title="Formulaire d'adhésion HelloAsso"
               loading="lazy"
             />

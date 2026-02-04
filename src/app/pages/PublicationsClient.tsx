@@ -20,6 +20,8 @@ function InstagramEmbed({ postId }: { postId: string }) {
           src={`https://www.instagram.com/p/${postId}/embed`}
           className="w-full h-[500px] border-0"
           title={`Instagram post ${postId}`}
+          scrolling="no"
+          style={{ overflow: 'hidden' }}
         />
       ) : (
         <div className="w-full h-[500px] bg-gray-100 animate-pulse flex items-center justify-center">
