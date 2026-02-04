@@ -15,11 +15,9 @@ function formatDate(dateStr: string | null): string {
 }
 
 function VideoCard({ video }: { video: Video }) {
-  const isShort = video.is_short === 1;
-  
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow ${isShort ? 'max-w-[300px] mx-auto' : ''}`}>
-      <div className={isShort ? 'aspect-[9/16]' : 'aspect-video'}>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="aspect-video">
         <LiteYouTubeEmbed
           id={video.youtube_id}
           title={video.title}

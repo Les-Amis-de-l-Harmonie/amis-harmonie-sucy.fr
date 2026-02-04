@@ -74,7 +74,7 @@ export function PublicationsAdminClient() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Publications Instagram</h1>
-        <Button onClick={() => { setEditing({ instagram_post_id: "" }); setDialogOpen(true); }}>
+        <Button onClick={() => { setEditing({ instagram_post_id: "", publication_date: null }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle publication
         </Button>
       </div>
@@ -86,6 +86,7 @@ export function PublicationsAdminClient() {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>ID Instagram</TableHead>
+                <TableHead>Date de publication</TableHead>
                 <TableHead>Lien</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -95,6 +96,9 @@ export function PublicationsAdminClient() {
                 <TableRow key={item.id}>
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="font-mono text-sm">{item.instagram_post_id}</TableCell>
+                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                    {item.publication_date ? new Date(item.publication_date).toLocaleDateString("fr-FR") : "—"}
+                  </TableCell>
                   <TableCell>
                     <a 
                       href={`https://www.instagram.com/p/${item.instagram_post_id}/`}
@@ -117,7 +121,7 @@ export function PublicationsAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune publication</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune publication</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -140,6 +144,15 @@ export function PublicationsAdminClient() {
                   placeholder="DSSKC1CCBKx"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: instagram.com/p/<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong>/</p>
+              </div>
+              <div className="grid gap-2">
+                <Label>Date de publication</Label>
+                <Input 
+                  type="date"
+                  value={editing.publication_date || ""} 
+                  onChange={(e) => setEditing({ ...editing, publication_date: e.target.value || null })}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Date de publication sur Instagram (pour le tri)</p>
               </div>
             </div>
           )}

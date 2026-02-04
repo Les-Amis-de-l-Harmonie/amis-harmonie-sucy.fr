@@ -25,6 +25,7 @@ export interface Video {
 export interface Publication {
   id: number;
   instagram_post_id: string;
+  publication_date: string | null;
   created_at: string;
 }
 

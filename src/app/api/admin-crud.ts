@@ -203,7 +203,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
           headers: { "Content-Type": "application/json" },
         });
       }
-      const pubs = await env.DB.prepare("SELECT * FROM publications ORDER BY created_at DESC").all();
+      const pubs = await env.DB.prepare("SELECT * FROM publications ORDER BY publication_date DESC, created_at DESC").all();
       return new Response(JSON.stringify(pubs.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -212,8 +212,8 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
     if (request.method === "POST") {
       const data = await request.json();
       const result = await env.DB.prepare(
-        "INSERT INTO publications (instagram_post_id) VALUES (?)"
-      ).bind(data.instagram_post_id).run();
+        "INSERT INTO publications (instagram_post_id, publication_date) VALUES (?, ?)"
+      ).bind(data.instagram_post_id, data.publication_date || null).run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -229,8 +229,8 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
       }
       const data = await request.json();
       await env.DB.prepare(
-        "UPDATE publications SET instagram_post_id = ? WHERE id = ?"
-      ).bind(data.instagram_post_id, id).run();
+        "UPDATE publications SET instagram_post_id = ?, publication_date = ? WHERE id = ?"
+      ).bind(data.instagram_post_id, data.publication_date || null, id).run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },

@@ -5,7 +5,7 @@ import { PublicationsClient } from "./PublicationsClient";
 
 async function getPublications(): Promise<Publication[]> {
   const results = await env.DB.prepare(
-    "SELECT * FROM publications ORDER BY created_at DESC"
+    "SELECT * FROM publications ORDER BY publication_date DESC, created_at DESC"
   ).all<Publication>();
   return results.results || [];
 }
