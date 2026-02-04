@@ -1,4 +1,5 @@
 import type { Event } from "@/db/types";
+import { ExpandableDescription } from "./ExpandableDescription";
 
 function isEventPast(dateStr: string): boolean {
   const eventDate = new Date(dateStr);
@@ -41,9 +42,7 @@ export function EventCard({ event }: EventCardProps) {
         )}
 
         {event.description && (
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-4 flex-1">
-            {event.description}
-          </p>
+          <ExpandableDescription text={event.description} />
         )}
 
         {event.details_link && (
