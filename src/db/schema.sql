@@ -50,7 +50,32 @@ CREATE TABLE IF NOT EXISTS contact_submissions (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
--- Admin users table
+-- Users table (admins and musicians)
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL DEFAULT 'MUSICIAN' CHECK(role IN ('ADMIN', 'MUSICIAN')),
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Musician profiles (linked to users with role=MUSICIAN)
+CREATE TABLE IF NOT EXISTS musician_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
+  avatar TEXT,
+  date_of_birth TEXT,
+  address_line1 TEXT,
+  address_line2 TEXT,
+  postal_code TEXT,
+  city TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Legacy alias for backward compatibility
 CREATE TABLE IF NOT EXISTS admin_users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL UNIQUE,

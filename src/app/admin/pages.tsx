@@ -5,6 +5,7 @@ import { VideosAdminClient } from "./VideosAdmin";
 import { PublicationsAdminClient } from "./PublicationsAdmin";
 import { GuestbookAdminClient } from "./GuestbookAdmin";
 import { ContactAdminClient } from "./ContactAdmin";
+import { UsersAdminClient } from "./UsersAdmin";
 
 interface AdminPageProps {
   email: string;
@@ -54,6 +55,14 @@ export function AdminContactPage({ email }: AdminPageProps) {
   return (
     <AdminLayout email={email}>
       <ContactAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminUsersPage({ email }: AdminPageProps) {
+  return (
+    <AdminLayout email={email}>
+      <UsersAdminClient />
     </AdminLayout>
   );
 }

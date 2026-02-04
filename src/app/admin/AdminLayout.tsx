@@ -5,6 +5,7 @@ import {
   Instagram, 
   BookOpen, 
   Mail, 
+  Users,
   LogOut 
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/publications", label: "Publications", icon: Instagram },
   { href: "/admin/guestbook", label: "Livre d'Or", icon: BookOpen },
   { href: "/admin/contact", label: "Messages", icon: Mail },
+  { href: "/admin/users", label: "Utilisateurs", icon: Users },
 ];
 
 export function AdminLayout({ children, email }: AdminLayoutProps) {

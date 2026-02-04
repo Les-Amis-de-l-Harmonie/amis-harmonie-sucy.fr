@@ -19,7 +19,8 @@ import { Legal } from "@/app/pages/Legal";
 import { handleContactSubmission } from "@/app/api/contact";
 import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import { handleMagicLinkRequest, handleMagicLinkVerify, handleLogout, verifySession } from "@/app/api/auth";
-import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi } from "@/app/api/admin-crud";
+import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi, handleUsersApi } from "@/app/api/admin-crud";
+import { handleMusicianProfileApi, handleMusicianAvatarApi } from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
 import { AdminLoginPage } from "@/app/admin/Login";
@@ -29,19 +30,32 @@ import {
   AdminVideosPage, 
   AdminPublicationsPage, 
   AdminGuestbookPage, 
-  AdminContactPage 
+  AdminContactPage,
+  AdminUsersPage 
 } from "@/app/admin/pages";
+import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
+import { MusicianLayout } from "@/app/musician/MusicianLayout";
+import { MusicianProfileClient } from "@/app/musician/MusicianProfile";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 
 export type AppContext = {};
 
 async function adminAuthMiddleware({ request }: { request: Request }) {
-  const session = await verifySession(request);
-  if (!session) {
+  const user = await verifySession(request, 'admin');
+  if (!user || user.role !== 'ADMIN') {
     const url = new URL(request.url);
     return Response.redirect(new URL("/admin/login", url.origin).toString());
   }
-  return { email: session.email };
+  return { email: user.email };
+}
+
+async function musicianAuthMiddleware({ request }: { request: Request }) {
+  const user = await verifySession(request, 'musician');
+  if (!user) {
+    const url = new URL(request.url);
+    return Response.redirect(new URL("/musician/login", url.origin).toString());
+  }
+  return { email: user.email, userId: user.id };
 }
 
 const app = defineApp([
@@ -59,7 +73,11 @@ const app = defineApp([
   }),
 
   route("/api/auth/magic-link", {
-    post: ({ request }: { request: Request }) => handleMagicLinkRequest(request),
+    post: ({ request }: { request: Request }) => handleMagicLinkRequest(request, 'admin'),
+  }),
+
+  route("/api/auth/musician-magic-link", {
+    post: ({ request }: { request: Request }) => handleMagicLinkRequest(request, 'musician'),
   }),
 
   route("/api/admin/events", ({ request }: { request: Request }) => handleEventsApi(request)),
@@ -67,13 +85,19 @@ const app = defineApp([
   route("/api/admin/publications", ({ request }: { request: Request }) => handlePublicationsApi(request)),
   route("/api/admin/guestbook", ({ request }: { request: Request }) => handleGuestbookApi(request)),
   route("/api/admin/contact", ({ request }: { request: Request }) => handleContactApi(request)),
+  route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
   route("/api/admin/upload", ({ request }: { request: Request }) => handleImageUpload(request)),
+
+  route("/api/musician/profile", ({ request }: { request: Request }) => handleMusicianProfileApi(request)),
+  route("/api/musician/avatar", ({ request }: { request: Request }) => handleMusicianAvatarApi(request)),
   
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
 
-  route("/admin/verify", ({ request }: { request: Request }) => handleMagicLinkVerify(request)),
-  
-  route("/admin/logout", ({ request }: { request: Request }) => handleLogout(request)),
+  route("/admin/verify", ({ request }: { request: Request }) => handleMagicLinkVerify(request, 'admin')),
+  route("/admin/logout", ({ request }: { request: Request }) => handleLogout(request, 'admin')),
+
+  route("/musician/verify", ({ request }: { request: Request }) => handleMagicLinkVerify(request, 'musician')),
+  route("/musician/logout", ({ request }: { request: Request }) => handleLogout(request, 'musician')),
   
   render(Document, [
     layout(Layout, [
@@ -127,6 +151,24 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminContactPage email={auth.email} />;
+    }),
+
+    route("/admin/users", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminUsersPage email={auth.email} />;
+    }),
+
+    route("/musician/login", () => <MusicianLoginClient />),
+
+    route("/musician/profile", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout email={auth.email}>
+          <MusicianProfileClient userId={auth.userId} />
+        </MusicianLayout>
+      );
     }),
   ]),
 ]);

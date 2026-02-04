@@ -1,10 +1,11 @@
 import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
 import { invalidateCache } from "@/lib/cache";
+import type { User, MusicianProfile } from "@/db/types";
 
-async function checkAuth(request: Request): Promise<Response | null> {
-  const session = await verifySession(request);
-  if (!session) {
+async function checkAdminAuth(request: Request): Promise<Response | null> {
+  const user = await verifySession(request, 'admin');
+  if (!user || user.role !== 'ADMIN') {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
@@ -14,7 +15,7 @@ async function checkAuth(request: Request): Promise<Response | null> {
 }
 
 export async function handleEventsApi(request: Request): Promise<Response> {
-  const authError = await checkAuth(request);
+  const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -112,7 +113,7 @@ export async function handleEventsApi(request: Request): Promise<Response> {
 }
 
 export async function handleVideosApi(request: Request): Promise<Response> {
-  const authError = await checkAuth(request);
+  const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -188,7 +189,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
 }
 
 export async function handlePublicationsApi(request: Request): Promise<Response> {
-  const authError = await checkAuth(request);
+  const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -264,7 +265,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
 }
 
 export async function handleGuestbookApi(request: Request): Promise<Response> {
-  const authError = await checkAuth(request);
+  const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -340,7 +341,7 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
 }
 
 export async function handleContactApi(request: Request): Promise<Response> {
-  const authError = await checkAuth(request);
+  const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -379,6 +380,282 @@ export async function handleContactApi(request: Request): Promise<Response> {
     });
   } catch (error) {
     console.error("Contact API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+interface UserInstrument {
+  instrument_name: string;
+  start_date?: string;
+  level?: string;
+}
+
+interface UserWithProfile {
+  email: string;
+  role: string;
+  first_name?: string;
+  last_name?: string;
+  avatar?: string;
+  date_of_birth?: string;
+  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  postal_code?: string;
+  city?: string;
+  harmonie_start_date?: string;
+  is_conservatory_student?: number;
+  music_theory_level?: string;
+  emergency_contact_last_name?: string;
+  emergency_contact_first_name?: string;
+  emergency_contact_email?: string;
+  emergency_contact_phone?: string;
+  instruments?: UserInstrument[];
+}
+
+export async function handleUsersApi(request: Request): Promise<Response> {
+  const authError = await checkAdminAuth(request);
+  if (authError) return authError;
+
+  const url = new URL(request.url);
+  const id = url.searchParams.get("id");
+
+  try {
+    if (request.method === "GET") {
+      if (id) {
+        const user = await env.DB.prepare(`
+          SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
+                 p.address_line1, p.address_line2, p.postal_code, p.city,
+                 p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
+                 p.emergency_contact_last_name, p.emergency_contact_first_name,
+                 p.emergency_contact_email, p.emergency_contact_phone
+          FROM users u
+          LEFT JOIN musician_profiles p ON u.id = p.user_id
+          WHERE u.id = ?
+        `).bind(id).first();
+
+        const instruments = await env.DB.prepare(
+          "SELECT instrument_name, start_date, level FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
+        ).bind(id).all();
+
+        return new Response(JSON.stringify({
+          ...user,
+          instruments: instruments.results || []
+        }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const users = await env.DB.prepare(`
+        SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
+               p.address_line1, p.address_line2, p.postal_code, p.city,
+               p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
+               p.emergency_contact_last_name, p.emergency_contact_first_name,
+               p.emergency_contact_email, p.emergency_contact_phone
+        FROM users u
+        LEFT JOIN musician_profiles p ON u.id = p.user_id
+        ORDER BY u.created_at DESC
+      `).all();
+      return new Response(JSON.stringify(users.results), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "POST") {
+      const data = await request.json() as UserWithProfile;
+      
+      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(data.email.toLowerCase().trim()).first();
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const result = await env.DB.prepare(
+        "INSERT INTO users (email, role) VALUES (?, ?)"
+      ).bind(data.email.toLowerCase().trim(), data.role || 'MUSICIAN').run();
+
+      const userId = result.meta.last_row_id;
+
+      await env.DB.prepare(`
+        INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
+          address_line1, address_line2, postal_code, city,
+          harmonie_start_date, is_conservatory_student, music_theory_level,
+          emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        userId,
+        data.first_name || null,
+        data.last_name || null,
+        data.avatar || null,
+        data.date_of_birth || null,
+        data.phone || null,
+        data.address_line1 || null,
+        data.address_line2 || null,
+        data.postal_code || null,
+        data.city || null,
+        data.harmonie_start_date || null,
+        data.is_conservatory_student ? 1 : 0,
+        data.music_theory_level || null,
+        data.emergency_contact_last_name || null,
+        data.emergency_contact_first_name || null,
+        data.emergency_contact_email || null,
+        data.emergency_contact_phone || null
+      ).run();
+
+      if (data.instruments) {
+        for (let i = 0; i < data.instruments.length; i++) {
+          const inst = data.instruments[i];
+          if (inst.instrument_name?.trim()) {
+            await env.DB.prepare(`
+              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
+              VALUES (?, ?, ?, ?, ?)
+            `).bind(
+              userId,
+              inst.instrument_name.trim(),
+              inst.start_date || null,
+              inst.level || null,
+              i
+            ).run();
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, id: userId }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "PUT") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const data = await request.json() as UserWithProfile;
+      
+      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+        .bind(data.email.toLowerCase().trim(), id).first();
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      await env.DB.prepare(
+        "UPDATE users SET email = ?, role = ? WHERE id = ?"
+      ).bind(data.email.toLowerCase().trim(), data.role, id).run();
+
+      const existingProfile = await env.DB.prepare("SELECT id FROM musician_profiles WHERE user_id = ?").bind(id).first();
+      if (existingProfile) {
+        await env.DB.prepare(`
+          UPDATE musician_profiles 
+          SET first_name = ?, last_name = ?, avatar = ?, date_of_birth = ?, phone = ?,
+              address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
+              harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
+              emergency_contact_last_name = ?, emergency_contact_first_name = ?,
+              emergency_contact_email = ?, emergency_contact_phone = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ?
+        `).bind(
+          data.first_name || null,
+          data.last_name || null,
+          data.avatar || null,
+          data.date_of_birth || null,
+          data.phone || null,
+          data.address_line1 || null,
+          data.address_line2 || null,
+          data.postal_code || null,
+          data.city || null,
+          data.harmonie_start_date || null,
+          data.is_conservatory_student ? 1 : 0,
+          data.music_theory_level || null,
+          data.emergency_contact_last_name || null,
+          data.emergency_contact_first_name || null,
+          data.emergency_contact_email || null,
+          data.emergency_contact_phone || null,
+          id
+        ).run();
+      } else {
+        await env.DB.prepare(`
+          INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
+            address_line1, address_line2, postal_code, city,
+            harmonie_start_date, is_conservatory_student, music_theory_level,
+            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          id,
+          data.first_name || null,
+          data.last_name || null,
+          data.avatar || null,
+          data.date_of_birth || null,
+          data.phone || null,
+          data.address_line1 || null,
+          data.address_line2 || null,
+          data.postal_code || null,
+          data.city || null,
+          data.harmonie_start_date || null,
+          data.is_conservatory_student ? 1 : 0,
+          data.music_theory_level || null,
+          data.emergency_contact_last_name || null,
+          data.emergency_contact_first_name || null,
+          data.emergency_contact_email || null,
+          data.emergency_contact_phone || null
+        ).run();
+      }
+
+      await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?").bind(id).run();
+      if (data.instruments) {
+        for (let i = 0; i < data.instruments.length; i++) {
+          const inst = data.instruments[i];
+          if (inst.instrument_name?.trim()) {
+            await env.DB.prepare(`
+              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
+              VALUES (?, ?, ?, ?, ?)
+            `).bind(
+              id,
+              inst.instrument_name.trim(),
+              inst.start_date || null,
+              inst.level || null,
+              i
+            ).run();
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "DELETE") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      
+      await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?").bind(id).run();
+      await env.DB.prepare("DELETE FROM musician_profiles WHERE user_id = ?").bind(id).run();
+      await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id).run();
+      await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
+      
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Users API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

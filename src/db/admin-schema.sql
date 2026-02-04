@@ -1,7 +1,24 @@
-CREATE TABLE IF NOT EXISTS admin_users (
+CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL DEFAULT 'MUSICIAN' CHECK(role IN ('ADMIN', 'MUSICIAN')),
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS musician_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
+  avatar TEXT,
+  date_of_birth TEXT,
+  address_line1 TEXT,
+  address_line2 TEXT,
+  postal_code TEXT,
+  city TEXT,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS auth_tokens (
@@ -13,12 +30,13 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS admin_sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id TEXT NOT NULL UNIQUE,
-  email TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
   expires_at TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-INSERT OR IGNORE INTO admin_users (email) VALUES ('maxime@amis-harmonie-sucy.fr');
+INSERT OR IGNORE INTO users (email, role) VALUES ('maxime@amis-harmonie-sucy.fr', 'ADMIN');
