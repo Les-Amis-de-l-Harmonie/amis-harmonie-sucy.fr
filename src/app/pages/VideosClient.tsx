@@ -4,11 +4,21 @@ import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 import type { Video } from "@/db/types";
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 function VideoCard({ video }: { video: Video }) {
   const isShort = video.is_short === 1;
   
   return (
-    <div className={`bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow ${isShort ? 'max-w-[300px] mx-auto' : ''}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow ${isShort ? 'max-w-[300px] mx-auto' : ''}`}>
       <div className={isShort ? 'aspect-[9/16]' : 'aspect-video'}>
         <LiteYouTubeEmbed
           id={video.youtube_id}
@@ -18,9 +28,14 @@ function VideoCard({ video }: { video: Video }) {
         />
       </div>
       <div className="p-4">
-        <h3 className="font-['Merriweather_Sans'] font-bold text-[#101828] line-clamp-2">
+        <h3 className="font-['Merriweather_Sans'] font-bold text-[#101828] dark:text-gray-100 line-clamp-2">
           {video.title}
         </h3>
+        {video.publication_date && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {formatDate(video.publication_date)}
+          </p>
+        )}
       </div>
     </div>
   );

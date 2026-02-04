@@ -5,7 +5,7 @@ import { VideosClient } from "./VideosClient";
 
 async function getVideos(): Promise<Video[]> {
   const results = await env.DB.prepare(
-    "SELECT * FROM videos ORDER BY created_at DESC"
+    "SELECT * FROM videos ORDER BY publication_date DESC, created_at DESC"
   ).all<Video>();
   return results.results || [];
 }

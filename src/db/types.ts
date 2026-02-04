@@ -18,6 +18,7 @@ export interface Video {
   youtube_id: string;
   thumbnail: string | null;
   is_short: number;
+  publication_date: string | null;
   created_at: string;
 }
 

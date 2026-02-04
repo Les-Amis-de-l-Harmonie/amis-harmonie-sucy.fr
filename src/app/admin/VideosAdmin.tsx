@@ -74,7 +74,7 @@ export function VideosAdminClient() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Vidéos</h1>
-        <Button onClick={() => { setEditing({ title: "", youtube_id: "", is_short: 0 }); setDialogOpen(true); }}>
+        <Button onClick={() => { setEditing({ title: "", youtube_id: "", is_short: 0, publication_date: new Date().toISOString().split("T")[0] }); setDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />Nouvelle vidéo
         </Button>
       </div>
@@ -86,6 +86,7 @@ export function VideosAdminClient() {
               <TableRow>
                 <TableHead>Titre</TableHead>
                 <TableHead>ID YouTube</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Aperçu</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -95,6 +96,7 @@ export function VideosAdminClient() {
                 <TableRow key={video.id}>
                   <TableCell className="font-medium">{video.title}</TableCell>
                   <TableCell className="font-mono text-sm">{video.youtube_id}</TableCell>
+                  <TableCell className="text-sm text-gray-500">{video.publication_date ? new Date(video.publication_date).toLocaleDateString("fr-FR") : "—"}</TableCell>
                   <TableCell>
                     <img 
                       src={`https://img.youtube.com/vi/${video.youtube_id}/default.jpg`} 
@@ -114,7 +116,7 @@ export function VideosAdminClient() {
               ))}
               {videos.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune vidéo</TableCell>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune vidéo</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -141,6 +143,14 @@ export function VideosAdminClient() {
                   placeholder="dQw4w9WgXcQ"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: youtube.com/watch?v=<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong></p>
+              </div>
+              <div className="grid gap-2">
+                <Label>Date de publication</Label>
+                <Input
+                  type="date"
+                  value={editing.publication_date || ""}
+                  onChange={(e) => setEditing({ ...editing, publication_date: e.target.value })}
+                />
               </div>
               <div className="flex items-center gap-2">
                 <input

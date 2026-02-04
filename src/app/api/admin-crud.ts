@@ -127,7 +127,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const videos = await env.DB.prepare("SELECT * FROM videos ORDER BY created_at DESC").all();
+      const videos = await env.DB.prepare("SELECT * FROM videos ORDER BY publication_date DESC, created_at DESC").all();
       return new Response(JSON.stringify(videos.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -136,8 +136,8 @@ export async function handleVideosApi(request: Request): Promise<Response> {
     if (request.method === "POST") {
       const data = await request.json();
       const result = await env.DB.prepare(
-        "INSERT INTO videos (title, youtube_id, thumbnail) VALUES (?, ?, ?)"
-      ).bind(data.title, data.youtube_id, data.thumbnail || null).run();
+        "INSERT INTO videos (title, youtube_id, thumbnail, is_short, publication_date) VALUES (?, ?, ?, ?, ?)"
+      ).bind(data.title, data.youtube_id, data.thumbnail || null, data.is_short || 0, data.publication_date || null).run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -153,8 +153,8 @@ export async function handleVideosApi(request: Request): Promise<Response> {
       }
       const data = await request.json();
       await env.DB.prepare(
-        "UPDATE videos SET title = ?, youtube_id = ?, thumbnail = ? WHERE id = ?"
-      ).bind(data.title, data.youtube_id, data.thumbnail || null, id).run();
+        "UPDATE videos SET title = ?, youtube_id = ?, thumbnail = ?, is_short = ?, publication_date = ? WHERE id = ?"
+      ).bind(data.title, data.youtube_id, data.thumbnail || null, data.is_short || 0, data.publication_date || null, id).run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
