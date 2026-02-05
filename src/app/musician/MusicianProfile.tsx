@@ -16,7 +16,8 @@ interface MusicianProfileClientProps {
   userId: number;
 }
 
-export function MusicianProfileClient({ userId }: MusicianProfileClientProps) {
+// eslint-disable-next-line no-unused-vars
+export function MusicianProfileClient({ userId: _userId }: MusicianProfileClientProps) {
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

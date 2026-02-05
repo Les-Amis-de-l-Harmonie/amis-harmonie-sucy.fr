@@ -1,4 +1,4 @@
-import { render, route, layout, prefix } from "rwsdk/router";
+import { render, route, layout } from "rwsdk/router";
 import { defineApp } from "rwsdk/worker";
 
 import { Document } from "@/app/Document";

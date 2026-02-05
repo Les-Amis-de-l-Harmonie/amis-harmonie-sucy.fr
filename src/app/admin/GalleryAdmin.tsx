@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Plus, Pencil, Trash2, Upload, X, RefreshCw, GripVertical, Eye, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, RefreshCw, Eye, ChevronUp, ChevronDown } from "lucide-react";
 import type { GalleryImage, GalleryCategory } from "@/db/types";
 import { GALLERY_CATEGORY_CONFIG } from "@/db/types";
 
@@ -676,10 +676,15 @@ interface ImageCardProps {
   image: GalleryImage;
   index: number;
   totalInCategory: number;
+  // eslint-disable-next-line no-unused-vars
   onEdit: (image: GalleryImage) => void;
+  // eslint-disable-next-line no-unused-vars
   onDelete: (image: GalleryImage) => void;
+  // eslint-disable-next-line no-unused-vars
   onPreview: (image: GalleryImage) => void;
+  // eslint-disable-next-line no-unused-vars
   onMoveUp: (image: GalleryImage, index: number) => void;
+  // eslint-disable-next-line no-unused-vars
   onMoveDown: (image: GalleryImage, index: number) => void;
 }
 
