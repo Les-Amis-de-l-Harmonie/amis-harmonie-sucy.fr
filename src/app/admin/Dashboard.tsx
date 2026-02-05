@@ -1,14 +1,16 @@
 import { env } from "cloudflare:workers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Calendar, Video, Instagram, BookOpen, Mail } from "lucide-react";
+import { Calendar, Video, Instagram, BookOpen, Mail, Images } from "lucide-react";
+import { R2CleanupClient } from "./DashboardClient";
 
 async function getStats() {
-  const [events, videos, publications, guestbook, contacts] = await Promise.all([
+  const [events, videos, publications, guestbook, contacts, galleryImages] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) as count FROM events").first<{ count: number }>(),
     env.DB.prepare("SELECT COUNT(*) as count FROM videos").first<{ count: number }>(),
     env.DB.prepare("SELECT COUNT(*) as count FROM publications").first<{ count: number }>(),
     env.DB.prepare("SELECT COUNT(*) as count FROM guestbook").first<{ count: number }>(),
     env.DB.prepare("SELECT COUNT(*) as count FROM contact_submissions").first<{ count: number }>(),
+    env.DB.prepare("SELECT COUNT(*) as count FROM gallery_images").first<{ count: number }>(),
   ]);
 
   return {
@@ -17,6 +19,7 @@ async function getStats() {
     publications: publications?.count || 0,
     guestbook: guestbook?.count || 0,
     contacts: contacts?.count || 0,
+    galleryImages: galleryImages?.count || 0,
   };
 }
 
@@ -29,13 +32,14 @@ export async function AdminDashboard() {
     { title: "Publications", count: stats.publications, icon: Instagram, href: "/admin/publications", color: "bg-pink-500" },
     { title: "Livre d'Or", count: stats.guestbook, icon: BookOpen, href: "/admin/guestbook", color: "bg-green-500" },
     { title: "Messages", count: stats.contacts, icon: Mail, href: "/admin/contact", color: "bg-yellow-500" },
+    { title: "Images Galerie", count: stats.galleryImages, icon: Images, href: "/admin/gallery", color: "bg-purple-500" },
   ];
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Tableau de bord</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {cards.map((card) => (
           <a key={card.href} href={card.href} className="block">
             <Card className="hover:shadow-lg dark:hover:shadow-gray-900/70 transition-shadow cursor-pointer">
@@ -82,6 +86,13 @@ export async function AdminDashboard() {
             <h3 className="font-medium text-gray-900 dark:text-gray-100">Nouvelle publication</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">Ajouter un post Instagram</p>
           </a>
+        </div>
+      </div>
+
+      <div className="mt-12">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Maintenance</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <R2CleanupClient />
         </div>
       </div>
     </div>
