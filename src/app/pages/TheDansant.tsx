@@ -125,7 +125,7 @@ export async function TheDansant() {
           <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-4">
             {sponsors.map((sponsor) => (
               <a key={sponsor.id} href={sponsor.link_url || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
-                <img src={sponsor.image_url} alt={sponsor.alt_text || ""} className="max-h-16 w-auto object-contain" />
+                <img src={sponsor.image_url} alt={sponsor.alt_text || ""} className="max-h-16 w-auto object-contain" loading="lazy" />
               </a>
             ))}
           </div>
@@ -144,7 +144,7 @@ export async function TheDansant() {
           <div className="grid grid-cols-4 gap-4 mb-8">
             {associations.map((a, i) => (
               <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
-                <img src={a.image} alt={a.name} className="max-h-16 w-auto object-contain" />
+                <img src={a.image} alt={a.name} className="max-h-16 w-auto object-contain" loading="lazy" />
               </a>
             ))}
           </div>
