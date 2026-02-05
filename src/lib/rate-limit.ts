@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { RATE_LIMIT_CONFIG } from "./constants";
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -6,11 +7,11 @@ export interface RateLimitConfig {
 }
 
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  "/api/auth/magic-link": { maxRequests: 5, windowMs: 15 * 60 * 1000 },
-  "/api/auth/musician-magic-link": { maxRequests: 5, windowMs: 15 * 60 * 1000 },
-  "/api/contact": { maxRequests: 3, windowMs: 60 * 60 * 1000 },
-  "/api/guestbook": { maxRequests: 3, windowMs: 60 * 60 * 1000 },
-  "/api/admin/upload": { maxRequests: 10, windowMs: 60 * 1000 },
+  "/api/auth/magic-link": RATE_LIMIT_CONFIG.AUTH_MAGIC_LINK,
+  "/api/auth/musician-magic-link": RATE_LIMIT_CONFIG.AUTH_MAGIC_LINK,
+  "/api/contact": RATE_LIMIT_CONFIG.CONTACT_FORM,
+  "/api/guestbook": RATE_LIMIT_CONFIG.GUESTBOOK,
+  "/api/admin/upload": RATE_LIMIT_CONFIG.ADMIN_UPLOAD,
 };
 
 function getClientIP(request: Request): string {

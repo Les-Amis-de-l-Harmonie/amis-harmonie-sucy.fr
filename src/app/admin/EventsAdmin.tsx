@@ -9,6 +9,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { isEventPast } from "@/lib/dates";
+import { IMAGE_CONFIG } from "@/lib/constants";
 import {
   Table,
   TableBody,
@@ -38,9 +39,11 @@ import { Plus, Pencil, Trash2, Upload, X, Crop, Check, RefreshCw } from "lucide-
 import type { Event } from "@/db/types";
 
 // Target size for event images (2x display size for retina)
-const TARGET_WIDTH = 600;
-const TARGET_HEIGHT = 600;
-const WEBP_QUALITY = 0.7;
+const {
+  EVENT_TARGET_WIDTH: TARGET_WIDTH,
+  EVENT_TARGET_HEIGHT: TARGET_HEIGHT,
+  WEBP_QUALITY,
+} = IMAGE_CONFIG;
 
 // Create cropped and resized image
 async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {

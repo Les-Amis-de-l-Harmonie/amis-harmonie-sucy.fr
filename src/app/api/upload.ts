@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
+import { UPLOAD_CONFIG } from "@/lib/constants";
 
 function validateFileSignature(buffer: ArrayBuffer): string | null {
   const bytes = new Uint8Array(buffer);
@@ -55,8 +56,7 @@ export async function handleImageUpload(request: Request): Promise<Response> {
       });
     }
 
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE_BYTES) {
       return new Response(JSON.stringify({ error: "File too large. Max 10MB" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },

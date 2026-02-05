@@ -29,11 +29,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Plus, Pencil, Trash2, Upload, X, RefreshCw, Eye, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Upload,
+  X,
+  RefreshCw,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import type { GalleryImage, GalleryCategory } from "@/db/types";
 import { GALLERY_CATEGORY_CONFIG } from "@/db/types";
+import { IMAGE_CONFIG } from "@/lib/constants";
 
-const WEBP_QUALITY = 0.70;
+const { WEBP_QUALITY } = IMAGE_CONFIG;
 
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -138,12 +149,13 @@ export function GalleryAdminClient() {
 
   const fetchImages = async () => {
     try {
-      const url = selectedCategory === "all" 
-        ? "/api/admin/gallery" 
-        : `/api/admin/gallery?category=${selectedCategory}`;
+      const url =
+        selectedCategory === "all"
+          ? "/api/admin/gallery"
+          : `/api/admin/gallery?category=${selectedCategory}`;
       const response = await fetch(url);
       if (response.ok) {
-        const data = await response.json() as GalleryImage[];
+        const data = (await response.json()) as GalleryImage[];
         setImages(data);
       }
     } catch (error) {
@@ -180,12 +192,12 @@ export function GalleryAdminClient() {
 
   const confirmDelete = async () => {
     if (!deletingImage) return;
-    
+
     try {
       const response = await fetch(`/api/admin/gallery?id=${deletingImage.id}`, {
         method: "DELETE",
       });
-      
+
       if (response.ok) {
         fetchImages();
       }
@@ -222,7 +234,7 @@ export function GalleryAdminClient() {
         body: formData,
       });
 
-      const data = await response.json() as { success?: boolean; url?: string; error?: string };
+      const data = (await response.json()) as { success?: boolean; url?: string; error?: string };
       if (data.success && data.url) {
         setEditingImage({ ...editingImage, image_url: data.url });
       } else {
@@ -268,7 +280,7 @@ export function GalleryAdminClient() {
           body: formData,
         });
 
-        const uploadData = await uploadResponse.json() as { success?: boolean; url?: string };
+        const uploadData = (await uploadResponse.json()) as { success?: boolean; url?: string };
         if (uploadData.success && uploadData.url) {
           await fetch("/api/admin/gallery", {
             method: "POST",
@@ -294,9 +306,12 @@ export function GalleryAdminClient() {
   };
 
   const handleRecompressAll = async () => {
-    const categoryImages = selectedCategory === "all" 
-      ? images.filter(img => img.image_url.includes("/images/r2/"))
-      : images.filter(img => img.category === selectedCategory && img.image_url.includes("/images/r2/"));
+    const categoryImages =
+      selectedCategory === "all"
+        ? images.filter((img) => img.image_url.includes("/images/r2/"))
+        : images.filter(
+            (img) => img.category === selectedCategory && img.image_url.includes("/images/r2/")
+          );
 
     if (categoryImages.length === 0) {
       alert("Aucune image R2 a recompresser");
@@ -334,7 +349,7 @@ export function GalleryAdminClient() {
           body: formData,
         });
 
-        const uploadData = await uploadResponse.json() as { success?: boolean; url?: string };
+        const uploadData = (await uploadResponse.json()) as { success?: boolean; url?: string };
         if (uploadData.success && uploadData.url) {
           await fetch(`/api/admin/gallery?id=${image.id}`, {
             method: "PUT",
@@ -355,12 +370,12 @@ export function GalleryAdminClient() {
   };
 
   const handleMoveUp = async (image: GalleryImage, index: number) => {
-    const categoryImages = images.filter(img => img.category === image.category);
+    const categoryImages = images.filter((img) => img.category === image.category);
     if (index === 0) return;
-    
-    const ids = categoryImages.map(img => img.id);
+
+    const ids = categoryImages.map((img) => img.id);
     [ids[index], ids[index - 1]] = [ids[index - 1], ids[index]];
-    
+
     await fetch("/api/admin/gallery?action=reorder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -370,12 +385,12 @@ export function GalleryAdminClient() {
   };
 
   const handleMoveDown = async (image: GalleryImage, index: number) => {
-    const categoryImages = images.filter(img => img.category === image.category);
+    const categoryImages = images.filter((img) => img.category === image.category);
     if (index === categoryImages.length - 1) return;
-    
-    const ids = categoryImages.map(img => img.id);
+
+    const ids = categoryImages.map((img) => img.id);
     [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
-    
+
     await fetch("/api/admin/gallery?action=reorder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -389,7 +404,7 @@ export function GalleryAdminClient() {
       alert("Veuillez ajouter une image");
       return;
     }
-    
+
     setSaving(true);
     try {
       const isNew = !editingImage.id;
@@ -414,11 +429,14 @@ export function GalleryAdminClient() {
     }
   };
 
-  const groupedImages = images.reduce((acc, img) => {
-    if (!acc[img.category]) acc[img.category] = [];
-    acc[img.category].push(img);
-    return acc;
-  }, {} as Record<string, GalleryImage[]>);
+  const groupedImages = images.reduce(
+    (acc, img) => {
+      if (!acc[img.category]) acc[img.category] = [];
+      acc[img.category].push(img);
+      return acc;
+    },
+    {} as Record<string, GalleryImage[]>
+  );
 
   if (loading) {
     return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
@@ -429,21 +447,26 @@ export function GalleryAdminClient() {
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Galerie</h1>
         <div className="flex flex-wrap gap-2">
-          <Select value={selectedCategory} onValueChange={(v: string) => setSelectedCategory(v as GalleryCategory | "all")}>
+          <Select
+            value={selectedCategory}
+            onValueChange={(v: string) => setSelectedCategory(v as GalleryCategory | "all")}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Categorie" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Toutes les categories</SelectItem>
               {Object.entries(GALLERY_CATEGORY_CONFIG).map(([key, config]) => (
-                <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                <SelectItem key={key} value={key}>
+                  {config.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={handleRecompressAll} disabled={recompressing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${recompressing ? "animate-spin" : ""}`} />
-            {recompressing 
-              ? `${recompressProgress.current}/${recompressProgress.total}...` 
+            {recompressing
+              ? `${recompressProgress.current}/${recompressProgress.total}...`
               : "Recompresser"}
           </Button>
           <input
@@ -454,7 +477,11 @@ export function GalleryAdminClient() {
             onChange={handleMultiFileSelect}
             className="hidden"
           />
-          <Button variant="outline" onClick={() => multiFileInputRef.current?.click()} disabled={uploading || selectedCategory === "all"}>
+          <Button
+            variant="outline"
+            onClick={() => multiFileInputRef.current?.click()}
+            disabled={uploading || selectedCategory === "all"}
+          >
             <Upload className="w-4 h-4 mr-2" />
             {uploading ? "Upload..." : "Upload multiple"}
           </Button>
@@ -471,15 +498,17 @@ export function GalleryAdminClient() {
             <CardHeader>
               <CardTitle className="text-lg">
                 {GALLERY_CATEGORY_CONFIG[category as GalleryCategory]?.label || category}
-                <span className="text-sm font-normal text-gray-500 ml-2">({categoryImages.length} images)</span>
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  ({categoryImages.length} images)
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {categoryImages.map((image, index) => (
-                  <ImageCard 
-                    key={image.id} 
-                    image={image} 
+                  <ImageCard
+                    key={image.id}
+                    image={image}
                     index={index}
                     totalInCategory={categoryImages.length}
                     onEdit={handleEdit}
@@ -498,9 +527,9 @@ export function GalleryAdminClient() {
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {images.map((image, index) => (
-                <ImageCard 
-                  key={image.id} 
-                  image={image} 
+                <ImageCard
+                  key={image.id}
+                  image={image}
                   index={index}
                   totalInCategory={images.length}
                   onEdit={handleEdit}
@@ -523,25 +552,27 @@ export function GalleryAdminClient() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {editingImage?.id ? "Modifier l'image" : "Nouvelle image"}
-            </DialogTitle>
+            <DialogTitle>{editingImage?.id ? "Modifier l'image" : "Nouvelle image"}</DialogTitle>
           </DialogHeader>
-          
+
           {editingImage && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label>Categorie</Label>
-                <Select 
-                  value={editingImage.category} 
-                  onValueChange={(v: string) => setEditingImage({ ...editingImage, category: v as GalleryCategory })}
+                <Select
+                  value={editingImage.category}
+                  onValueChange={(v: string) =>
+                    setEditingImage({ ...editingImage, category: v as GalleryCategory })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(GALLERY_CATEGORY_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                      <SelectItem key={key} value={key}>
+                        {config.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -552,9 +583,9 @@ export function GalleryAdminClient() {
                 <div className="space-y-2">
                   {editingImage.image_url && (
                     <div className="relative inline-block">
-                      <img 
-                        src={editingImage.image_url} 
-                        alt="Apercu" 
+                      <img
+                        src={editingImage.image_url}
+                        alt="Apercu"
                         className="w-full max-w-[200px] h-auto object-cover rounded border"
                       />
                       <button
@@ -585,13 +616,26 @@ export function GalleryAdminClient() {
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {editingImage.category && GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory] && (
-                      <>Taille: {GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory].targetWidth}x{GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory].targetHeight}px, WebP 70%</>
-                    )}
+                    {editingImage.category &&
+                      GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory] && (
+                        <>
+                          Taille:{" "}
+                          {
+                            GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory]
+                              .targetWidth
+                          }
+                          x
+                          {
+                            GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory]
+                              .targetHeight
+                          }
+                          px, WebP 70%
+                        </>
+                      )}
                   </p>
                 </div>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="alt_text">Texte alternatif</Label>
                 <Input
@@ -659,9 +703,9 @@ export function GalleryAdminClient() {
           </DialogHeader>
           {previewImage && (
             <div className="flex justify-center">
-              <img 
-                src={previewImage.image_url} 
-                alt={previewImage.alt_text || ""} 
+              <img
+                src={previewImage.image_url}
+                alt={previewImage.alt_text || ""}
                 className="max-w-full max-h-[70vh] object-contain"
               />
             </div>
@@ -688,40 +732,64 @@ interface ImageCardProps {
   onMoveDown: (image: GalleryImage, index: number) => void;
 }
 
-function ImageCard({ image, index, totalInCategory, onEdit, onDelete, onPreview, onMoveUp, onMoveDown }: ImageCardProps) {
+function ImageCard({
+  image,
+  index,
+  totalInCategory,
+  onEdit,
+  onDelete,
+  onPreview,
+  onMoveUp,
+  onMoveDown,
+}: ImageCardProps) {
   return (
     <div className="group relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden aspect-square">
-      <img 
-        src={image.image_url} 
-        alt={image.alt_text || ""} 
+      <img
+        src={image.image_url}
+        alt={image.alt_text || ""}
         className="w-full h-full object-cover cursor-pointer"
         onClick={() => onPreview(image)}
       />
       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => onPreview(image)}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 text-white hover:bg-white/20"
+          onClick={() => onPreview(image)}
+        >
           <Eye className="w-4 h-4" />
         </Button>
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => onEdit(image)}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 text-white hover:bg-white/20"
+          onClick={() => onEdit(image)}
+        >
           <Pencil className="w-4 h-4" />
         </Button>
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => onDelete(image)}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 text-white hover:bg-white/20"
+          onClick={() => onDelete(image)}
+        >
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
       <div className="absolute top-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button 
-          size="icon" 
-          variant="secondary" 
-          className="h-6 w-6" 
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-6 w-6"
           onClick={() => onMoveUp(image, index)}
           disabled={index === 0}
         >
           <ChevronUp className="w-3 h-3" />
         </Button>
-        <Button 
-          size="icon" 
-          variant="secondary" 
-          className="h-6 w-6" 
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-6 w-6"
           onClick={() => onMoveDown(image, index)}
           disabled={index === totalInCategory - 1}
         >
