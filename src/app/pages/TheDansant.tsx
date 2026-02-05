@@ -5,14 +5,14 @@ export function TheDansant() {
   const pageDescription = "Thé Dansant 2026 à Sucy-en-Brie - Journée de danse et musique avec l'Harmonie Municipale et Picotango Orquesta. Réservez vos places !";
 
   const commercants = [
-    { name: "L'Arbre ô jeux", url: "https://www.larbreojeux.fr/", image: "/images/arbre.png" },
-    { name: "Boulangerie Saint Honoré", url: "https://share.google/y1oaJVB9eWm6SO3Jt", image: "/images/thedansant/boulangerie.jpg" },
-    { name: "Be Perfect", url: "https://www.planity.com/be-perfect-sucy-en-brie-94370", image: "/images/beperfect.jpg" },
-    { name: "L'Oiseau Moqueur", url: "https://www.sucyofcourses.fr/l-oiseau-moqueur", image: "/images/oiseau.jpg" },
-    { name: "Isabelle Chaussures", url: "https://www.facebook.com/chaussuresisabelle94/?locale=fr_FR", image: "/images/logoisabelle.jpg" },
-    { name: "Mine d'Or", url: "https://www.mine-or.com/", image: "/images/thedansant/minedor.png" },
-    { name: "Made In Sens", url: "https://madeinsens.com/", image: "/images/thedansant/madeinsens.jpg" },
-    { name: "Rucher Clos Pacot", url: "https://www.instagram.com/rucherclospacot", image: "/images/thedansant/llogorc.jpg" },
+    { name: "L'Arbre ô jeux", url: "https://www.larbreojeux.fr/", image: "/images/arbre.webp" },
+    { name: "Boulangerie Saint Honoré", url: "https://share.google/y1oaJVB9eWm6SO3Jt", image: "/images/thedansant/boulangerie.webp" },
+    { name: "Be Perfect", url: "https://www.planity.com/be-perfect-sucy-en-brie-94370", image: "/images/beperfect.webp" },
+    { name: "L'Oiseau Moqueur", url: "https://www.sucyofcourses.fr/l-oiseau-moqueur", image: "/images/oiseau.webp" },
+    { name: "Isabelle Chaussures", url: "https://www.facebook.com/chaussuresisabelle94/?locale=fr_FR", image: "/images/logoisabelle.webp" },
+    { name: "Mine d'Or", url: "https://www.mine-or.com/", image: "/images/thedansant/minedor.webp" },
+    { name: "Made In Sens", url: "https://madeinsens.com/", image: "/images/thedansant/madeinsens.webp" },
+    { name: "Rucher Clos Pacot", url: "https://www.instagram.com/rucherclospacot", image: "/images/thedansant/llogorc.webp" },
   ];
 
   const commercantsText = [
@@ -36,13 +36,13 @@ export function TheDansant() {
   ];
 
   const associations = [
-    { name: "Kifékoi?", url: "https://kifekoisucy.fr/", image: "/images/logo-kifekoi.png" },
-    { name: "Confrérie des Côteaux de Sucy", url: "https://confrerie-sucy.fr/", image: "/images/logo-confrerie.jpeg" },
-    { name: "Sucy Loisirs Accueil", url: "https://sla-sucy.fr/", image: "/images/logo-sla.png" },
-    { name: "Le Club Montaleau", url: "http://www.club-montaleau.fr/", image: "/images/logo-clubmontaleau.jpeg" },
+    { name: "Kifékoi?", url: "https://kifekoisucy.fr/", image: "/images/logo-kifekoi.webp" },
+    { name: "Confrérie des Côteaux de Sucy", url: "https://confrerie-sucy.fr/", image: "/images/logo-confrerie.webp" },
+    { name: "Sucy Loisirs Accueil", url: "https://sla-sucy.fr/", image: "/images/logo-sla.webp" },
+    { name: "Le Club Montaleau", url: "http://www.club-montaleau.fr/", image: "/images/logo-clubmontaleau.webp" },
   ];
 
-  const galleryImages = Array.from({ length: 12 }, (_, i) => `/images/thedansant/thedansant${i + 1}.jpg`);
+  const galleryImages = Array.from({ length: 12 }, (_, i) => `/images/thedansant/thedansant${i + 1}.webp`);
 
   return (
     <>
@@ -70,8 +70,8 @@ export function TheDansant() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 mb-12">
-          <img src="/images/thedansant/thedansant20261.png" alt="Flyer Thé Dansant 2026 - Part 1" className="w-full rounded-lg shadow-lg" />
-          <img src="/images/thedansant/thedansant20262.png" alt="Flyer Thé Dansant 2026 - Part 2" className="w-full rounded-lg shadow-lg" />
+          <img src="/images/thedansant/thedansant20261.webp" alt="Flyer Thé Dansant 2026 - Part 1" className="w-full rounded-lg shadow-lg" />
+          <img src="/images/thedansant/thedansant20262.webp" alt="Flyer Thé Dansant 2026 - Part 2" className="w-full rounded-lg shadow-lg" />
         </div>
 
         <section className="mb-12">
@@ -114,7 +114,7 @@ export function TheDansant() {
           </p>
           <div className="flex justify-center mb-8">
             <a href="https://www.ville-sucy.fr/" target="_blank" rel="noopener noreferrer">
-              <img src="/images/logo-sucy.png" alt="Ville de Sucy-en-Brie" className="h-24" />
+              <img src="/images/logo-sucy.webp" alt="Ville de Sucy-en-Brie" className="h-24" />
             </a>
           </div>
 

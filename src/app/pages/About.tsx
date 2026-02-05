@@ -3,21 +3,21 @@ export function About() {
   const pageDescription = "Découvrez Les Amis de l'Harmonie de Sucy-en-Brie, notre bureau et notre mission : soutenir l'Harmonie Municipale et promouvoir la musique.";
 
   const teamMembers = [
-    { name: "Maxime Leduc", role: "Président", description: "Saxophoniste de l'Harmonie", image: "/images/team/maxime.png" },
-    { name: "Andréa", role: "Vice-Présidente", description: "Percussionniste de l'Harmonie", image: "/images/team/andrea.png" },
-    { name: "David Brunet", role: "Directeur musical", description: "Chef d'orchestre de l'Harmonie", image: "/images/team/david.png" },
-    { name: "Carole Siméone", role: "Trésorière", description: "Saxophoniste de l'Harmonie", image: "/images/team/carole.png" },
-    { name: "Mario Nunes", role: "Trésorier adjoint", description: "Parent d'un musicien de l'Harmonie", image: "/images/team/mario.png" },
-    { name: "Estelle Debache", role: "Responsable communication", description: "Percussionniste de l'Harmonie", image: "/images/team/estelle.png" },
-    { name: "Marcel Hamon", role: "Membre", description: "Chef adjoint et percussionniste de l'Harmonie", image: "/images/team/marcel.png" },
+    { name: "Maxime Leduc", role: "Président", description: "Saxophoniste de l'Harmonie", image: "/images/team/maxime.webp" },
+    { name: "Andréa", role: "Vice-Présidente", description: "Percussionniste de l'Harmonie", image: "/images/team/andrea.webp" },
+    { name: "David Brunet", role: "Directeur musical", description: "Chef d'orchestre de l'Harmonie", image: "/images/team/david.webp" },
+    { name: "Carole Siméone", role: "Trésorière", description: "Saxophoniste de l'Harmonie", image: "/images/team/carole.webp" },
+    { name: "Mario Nunes", role: "Trésorier adjoint", description: "Parent d'un musicien de l'Harmonie", image: "/images/team/mario.webp" },
+    { name: "Estelle Debache", role: "Responsable communication", description: "Percussionniste de l'Harmonie", image: "/images/team/estelle.webp" },
+    { name: "Marcel Hamon", role: "Membre", description: "Chef adjoint et percussionniste de l'Harmonie", image: "/images/team/marcel.webp" },
   ];
 
   const photos = [
-    "29asso.jpg", "28asso.jpg", "10asso.jpg", "2asso.jpg", "3asso.jpg", "4asso.jpg", "5asso.jpg", "6asso.jpg",
-    "8asso.jpg", "9asso.jpg", "11asso.jpg", "12asso.jpg", "13asso.jpg", "14asso.jpg", "15asso.jpg", "16asso.jpg",
-    "17asso.jpg", "18asso.jpg", "19asso.jpg", "20asso.jpg", "21asso.jpg", "22asso.jpg", "23asso.jpg", "1asso.png",
-    "24asso.jpg", "25asso.jpg", "26asso.jpg", "27asso.jpg", "30asso.jpg", "31asso.jpg", "32asso.jpg", "33asso.jpg",
-    "34asso.jpg", "35asso.jpg", "36asso.jpg", "37asso.jpg", "38asso.jpg", "39asso.jpg", "40asso.jpg",
+    "29asso.webp", "28asso.webp", "10asso.webp", "2asso.webp", "3asso.webp", "4asso.webp", "5asso.webp", "6asso.webp",
+    "8asso.webp", "9asso.webp", "11asso.webp", "12asso.webp", "13asso.webp", "14asso.webp", "15asso.webp", "16asso.webp",
+    "17asso.webp", "18asso.webp", "19asso.webp", "20asso.webp", "21asso.webp", "22asso.webp", "23asso.webp", "1asso.webp",
+    "24asso.webp", "25asso.webp", "26asso.webp", "27asso.webp", "30asso.webp", "31asso.webp", "32asso.webp", "33asso.webp",
+    "34asso.webp", "35asso.webp", "36asso.webp", "37asso.webp", "38asso.webp", "39asso.webp", "40asso.webp",
   ];
 
   return (

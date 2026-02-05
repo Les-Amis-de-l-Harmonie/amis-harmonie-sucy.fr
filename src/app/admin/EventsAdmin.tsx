@@ -33,13 +33,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Upload, X, Crop, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Crop, Check, RefreshCw } from "lucide-react";
 import type { Event } from "@/db/types";
 
 // Target size for event images (2x display size for retina)
-const TARGET_WIDTH = 800;
-const TARGET_HEIGHT = 800;
-const JPEG_QUALITY = 0.85;
+const TARGET_WIDTH = 600;
+const TARGET_HEIGHT = 600;
+const WEBP_QUALITY = 0.70;
 
 // Create cropped and resized image
 async function getCroppedImg(
@@ -89,8 +89,8 @@ async function getCroppedImg(
           reject(new Error("Canvas is empty"));
         }
       },
-      "image/jpeg",
-      JPEG_QUALITY
+      "image/webp",
+      WEBP_QUALITY
     );
   });
 }
@@ -98,9 +98,52 @@ async function getCroppedImg(
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    image.crossOrigin = "anonymous";
     image.addEventListener("load", () => resolve(image));
     image.addEventListener("error", (error) => reject(error));
     image.src = url;
+  });
+}
+
+async function recompressImage(imageUrl: string): Promise<Blob> {
+  const image = await createImage(imageUrl);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("No 2d context");
+  }
+
+  const aspectRatio = image.width / image.height;
+  let outputWidth = image.width;
+  let outputHeight = image.height;
+
+  if (outputWidth > TARGET_WIDTH) {
+    outputWidth = TARGET_WIDTH;
+    outputHeight = TARGET_WIDTH / aspectRatio;
+  }
+  if (outputHeight > TARGET_HEIGHT) {
+    outputHeight = TARGET_HEIGHT;
+    outputWidth = TARGET_HEIGHT * aspectRatio;
+  }
+
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+
+  ctx.drawImage(image, 0, 0, outputWidth, outputHeight);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Canvas is empty"));
+        }
+      },
+      "image/webp",
+      WEBP_QUALITY
+    );
   });
 }
 
@@ -139,6 +182,9 @@ export function EventsAdminClient() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const [recompressing, setRecompressing] = useState(false);
+  const [recompressProgress, setRecompressProgress] = useState({ current: 0, total: 0 });
 
   const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -223,7 +269,7 @@ export function EventsAdminClient() {
     try {
       const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
       const formData = new FormData();
-      formData.append("file", croppedBlob, "event.jpg");
+      formData.append("file", croppedBlob, "event.webp");
 
       const response = await fetch("/api/admin/upload", {
         method: "POST",
@@ -248,6 +294,58 @@ export function EventsAdminClient() {
   const handleCropCancel = () => {
     setCropperOpen(false);
     setImageSrc(null);
+  };
+
+  const handleRecompressAll = async () => {
+    const eventsWithR2Images = events.filter(
+      (e) => e.image && e.image.includes("/images/r2/")
+    );
+
+    if (eventsWithR2Images.length === 0) {
+      alert("Aucune image R2 à recompresser");
+      return;
+    }
+
+    if (!confirm(`Recompresser ${eventsWithR2Images.length} image(s) en WebP 600x600 ?`)) {
+      return;
+    }
+
+    setRecompressing(true);
+    setRecompressProgress({ current: 0, total: eventsWithR2Images.length });
+
+    let successCount = 0;
+    for (let i = 0; i < eventsWithR2Images.length; i++) {
+      const event = eventsWithR2Images[i];
+      setRecompressProgress({ current: i + 1, total: eventsWithR2Images.length });
+
+      try {
+        const blob = await recompressImage(event.image!);
+        const formData = new FormData();
+        formData.append("file", blob, "event.webp");
+
+        const uploadResponse = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json() as { success?: boolean; url?: string; error?: string };
+        if (uploadData.success && uploadData.url) {
+          await fetch(`/api/admin/events?id=${event.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...event, image: uploadData.url }),
+          });
+          successCount++;
+        }
+      } catch (error) {
+        console.error(`Error recompressing image for event ${event.id}:`, error);
+      }
+    }
+
+    setRecompressing(false);
+    setRecompressProgress({ current: 0, total: 0 });
+    alert(`${successCount}/${eventsWithR2Images.length} image(s) recompressée(s)`);
+    fetchEvents();
   };
 
   const handleSave = async () => {
@@ -285,10 +383,18 @@ export function EventsAdminClient() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Événements</h1>
-        <Button onClick={handleNew}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvel événement
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRecompressAll} disabled={recompressing}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${recompressing ? "animate-spin" : ""}`} />
+            {recompressing 
+              ? `Recompression ${recompressProgress.current}/${recompressProgress.total}...` 
+              : "Recompresser images"}
+          </Button>
+          <Button onClick={handleNew}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvel événement
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -541,7 +647,7 @@ export function EventsAdminClient() {
           </div>
 
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            L'image sera automatiquement redimensionnée et compressée (800x800 max, JPEG 85%).
+            L'image sera automatiquement redimensionnée et compressée (600x600 max, WebP 70%).
           </p>
 
           <DialogFooter>

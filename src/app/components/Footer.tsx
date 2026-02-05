@@ -12,12 +12,12 @@ export function Footer() {
         <div className="mb-6 inline-flex">
           <a href="/">
             <img
-              src="/images/logo.png"
+              src="/images/logo.webp"
               alt="Les Amis de l'Harmonie de Sucy"
               className="h-20 w-auto dark:hidden"
             />
             <img
-              src="/images/logo-dark.png"
+              src="/images/logo-dark.webp"
               alt="Les Amis de l'Harmonie de Sucy"
               className="h-20 w-auto hidden dark:block"
             />

@@ -1,18 +1,18 @@
 export function Partenaires() {
   const partners = [
-    { name: "Ville de Sucy-en-Brie", image: "/images/logo-sucy.png" },
-    { name: "Grain de Vent", image: "/images/graindevent.png" },
-    { name: "Kifékoi?", image: "/images/logo-kifekoi.png" },
-    { name: "Confrérie des Côteaux de Sucy", image: "/images/logo-confrerie.jpeg" },
-    { name: "Sucy Loisirs Accueil", image: "/images/logo-sla.png" },
-    { name: "Le Club Montaleau", image: "/images/logo-clubmontaleau.jpeg" },
-    { name: "K à contre moun", image: "/images/logo-k.png" },
-    { name: "Confédération Musicale de France", image: "/images/logo-cmf.png" },
-    { name: "CMF Val-de-Marne", image: "/images/logo-cmf-vdm.jpeg" },
-    { name: "Oiseau", image: "/images/oiseau.jpg" },
-    { name: "Be Perfect", image: "/images/beperfect.jpg" },
-    { name: "Isabelle", image: "/images/logoisabelle.jpg" },
-    { name: "L'Arbre ô jeux", image: "/images/arbre.png" },
+    { name: "Ville de Sucy-en-Brie", image: "/images/logo-sucy.webp" },
+    { name: "Grain de Vent", image: "/images/graindevent.webp" },
+    { name: "Kifékoi?", image: "/images/logo-kifekoi.webp" },
+    { name: "Confrérie des Côteaux de Sucy", image: "/images/logo-confrerie.webp" },
+    { name: "Sucy Loisirs Accueil", image: "/images/logo-sla.webp" },
+    { name: "Le Club Montaleau", image: "/images/logo-clubmontaleau.webp" },
+    { name: "K à contre moun", image: "/images/logo-k.webp" },
+    { name: "Confédération Musicale de France", image: "/images/logo-cmf.webp" },
+    { name: "CMF Val-de-Marne", image: "/images/logo-cmf-vdm.webp" },
+    { name: "Oiseau", image: "/images/oiseau.webp" },
+    { name: "Be Perfect", image: "/images/beperfect.webp" },
+    { name: "Isabelle", image: "/images/logoisabelle.webp" },
+    { name: "L'Arbre ô jeux", image: "/images/arbre.webp" },
   ];
 
   return (

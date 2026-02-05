@@ -31,7 +31,7 @@ export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
     "@type": "Organization",
     "name": SITE_NAME,
     "url": SITE_URL,
-    "logo": `${SITE_URL}/images/logo.png`,
+    "logo": `${SITE_URL}/images/logo.webp`,
     "description": DEFAULT_DESCRIPTION,
     "address": {
       "@type": "PostalAddress",

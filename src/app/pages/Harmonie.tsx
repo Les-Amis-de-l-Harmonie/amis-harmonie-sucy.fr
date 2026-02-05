@@ -1,14 +1,14 @@
 export function Harmonie() {
   const photos = [
-    "harmonie44.jpg", "harmonie43.jpg", "harmonie45.png", "harmonie40.png",
-    "harmonie8.jpg", "harmonie9.jpg", "harmonie10.jpg", "harmonie11.jpg",
-    "harmonie12.jpg", "harmonie13.jpg", "harmonie14.jpg", "harmonie15.jpg",
-    "harmonie16.jpeg", "harmonie17.png", "harmonie18.jpg", "harmonie19.jpg",
-    "harmonie20.jpg", "harmonie21.jpg", "harmonie22.jpg", "harmonie23.jpg",
-    "harmonie25.jpg", "harmonie26.jpg", "harmonie7.jpg", "harmonie27.jpg",
-    "harmonie29.jpg", "harmonie30.jpg", "harmonie31.jpg", "harmonie32.jpg",
-    "harmonie33.jpg", "harmonie34.jpg", "harmonie35.jpg", "harmonie37.jpg",
-    "harmonie38.png", "harmonie39.png", "harmonie41.jpg", "harmonie42.png",
+    "harmonie44.webp", "harmonie43.webp", "harmonie45.webp", "harmonie40.webp",
+    "harmonie8.webp", "harmonie9.webp", "harmonie10.webp", "harmonie11.webp",
+    "harmonie12.webp", "harmonie13.webp", "harmonie14.webp", "harmonie15.webp",
+    "harmonie16.webp", "harmonie17.webp", "harmonie18.webp", "harmonie19.webp",
+    "harmonie20.webp", "harmonie21.webp", "harmonie22.webp", "harmonie23.webp",
+    "harmonie25.webp", "harmonie26.webp", "harmonie7.webp", "harmonie27.webp",
+    "harmonie29.webp", "harmonie30.webp", "harmonie31.webp", "harmonie32.webp",
+    "harmonie33.webp", "harmonie34.webp", "harmonie35.webp", "harmonie37.webp",
+    "harmonie38.webp", "harmonie39.webp", "harmonie41.webp", "harmonie42.webp",
   ];
 
   return (
@@ -27,7 +27,7 @@ export function Harmonie() {
 
           <div className="mb-8">
             <img
-              src="/images/harmonie25.png"
+              src="/images/harmonie25.webp"
               alt="L'Harmonie Municipale de Sucy-en-Brie"
               className="w-full"
             />
@@ -66,7 +66,7 @@ export function Harmonie() {
             <div className="w-full md:w-1/4 md:my-6 px-10 py-6 md:py-10 border-b-4 border-white/30 md:border-b-0 md:border-r-4">
               <img
                 className="w-[100px] h-auto md:w-full mx-auto"
-                src="/images/i.png"
+                src="/images/i.webp"
                 alt="Information"
                 loading="lazy"
               />

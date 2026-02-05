@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 
 const images = [
-  "/images/home1.jpg",
-  "/images/home2.jpg",
-  "/images/home3.jpg",
-  "/images/home4.jpg",
+  "/images/home1.webp",
+  "/images/home2.webp",
+  "/images/home3.webp",
+  "/images/home4.webp",
 ];
 
 export function HomeSlideshow() {

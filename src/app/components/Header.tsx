@@ -52,12 +52,12 @@ export function Header() {
         <div className="flex items-center justify-between h-20">
           <a href="/" className="flex-shrink-0">
             <img
-              src="/images/logo.png"
+              src="/images/logo.webp"
               alt="Les Amis de l'Harmonie de Sucy"
               className="h-16 w-auto dark:hidden"
             />
             <img
-              src="/images/logo-dark.png"
+              src="/images/logo-dark.webp"
               alt="Les Amis de l'Harmonie de Sucy"
               className="h-16 w-auto hidden dark:block"
             />
