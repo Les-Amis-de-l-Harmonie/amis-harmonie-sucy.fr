@@ -3,16 +3,7 @@
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 import type { Video } from "@/db/types";
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
+import { formatDateLong } from "@/lib/dates";
 
 function VideoCard({ video }: { video: Video }) {
   return (
@@ -31,7 +22,7 @@ function VideoCard({ video }: { video: Video }) {
         </h3>
         {video.publication_date && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {formatDate(video.publication_date)}
+            {formatDateLong(video.publication_date)}
           </p>
         )}
       </div>

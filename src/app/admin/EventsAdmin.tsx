@@ -8,6 +8,7 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent } from "@/app/components/ui/card";
+import { isEventPast } from "@/lib/dates";
 import {
   Table,
   TableBody,
@@ -39,13 +40,10 @@ import type { Event } from "@/db/types";
 // Target size for event images (2x display size for retina)
 const TARGET_WIDTH = 600;
 const TARGET_HEIGHT = 600;
-const WEBP_QUALITY = 0.70;
+const WEBP_QUALITY = 0.7;
 
 // Create cropped and resized image
-async function getCroppedImg(
-  imageSrc: string,
-  pixelCrop: Area
-): Promise<Blob> {
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -58,7 +56,7 @@ async function getCroppedImg(
   const aspectRatio = pixelCrop.width / pixelCrop.height;
   let outputWidth = TARGET_WIDTH;
   let outputHeight = TARGET_WIDTH / aspectRatio;
-  
+
   // If height is larger, constrain by height instead
   if (outputHeight > TARGET_HEIGHT) {
     outputHeight = TARGET_HEIGHT;
@@ -147,13 +145,6 @@ async function recompressImage(imageUrl: string): Promise<Blob> {
   });
 }
 
-function isEventPast(dateStr: string): boolean {
-  const eventDate = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return eventDate < today;
-}
-
 const emptyEvent = {
   title: "",
   image: "",
@@ -194,7 +185,7 @@ export function EventsAdminClient() {
     try {
       const response = await fetch("/api/admin/events");
       if (response.ok) {
-        const data = await response.json() as Event[];
+        const data = (await response.json()) as Event[];
         setEvents(data);
       }
     } catch (error) {
@@ -225,12 +216,12 @@ export function EventsAdminClient() {
 
   const confirmDelete = async () => {
     if (!deletingEvent) return;
-    
+
     try {
       const response = await fetch(`/api/admin/events?id=${deletingEvent.id}`, {
         method: "DELETE",
       });
-      
+
       if (response.ok) {
         fetchEvents();
       }
@@ -276,7 +267,7 @@ export function EventsAdminClient() {
         body: formData,
       });
 
-      const data = await response.json() as { success?: boolean; url?: string; error?: string };
+      const data = (await response.json()) as { success?: boolean; url?: string; error?: string };
       if (data.success && data.url) {
         setEditingEvent({ ...editingEvent, image: data.url });
       } else {
@@ -297,9 +288,7 @@ export function EventsAdminClient() {
   };
 
   const handleRecompressAll = async () => {
-    const eventsWithR2Images = events.filter(
-      (e) => e.image && e.image.includes("/images/r2/")
-    );
+    const eventsWithR2Images = events.filter((e) => e.image && e.image.includes("/images/r2/"));
 
     if (eventsWithR2Images.length === 0) {
       alert("Aucune image R2 à recompresser");
@@ -328,7 +317,11 @@ export function EventsAdminClient() {
           body: formData,
         });
 
-        const uploadData = await uploadResponse.json() as { success?: boolean; url?: string; error?: string };
+        const uploadData = (await uploadResponse.json()) as {
+          success?: boolean;
+          url?: string;
+          error?: string;
+        };
         if (uploadData.success && uploadData.url) {
           await fetch(`/api/admin/events?id=${event.id}`, {
             method: "PUT",
@@ -350,7 +343,7 @@ export function EventsAdminClient() {
 
   const handleSave = async () => {
     if (!editingEvent) return;
-    
+
     setSaving(true);
     try {
       const isNew = !editingEvent.id;
@@ -386,8 +379,8 @@ export function EventsAdminClient() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleRecompressAll} disabled={recompressing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${recompressing ? "animate-spin" : ""}`} />
-            {recompressing 
-              ? `Recompression ${recompressProgress.current}/${recompressProgress.total}...` 
+            {recompressing
+              ? `Recompression ${recompressProgress.current}/${recompressProgress.total}...`
               : "Recompresser images"}
           </Button>
           <Button onClick={handleNew}>
@@ -411,35 +404,42 @@ export function EventsAdminClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-                {events.map((event) => {
-                  const isPast = isEventPast(event.date);
-                  return (
-                    <TableRow key={event.id}>
-                      <TableCell className="font-medium">{event.title}</TableCell>
-                      <TableCell>{event.date}</TableCell>
-                      <TableCell>{event.location}</TableCell>
-                      <TableCell>{event.price || "-"}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          isPast ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300" : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
-                        }`}>
-                          {isPast ? "Passé" : "À venir"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+              {events.map((event) => {
+                const isPast = isEventPast(event.date);
+                return (
+                  <TableRow key={event.id}>
+                    <TableCell className="font-medium">{event.title}</TableCell>
+                    <TableCell>{event.date}</TableCell>
+                    <TableCell>{event.location}</TableCell>
+                    <TableCell>{event.price || "-"}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          isPast
+                            ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                            : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+                        }`}
+                      >
+                        {isPast ? "Passé" : "À venir"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {events.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-gray-500 dark:text-gray-400"
+                  >
                     Aucun événement
                   </TableCell>
                 </TableRow>
@@ -456,7 +456,7 @@ export function EventsAdminClient() {
               {editingEvent?.id ? "Modifier l'événement" : "Nouvel événement"}
             </DialogTitle>
           </DialogHeader>
-          
+
           {editingEvent && (
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -467,7 +467,7 @@ export function EventsAdminClient() {
                   onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="date">Date *</Label>
@@ -514,9 +514,9 @@ export function EventsAdminClient() {
                 <div className="space-y-2">
                   {editingEvent.image && (
                     <div className="relative inline-block">
-                      <img 
-                        src={editingEvent.image} 
-                        alt="Aperçu" 
+                      <img
+                        src={editingEvent.image}
+                        alt="Aperçu"
                         className="w-32 h-32 object-cover rounded border"
                       />
                       <button
@@ -554,7 +554,9 @@ export function EventsAdminClient() {
                 <Textarea
                   id="description"
                   value={editingEvent.description || ""}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditingEvent({ ...editingEvent, description: e.target.value })
+                  }
                   rows={4}
                 />
               </div>
@@ -565,7 +567,9 @@ export function EventsAdminClient() {
                   <Input
                     id="details_link"
                     value={editingEvent.details_link || ""}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, details_link: e.target.value })}
+                    onChange={(e) =>
+                      setEditingEvent({ ...editingEvent, details_link: e.target.value })
+                    }
                     placeholder="/the-dansant"
                   />
                 </div>
@@ -574,7 +578,9 @@ export function EventsAdminClient() {
                   <Input
                     id="reservation_link"
                     value={editingEvent.reservation_link || ""}
-                    onChange={(e) => setEditingEvent({ ...editingEvent, reservation_link: e.target.value })}
+                    onChange={(e) =>
+                      setEditingEvent({ ...editingEvent, reservation_link: e.target.value })
+                    }
                     placeholder="https://..."
                   />
                 </div>
@@ -598,7 +604,8 @@ export function EventsAdminClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'événement ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'événement "{deletingEvent?.title}" sera définitivement supprimé.
+              Cette action est irréversible. L'événement "{deletingEvent?.title}" sera
+              définitivement supprimé.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -618,7 +625,7 @@ export function EventsAdminClient() {
               Recadrer l'image
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="relative w-full h-[400px] bg-gray-900 rounded-lg overflow-hidden">
             {imageSrc && (
               <Cropper

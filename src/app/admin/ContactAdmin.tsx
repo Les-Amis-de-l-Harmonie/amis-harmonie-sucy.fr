@@ -3,11 +3,28 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/app/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { Eye, Trash2 } from "lucide-react";
 import type { ContactSubmission } from "@/db/types";
+import { formatDateShort } from "@/lib/dates";
 
 export function ContactAdminClient() {
   const [items, setItems] = useState<ContactSubmission[]>([]);
@@ -28,7 +45,9 @@ export function ContactAdminClient() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -43,7 +62,8 @@ export function ContactAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
@@ -66,17 +86,35 @@ export function ContactAdminClient() {
             <TableBody>
               {items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.prenom} {item.nom}</TableCell>
+                  <TableCell className="font-medium">
+                    {item.prenom} {item.nom}
+                  </TableCell>
                   <TableCell>
-                    <a href={`mailto:${item.email}`} className="text-[#a5b3e2] hover:underline">{item.email}</a>
+                    <a href={`mailto:${item.email}`} className="text-[#a5b3e2] hover:underline">
+                      {item.email}
+                    </a>
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{item.message}</TableCell>
-                  <TableCell>{new Date(item.created_at).toLocaleDateString('fr-FR')}</TableCell>
+                  <TableCell>{formatDateShort(item.created_at)}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => { setViewing(item); setViewDialogOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setViewing(item);
+                        setViewDialogOpen(true);
+                      }}
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setDeleting(item); setDeleteDialogOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setDeleting(item);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -84,7 +122,12 @@ export function ContactAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucun message</TableCell>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-gray-500 dark:text-gray-400"
+                  >
+                    Aucun message
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -95,21 +138,29 @@ export function ContactAdminClient() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Message de {viewing?.prenom} {viewing?.nom}</DialogTitle>
+            <DialogTitle>
+              Message de {viewing?.prenom} {viewing?.nom}
+            </DialogTitle>
           </DialogHeader>
           {viewing && (
             <div className="space-y-4 py-4">
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                <a href={`mailto:${viewing.email}`} className="text-primary hover:underline">{viewing.email}</a>
+                <a href={`mailto:${viewing.email}`} className="text-primary hover:underline">
+                  {viewing.email}
+                </a>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</p>
-                <p className="text-gray-900 dark:text-gray-100">{new Date(viewing.created_at).toLocaleString('fr-FR')}</p>
+                <p className="text-gray-900 dark:text-gray-100">
+                  {new Date(viewing.created_at).toLocaleString("fr-FR")}
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Message</p>
-                <p className="whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-4 rounded-md text-gray-900 dark:text-gray-100">{viewing.message}</p>
+                <p className="whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-4 rounded-md text-gray-900 dark:text-gray-100">
+                  {viewing.message}
+                </p>
               </div>
             </div>
           )}
@@ -124,7 +175,9 @@ export function ContactAdminClient() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Supprimer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

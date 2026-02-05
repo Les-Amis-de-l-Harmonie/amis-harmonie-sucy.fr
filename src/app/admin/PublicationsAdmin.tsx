@@ -5,11 +5,34 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/app/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/app/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import type { Publication } from "@/db/types";
+import { formatDateShort } from "@/lib/dates";
 
 export function PublicationsAdminClient() {
   const [items, setItems] = useState<Publication[]>([]);
@@ -31,18 +54,23 @@ export function PublicationsAdminClient() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
     try {
       const isNew = !editing.id;
-      const response = await fetch(isNew ? "/api/admin/publications" : `/api/admin/publications?id=${editing.id}`, {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editing),
-      });
+      const response = await fetch(
+        isNew ? "/api/admin/publications" : `/api/admin/publications?id=${editing.id}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editing),
+        }
+      );
       if (response.ok) {
         fetchData();
         setDialogOpen(false);
@@ -58,7 +86,9 @@ export function PublicationsAdminClient() {
   const confirmDelete = async () => {
     if (!deleting) return;
     try {
-      const response = await fetch(`/api/admin/publications?id=${deleting.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/admin/publications?id=${deleting.id}`, {
+        method: "DELETE",
+      });
       if (response.ok) fetchData();
     } catch (error) {
       console.error("Error:", error);
@@ -68,14 +98,23 @@ export function PublicationsAdminClient() {
     }
   };
 
-  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Publications Instagram</h1>
-        <Button onClick={() => { setEditing({ instagram_post_id: "", publication_date: null }); setDialogOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" />Nouvelle publication
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Publications Instagram
+        </h1>
+        <Button
+          onClick={() => {
+            setEditing({ instagram_post_id: "", publication_date: null });
+            setDialogOpen(true);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle publication
         </Button>
       </div>
 
@@ -97,10 +136,10 @@ export function PublicationsAdminClient() {
                   <TableCell>{item.id}</TableCell>
                   <TableCell className="font-mono text-sm">{item.instagram_post_id}</TableCell>
                   <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                    {item.publication_date ? new Date(item.publication_date).toLocaleDateString("fr-FR") : "—"}
+                    {item.publication_date ? formatDateShort(item.publication_date) : "—"}
                   </TableCell>
                   <TableCell>
-                    <a 
+                    <a
                       href={`https://www.instagram.com/p/${item.instagram_post_id}/`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -110,10 +149,24 @@ export function PublicationsAdminClient() {
                     </a>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(item); setDialogOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditing(item);
+                        setDialogOpen(true);
+                      }}
+                    >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setDeleting(item); setDeleteDialogOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setDeleting(item);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -121,7 +174,12 @@ export function PublicationsAdminClient() {
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucune publication</TableCell>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-gray-500 dark:text-gray-400"
+                  >
+                    Aucune publication
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -138,27 +196,38 @@ export function PublicationsAdminClient() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label>ID Instagram *</Label>
-                <Input 
-                  value={editing.instagram_post_id || ""} 
+                <Input
+                  value={editing.instagram_post_id || ""}
                   onChange={(e) => setEditing({ ...editing, instagram_post_id: e.target.value })}
                   placeholder="DSSKC1CCBKx"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">L'ID se trouve dans l'URL: instagram.com/p/<strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong>/</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  L'ID se trouve dans l'URL: instagram.com/p/
+                  <strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong>/
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label>Date de publication</Label>
-                <Input 
+                <Input
                   type="date"
-                  value={editing.publication_date || ""} 
-                  onChange={(e) => setEditing({ ...editing, publication_date: e.target.value || null })}
+                  value={editing.publication_date || ""}
+                  onChange={(e) =>
+                    setEditing({ ...editing, publication_date: e.target.value || null })
+                  }
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Date de publication sur Instagram (pour le tri)</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Date de publication sur Instagram (pour le tri)
+                </p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? "Enregistrement..." : "Enregistrer"}</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -171,7 +240,9 @@ export function PublicationsAdminClient() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Supprimer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

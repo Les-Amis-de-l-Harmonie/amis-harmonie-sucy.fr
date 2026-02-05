@@ -4,18 +4,10 @@ import { EventCard } from "../components/EventCard";
 import { HomeSlideshow } from "./HomeClient";
 import type { Event } from "@/db/types";
 import { getGalleryImages } from "@/app/shared/gallery";
-
-function isEventPast(dateStr: string): boolean {
-  const eventDate = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return eventDate < today;
-}
+import { isEventPast } from "@/lib/dates";
 
 async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
-  const results = await env.DB.prepare(
-    "SELECT * FROM events ORDER BY date DESC"
-  ).all<Event>();
+  const results = await env.DB.prepare("SELECT * FROM events ORDER BY date DESC").all<Event>();
 
   const events = results.results || [];
   return {
@@ -25,8 +17,8 @@ async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
 }
 
 async function HeroSection() {
-  const slideshowImages = await getGalleryImages('home_slideshow');
-  
+  const slideshowImages = await getGalleryImages("home_slideshow");
+
   return (
     <section className="relative py-16 pb-0 pt-4 lg:pt-0 overflow-hidden">
       <img
@@ -42,13 +34,15 @@ async function HeroSection() {
                 Les amis de
               </span>
               <h1 className="font-['Merriweather_Sans'] font-bold text-gray-900 dark:text-white text-4xl md:text-5xl leading-[1] lg:text-[72px]">
-                l'Harmonie de{" "}
-                <span style={{ whiteSpace: "nowrap" }}>Sucy-en-Brie</span>
+                l'Harmonie de <span style={{ whiteSpace: "nowrap" }}>Sucy-en-Brie</span>
               </h1>
             </div>
             <p className="mt-4 px-4 text-gray-600 dark:text-gray-400">
               <i>
-                "Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de l'humanité, car la Musique contribue à la communication et à la compréhension entre les peuples."
+                "Tel qu'il s'est forgé à travers les siècles, l'orchestre représente une des grandes
+                conquêtes du monde civilisé. Il doit être soutenu et développé pour le bien de
+                l'humanité, car la Musique contribue à la communication et à la compréhension entre
+                les peuples."
               </i>
               <span className="ml-2 text-primary font-medium">Riccardo Muti</span>
             </p>
@@ -139,9 +133,15 @@ export function Home() {
   return (
     <>
       <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
-      <meta name="description" content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté." />
+      <meta
+        name="description"
+        content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté."
+      />
       <meta property="og:title" content="Les Amis de l'Harmonie de Sucy-en-Brie" />
-      <meta property="og:description" content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux." />
+      <meta
+        property="og:description"
+        content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux."
+      />
       <meta property="og:url" content="https://amis-harmonie-sucy.fr/" />
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/" />
       <HeroSection />

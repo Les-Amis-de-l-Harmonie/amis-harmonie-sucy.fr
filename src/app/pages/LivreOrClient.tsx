@@ -14,14 +14,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/ui/dialog";
+import { formatDateFrench } from "@/lib/dates";
 
 function GuestbookEntryCard({ entry }: { entry: GuestbookEntry }) {
-  const formattedDate = new Date(entry.date).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const formattedDate = formatDateFrench(entry.date);
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
@@ -71,23 +67,13 @@ function AddEntryForm({ onSuccess }: { onSuccess: () => void }) {
           <Label htmlFor="first_name" className="text-gray-700 dark:text-gray-300">
             Prénom *
           </Label>
-          <Input
-            type="text"
-            id="first_name"
-            name="first_name"
-            required
-          />
+          <Input type="text" id="first_name" name="first_name" required />
         </div>
         <div className="space-y-1">
           <Label htmlFor="last_name" className="text-gray-700 dark:text-gray-300">
             Nom *
           </Label>
-          <Input
-            type="text"
-            id="last_name"
-            name="last_name"
-            required
-          />
+          <Input type="text" id="last_name" name="last_name" required />
         </div>
       </div>
 
@@ -95,19 +81,10 @@ function AddEntryForm({ onSuccess }: { onSuccess: () => void }) {
         <Label htmlFor="message" className="text-gray-700 dark:text-gray-300">
           Message *
         </Label>
-        <Textarea
-          id="message"
-          name="message"
-          rows={4}
-          required
-        />
+        <Textarea id="message" name="message" rows={4} required />
       </div>
 
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-full"
-      >
+      <Button type="submit" disabled={isSubmitting} className="w-full rounded-full">
         {isSubmitting ? "Envoi..." : "Envoyer"}
       </Button>
     </form>
@@ -128,9 +105,9 @@ export function LivreOrClient({ entries }: { entries: GuestbookEntry[] }) {
           </DialogTrigger>
           <DialogContent className="rounded-2xl">
             <DialogHeader>
-            <DialogTitle className="font-['Merriweather_Sans'] text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Laisser un message
-            </DialogTitle>
+              <DialogTitle className="font-['Merriweather_Sans'] text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Laisser un message
+              </DialogTitle>
             </DialogHeader>
             <AddEntryForm
               onSuccess={() => {
@@ -144,7 +121,9 @@ export function LivreOrClient({ entries }: { entries: GuestbookEntry[] }) {
 
       {entries.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-600 dark:text-gray-400 text-lg">Soyez le premier à laisser un message !</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
+            Soyez le premier à laisser un message !
+          </p>
         </div>
       ) : (
         <div className="max-w-2xl mx-auto">
