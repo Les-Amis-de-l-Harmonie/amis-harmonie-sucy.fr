@@ -19,7 +19,7 @@ import { Legal } from "@/app/pages/Legal";
 import { handleContactSubmission } from "@/app/api/contact";
 import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import { handleMagicLinkRequest, handleMagicLinkVerify, handleLogout, verifySession } from "@/app/api/auth";
-import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi, handleUsersApi, handleGalleryApi } from "@/app/api/admin-crud";
+import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi, handleUsersApi, handleGalleryApi, handleR2CleanupApi } from "@/app/api/admin-crud";
 import { handleMusicianProfileApi, handleMusicianAvatarApi } from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
@@ -92,6 +92,7 @@ const app = defineApp([
   route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
   route("/api/admin/gallery", ({ request }: { request: Request }) => handleGalleryApi(request)),
   route("/api/admin/upload", ({ request }: { request: Request }) => handleImageUpload(request)),
+  route("/api/admin/r2-cleanup", ({ request }: { request: Request }) => handleR2CleanupApi(request)),
 
   route("/api/musician/profile", ({ request }: { request: Request }) => handleMusicianProfileApi(request)),
   route("/api/musician/avatar", ({ request }: { request: Request }) => handleMusicianAvatarApi(request)),
