@@ -1,19 +1,15 @@
 import { TheDansantClient } from "./TheDansantClient";
+import { getGalleryImages } from "@/app/shared/gallery";
 
-export function TheDansant() {
+export async function TheDansant() {
   const pageTitle = "Thé Dansant 2026 | Les Amis de l'Harmonie de Sucy";
   const pageDescription = "Thé Dansant 2026 à Sucy-en-Brie - Journée de danse et musique avec l'Harmonie Municipale et Picotango Orquesta. Réservez vos places !";
 
-  const commercants = [
-    { name: "L'Arbre ô jeux", url: "https://www.larbreojeux.fr/", image: "/images/arbre.webp" },
-    { name: "Boulangerie Saint Honoré", url: "https://share.google/y1oaJVB9eWm6SO3Jt", image: "/images/thedansant/boulangerie.webp" },
-    { name: "Be Perfect", url: "https://www.planity.com/be-perfect-sucy-en-brie-94370", image: "/images/beperfect.webp" },
-    { name: "L'Oiseau Moqueur", url: "https://www.sucyofcourses.fr/l-oiseau-moqueur", image: "/images/oiseau.webp" },
-    { name: "Isabelle Chaussures", url: "https://www.facebook.com/chaussuresisabelle94/?locale=fr_FR", image: "/images/logoisabelle.webp" },
-    { name: "Mine d'Or", url: "https://www.mine-or.com/", image: "/images/thedansant/minedor.webp" },
-    { name: "Made In Sens", url: "https://madeinsens.com/", image: "/images/thedansant/madeinsens.webp" },
-    { name: "Rucher Clos Pacot", url: "https://www.instagram.com/rucherclospacot", image: "/images/thedansant/llogorc.webp" },
-  ];
+  const [flyers, sponsors, galleryImages] = await Promise.all([
+    getGalleryImages('thedansant_flyers'),
+    getGalleryImages('thedansant_sponsors'),
+    getGalleryImages('thedansant_gallery')
+  ]);
 
   const commercantsText = [
     { name: "Les Petits Plats de Chloé", url: "https://www.facebook.com/p/Les-Petits-Plats-de-Chlo%C3%A9-0650082824-100077768149167/" },
@@ -42,8 +38,6 @@ export function TheDansant() {
     { name: "Le Club Montaleau", url: "http://www.club-montaleau.fr/", image: "/images/logo-clubmontaleau.webp" },
   ];
 
-  const galleryImages = Array.from({ length: 12 }, (_, i) => `/images/thedansant/thedansant${i + 1}.webp`);
-
   return (
     <>
       <title>{pageTitle}</title>
@@ -70,8 +64,14 @@ export function TheDansant() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 mb-12">
-          <img src="/images/thedansant/thedansant20261.webp" alt="Flyer Thé Dansant 2026 - Part 1" className="w-full rounded-lg shadow-lg" />
-          <img src="/images/thedansant/thedansant20262.webp" alt="Flyer Thé Dansant 2026 - Part 2" className="w-full rounded-lg shadow-lg" />
+          {flyers.map((flyer) => (
+            <img 
+              key={flyer.id} 
+              src={flyer.image_url} 
+              alt={flyer.alt_text || "Flyer Thé Dansant"} 
+              className="w-full rounded-lg shadow-lg" 
+            />
+          ))}
         </div>
 
         <section className="mb-12">
@@ -123,9 +123,9 @@ export function TheDansant() {
             Nous remercions chaleureusement les entreprises et commerçants Sucyciens, dont la participation et la générosité contribuent à faire de cette journée un moment unique.
           </p>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-4 mb-4">
-            {commercants.map((c, i) => (
-              <a key={i} href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
-                <img src={c.image} alt={c.name} className="max-h-16 w-auto object-contain" />
+            {sponsors.map((sponsor) => (
+              <a key={sponsor.id} href={sponsor.link_url || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center bg-white dark:bg-gray-800 rounded p-2">
+                <img src={sponsor.image_url} alt={sponsor.alt_text || ""} className="max-h-16 w-auto object-contain" />
               </a>
             ))}
           </div>
@@ -154,11 +154,11 @@ export function TheDansant() {
 
         <section className="mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {galleryImages.map((src, i) => (
-              <div key={i} className="w-full aspect-[3/2] overflow-hidden rounded-lg">
+            {galleryImages.map((image) => (
+              <div key={image.id} className="w-full aspect-[3/2] overflow-hidden rounded-lg">
                 <img
-                  src={src}
-                  alt={`Thé Dansant photo ${i + 1}`}
+                  src={image.image_url}
+                  alt={image.alt_text || "Thé Dansant"}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />

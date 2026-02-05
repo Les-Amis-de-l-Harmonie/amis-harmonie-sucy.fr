@@ -6,6 +6,7 @@ import { PublicationsAdminClient } from "./PublicationsAdmin";
 import { GuestbookAdminClient } from "./GuestbookAdmin";
 import { ContactAdminClient } from "./ContactAdmin";
 import { UsersAdminClient } from "./UsersAdmin";
+import { GalleryAdminClient } from "./GalleryAdmin";
 
 interface AdminPageProps {
   email: string;
@@ -63,6 +64,14 @@ export function AdminUsersPage({ email }: AdminPageProps) {
   return (
     <AdminLayout email={email}>
       <UsersAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminGalleryPage({ email }: AdminPageProps) {
+  return (
+    <AdminLayout email={email}>
+      <GalleryAdminClient />
     </AdminLayout>
   );
 }

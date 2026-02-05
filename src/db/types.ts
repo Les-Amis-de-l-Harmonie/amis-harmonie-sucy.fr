@@ -110,6 +110,44 @@ export interface UserWithProfile extends User {
   profile?: MusicianProfile;
 }
 
+export type GalleryCategory = 
+  | 'home_slideshow'
+  | 'harmonie_gallery'
+  | 'association_gallery'
+  | 'team'
+  | 'partners'
+  | 'thedansant_gallery'
+  | 'thedansant_flyers'
+  | 'thedansant_sponsors';
+
+export interface GalleryImage {
+  id: number;
+  category: GalleryCategory;
+  image_url: string;
+  alt_text: string | null;
+  link_url: string | null;
+  link_name: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+// Category configuration for display and compression
+export const GALLERY_CATEGORY_CONFIG: Record<GalleryCategory, {
+  label: string;
+  targetWidth: number;
+  targetHeight: number;
+  aspectRatio: number | null; // null = preserve original
+}> = {
+  home_slideshow: { label: 'Accueil - Diaporama', targetWidth: 1600, targetHeight: 900, aspectRatio: 16/9 },
+  harmonie_gallery: { label: 'Harmonie - Galerie', targetWidth: 800, targetHeight: 534, aspectRatio: 3/2 },
+  association_gallery: { label: 'Association - Galerie', targetWidth: 800, targetHeight: 534, aspectRatio: 3/2 },
+  team: { label: 'Equipe', targetWidth: 500, targetHeight: 667, aspectRatio: 3/4 },
+  partners: { label: 'Partenaires', targetWidth: 400, targetHeight: 192, aspectRatio: null },
+  thedansant_gallery: { label: 'The Dansant - Galerie', targetWidth: 800, targetHeight: 534, aspectRatio: 3/2 },
+  thedansant_flyers: { label: 'The Dansant - Affiches', targetWidth: 800, targetHeight: 1200, aspectRatio: null },
+  thedansant_sponsors: { label: 'The Dansant - Sponsors', targetWidth: 256, targetHeight: 128, aspectRatio: null },
+};
+
 // Legacy aliases for backward compatibility during migration
 export type AdminUser = User;
 export type AdminSession = Session & { email?: string };

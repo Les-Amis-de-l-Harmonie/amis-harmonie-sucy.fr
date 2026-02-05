@@ -1,31 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { GalleryImage } from "@/db/types";
 
-const images = [
-  "/images/home1.webp",
-  "/images/home2.webp",
-  "/images/home3.webp",
-  "/images/home4.webp",
-];
+interface HomeSlideshowProps {
+  images: GalleryImage[];
+}
 
-export function HomeSlideshow() {
+export function HomeSlideshow({ images }: HomeSlideshowProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (images.length === 0) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % images.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [images.length]);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
       {images.map((image, index) => (
         <img
-          key={index}
-          src={image}
-          alt=""
+          key={image.id}
+          src={image.image_url}
+          alt={image.alt_text || ""}
           className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 ease-in-out rounded-xl"
           style={{
             transform: `translateX(${(index - currentSlide) * 100}%)`,

@@ -194,7 +194,7 @@ export function EventsAdminClient() {
     try {
       const response = await fetch("/api/admin/events");
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as Event[];
         setEvents(data);
       }
     } catch (error) {
@@ -276,7 +276,7 @@ export function EventsAdminClient() {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success?: boolean; url?: string; error?: string };
       if (data.success && data.url) {
         setEditingEvent({ ...editingEvent, image: data.url });
       } else {

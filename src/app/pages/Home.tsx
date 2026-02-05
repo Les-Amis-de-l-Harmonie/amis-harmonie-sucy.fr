@@ -3,6 +3,7 @@ import { env } from "cloudflare:workers";
 import { EventCard } from "../components/EventCard";
 import { HomeSlideshow } from "./HomeClient";
 import type { Event } from "@/db/types";
+import { getGalleryImages } from "@/app/shared/gallery";
 
 function isEventPast(dateStr: string): boolean {
   const eventDate = new Date(dateStr);
@@ -23,7 +24,9 @@ async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
   };
 }
 
-function HeroSection() {
+async function HeroSection() {
+  const slideshowImages = await getGalleryImages('home_slideshow');
+  
   return (
     <section className="relative py-16 pb-0 pt-4 lg:pt-0 overflow-hidden">
       <img
@@ -60,7 +63,7 @@ function HeroSection() {
           </div>
           <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
             <div className="relative w-[360px] lg:w-full h-full mx-auto overflow-hidden">
-              <HomeSlideshow />
+              <HomeSlideshow images={slideshowImages} />
             </div>
           </div>
         </div>

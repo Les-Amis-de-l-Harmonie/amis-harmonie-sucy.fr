@@ -19,10 +19,11 @@ import { Legal } from "@/app/pages/Legal";
 import { handleContactSubmission } from "@/app/api/contact";
 import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import { handleMagicLinkRequest, handleMagicLinkVerify, handleLogout, verifySession } from "@/app/api/auth";
-import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi, handleUsersApi } from "@/app/api/admin-crud";
+import { handleEventsApi, handleVideosApi, handlePublicationsApi, handleGuestbookApi, handleContactApi, handleUsersApi, handleGalleryApi } from "@/app/api/admin-crud";
 import { handleMusicianProfileApi, handleMusicianAvatarApi } from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
+import { handlePublicGalleryApi } from "@/app/api/gallery";
 import { AdminLoginPage } from "@/app/admin/Login";
 import { 
   AdminDashboardPage, 
@@ -31,7 +32,8 @@ import {
   AdminPublicationsPage, 
   AdminGuestbookPage, 
   AdminContactPage,
-  AdminUsersPage 
+  AdminUsersPage,
+  AdminGalleryPage
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -72,6 +74,8 @@ const app = defineApp([
     post: ({ request }: { request: Request }) => handleGuestbookSubmission(request),
   }),
 
+  route("/api/gallery", ({ request }: { request: Request }) => handlePublicGalleryApi(request)),
+
   route("/api/auth/magic-link", {
     post: ({ request }: { request: Request }) => handleMagicLinkRequest(request, 'admin'),
   }),
@@ -86,6 +90,7 @@ const app = defineApp([
   route("/api/admin/guestbook", ({ request }: { request: Request }) => handleGuestbookApi(request)),
   route("/api/admin/contact", ({ request }: { request: Request }) => handleContactApi(request)),
   route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
+  route("/api/admin/gallery", ({ request }: { request: Request }) => handleGalleryApi(request)),
   route("/api/admin/upload", ({ request }: { request: Request }) => handleImageUpload(request)),
 
   route("/api/musician/profile", ({ request }: { request: Request }) => handleMusicianProfileApi(request)),
@@ -157,6 +162,12 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminUsersPage email={auth.email} />;
+    }),
+
+    route("/admin/gallery", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminGalleryPage email={auth.email} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),

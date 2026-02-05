@@ -1,15 +1,7 @@
-export function Harmonie() {
-  const photos = [
-    "harmonie44.webp", "harmonie43.webp", "harmonie45.webp", "harmonie40.webp",
-    "harmonie8.webp", "harmonie9.webp", "harmonie10.webp", "harmonie11.webp",
-    "harmonie12.webp", "harmonie13.webp", "harmonie14.webp", "harmonie15.webp",
-    "harmonie16.webp", "harmonie17.webp", "harmonie18.webp", "harmonie19.webp",
-    "harmonie20.webp", "harmonie21.webp", "harmonie22.webp", "harmonie23.webp",
-    "harmonie25.webp", "harmonie26.webp", "harmonie7.webp", "harmonie27.webp",
-    "harmonie29.webp", "harmonie30.webp", "harmonie31.webp", "harmonie32.webp",
-    "harmonie33.webp", "harmonie34.webp", "harmonie35.webp", "harmonie37.webp",
-    "harmonie38.webp", "harmonie39.webp", "harmonie41.webp", "harmonie42.webp",
-  ];
+import { getGalleryImages } from "@/app/shared/gallery";
+
+export async function Harmonie() {
+  const galleryImages = await getGalleryImages('harmonie_gallery');
 
   return (
     <>
@@ -89,11 +81,11 @@ export function Harmonie() {
 
           <div className="mt-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {photos.map((photo) => (
-                <div key={photo} className="w-full aspect-[3/2]">
+              {galleryImages.map((image) => (
+                <div key={image.id} className="w-full aspect-[3/2]">
                   <img
-                    src={`/images/${photo}`}
-                    alt=""
+                    src={image.image_url}
+                    alt={image.alt_text || ""}
                     className="rounded-lg shadow-md object-cover w-full h-full"
                     loading="lazy"
                   />

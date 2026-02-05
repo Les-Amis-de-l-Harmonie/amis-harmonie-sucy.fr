@@ -6,6 +6,7 @@ import {
   BookOpen, 
   Mail, 
   Users,
+  Images,
   LogOut 
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
@@ -17,8 +18,9 @@ interface AdminLayoutProps {
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/events", label: "Événements", icon: Calendar },
-  { href: "/admin/videos", label: "Vidéos", icon: Video },
+  { href: "/admin/events", label: "Evenements", icon: Calendar },
+  { href: "/admin/gallery", label: "Galerie", icon: Images },
+  { href: "/admin/videos", label: "Videos", icon: Video },
   { href: "/admin/publications", label: "Publications", icon: Instagram },
   { href: "/admin/guestbook", label: "Livre d'Or", icon: BookOpen },
   { href: "/admin/contact", label: "Messages", icon: Mail },

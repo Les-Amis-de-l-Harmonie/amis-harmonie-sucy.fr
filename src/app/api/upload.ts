@@ -20,6 +20,7 @@ export async function handleImageUpload(request: Request): Promise<Response> {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const folder = (formData.get("folder") as string) || "events";
 
     if (!file) {
       return new Response(JSON.stringify({ error: "No file provided" }), {
@@ -36,16 +37,16 @@ export async function handleImageUpload(request: Request): Promise<Response> {
       });
     }
 
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      return new Response(JSON.stringify({ error: "File too large. Max 5MB" }), {
+      return new Response(JSON.stringify({ error: "File too large. Max 10MB" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const filename = `events/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "webp";
+    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
     

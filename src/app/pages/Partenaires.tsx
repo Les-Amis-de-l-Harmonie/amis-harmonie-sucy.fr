@@ -1,19 +1,7 @@
-export function Partenaires() {
-  const partners = [
-    { name: "Ville de Sucy-en-Brie", image: "/images/logo-sucy.webp" },
-    { name: "Grain de Vent", image: "/images/graindevent.webp" },
-    { name: "Kifékoi?", image: "/images/logo-kifekoi.webp" },
-    { name: "Confrérie des Côteaux de Sucy", image: "/images/logo-confrerie.webp" },
-    { name: "Sucy Loisirs Accueil", image: "/images/logo-sla.webp" },
-    { name: "Le Club Montaleau", image: "/images/logo-clubmontaleau.webp" },
-    { name: "K à contre moun", image: "/images/logo-k.webp" },
-    { name: "Confédération Musicale de France", image: "/images/logo-cmf.webp" },
-    { name: "CMF Val-de-Marne", image: "/images/logo-cmf-vdm.webp" },
-    { name: "Oiseau", image: "/images/oiseau.webp" },
-    { name: "Be Perfect", image: "/images/beperfect.webp" },
-    { name: "Isabelle", image: "/images/logoisabelle.webp" },
-    { name: "L'Arbre ô jeux", image: "/images/arbre.webp" },
-  ];
+import { getGalleryImages } from "@/app/shared/gallery";
+
+export async function Partenaires() {
+  const partners = await getGalleryImages('partners');
 
   return (
     <>
@@ -34,11 +22,11 @@ export function Partenaires() {
           </h6>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-            {partners.map((partner, i) => (
-              <div key={i} className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg">
+            {partners.map((partner) => (
+              <div key={partner.id} className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg">
                 <img
-                  src={partner.image}
-                  alt={partner.name}
+                  src={partner.image_url}
+                  alt={partner.alt_text || ""}
                   className="max-h-24 w-auto object-contain"
                   loading="lazy"
                 />

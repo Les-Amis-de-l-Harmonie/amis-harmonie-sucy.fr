@@ -27,10 +27,10 @@ export function AdminLoginClient() {
         body: formData,
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success?: boolean; message?: string; debug_link?: string; error?: string };
 
       if (data.success) {
-        setMessage({ type: "success", text: data.message });
+        setMessage({ type: "success", text: data.message || "Succès" });
         if (data.debug_link) {
           setDebugLink(data.debug_link);
         }

@@ -1,24 +1,13 @@
-export function About() {
+import { getGalleryImages } from "@/app/shared/gallery";
+
+export async function About() {
   const pageTitle = "L'Association | Les Amis de l'Harmonie de Sucy";
   const pageDescription = "Découvrez Les Amis de l'Harmonie de Sucy-en-Brie, notre bureau et notre mission : soutenir l'Harmonie Municipale et promouvoir la musique.";
 
-  const teamMembers = [
-    { name: "Maxime Leduc", role: "Président", description: "Saxophoniste de l'Harmonie", image: "/images/team/maxime.webp" },
-    { name: "Andréa", role: "Vice-Présidente", description: "Percussionniste de l'Harmonie", image: "/images/team/andrea.webp" },
-    { name: "David Brunet", role: "Directeur musical", description: "Chef d'orchestre de l'Harmonie", image: "/images/team/david.webp" },
-    { name: "Carole Siméone", role: "Trésorière", description: "Saxophoniste de l'Harmonie", image: "/images/team/carole.webp" },
-    { name: "Mario Nunes", role: "Trésorier adjoint", description: "Parent d'un musicien de l'Harmonie", image: "/images/team/mario.webp" },
-    { name: "Estelle Debache", role: "Responsable communication", description: "Percussionniste de l'Harmonie", image: "/images/team/estelle.webp" },
-    { name: "Marcel Hamon", role: "Membre", description: "Chef adjoint et percussionniste de l'Harmonie", image: "/images/team/marcel.webp" },
-  ];
-
-  const photos = [
-    "29asso.webp", "28asso.webp", "10asso.webp", "2asso.webp", "3asso.webp", "4asso.webp", "5asso.webp", "6asso.webp",
-    "8asso.webp", "9asso.webp", "11asso.webp", "12asso.webp", "13asso.webp", "14asso.webp", "15asso.webp", "16asso.webp",
-    "17asso.webp", "18asso.webp", "19asso.webp", "20asso.webp", "21asso.webp", "22asso.webp", "23asso.webp", "1asso.webp",
-    "24asso.webp", "25asso.webp", "26asso.webp", "27asso.webp", "30asso.webp", "31asso.webp", "32asso.webp", "33asso.webp",
-    "34asso.webp", "35asso.webp", "36asso.webp", "37asso.webp", "38asso.webp", "39asso.webp", "40asso.webp",
-  ];
+  const [teamImages, galleryImages] = await Promise.all([
+    getGalleryImages('team'),
+    getGalleryImages('association_gallery')
+  ]);
 
   return (
     <>
@@ -65,28 +54,34 @@ export function About() {
           </div>
 
           <div className="flex flex-wrap text-center md:max-w-[1000px] md:mx-auto justify-center mb-16">
-            {teamMembers.map((member, i) => (
-              <div key={i} className="w-full sm:w-1/2 md:w-1/3 max-w-[275px] mb-6 px-2">
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="mb-3 w-full"
-                  loading="lazy"
-                />
-                <h5 className="text-primary font-bold">{member.name}</h5>
-                <p className="text-gray-700 dark:text-gray-300">{member.role}</p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">{member.description}</p>
-              </div>
-            ))}
+            {teamImages.map((member) => {
+              // link_name format: "Name - Role" or just role, alt_text has the name
+              const name = member.alt_text || "";
+              const role = member.link_name?.includes(" - ") 
+                ? member.link_name.split(" - ").slice(1).join(" - ")
+                : member.link_name || "";
+              return (
+                <div key={member.id} className="w-full sm:w-1/2 md:w-1/3 max-w-[275px] mb-6 px-2">
+                  <img
+                    src={member.image_url}
+                    alt={name}
+                    className="mb-3 w-full"
+                    loading="lazy"
+                  />
+                  <h5 className="text-primary font-bold">{name}</h5>
+                  <p className="text-gray-700 dark:text-gray-300">{role}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {photos.map((photo) => (
-                <div key={photo} className="w-full aspect-[3/2]">
+              {galleryImages.map((image) => (
+                <div key={image.id} className="w-full aspect-[3/2]">
                   <img
-                    src={`/images/${photo}`}
-                    alt=""
+                    src={image.image_url}
+                    alt={image.alt_text || ""}
                     className="rounded-lg shadow-md object-cover w-full h-full"
                     loading="lazy"
                   />
