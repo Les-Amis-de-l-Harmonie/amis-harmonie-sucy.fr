@@ -5,14 +5,15 @@ import { HomeSlideshow } from "./HomeClient";
 import type { Event } from "@/db/types";
 import { getGalleryImages } from "@/app/shared/gallery";
 import { isEventPast } from "@/lib/dates";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
 
 async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
-  const results = await env.DB.prepare("SELECT * FROM events ORDER BY date DESC").all<Event>();
+  const results = await env.DB.prepare("SELECT * FROM events ORDER BY date ASC").all<Event>();
 
   const events = results.results || [];
   return {
     upcoming: events.filter((e) => !isEventPast(e.date)),
-    past: events.filter((e) => isEventPast(e.date)),
+    past: events.filter((e) => isEventPast(e.date)).reverse(),
   };
 }
 
@@ -28,7 +29,7 @@ async function HeroSection() {
       />
       <div className="mx-auto max-w-[1320px]">
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:px-8 gap-8">
-          <div className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center">
+          <ScrollReveal className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center">
             <div>
               <span className="font-bold text-gray-800 dark:text-gray-200 lg:text-[55px]">
                 Les amis de
@@ -54,7 +55,7 @@ async function HeroSection() {
                 En savoir plus
               </a>
             </div>
-          </div>
+          </ScrollReveal>
           <div className="h-[360px] w-full lg:h-[640px] pt-4 order-1 lg:order-2">
             <div className="relative w-[360px] lg:w-full h-full mx-auto overflow-hidden">
               <HomeSlideshow images={slideshowImages} />
@@ -74,12 +75,16 @@ async function EventsSection() {
       <div className="mx-auto max-w-[1320px] flex flex-col gap-8">
         {upcoming.length > 0 && (
           <div className="mb-16">
-            <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
-              Évènements à venir
-            </h2>
+            <ScrollReveal>
+              <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+                Évènements à venir
+              </h2>
+            </ScrollReveal>
             <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {upcoming.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {upcoming.map((event, index) => (
+                <ScrollReveal key={event.id} delay={index * 80} className="h-full">
+                  <EventCard event={event} />
+                </ScrollReveal>
               ))}
             </div>
           </div>
@@ -87,12 +92,16 @@ async function EventsSection() {
 
         {past.length > 0 && (
           <div>
-            <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
-              Évènements passés
-            </h2>
+            <ScrollReveal>
+              <h2 className="font-['Merriweather_Sans'] text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+                Évènements passés
+              </h2>
+            </ScrollReveal>
             <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {past.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {past.map((event, index) => (
+                <ScrollReveal key={event.id} delay={index * 80} className="h-full">
+                  <EventCard event={event} />
+                </ScrollReveal>
               ))}
             </div>
           </div>

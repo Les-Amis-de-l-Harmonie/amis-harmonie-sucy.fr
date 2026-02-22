@@ -9,13 +9,13 @@ interface EventCardProps {
 export function EventCard({ event }: EventCardProps) {
   const isPast = isEventPast(event.date);
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-lg dark:hover:shadow-gray-900/70 transition-shadow flex flex-col">
+    <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/80 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
       {event.image && (
         <div className="relative aspect-[15/8] overflow-hidden">
           <img
             src={event.image}
             alt={event.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         </div>

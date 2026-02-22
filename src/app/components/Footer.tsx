@@ -26,17 +26,26 @@ export function Footer() {
 
         <ul className="mb-12 mt-6 flex-wrap space-x-2 lg:space-x-4">
           <li className="inline-block">
-            <a href="/" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+            <a
+              href="/"
+              className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4"
+            >
               Accueil
             </a>
           </li>
           <li className="inline-block">
-            <a href="/contact" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+            <a
+              href="/contact"
+              className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4"
+            >
               Contact
             </a>
           </li>
           <li className="inline-block">
-            <a href="/legal" className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4">
+            <a
+              href="/legal"
+              className="p-2 font-bold text-gray-900 dark:text-gray-100 hover:text-primary lg:p-4"
+            >
               Mentions Légales
             </a>
           </li>

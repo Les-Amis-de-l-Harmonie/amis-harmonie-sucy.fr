@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -30,9 +30,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import type { Video } from "@/db/types";
-import { formatDateShort } from "@/lib/dates";
+
+function parseYouTubeUrl(url: string): { id: string; isShort: boolean } | null {
+  const trimmed = url.trim();
+
+  // Handle shorts URL: https://www.youtube.com/shorts/VIDEO_ID (with optional query params)
+  const shortsMatch = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/
+  );
+  if (shortsMatch) {
+    return { id: shortsMatch[1], isShort: true };
+  }
+
+  // Handle youtu.be URL with shorts feature flag: https://youtu.be/VIDEO_ID?feature=shorts
+  const shortUrlWithFeature = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+).*?(?:\?|&)feature=shorts/);
+  if (shortUrlWithFeature) {
+    return { id: shortUrlWithFeature[1], isShort: true };
+  }
+
+  // Handle watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) {
+    return { id: watchMatch[1], isShort: false };
+  }
+
+  // Handle youtu.be URL: https://youtu.be/VIDEO_ID
+  const shortUrlMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortUrlMatch) {
+    return { id: shortUrlMatch[1], isShort: false };
+  }
+
+  // Handle embed URL: https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = trimmed.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+  if (embedMatch) {
+    return { id: embedMatch[1], isShort: false };
+  }
+
+  // If just an ID (11 characters, alphanumeric with - and _)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return { id: trimmed, isShort: false };
+  }
+
+  return null;
+}
 
 export function VideosAdminClient() {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -42,8 +84,11 @@ export function VideosAdminClient() {
   const [editing, setEditing] = useState<Partial<Video> | null>(null);
   const [deleting, setDeleting] = useState<Video | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const [youtubeUrlInput, setYoutubeUrlInput] = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/videos");
       if (response.ok) setVideos(await response.json());
@@ -52,11 +97,11 @@ export function VideosAdminClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSave = async () => {
     if (!editing) return;
@@ -96,21 +141,45 @@ export function VideosAdminClient() {
     }
   };
 
-  if (loading)
-    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+  const handleDragStart = (id: number) => setDraggedId(id);
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
+  };
+
+  const handleDrop = async (targetId: number) => {
+    if (!draggedId || draggedId === targetId) return;
+    const fromIndex = videos.findIndex((v) => v.id === draggedId);
+    const toIndex = videos.findIndex((v) => v.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const reordered = [...videos];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    setVideos(reordered);
+    await fetch("/api/admin/videos?action=reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: reordered.map((v) => v.id) }),
+    });
+    setDraggedId(null);
+    setDragOverId(null);
+  };
+
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Vidéos</h1>
+        <h1 className="text-3xl font-bold text-foreground">Vidéos</h1>
         <Button
           onClick={() => {
             setEditing({
               title: "",
               youtube_id: "",
               is_short: 0,
-              publication_date: new Date().toISOString().split("T")[0],
             });
+            setYoutubeUrlInput("");
             setDialogOpen(true);
           }}
         >
@@ -124,20 +193,39 @@ export function VideosAdminClient() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8"></TableHead>
                 <TableHead>Titre</TableHead>
-                <TableHead>ID YouTube</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Aperçu</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {videos.map((video) => (
-                <TableRow key={video.id}>
+                <TableRow
+                  key={video.id}
+                  draggable
+                  onDragStart={() => handleDragStart(video.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragEnter={() => setDragOverId(video.id)}
+                  onDragLeave={() => setDragOverId(null)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop(video.id);
+                  }}
+                  className={`${draggedId === video.id ? "opacity-50" : "opacity-100"} ${dragOverId === video.id && draggedId !== video.id ? "border-primary bg-muted/30" : ""}`}
+                >
+                  <TableCell className="cursor-grab text-muted-foreground">
+                    <GripVertical className="h-4 w-4" />
+                  </TableCell>
                   <TableCell className="font-medium">{video.title}</TableCell>
-                  <TableCell className="font-mono text-sm">{video.youtube_id}</TableCell>
-                  <TableCell className="text-sm text-gray-500">
-                    {video.publication_date ? formatDateShort(video.publication_date) : "—"}
+                  <TableCell className="text-sm">
+                    {video.is_short === 1 ? (
+                      <span className="text-orange-600 font-medium">Short</span>
+                    ) : (
+                      <span className="text-blue-600">Vidéo</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <img
@@ -152,6 +240,7 @@ export function VideosAdminClient() {
                       size="icon"
                       onClick={() => {
                         setEditing(video);
+                        setYoutubeUrlInput(video.youtube_id);
                         setDialogOpen(true);
                       }}
                     >
@@ -172,10 +261,7 @@ export function VideosAdminClient() {
               ))}
               {videos.length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center py-8 text-gray-500 dark:text-gray-400"
-                  >
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     Aucune vidéo
                   </TableCell>
                 </TableRow>
@@ -200,24 +286,34 @@ export function VideosAdminClient() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>ID YouTube *</Label>
+                <Label>URL ou ID YouTube *</Label>
                 <Input
-                  value={editing.youtube_id || ""}
-                  onChange={(e) => setEditing({ ...editing, youtube_id: e.target.value })}
-                  placeholder="dQw4w9WgXcQ"
+                  value={youtubeUrlInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setYoutubeUrlInput(value);
+                    const parsed = parseYouTubeUrl(value);
+                    if (parsed) {
+                      setEditing({
+                        ...editing,
+                        youtube_id: parsed.id,
+                        is_short: parsed.isShort ? 1 : 0,
+                      });
+                    } else {
+                      setEditing({ ...editing, youtube_id: value });
+                    }
+                  }}
+                  placeholder="https://www.youtube.com/watch?v=..."
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  L'ID se trouve dans l'URL: youtube.com/watch?v=
-                  <strong className="text-gray-700 dark:text-gray-300">ID_ICI</strong>
+                <p className="text-xs text-muted-foreground">
+                  Collez l'URL complète ou l'ID. Le type (Short/Normal) est détecté automatiquement.
                 </p>
-              </div>
-              <div className="grid gap-2">
-                <Label>Date de publication</Label>
-                <Input
-                  type="date"
-                  value={editing.publication_date || ""}
-                  onChange={(e) => setEditing({ ...editing, publication_date: e.target.value })}
-                />
+                {youtubeUrlInput && parseYouTubeUrl(youtubeUrlInput) && (
+                  <p className="text-xs text-green-600">
+                    ID détecté: {parseYouTubeUrl(youtubeUrlInput)?.id}
+                    {parseYouTubeUrl(youtubeUrlInput)?.isShort ? " (Short)" : " (Vidéo)"}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -225,10 +321,10 @@ export function VideosAdminClient() {
                   id="is_short"
                   checked={editing.is_short === 1}
                   onChange={(e) => setEditing({ ...editing, is_short: e.target.checked ? 1 : 0 })}
-                  className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                  className="w-4 h-4 rounded border-border"
                 />
                 <Label htmlFor="is_short" className="cursor-pointer">
-                  YouTube Short (format vertical 9:16)
+                  YouTube Short (format vertical)
                 </Label>
               </div>
             </div>

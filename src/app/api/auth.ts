@@ -13,31 +13,34 @@ function generateSessionId(): string {
   return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-type LoginContext = 'admin' | 'musician';
+type LoginContext = "admin" | "musician";
 
 function getRedirectPath(role: UserRole, context: LoginContext): string {
-  if (context === 'admin' && role === 'ADMIN') {
-    return '/admin';
+  if (context === "admin" && role === "ADMIN") {
+    return "/admin";
   }
-  if (context === 'musician') {
-    return '/musician/profile';
+  if (context === "musician") {
+    return "/musician/";
   }
-  return '/';
+  return "/";
 }
 
 function getLoginPath(context: LoginContext): string {
-  return context === 'admin' ? '/admin/login' : '/musician/login';
+  return context === "admin" ? "/admin/login" : "/musician/login";
 }
 
 function getVerifyPath(context: LoginContext): string {
-  return context === 'admin' ? '/admin/verify' : '/musician/verify';
+  return context === "admin" ? "/admin/verify" : "/musician/verify";
 }
 
 function getCookieName(context: LoginContext): string {
-  return context === 'admin' ? 'admin_session' : 'musician_session';
+  return context === "admin" ? "admin_session" : "musician_session";
 }
 
-export async function handleMagicLinkRequest(request: Request, context: LoginContext = 'admin'): Promise<Response> {
+export async function handleMagicLinkRequest(
+  request: Request,
+  context: LoginContext = "admin"
+): Promise<Response> {
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -56,47 +59,53 @@ export async function handleMagicLinkRequest(request: Request, context: LoginCon
       });
     }
 
-    const user = await env.DB.prepare(
-      "SELECT * FROM users WHERE email = ?"
-    ).bind(email).first<User>();
+    const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?")
+      .bind(email)
+      .first<User>();
 
     if (!user) {
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: "Si cet email est enregistré, un lien de connexion a été envoyé." 
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Si cet email est enregistré, un lien de connexion a été envoyé.",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    if (context === 'admin' && user.role !== 'ADMIN') {
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: "Si cet email est enregistré, un lien de connexion a été envoyé." 
-      }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (context === "admin" && user.role !== "ADMIN") {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Si cet email est enregistré, un lien de connexion a été envoyé.",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const token = generateToken();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    await env.DB.prepare(
-      "INSERT INTO auth_tokens (token, email, expires_at) VALUES (?, ?, ?)"
-    ).bind(token, email, expiresAt).run();
+    await env.DB.prepare("INSERT INTO auth_tokens (token, email, expires_at) VALUES (?, ?, ?)")
+      .bind(token, email, expiresAt)
+      .run();
 
     const baseUrl = new URL(request.url).origin;
     const verifyPath = getVerifyPath(context);
     const magicLink = `${baseUrl}${verifyPath}?token=${token}`;
 
-    const contextLabel = context === 'admin' ? "l'administration" : "l'espace musicien";
+    const contextLabel = context === "admin" ? "l'administration" : "l'espace musicien";
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         from: "Les Amis de l'Harmonie <noreply@notifications.amis-harmonie-sucy.fr>",
@@ -117,8 +126,8 @@ export async function handleMagicLinkRequest(request: Request, context: LoginCon
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
             <p style="color: #999; font-size: 12px;">Les Amis de l'Harmonie de Sucy-en-Brie</p>
           </div>
-        `
-      })
+        `,
+      }),
     });
 
     if (!emailResponse.ok) {
@@ -130,13 +139,16 @@ export async function handleMagicLinkRequest(request: Request, context: LoginCon
       });
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Un lien de connexion a été envoyé à votre adresse email."
-    }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Un lien de connexion a été envoyé à votre adresse email.",
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("Magic link error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
@@ -146,7 +158,10 @@ export async function handleMagicLinkRequest(request: Request, context: LoginCon
   }
 }
 
-export async function handleMagicLinkVerify(request: Request, context: LoginContext = 'admin'): Promise<Response> {
+export async function handleMagicLinkVerify(
+  request: Request,
+  context: LoginContext = "admin"
+): Promise<Response> {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
   const loginPath = getLoginPath(context);
@@ -157,9 +172,9 @@ export async function handleMagicLinkVerify(request: Request, context: LoginCont
   }
 
   try {
-    const authToken = await env.DB.prepare(
-      "SELECT * FROM auth_tokens WHERE token = ? AND used = 0"
-    ).bind(token).first<AuthToken>();
+    const authToken = await env.DB.prepare("SELECT * FROM auth_tokens WHERE token = ? AND used = 0")
+      .bind(token)
+      .first<AuthToken>();
 
     if (!authToken) {
       return Response.redirect(new URL(`${loginPath}?error=invalid_token`, url.origin).toString());
@@ -169,28 +184,32 @@ export async function handleMagicLinkVerify(request: Request, context: LoginCont
       return Response.redirect(new URL(`${loginPath}?error=expired_token`, url.origin).toString());
     }
 
-    const user = await env.DB.prepare(
-      "SELECT * FROM users WHERE email = ?"
-    ).bind(authToken.email).first<User>();
+    const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?")
+      .bind(authToken.email)
+      .first<User>();
 
     if (!user) {
       return Response.redirect(new URL(`${loginPath}?error=invalid_token`, url.origin).toString());
     }
 
-    if (context === 'admin' && user.role !== 'ADMIN') {
+    if (user.is_active === 0) {
+      return Response.redirect(
+        new URL(`${loginPath}?error=account_inactive`, url.origin).toString()
+      );
+    }
+
+    if (context === "admin" && user.role !== "ADMIN") {
       return Response.redirect(new URL(`${loginPath}?error=unauthorized`, url.origin).toString());
     }
 
-    await env.DB.prepare(
-      "UPDATE auth_tokens SET used = 1 WHERE token = ?"
-    ).bind(token).run();
+    await env.DB.prepare("UPDATE auth_tokens SET used = 1 WHERE token = ?").bind(token).run();
 
     const sessionId = generateSessionId();
     const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    await env.DB.prepare(
-      "INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)"
-    ).bind(sessionId, user.id, sessionExpiresAt).run();
+    await env.DB.prepare("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
+      .bind(sessionId, user.id, sessionExpiresAt)
+      .run();
 
     const redirectPath = getRedirectPath(user.role, context);
     const response = Response.redirect(new URL(redirectPath, url.origin).toString());
@@ -210,7 +229,10 @@ export async function handleMagicLinkVerify(request: Request, context: LoginCont
   }
 }
 
-export async function handleLogout(request: Request, context: LoginContext = 'admin'): Promise<Response> {
+export async function handleLogout(
+  request: Request,
+  context: LoginContext = "admin"
+): Promise<Response> {
   const cookieName = getCookieName(context);
   const loginPath = getLoginPath(context);
   const cookieHeader = request.headers.get("Cookie") || "";
@@ -218,18 +240,13 @@ export async function handleLogout(request: Request, context: LoginContext = 'ad
   const sessionId = sessionMatch ? sessionMatch[1] : null;
 
   if (sessionId) {
-    await env.DB.prepare(
-      "DELETE FROM sessions WHERE session_id = ?"
-    ).bind(sessionId).run();
+    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
   }
 
   const url = new URL(request.url);
   const response = Response.redirect(new URL(loginPath, url.origin).toString());
   const headers = new Headers(response.headers);
-  headers.set(
-    "Set-Cookie",
-    `${cookieName}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-  );
+  headers.set("Set-Cookie", `${cookieName}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
 
   return new Response(response.body, {
     status: response.status,
@@ -241,7 +258,10 @@ export interface AuthenticatedUser extends User {
   sessionId: string;
 }
 
-export async function verifySession(request: Request, context: LoginContext = 'admin'): Promise<AuthenticatedUser | null> {
+export async function verifySession(
+  request: Request,
+  context: LoginContext = "admin"
+): Promise<AuthenticatedUser | null> {
   const cookieName = getCookieName(context);
   const cookieHeader = request.headers.get("Cookie") || "";
   const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
@@ -252,17 +272,24 @@ export async function verifySession(request: Request, context: LoginContext = 'a
   }
 
   const session = await env.DB.prepare(
-    "SELECT s.*, u.email, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
-  ).bind(sessionId).first<Session & { email: string; role: UserRole }>();
+    "SELECT s.*, u.email, u.role, u.is_active, u.created_at as user_created_at FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
+  )
+    .bind(sessionId)
+    .first<
+      Session & { email: string; role: UserRole; is_active: number; user_created_at: string }
+    >();
 
   if (!session) {
     return null;
   }
 
   if (new Date(session.expires_at) < new Date()) {
-    await env.DB.prepare(
-      "DELETE FROM sessions WHERE session_id = ?"
-    ).bind(sessionId).run();
+    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
+    return null;
+  }
+
+  if (session.is_active === 0) {
+    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
     return null;
   }
 
@@ -270,15 +297,16 @@ export async function verifySession(request: Request, context: LoginContext = 'a
     id: session.user_id,
     email: session.email,
     role: session.role,
-    created_at: session.created_at,
+    is_active: session.is_active,
+    created_at: session.user_created_at,
     sessionId: session.session_id,
   };
 }
 
 export async function requireAdminAuth(request: Request): Promise<Response | AuthenticatedUser> {
-  const user = await verifySession(request, 'admin');
-  
-  if (!user || user.role !== 'ADMIN') {
+  const user = await verifySession(request, "admin");
+
+  if (!user || user.role !== "ADMIN") {
     const url = new URL(request.url);
     return Response.redirect(new URL("/admin/login", url.origin).toString());
   }
@@ -287,8 +315,8 @@ export async function requireAdminAuth(request: Request): Promise<Response | Aut
 }
 
 export async function requireMusicianAuth(request: Request): Promise<Response | AuthenticatedUser> {
-  const user = await verifySession(request, 'musician');
-  
+  const user = await verifySession(request, "musician");
+
   if (!user) {
     const url = new URL(request.url);
     return Response.redirect(new URL("/musician/login", url.origin).toString());

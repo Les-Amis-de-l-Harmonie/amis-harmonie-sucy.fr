@@ -69,14 +69,15 @@ export function R2CleanupClient() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+        <CardTitle className="flex items-center gap-2 text-foreground">
           <HardDrive className="w-5 h-5" />
           Stockage R2
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Analysez le stockage R2 pour détecter les fichiers orphelins (non référencés en base de données).
+        <p className="text-sm text-muted-foreground">
+          Analysez le stockage R2 pour détecter les fichiers orphelins (non référencés en base de
+          données).
         </p>
 
         <Button
@@ -103,7 +104,8 @@ export function R2CleanupClient() {
           <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
             <p className="text-sm text-green-700 dark:text-green-300">
-              {result.deleted} fichier{result.deleted > 1 ? "s" : ""} orphelin{result.deleted > 1 ? "s" : ""} supprimé{result.deleted > 1 ? "s" : ""}.
+              {result.deleted} fichier{result.deleted > 1 ? "s" : ""} orphelin
+              {result.deleted > 1 ? "s" : ""} supprimé{result.deleted > 1 ? "s" : ""}.
             </p>
           </div>
         )}
@@ -111,23 +113,27 @@ export function R2CleanupClient() {
         {result && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{result.total_r2_objects}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Objets R2</div>
+              <div className="p-3 bg-muted rounded-lg text-center">
+                <div className="text-2xl font-bold text-foreground">{result.total_r2_objects}</div>
+                <div className="text-xs text-muted-foreground">Objets R2</div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{result.referenced_in_db}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Référencés en BDD</div>
+              <div className="p-3 bg-muted rounded-lg text-center">
+                <div className="text-2xl font-bold text-foreground">{result.referenced_in_db}</div>
+                <div className="text-xs text-muted-foreground">Référencés en BDD</div>
               </div>
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{result.kept}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Conservés</div>
+              <div className="p-3 bg-muted rounded-lg text-center">
+                <div className="text-2xl font-bold text-foreground">{result.kept}</div>
+                <div className="text-xs text-muted-foreground">Conservés</div>
               </div>
-              <div className={`p-3 rounded-lg text-center ${result.orphans_found > 0 ? "bg-orange-50 dark:bg-orange-900/30" : "bg-green-50 dark:bg-green-900/30"}`}>
-                <div className={`text-2xl font-bold ${result.orphans_found > 0 ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"}`}>
+              <div
+                className={`p-3 rounded-lg text-center ${result.orphans_found > 0 ? "bg-orange-50 dark:bg-orange-900/30" : "bg-green-50 dark:bg-green-900/30"}`}
+              >
+                <div
+                  className={`text-2xl font-bold ${result.orphans_found > 0 ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400"}`}
+                >
                   {result.orphans_found}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Orphelins</div>
+                <div className="text-xs text-muted-foreground">Orphelins</div>
               </div>
             </div>
 
@@ -141,9 +147,11 @@ export function R2CleanupClient() {
                     </span>
                   </div>
                   <div className="max-h-40 overflow-y-auto">
-                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <ul className="text-xs text-muted-foreground space-y-1">
                       {result.orphans.map((key) => (
-                        <li key={key} className="font-mono truncate">{key}</li>
+                        <li key={key} className="font-mono truncate">
+                          {key}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -176,13 +184,18 @@ export function R2CleanupClient() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
               <AlertDialogDescription>
-                Vous êtes sur le point de supprimer {result?.orphans_found || 0} fichier{(result?.orphans_found || 0) > 1 ? "s" : ""} orphelin{(result?.orphans_found || 0) > 1 ? "s" : ""} du stockage R2.
-                Cette action est irréversible.
+                Vous êtes sur le point de supprimer {result?.orphans_found || 0} fichier
+                {(result?.orphans_found || 0) > 1 ? "s" : ""} orphelin
+                {(result?.orphans_found || 0) > 1 ? "s" : ""} du stockage R2. Cette action est
+                irréversible.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={runDelete} className="bg-red-600 hover:bg-red-700 text-white">
+              <AlertDialogAction
+                onClick={runDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
                 Supprimer définitivement
               </AlertDialogAction>
             </AlertDialogFooter>

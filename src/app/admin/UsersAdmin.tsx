@@ -1,20 +1,85 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/app/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Shield, Music, Camera, Loader2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Shield,
+  Music,
+  Camera,
+  Loader2,
+  Search,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import type { UserRole } from "@/db/types";
+
+const isProfileComplete = (user: UserWithProfile): boolean => {
+  const requiredFields = [
+    user.first_name,
+    user.last_name,
+    user.date_of_birth,
+    user.phone,
+    user.address_line1,
+    user.postal_code,
+    user.city,
+    user.harmonie_start_date,
+    user.emergency_contact_first_name,
+    user.emergency_contact_last_name,
+    user.emergency_contact_phone,
+  ];
+  const allTextFieldsFilled = requiredFields.every(
+    (field) => field && field.toString().trim() !== ""
+  );
+  const hasConservatoryChoice =
+    user.is_conservatory_student === 0 || user.is_conservatory_student === 1;
+  const hasImageConsentChoice = user.image_consent === 0 || user.image_consent === 1;
+  return allTextFieldsFilled && hasConservatoryChoice && hasImageConsentChoice;
+};
 
 interface UserWithProfile {
   id?: number;
   email: string;
   role: UserRole;
+  is_active?: number;
   created_at?: string;
   first_name?: string | null;
   last_name?: string | null;
@@ -32,6 +97,8 @@ interface UserWithProfile {
   emergency_contact_first_name?: string | null;
   emergency_contact_email?: string | null;
   emergency_contact_phone?: string | null;
+  image_consent?: number | null;
+  adhesion_2025_2026?: number | null;
   instruments?: { instrument_name: string; start_date?: string; level?: string }[];
 }
 
@@ -47,10 +114,20 @@ export function UsersAdminClient() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState<"all" | "ADMIN" | "MUSICIAN">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [filterAdhesion, setFilterAdhesion] = useState<"all" | "adherent" | "non_adherent">("all");
+  const [filterProfile, setFilterProfile] = useState<"all" | "complete" | "incomplete">("all");
+  const [sortField, setSortField] = useState<
+    "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile"
+  >("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
   const fetchData = async () => {
     try {
       const response = await fetch("/api/admin/users");
-      if (response.ok) setUsers(await response.json() as UserWithProfile[]);
+      if (response.ok) setUsers((await response.json()) as UserWithProfile[]);
     } catch (err) {
       console.error("Error:", err);
     } finally {
@@ -58,7 +135,9 @@ export function UsersAdminClient() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -90,7 +169,7 @@ export function UsersAdminClient() {
         body: formData,
       });
 
-      const data = await response.json() as { url?: string; error?: string };
+      const data = (await response.json()) as { url?: string; error?: string };
 
       if (response.ok && data.url) {
         setEditing({ ...editing, avatar: data.url });
@@ -111,12 +190,15 @@ export function UsersAdminClient() {
     setError(null);
     try {
       const isNew = !editing.id;
-      const response = await fetch(isNew ? "/api/admin/users" : `/api/admin/users?id=${editing.id}`, {
-        method: isNew ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editing),
-      });
-      const data = await response.json() as { error?: string };
+      const response = await fetch(
+        isNew ? "/api/admin/users" : `/api/admin/users?id=${editing.id}`,
+        {
+          method: isNew ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(editing),
+        }
+      );
+      const data = (await response.json()) as { error?: string };
       if (response.ok) {
         fetchData();
         setDialogOpen(false);
@@ -145,8 +227,113 @@ export function UsersAdminClient() {
     }
   };
 
+  const handleSort = (
+    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile"
+  ) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({
+    field,
+  }: {
+    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile";
+  }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-40" />;
+    return sortDir === "asc" ? (
+      <ChevronUp className="w-3.5 h-3.5 ml-1" />
+    ) : (
+      <ChevronDown className="w-3.5 h-3.5 ml-1" />
+    );
+  };
+
+  const filteredUsers = useMemo(() => {
+    let result = [...users];
+
+    if (filterRole !== "all") {
+      result = result.filter((u) => u.role === filterRole);
+    }
+
+    if (filterStatus !== "all") {
+      result = result.filter((u) =>
+        filterStatus === "active" ? u.is_active !== 0 : u.is_active === 0
+      );
+    }
+
+    if (filterAdhesion !== "all") {
+      result = result.filter((u) =>
+        filterAdhesion === "adherent" ? u.adhesion_2025_2026 === 1 : u.adhesion_2025_2026 !== 1
+      );
+    }
+
+    if (filterProfile !== "all") {
+      result = result.filter((u) =>
+        filterProfile === "complete" ? isProfileComplete(u) : !isProfileComplete(u)
+      );
+    }
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (u) =>
+          u.email?.toLowerCase().includes(q) ||
+          u.first_name?.toLowerCase().includes(q) ||
+          u.last_name?.toLowerCase().includes(q) ||
+          `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)
+      );
+    }
+
+    result.sort((a, b) => {
+      let aVal: string | number;
+      let bVal: string | number;
+
+      if (sortField === "name") {
+        aVal = `${a.last_name || ""} ${a.first_name || ""}`.toLowerCase();
+        bVal = `${b.last_name || ""} ${b.first_name || ""}`.toLowerCase();
+      } else if (sortField === "city") {
+        aVal = (a.city || "").toLowerCase();
+        bVal = (b.city || "").toLowerCase();
+      } else if (sortField === "status") {
+        aVal = a.is_active !== 0 ? 1 : 0;
+        bVal = b.is_active !== 0 ? 1 : 0;
+      } else if (sortField === "adhesion") {
+        aVal = a.adhesion_2025_2026 === 1 ? 1 : 0;
+        bVal = b.adhesion_2025_2026 === 1 ? 1 : 0;
+      } else if (sortField === "profile") {
+        aVal = isProfileComplete(a) ? 1 : 0;
+        bVal = isProfileComplete(b) ? 1 : 0;
+      } else {
+        aVal = ((a[sortField] as string) || "").toLowerCase();
+        bVal = ((b[sortField] as string) || "").toLowerCase();
+      }
+
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      const cmp = (aVal as string).localeCompare(bVal as string, "fr");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [
+    users,
+    search,
+    filterRole,
+    filterStatus,
+    filterAdhesion,
+    filterProfile,
+    isProfileComplete,
+    sortField,
+    sortDir,
+  ]);
+
   const getRoleBadge = (role: UserRole) => {
-    if (role === 'ADMIN') {
+    if (role === "ADMIN") {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
           <Shield className="w-3 h-3" />
@@ -164,7 +351,7 @@ export function UsersAdminClient() {
 
   const getDisplayName = (user: UserWithProfile) => {
     if (user.first_name || user.last_name) {
-      return `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      return `${user.first_name || ""} ${user.last_name || ""}`.trim();
     }
     return null;
   };
@@ -173,7 +360,10 @@ export function UsersAdminClient() {
     if (!editing) return;
     setEditing({
       ...editing,
-      instruments: [...(editing.instruments || []), { instrument_name: "", start_date: "", level: "" }]
+      instruments: [
+        ...(editing.instruments || []),
+        { instrument_name: "", start_date: "", level: "" },
+      ],
     });
   };
 
@@ -204,15 +394,80 @@ export function UsersAdminClient() {
     setDialogOpen(true);
   };
 
-  if (loading) return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Utilisateurs</h1>
-        <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN" })}>
-          <Plus className="w-4 h-4 mr-2" />Nouvel utilisateur
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+        <h1 className="text-3xl font-bold text-foreground">Utilisateurs</h1>
+        <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvel utilisateur
         </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Rechercher (nom, email...)"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={filterRole}
+          onValueChange={(v) => setFilterRole(v as "all" | "ADMIN" | "MUSICIAN")}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les rôles</SelectItem>
+            <SelectItem value="ADMIN">Admin</SelectItem>
+            <SelectItem value="MUSICIAN">Musicien</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={filterStatus}
+          onValueChange={(v) => setFilterStatus(v as "all" | "active" | "inactive")}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="active">Actif</SelectItem>
+            <SelectItem value="inactive">Inactif</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={filterAdhesion}
+          onValueChange={(v) => setFilterAdhesion(v as "all" | "adherent" | "non_adherent")}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes adhésions</SelectItem>
+            <SelectItem value="adherent">Adhérent 2025-26</SelectItem>
+            <SelectItem value="non_adherent">Non adhérent</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={filterProfile}
+          onValueChange={(v) => setFilterProfile(v as "all" | "complete" | "incomplete")}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les profils</SelectItem>
+            <SelectItem value="complete">Profil complet</SelectItem>
+            <SelectItem value="incomplete">Profil incomplet</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -221,46 +476,140 @@ export function UsersAdminClient() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rôle</TableHead>
-                <TableHead>Ville</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("name")}
+                >
+                  <span className="inline-flex items-center">
+                    Nom <SortIcon field="name" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("email")}
+                >
+                  <span className="inline-flex items-center">
+                    Email <SortIcon field="email" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("role")}
+                >
+                  <span className="inline-flex items-center">
+                    Rôle <SortIcon field="role" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("city")}
+                >
+                  <span className="inline-flex items-center">
+                    Ville <SortIcon field="city" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("status")}
+                >
+                  <span className="inline-flex items-center">
+                    Statut <SortIcon field="status" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("adhesion")}
+                >
+                  <span className="inline-flex items-center">
+                    Adhésion <SortIcon field="adhesion" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("profile")}
+                >
+                  <span className="inline-flex items-center">
+                    Profil <SortIcon field="profile" />
+                  </span>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     {user.avatar ? (
                       <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <Music className="w-4 h-4 text-gray-400" />
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <Music className="w-4 h-4 text-muted-foreground" />
                       </div>
                     )}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {getDisplayName(user) || <span className="text-gray-400 italic">Non renseigné</span>}
+                    {getDisplayName(user) || (
+                      <span className="text-muted-foreground italic">Non renseigné</span>
+                    )}
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell className="text-gray-500 dark:text-gray-400">
-                    {user.city || '-'}
+                  <TableCell className="text-muted-foreground">{user.city || "-"}</TableCell>
+                  <TableCell>
+                    {user.is_active !== 0 ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Actif
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        Inactif
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.adhesion_2025_2026 === 1 ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Adhérent
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                        Non adhérent
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isProfileComplete(user) ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Complet
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        Incomplet
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => { setDeleting(user); setDeleteDialogOpen(true); }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setDeleting(user);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
-              {users.length === 0 && (
+              {filteredUsers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">Aucun utilisateur</TableCell>
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {users.length === 0 ? "Aucun utilisateur" : "Aucun résultat pour ces critères"}
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -287,13 +636,17 @@ export function UsersAdminClient() {
                     type="button"
                     onClick={handleAvatarClick}
                     disabled={uploadingAvatar}
-                    className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="relative w-20 h-20 rounded-full overflow-hidden bg-muted hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   >
                     {editing.avatar ? (
-                      <img src={editing.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      <img
+                        src={editing.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Camera className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+                        <Camera className="w-6 h-6 text-muted-foreground" />
                       </div>
                     )}
                     {uploadingAvatar && (
@@ -310,8 +663,8 @@ export function UsersAdminClient() {
                     className="hidden"
                   />
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  <p className="font-medium text-gray-700 dark:text-gray-300">Photo de profil</p>
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Photo de profil</p>
                   <p>Cliquez pour changer</p>
                 </div>
               </div>
@@ -319,42 +672,70 @@ export function UsersAdminClient() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Email *</Label>
-                  <Input 
+                  <Input
                     type="email"
-                    value={editing.email || ""} 
-                    onChange={(e) => setEditing({ ...editing, email: e.target.value })} 
+                    value={editing.email || ""}
+                    onChange={(e) => setEditing({ ...editing, email: e.target.value })}
                     placeholder="email@example.com"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label>Rôle *</Label>
-                  <select 
-                    value={editing.role || "MUSICIAN"} 
+                  <select
+                    value={editing.role || "MUSICIAN"}
                     onChange={(e) => setEditing({ ...editing, role: e.target.value as UserRole })}
-                    className="flex h-10 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   >
                     <option value="MUSICIAN">Musicien</option>
                     <option value="ADMIN">Administrateur</option>
                   </select>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Statut du compte</Label>
+                  <div className="flex items-center gap-4 h-10">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="is_active"
+                        checked={editing.is_active !== 0}
+                        onChange={() => setEditing({ ...editing, is_active: 1 })}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Actif</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="is_active"
+                        checked={editing.is_active === 0}
+                        onChange={() => setEditing({ ...editing, is_active: 0 })}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Inactif</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Un compte inactif ne pourra plus se connecter à son espace.
+                  </p>
+                </div>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Informations personnelles</h3>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Prénom</Label>
-                    <Input 
-                      value={editing.first_name || ""} 
-                      onChange={(e) => setEditing({ ...editing, first_name: e.target.value })} 
+                    <Input
+                      value={editing.first_name || ""}
+                      onChange={(e) => setEditing({ ...editing, first_name: e.target.value })}
                       placeholder="Jean"
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label>Nom</Label>
-                    <Input 
-                      value={editing.last_name || ""} 
-                      onChange={(e) => setEditing({ ...editing, last_name: e.target.value })} 
+                    <Input
+                      value={editing.last_name || ""}
+                      onChange={(e) => setEditing({ ...editing, last_name: e.target.value })}
                       placeholder="Dupont"
                     />
                   </div>
@@ -362,17 +743,17 @@ export function UsersAdminClient() {
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="grid gap-2">
                     <Label>Date de naissance</Label>
-                    <Input 
+                    <Input
                       type="date"
-                      value={editing.date_of_birth || ""} 
-                      onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })} 
+                      value={editing.date_of_birth || ""}
+                      onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label>Téléphone</Label>
-                    <Input 
+                    <Input
                       type="tel"
-                      value={editing.phone || ""} 
+                      value={editing.phone || ""}
                       onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
                       placeholder="06 12 34 56 78"
                     />
@@ -380,40 +761,40 @@ export function UsersAdminClient() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Adresse postale</h3>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label>Adresse</Label>
-                    <Input 
-                      value={editing.address_line1 || ""} 
-                      onChange={(e) => setEditing({ ...editing, address_line1: e.target.value })} 
+                    <Input
+                      value={editing.address_line1 || ""}
+                      onChange={(e) => setEditing({ ...editing, address_line1: e.target.value })}
                       placeholder="123 rue de la Musique"
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label>Complément d'adresse</Label>
-                    <Input 
-                      value={editing.address_line2 || ""} 
-                      onChange={(e) => setEditing({ ...editing, address_line2: e.target.value })} 
+                    <Input
+                      value={editing.address_line2 || ""}
+                      onChange={(e) => setEditing({ ...editing, address_line2: e.target.value })}
                       placeholder="Appartement 4B, Bâtiment C"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Code postal</Label>
-                      <Input 
-                        value={editing.postal_code || ""} 
-                        onChange={(e) => setEditing({ ...editing, postal_code: e.target.value })} 
+                      <Input
+                        value={editing.postal_code || ""}
+                        onChange={(e) => setEditing({ ...editing, postal_code: e.target.value })}
                         placeholder="94370"
                         maxLength={5}
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label>Ville</Label>
-                      <Input 
-                        value={editing.city || ""} 
-                        onChange={(e) => setEditing({ ...editing, city: e.target.value })} 
+                      <Input
+                        value={editing.city || ""}
+                        onChange={(e) => setEditing({ ...editing, city: e.target.value })}
                         placeholder="Sucy-en-Brie"
                       />
                     </div>
@@ -421,15 +802,17 @@ export function UsersAdminClient() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Harmonie</h3>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Harmonie</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label>Date d'entrée à l'Harmonie</Label>
-                    <Input 
+                    <Input
                       type="date"
-                      value={editing.harmonie_start_date || ""} 
-                      onChange={(e) => setEditing({ ...editing, harmonie_start_date: e.target.value })} 
+                      value={editing.harmonie_start_date || ""}
+                      onChange={(e) =>
+                        setEditing({ ...editing, harmonie_start_date: e.target.value })
+                      }
                     />
                   </div>
                   <div className="grid gap-2">
@@ -457,28 +840,115 @@ export function UsersAdminClient() {
                       </label>
                     </div>
                   </div>
+                  <div className="grid gap-3">
+                    <Label>Droit à l'image</Label>
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
+                      <p>
+                        Dans le cadre des activités de l'Harmonie (répétitions, concerts,
+                        déplacements, voyage en Allemagne 🇩🇪, etc.), des photos et/ou vidéos
+                        pourront être réalisées.
+                      </p>
+                      <p>
+                        En cochant la case ci-dessous, j'autorise l'association à utiliser mon image
+                        (ou celle de mon enfant mineur) sur les supports de communication de
+                        l'association :
+                      </p>
+                      <ul className="list-disc list-inside ml-2">
+                        <li>site internet</li>
+                        <li>réseaux sociaux</li>
+                        <li>presse locale</li>
+                        <li>supports de communication</li>
+                      </ul>
+                      <p className="italic">
+                        Cette autorisation est accordée à titre gratuit et sans limitation de durée.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 pt-2">
+                      <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                        <input
+                          type="radio"
+                          name="image_consent"
+                          checked={editing.image_consent === 1}
+                          onChange={() => setEditing({ ...editing, image_consent: 1 })}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span className="text-sm">J'autorise l'utilisation de mon image</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                        <input
+                          type="radio"
+                          name="image_consent"
+                          checked={editing.image_consent !== 1}
+                          onChange={() => setEditing({ ...editing, image_consent: 0 })}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span className="text-sm">
+                          Je n'autorise pas l'utilisation de mon image
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Pratique instrumentale et formation musicale</h3>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
+                <div className="grid gap-2">
+                  <Label>Statut adhésion</Label>
+                  <div className="flex items-center gap-4 h-10">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="adhesion_2025_2026"
+                        checked={editing.adhesion_2025_2026 === 1}
+                        onChange={() => setEditing({ ...editing, adhesion_2025_2026: 1 })}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Adhérent 2025-2026</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="adhesion_2025_2026"
+                        checked={editing.adhesion_2025_2026 !== 1}
+                        onChange={() => setEditing({ ...editing, adhesion_2025_2026: 0 })}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <span className="text-sm">Non adhérent</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">
+                  Pratique instrumentale et formation musicale
+                </h3>
                 <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label>Formation Musicale (solfège) - Niveau conservatoire</Label>
-                    <Input 
-                      value={editing.music_theory_level || ""} 
-                      onChange={(e) => setEditing({ ...editing, music_theory_level: e.target.value })} 
+                    <Input
+                      value={editing.music_theory_level || ""}
+                      onChange={(e) =>
+                        setEditing({ ...editing, music_theory_level: e.target.value })
+                      }
                       placeholder="Ex: Cycle 2, 3ème année"
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label>Instruments</Label>
                     {(editing.instruments || []).map((instrument, index) => (
-                      <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
+                      <div key={index} className="p-4 border border-border rounded-lg space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Instrument {index + 1}</span>
+                          <span className="text-sm font-medium text-foreground">
+                            Instrument {index + 1}
+                          </span>
                           {(editing.instruments?.length || 0) > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => removeInstrument(index)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeInstrument(index)}
+                            >
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           )}
@@ -488,7 +958,9 @@ export function UsersAdminClient() {
                             <Label>Instrument</Label>
                             <Input
                               value={instrument.instrument_name || ""}
-                              onChange={(e) => updateInstrument(index, "instrument_name", e.target.value)}
+                              onChange={(e) =>
+                                updateInstrument(index, "instrument_name", e.target.value)
+                              }
                               placeholder="Ex: Clarinette"
                             />
                           </div>
@@ -497,7 +969,9 @@ export function UsersAdminClient() {
                             <Input
                               type="date"
                               value={instrument.start_date || ""}
-                              onChange={(e) => updateInstrument(index, "start_date", e.target.value)}
+                              onChange={(e) =>
+                                updateInstrument(index, "start_date", e.target.value)
+                              }
                             />
                           </div>
                           <div className="grid gap-2">
@@ -519,23 +993,29 @@ export function UsersAdminClient() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Contact d'urgence / Représentant légal</h3>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">
+                  Contact d'urgence / Représentant légal
+                </h3>
                 <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Prénom</Label>
-                      <Input 
-                        value={editing.emergency_contact_first_name || ""} 
-                        onChange={(e) => setEditing({ ...editing, emergency_contact_first_name: e.target.value })} 
+                      <Input
+                        value={editing.emergency_contact_first_name || ""}
+                        onChange={(e) =>
+                          setEditing({ ...editing, emergency_contact_first_name: e.target.value })
+                        }
                         placeholder="Marie"
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label>Nom</Label>
-                      <Input 
-                        value={editing.emergency_contact_last_name || ""} 
-                        onChange={(e) => setEditing({ ...editing, emergency_contact_last_name: e.target.value })} 
+                      <Input
+                        value={editing.emergency_contact_last_name || ""}
+                        onChange={(e) =>
+                          setEditing({ ...editing, emergency_contact_last_name: e.target.value })
+                        }
                         placeholder="Dupont"
                       />
                     </div>
@@ -543,19 +1023,23 @@ export function UsersAdminClient() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Email</Label>
-                      <Input 
+                      <Input
                         type="email"
-                        value={editing.emergency_contact_email || ""} 
-                        onChange={(e) => setEditing({ ...editing, emergency_contact_email: e.target.value })} 
+                        value={editing.emergency_contact_email || ""}
+                        onChange={(e) =>
+                          setEditing({ ...editing, emergency_contact_email: e.target.value })
+                        }
                         placeholder="marie.dupont@email.com"
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label>Téléphone</Label>
-                      <Input 
+                      <Input
                         type="tel"
-                        value={editing.emergency_contact_phone || ""} 
-                        onChange={(e) => setEditing({ ...editing, emergency_contact_phone: e.target.value })} 
+                        value={editing.emergency_contact_phone || ""}
+                        onChange={(e) =>
+                          setEditing({ ...editing, emergency_contact_phone: e.target.value })
+                        }
                         placeholder="06 12 34 56 78"
                       />
                     </div>
@@ -565,7 +1049,9 @@ export function UsersAdminClient() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Annuler
+            </Button>
             <Button onClick={handleSave} disabled={saving || !editing?.email}>
               {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
@@ -578,12 +1064,15 @@ export function UsersAdminClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'utilisateur "{deleting?.email}" et toutes ses données seront définitivement supprimés.
+              Cette action est irréversible. L'utilisateur "{deleting?.email}" et toutes ses données
+              seront définitivement supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">Supprimer</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Supprimer
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

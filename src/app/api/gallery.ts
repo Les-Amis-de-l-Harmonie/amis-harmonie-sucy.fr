@@ -16,9 +16,11 @@ export async function handlePublicGalleryApi(request: Request): Promise<Response
     if (category) {
       const images = await env.DB.prepare(
         "SELECT * FROM gallery_images WHERE category = ? ORDER BY sort_order ASC"
-      ).bind(category).all<GalleryImage>();
+      )
+        .bind(category)
+        .all<GalleryImage>();
       return new Response(JSON.stringify(images.results), {
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Cache-Control": "public, max-age=300",
         },

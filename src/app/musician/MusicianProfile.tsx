@@ -1,41 +1,49 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
-import { Camera, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, Save, Loader2, Plus, Trash2, Check } from "lucide-react";
 import type { MusicianProfile, MusicianInstrument } from "@/db/types";
+import { HARMONIE_INSTRUMENTS } from "@/db/types";
 
 interface ProfileWithInstruments extends Partial<MusicianProfile> {
   instruments?: Partial<MusicianInstrument>[];
+  harmonieInstruments?: string[];
+  email?: string;
 }
 
 interface MusicianProfileClientProps {
   userId: number;
 }
 
-// eslint-disable-next-line no-unused-vars
 export function MusicianProfileClient({ userId: _userId }: MusicianProfileClientProps) {
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch("/api/musician/profile");
       if (response.ok) {
-        const data = await response.json() as ProfileWithInstruments;
+        const data = (await response.json()) as ProfileWithInstruments;
         if (!data.instruments || data.instruments.length === 0) {
           data.instruments = [{ instrument_name: "", start_date: "", level: "" }];
+        }
+        if (!data.harmonieInstruments) {
+          data.harmonieInstruments = [];
         }
         setProfile(data);
       }
@@ -44,7 +52,11 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -76,7 +88,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         body: formData,
       });
 
-      const data = await response.json() as { url?: string; error?: string };
+      const data = (await response.json()) as { url?: string; error?: string };
 
       if (response.ok && data.url) {
         setProfile({ ...profile, avatar: data.url });
@@ -95,7 +107,10 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   const addInstrument = () => {
     setProfile({
       ...profile,
-      instruments: [...(profile.instruments || []), { instrument_name: "", start_date: "", level: "" }]
+      instruments: [
+        ...(profile.instruments || []),
+        { instrument_name: "", start_date: "", level: "" },
+      ],
     });
   };
 
@@ -114,9 +129,48 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     setProfile({ ...profile, instruments: newInstruments });
   };
 
+  const validateProfile = (): string | null => {
+    const errors: string[] = [];
+
+    if (!profile.first_name?.trim()) errors.push("Prénom");
+    if (!profile.last_name?.trim()) errors.push("Nom");
+    if (!profile.date_of_birth?.trim()) errors.push("Date de naissance");
+    if (!profile.phone?.trim()) errors.push("Téléphone");
+    if (!profile.address_line1?.trim()) errors.push("Adresse");
+    if (!profile.postal_code?.trim()) errors.push("Code postal");
+    if (!profile.city?.trim()) errors.push("Ville");
+    if (!profile.harmonie_start_date?.trim()) errors.push("Date d'entrée à l'Harmonie");
+    if (!profile.harmonieInstruments || profile.harmonieInstruments.length === 0) {
+      errors.push("Instrument(s) joué(s) à l'Harmonie");
+    }
+    if (profile.is_conservatory_student === undefined || profile.is_conservatory_student === null) {
+      errors.push("Élève au Conservatoire de Sucy-en-Brie");
+    }
+    if (profile.image_consent === undefined || profile.image_consent === null) {
+      errors.push("Droit à l'image");
+    }
+    if (!profile.emergency_contact_first_name?.trim()) errors.push("Prénom du contact d'urgence");
+    if (!profile.emergency_contact_last_name?.trim()) errors.push("Nom du contact d'urgence");
+    if (!profile.emergency_contact_phone?.trim()) errors.push("Téléphone du contact d'urgence");
+
+    if (errors.length > 0) {
+      return "Veuillez renseigner les champs obligatoires : " + errors.join(", ");
+    }
+
+    return null;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
+    setValidationError(null);
+
+    const validationResult = validateProfile();
+    if (validationResult) {
+      setValidationError(validationResult);
+      setSaving(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/musician/profile", {
@@ -125,10 +179,11 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         body: JSON.stringify(profile),
       });
 
-      const data = await response.json() as { success?: boolean; error?: string };
+      const data = (await response.json()) as { success?: boolean; error?: string };
 
       if (response.ok && data.success) {
         setMessage({ type: "success", text: "Profil enregistré avec succès" });
+        window.location.href = "/musician/";
       } else {
         setMessage({ type: "error", text: data.error || "Erreur lors de l'enregistrement" });
       }
@@ -152,19 +207,11 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mon Profil</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Gérez vos informations personnelles
-        </p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Gérez vos informations personnelles</p>
       </div>
 
-      {message && (
-        <div
-          className={`p-4 rounded-md text-sm ${
-            message.type === "success"
-              ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
-              : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
-          }`}
-        >
+      {message?.type === "success" && (
+        <div className="p-4 rounded-md text-sm bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
           {message.text}
         </div>
       )}
@@ -172,7 +219,14 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
       <Card>
         <CardHeader>
           <CardTitle>Photo de profil</CardTitle>
-          <CardDescription>Cliquez sur l'image pour changer votre photo</CardDescription>
+          <CardDescription>
+            Cliquez sur l'image pour changer votre photo.
+            <br />
+            <span className="text-xs text-muted-foreground">
+              Votre photo pourra être affichée sur le site internet pour le trombinoscope des
+              musiciens.
+            </span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -196,7 +250,13 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                   </div>
                 )}
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               <p>Format : JPG, PNG ou WebP</p>
@@ -213,7 +273,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">Prénom</Label>
+              <Label htmlFor="first_name">
+                Prénom <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="first_name"
                 value={profile.first_name || ""}
@@ -222,7 +284,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Nom</Label>
+              <Label htmlFor="last_name">
+                Nom <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="last_name"
                 value={profile.last_name || ""}
@@ -234,7 +298,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date_of_birth">Date de naissance</Label>
+              <Label htmlFor="date_of_birth">
+                Date de naissance <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="date_of_birth"
                 type="date"
@@ -243,7 +309,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+              <Label htmlFor="phone">
+                Téléphone <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -253,51 +321,71 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Adresse postale</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="address_line1">Adresse</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="address_line1"
-              value={profile.address_line1 || ""}
-              onChange={(e) => setProfile({ ...profile, address_line1: e.target.value })}
-              placeholder="123 rue de la Musique"
+              id="email"
+              type="email"
+              value={profile.email || ""}
+              disabled
+              className="bg-muted cursor-not-allowed"
             />
+            <p className="text-xs text-muted-foreground">
+              L'email ne peut pas être modifié. Contactez un administrateur en cas de changement.
+            </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="address_line2">Complément d'adresse</Label>
-            <Input
-              id="address_line2"
-              value={profile.address_line2 || ""}
-              onChange={(e) => setProfile({ ...profile, address_line2: e.target.value })}
-              placeholder="Appartement 4B, Bâtiment C"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="postal_code">Code postal</Label>
-              <Input
-                id="postal_code"
-                value={profile.postal_code || ""}
-                onChange={(e) => setProfile({ ...profile, postal_code: e.target.value })}
-                placeholder="94370"
-                maxLength={5}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="city">Ville</Label>
-              <Input
-                id="city"
-                value={profile.city || ""}
-                onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                placeholder="Sucy-en-Brie"
-              />
+
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+              Adresse postale
+            </h4>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address_line1">
+                  Adresse <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="address_line1"
+                  value={profile.address_line1 || ""}
+                  onChange={(e) => setProfile({ ...profile, address_line1: e.target.value })}
+                  placeholder="123 rue de la Musique"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address_line2">Complément d'adresse</Label>
+                <Input
+                  id="address_line2"
+                  value={profile.address_line2 || ""}
+                  onChange={(e) => setProfile({ ...profile, address_line2: e.target.value })}
+                  placeholder="Appartement 4B, Bâtiment C"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="postal_code">
+                    Code postal <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="postal_code"
+                    value={profile.postal_code || ""}
+                    onChange={(e) => setProfile({ ...profile, postal_code: e.target.value })}
+                    placeholder="94370"
+                    maxLength={5}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">
+                    Ville <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="city"
+                    value={profile.city || ""}
+                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                    placeholder="Sucy-en-Brie"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -310,7 +398,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="harmonie_start_date">Date d'entrée à l'Harmonie</Label>
+              <Label htmlFor="harmonie_start_date">
+                Date d'entrée à l'Harmonie <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="harmonie_start_date"
                 type="date"
@@ -318,31 +408,97 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 onChange={(e) => setProfile({ ...profile, harmonie_start_date: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Élève au Conservatoire de Sucy-en-Brie</Label>
-              <div className="flex items-center gap-4 h-10">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="conservatory"
-                    checked={profile.is_conservatory_student === 1}
-                    onChange={() => setProfile({ ...profile, is_conservatory_student: 1 })}
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span className="text-sm">Oui</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="conservatory"
-                    checked={profile.is_conservatory_student !== 1}
-                    onChange={() => setProfile({ ...profile, is_conservatory_student: 0 })}
-                    className="w-4 h-4 text-primary"
-                  />
-                  <span className="text-sm">Non</span>
-                </label>
-              </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Instrument(s) joué(s) à l'Harmonie <span className="text-red-500">*</span>
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {HARMONIE_INSTRUMENTS.map((instrument) => {
+                const isSelected = profile.harmonieInstruments?.includes(instrument);
+                return (
+                  <button
+                    key={instrument}
+                    type="button"
+                    onClick={() => {
+                      const current = profile.harmonieInstruments || [];
+                      if (isSelected) {
+                        setProfile({
+                          ...profile,
+                          harmonieInstruments: current.filter((i) => i !== instrument),
+                        });
+                      } else {
+                        setProfile({
+                          ...profile,
+                          harmonieInstruments: [...current, instrument],
+                        });
+                      }
+                    }}
+                    className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card border-border hover:bg-muted"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3" />}
+                    {instrument}
+                  </button>
+                );
+              })}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Droit à l'image <span className="text-red-500">*</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
+            <p>
+              Dans le cadre des activités de l'Harmonie (répétitions, concerts, déplacements, voyage
+              en Allemagne 🇩🇪, etc.), des photos et/ou vidéos pourront être réalisées.
+            </p>
+            <p>
+              En cochant la case ci-dessous, j'autorise l'association à utiliser mon image (ou celle
+              de mon enfant mineur) sur les supports de communication de l'association :
+            </p>
+            <ul className="list-disc list-inside ml-2">
+              <li>site internet</li>
+              <li>réseaux sociaux</li>
+              <li>presse locale</li>
+              <li>supports de communication</li>
+            </ul>
+            <p className="italic">
+              Cette autorisation est accordée à titre gratuit et sans limitation de durée.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+              <input
+                type="radio"
+                name="image_consent"
+                checked={profile.image_consent === 1}
+                onChange={() => setProfile({ ...profile, image_consent: 1 })}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm">J'autorise l'utilisation de mon image</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+              <input
+                type="radio"
+                name="image_consent"
+                checked={profile.image_consent !== 1}
+                onChange={() => setProfile({ ...profile, image_consent: 0 })}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm">Je n'autorise pas l'utilisation de mon image</span>
+            </label>
           </div>
         </CardContent>
       </Card>
@@ -353,7 +509,37 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="music_theory_level">Formation Musicale (solfège) - Niveau conservatoire</Label>
+            <Label>
+              Élève au Conservatoire de Sucy-en-Brie <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex items-center gap-4 h-10">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="conservatory"
+                  checked={profile.is_conservatory_student === 1}
+                  onChange={() => setProfile({ ...profile, is_conservatory_student: 1 })}
+                  className="w-4 h-4 text-primary"
+                />
+                <span className="text-sm">Oui</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="conservatory"
+                  checked={profile.is_conservatory_student !== 1}
+                  onChange={() => setProfile({ ...profile, is_conservatory_student: 0 })}
+                  className="w-4 h-4 text-primary"
+                />
+                <span className="text-sm">Non</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="music_theory_level">
+              Formation Musicale (solfège) - Niveau conservatoire
+            </Label>
             <Input
               id="music_theory_level"
               value={profile.music_theory_level || ""}
@@ -365,9 +551,14 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           <div className="space-y-4">
             <Label>Instruments</Label>
             {(profile.instruments || []).map((instrument, index) => (
-              <div key={index} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4">
+              <div
+                key={index}
+                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Instrument {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Instrument {index + 1}
+                  </span>
                   {(profile.instruments?.length || 0) > 1 && (
                     <Button variant="ghost" size="icon" onClick={() => removeInstrument(index)}>
                       <Trash2 className="w-4 h-4 text-red-500" />
@@ -412,26 +603,36 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
 
       <Card>
         <CardHeader>
-          <CardTitle>Contact d'urgence / Représentant légal</CardTitle>
+          <CardTitle>
+            Contact d'urgence / Représentant légal <span className="text-red-500">*</span>
+          </CardTitle>
           <CardDescription>Pour les mineurs ou en cas d'urgence</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="emergency_contact_first_name">Prénom</Label>
+              <Label htmlFor="emergency_contact_first_name">
+                Prénom <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="emergency_contact_first_name"
                 value={profile.emergency_contact_first_name || ""}
-                onChange={(e) => setProfile({ ...profile, emergency_contact_first_name: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, emergency_contact_first_name: e.target.value })
+                }
                 placeholder="Marie"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emergency_contact_last_name">Nom</Label>
+              <Label htmlFor="emergency_contact_last_name">
+                Nom <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="emergency_contact_last_name"
                 value={profile.emergency_contact_last_name || ""}
-                onChange={(e) => setProfile({ ...profile, emergency_contact_last_name: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, emergency_contact_last_name: e.target.value })
+                }
                 placeholder="Dupont"
               />
             </div>
@@ -443,17 +644,23 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 id="emergency_contact_email"
                 type="email"
                 value={profile.emergency_contact_email || ""}
-                onChange={(e) => setProfile({ ...profile, emergency_contact_email: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, emergency_contact_email: e.target.value })
+                }
                 placeholder="marie.dupont@email.com"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emergency_contact_phone">Téléphone</Label>
+              <Label htmlFor="emergency_contact_phone">
+                Téléphone <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="emergency_contact_phone"
                 type="tel"
                 value={profile.emergency_contact_phone || ""}
-                onChange={(e) => setProfile({ ...profile, emergency_contact_phone: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, emergency_contact_phone: e.target.value })
+                }
                 placeholder="06 12 34 56 78"
               />
             </div>
@@ -461,7 +668,10 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-4">
+        {validationError && (
+          <span className="text-sm text-red-600 dark:text-red-400">{validationError}</span>
+        )}
         <Button onClick={handleSave} disabled={saving} size="lg">
           {saving ? (
             <>

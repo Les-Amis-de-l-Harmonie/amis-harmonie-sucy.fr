@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
@@ -29,7 +35,12 @@ export function MusicianLoginClient() {
         body: formData,
       });
 
-      const data = await response.json() as { success?: boolean; message?: string; error?: string; debug_link?: string };
+      const data = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+        debug_link?: string;
+      };
 
       if (data.success) {
         setMessage({ type: "success", text: data.message || "Lien envoyé" });
@@ -46,7 +57,8 @@ export function MusicianLoginClient() {
     }
   };
 
-  const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const urlParams =
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const errorParam = urlParams?.get("error");
 
   return (
@@ -54,7 +66,7 @@ export function MusicianLoginClient() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      
+
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -70,13 +82,18 @@ export function MusicianLoginClient() {
         <CardContent>
           {errorParam && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-md text-sm">
-              {errorParam === "invalid_token" && "Le lien de connexion est invalide ou a déjà été utilisé."}
-              {errorParam === "expired_token" && "Le lien de connexion a expiré. Veuillez en demander un nouveau."}
+              {errorParam === "invalid_token" &&
+                "Le lien de connexion est invalide ou a déjà été utilisé."}
+              {errorParam === "expired_token" &&
+                "Le lien de connexion a expiré. Veuillez en demander un nouveau."}
+              {errorParam === "account_inactive" &&
+                "Votre compte est inactif. Contactez l'administrateur."}
               {errorParam === "unauthorized" && "Vous n'êtes pas autorisé à accéder à cet espace."}
-              {errorParam === "server_error" && "Une erreur serveur est survenue. Veuillez réessayer."}
+              {errorParam === "server_error" &&
+                "Une erreur serveur est survenue. Veuillez réessayer."}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -90,7 +107,7 @@ export function MusicianLoginClient() {
                 disabled={loading}
               />
             </div>
-            
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Envoi en cours..." : "Recevoir le lien de connexion"}
             </Button>
@@ -111,7 +128,8 @@ export function MusicianLoginClient() {
           {debugLink && (
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
               <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
-                <strong>Mode développement:</strong> Cliquez sur le lien ci-dessous pour vous connecter
+                <strong>Mode développement:</strong> Cliquez sur le lien ci-dessous pour vous
+                connecter
               </p>
               <a
                 href={debugLink}

@@ -8,9 +8,7 @@ export function renderWithProviders(ui: ReactElement, options?: Omit<RenderOptio
 
 export function mockDb() {
   return {
-    // eslint-disable-next-line no-unused-vars
     prepare: (_query: string) => ({
-      // eslint-disable-next-line no-unused-vars
       bind: (..._args: unknown[]) => ({
         first: async <T = unknown,>() => null as T | null,
         all: async <T = unknown,>() => ({ results: [] as T[] }),

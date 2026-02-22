@@ -21,10 +21,7 @@ export function ExpandableDescription({ text }: ExpandableDescriptionProps) {
 
   return (
     <div className="text-gray-600 dark:text-gray-400 text-sm mb-3 flex-1">
-      <p
-        ref={textRef}
-        className={isExpanded ? "" : "line-clamp-4"}
-      >
+      <p ref={textRef} className={isExpanded ? "" : "line-clamp-4"}>
         {text}
       </p>
       {isClamped && (

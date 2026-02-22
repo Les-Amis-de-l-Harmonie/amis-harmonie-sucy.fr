@@ -25,6 +25,7 @@ interface VideoInput {
 
 interface PublicationInput {
   instagram_post_id: string;
+  thumbnail?: string | null;
   publication_date?: string | null;
 }
 
@@ -35,9 +36,52 @@ interface GuestbookInput {
   date: string;
 }
 
+function parseYouTubeUrl(url: string): { id: string; isShort: boolean } | null {
+  const trimmed = url.trim();
+
+  // Handle shorts URL: https://www.youtube.com/shorts/VIDEO_ID (with optional query params)
+  const shortsMatch = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/
+  );
+  if (shortsMatch) {
+    return { id: shortsMatch[1], isShort: true };
+  }
+
+  // Handle youtu.be URL with shorts feature flag: https://youtu.be/VIDEO_ID?feature=shorts
+  const shortUrlWithFeature = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+).*?(?:\?|&)feature=shorts/);
+  if (shortUrlWithFeature) {
+    return { id: shortUrlWithFeature[1], isShort: true };
+  }
+
+  // Handle watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) {
+    return { id: watchMatch[1], isShort: false };
+  }
+
+  // Handle youtu.be URL: https://youtu.be/VIDEO_ID
+  const shortUrlMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortUrlMatch) {
+    return { id: shortUrlMatch[1], isShort: false };
+  }
+
+  // Handle embed URL: https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = trimmed.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+  if (embedMatch) {
+    return { id: embedMatch[1], isShort: false };
+  }
+
+  // If just an ID (11 characters, alphanumeric with - and _)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return { id: trimmed, isShort: false };
+  }
+
+  return null;
+}
+
 async function checkAdminAuth(request: Request): Promise<Response | null> {
-  const user = await verifySession(request, 'admin');
-  if (!user || user.role !== 'ADMIN') {
+  const user = await verifySession(request, "admin");
+  if (!user || user.role !== "ADMIN") {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
@@ -68,21 +112,23 @@ export async function handleEventsApi(request: Request): Promise<Response> {
     }
 
     if (request.method === "POST") {
-      const data = await request.json() as EventInput;
+      const data = (await request.json()) as EventInput;
       const result = await env.DB.prepare(
         `INSERT INTO events (title, image, location, description, date, time, price, details_link, reservation_link) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        data.title,
-        data.image || null,
-        data.location || null,
-        data.description || null,
-        data.date,
-        data.time || null,
-        data.price || null,
-        data.details_link || null,
-        data.reservation_link || null
-      ).run();
+      )
+        .bind(
+          data.title,
+          data.image || null,
+          data.location || null,
+          data.description || null,
+          data.date,
+          data.time || null,
+          data.price || null,
+          data.details_link || null,
+          data.reservation_link || null
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -96,21 +142,23 @@ export async function handleEventsApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const data = await request.json() as EventInput;
+      const data = (await request.json()) as EventInput;
       await env.DB.prepare(
         `UPDATE events SET title = ?, image = ?, location = ?, description = ?, date = ?, time = ?, price = ?, details_link = ?, reservation_link = ? WHERE id = ?`
-      ).bind(
-        data.title,
-        data.image || null,
-        data.location || null,
-        data.description || null,
-        data.date,
-        data.time || null,
-        data.price || null,
-        data.details_link || null,
-        data.reservation_link || null,
-        id
-      ).run();
+      )
+        .bind(
+          data.title,
+          data.image || null,
+          data.location || null,
+          data.description || null,
+          data.date,
+          data.time || null,
+          data.price || null,
+          data.details_link || null,
+          data.reservation_link || null,
+          id
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
@@ -150,6 +198,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
+  const action = url.searchParams.get("action");
 
   try {
     if (request.method === "GET") {
@@ -159,17 +208,53 @@ export async function handleVideosApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const videos = await env.DB.prepare("SELECT * FROM videos ORDER BY publication_date DESC, created_at DESC").all();
+      const videos = await env.DB.prepare(
+        "SELECT * FROM videos ORDER BY sort_order ASC, publication_date DESC, created_at DESC"
+      ).all();
       return new Response(JSON.stringify(videos.results), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (request.method === "POST") {
-      const data = await request.json() as VideoInput;
+      if (action === "reorder") {
+        const { ids } = (await request.json()) as { ids: number[] };
+        await Promise.all(
+          ids.map((videoId, index) =>
+            env.DB.prepare("UPDATE videos SET sort_order = ? WHERE id = ?")
+              .bind(index, videoId)
+              .run()
+          )
+        );
+        await invalidateCache();
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const data = (await request.json()) as VideoInput;
+      const parsed = parseYouTubeUrl(data.youtube_id);
+      if (!parsed) {
+        return new Response(JSON.stringify({ error: "Invalid YouTube URL or ID" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      // Increment sort_order of all existing videos to make room for new one at top
+      await env.DB.prepare("UPDATE videos SET sort_order = sort_order + 1").run();
       const result = await env.DB.prepare(
-        "INSERT INTO videos (title, youtube_id, thumbnail, is_short, publication_date) VALUES (?, ?, ?, ?, ?)"
-      ).bind(data.title, data.youtube_id, data.thumbnail || null, data.is_short || 0, data.publication_date || null).run();
+        "INSERT INTO videos (title, youtube_id, thumbnail, is_short, publication_date, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+        .bind(
+          data.title,
+          parsed.id,
+          data.thumbnail || null,
+          data.is_short ?? (parsed.isShort ? 1 : 0),
+          data.publication_date || null,
+          0
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -183,10 +268,26 @@ export async function handleVideosApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const data = await request.json() as VideoInput;
+      const data = (await request.json()) as VideoInput;
+      const parsed = parseYouTubeUrl(data.youtube_id);
+      if (!parsed) {
+        return new Response(JSON.stringify({ error: "Invalid YouTube URL or ID" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       await env.DB.prepare(
         "UPDATE videos SET title = ?, youtube_id = ?, thumbnail = ?, is_short = ?, publication_date = ? WHERE id = ?"
-      ).bind(data.title, data.youtube_id, data.thumbnail || null, data.is_short || 0, data.publication_date || null, id).run();
+      )
+        .bind(
+          data.title,
+          parsed.id,
+          data.thumbnail || null,
+          data.is_short ?? (parsed.isShort ? 1 : 0),
+          data.publication_date || null,
+          id
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
@@ -230,22 +331,28 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
   try {
     if (request.method === "GET") {
       if (id) {
-        const pub = await env.DB.prepare("SELECT * FROM publications WHERE id = ?").bind(id).first();
+        const pub = await env.DB.prepare("SELECT * FROM publications WHERE id = ?")
+          .bind(id)
+          .first();
         return new Response(JSON.stringify(pub), {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const pubs = await env.DB.prepare("SELECT * FROM publications ORDER BY publication_date DESC, created_at DESC").all();
+      const pubs = await env.DB.prepare(
+        "SELECT * FROM publications ORDER BY publication_date DESC, created_at DESC"
+      ).all();
       return new Response(JSON.stringify(pubs.results), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (request.method === "POST") {
-      const data = await request.json() as PublicationInput;
+      const data = (await request.json()) as PublicationInput;
       const result = await env.DB.prepare(
-        "INSERT INTO publications (instagram_post_id, publication_date) VALUES (?, ?)"
-      ).bind(data.instagram_post_id, data.publication_date || null).run();
+        "INSERT INTO publications (instagram_post_id, thumbnail, publication_date) VALUES (?, ?, ?)"
+      )
+        .bind(data.instagram_post_id, data.thumbnail || null, data.publication_date || null)
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -259,10 +366,12 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
           headers: { "Content-Type": "application/json" },
         });
       }
-      const data = await request.json() as PublicationInput;
+      const data = (await request.json()) as PublicationInput;
       await env.DB.prepare(
-        "UPDATE publications SET instagram_post_id = ?, publication_date = ? WHERE id = ?"
-      ).bind(data.instagram_post_id, data.publication_date || null, id).run();
+        "UPDATE publications SET instagram_post_id = ?, thumbnail = ?, publication_date = ? WHERE id = ?"
+      )
+        .bind(data.instagram_post_id, data.thumbnail || null, data.publication_date || null, id)
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
@@ -318,10 +427,12 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
     }
 
     if (request.method === "POST") {
-      const data = await request.json() as GuestbookInput;
+      const data = (await request.json()) as GuestbookInput;
       const result = await env.DB.prepare(
         "INSERT INTO guestbook (first_name, last_name, message, date) VALUES (?, ?, ?, ?)"
-      ).bind(data.first_name, data.last_name, data.message, data.date).run();
+      )
+        .bind(data.first_name, data.last_name, data.message, data.date)
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -335,10 +446,12 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const data = await request.json() as GuestbookInput;
+      const data = (await request.json()) as GuestbookInput;
       await env.DB.prepare(
         "UPDATE guestbook SET first_name = ?, last_name = ?, message = ?, date = ? WHERE id = ?"
-      ).bind(data.first_name, data.last_name, data.message, data.date, id).run();
+      )
+        .bind(data.first_name, data.last_name, data.message, data.date, id)
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
@@ -382,12 +495,16 @@ export async function handleContactApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const sub = await env.DB.prepare("SELECT * FROM contact_submissions WHERE id = ?").bind(id).first();
+        const sub = await env.DB.prepare("SELECT * FROM contact_submissions WHERE id = ?")
+          .bind(id)
+          .first();
         return new Response(JSON.stringify(sub), {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const subs = await env.DB.prepare("SELECT * FROM contact_submissions ORDER BY created_at DESC").all();
+      const subs = await env.DB.prepare(
+        "SELECT * FROM contact_submissions ORDER BY created_at DESC"
+      ).all();
       return new Response(JSON.stringify(subs.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -428,6 +545,7 @@ interface UserInstrument {
 interface UserWithProfile {
   email: string;
   role: string;
+  is_active?: number;
   first_name?: string;
   last_name?: string;
   avatar?: string;
@@ -444,6 +562,8 @@ interface UserWithProfile {
   emergency_contact_first_name?: string;
   emergency_contact_email?: string;
   emergency_contact_phone?: string;
+  image_consent?: number;
+  adhesion_2025_2026?: number;
   instruments?: UserInstrument[];
 }
 
@@ -457,143 +577,93 @@ export async function handleUsersApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const user = await env.DB.prepare(`
+        const user = await env.DB.prepare(
+          `
           SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
                  p.address_line1, p.address_line2, p.postal_code, p.city,
                  p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
                  p.emergency_contact_last_name, p.emergency_contact_first_name,
-                 p.emergency_contact_email, p.emergency_contact_phone
+                 p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2025_2026
           FROM users u
           LEFT JOIN musician_profiles p ON u.id = p.user_id
           WHERE u.id = ?
-        `).bind(id).first();
+        `
+        )
+          .bind(id)
+          .first();
 
         const instruments = await env.DB.prepare(
           "SELECT instrument_name, start_date, level FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
-        ).bind(id).all();
+        )
+          .bind(id)
+          .all();
 
-        return new Response(JSON.stringify({
-          ...user,
-          instruments: instruments.results || []
-        }), {
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            ...user,
+            instruments: instruments.results || [],
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
-      const users = await env.DB.prepare(`
+      const users = await env.DB.prepare(
+        `
         SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
                p.address_line1, p.address_line2, p.postal_code, p.city,
                p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
                p.emergency_contact_last_name, p.emergency_contact_first_name,
-               p.emergency_contact_email, p.emergency_contact_phone
+               p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2025_2026
         FROM users u
         LEFT JOIN musician_profiles p ON u.id = p.user_id
         ORDER BY u.created_at DESC
-      `).all();
+      `
+      ).all();
       return new Response(JSON.stringify(users.results), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (request.method === "POST") {
-      const data = await request.json() as UserWithProfile;
-      
-      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(data.email.toLowerCase().trim()).first();
+      const data = (await request.json()) as UserWithProfile;
+
+      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?")
+        .bind(data.email.toLowerCase().trim())
+        .first();
       if (existing) {
-        return new Response(JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
       const result = await env.DB.prepare(
-        "INSERT INTO users (email, role) VALUES (?, ?)"
-      ).bind(data.email.toLowerCase().trim(), data.role || 'MUSICIAN').run();
+        "INSERT INTO users (email, role, is_active) VALUES (?, ?, ?)"
+      )
+        .bind(
+          data.email.toLowerCase().trim(),
+          data.role || "MUSICIAN",
+          data.is_active !== 0 ? 1 : 0
+        )
+        .run();
 
       const userId = result.meta.last_row_id;
 
-      await env.DB.prepare(`
+      await env.DB.prepare(
+        `
         INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
           address_line1, address_line2, postal_code, city,
           harmonie_start_date, is_conservatory_student, music_theory_level,
-          emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        userId,
-        data.first_name || null,
-        data.last_name || null,
-        data.avatar || null,
-        data.date_of_birth || null,
-        data.phone || null,
-        data.address_line1 || null,
-        data.address_line2 || null,
-        data.postal_code || null,
-        data.city || null,
-        data.harmonie_start_date || null,
-        data.is_conservatory_student ? 1 : 0,
-        data.music_theory_level || null,
-        data.emergency_contact_last_name || null,
-        data.emergency_contact_first_name || null,
-        data.emergency_contact_email || null,
-        data.emergency_contact_phone || null
-      ).run();
-
-      if (data.instruments) {
-        for (let i = 0; i < data.instruments.length; i++) {
-          const inst = data.instruments[i];
-          if (inst.instrument_name?.trim()) {
-            await env.DB.prepare(`
-              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
-              VALUES (?, ?, ?, ?, ?)
-            `).bind(
-              userId,
-              inst.instrument_name.trim(),
-              inst.start_date || null,
-              inst.level || null,
-              i
-            ).run();
-          }
-        }
-      }
-
-      return new Response(JSON.stringify({ success: true, id: userId }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    if (request.method === "PUT") {
-      if (!id) {
-        return new Response(JSON.stringify({ error: "ID required" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      const data = await request.json() as UserWithProfile;
-      
-      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
-        .bind(data.email.toLowerCase().trim(), id).first();
-      if (existing) {
-        return new Response(JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      await env.DB.prepare(
-        "UPDATE users SET email = ?, role = ? WHERE id = ?"
-      ).bind(data.email.toLowerCase().trim(), data.role, id).run();
-
-      const existingProfile = await env.DB.prepare("SELECT id FROM musician_profiles WHERE user_id = ?").bind(id).first();
-      if (existingProfile) {
-        await env.DB.prepare(`
-          UPDATE musician_profiles 
-          SET first_name = ?, last_name = ?, avatar = ?, date_of_birth = ?, phone = ?,
-              address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
-              harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
-              emergency_contact_last_name = ?, emergency_contact_first_name = ?,
-              emergency_contact_email = ?, emergency_contact_phone = ?,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE user_id = ?
-        `).bind(
+          emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      )
+        .bind(
+          userId,
           data.first_name || null,
           data.last_name || null,
           data.avatar || null,
@@ -610,34 +680,136 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           data.emergency_contact_first_name || null,
           data.emergency_contact_email || null,
           data.emergency_contact_phone || null,
-          id
-        ).run();
+          data.image_consent ? 1 : 0,
+          data.adhesion_2025_2026 ? 1 : 0
+        )
+        .run();
+
+      if (data.instruments) {
+        for (let i = 0; i < data.instruments.length; i++) {
+          const inst = data.instruments[i];
+          if (inst.instrument_name?.trim()) {
+            await env.DB.prepare(
+              `
+              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
+              VALUES (?, ?, ?, ?, ?)
+            `
+            )
+              .bind(
+                userId,
+                inst.instrument_name.trim(),
+                inst.start_date || null,
+                inst.level || null,
+                i
+              )
+              .run();
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, id: userId }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "PUT") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const data = (await request.json()) as UserWithProfile;
+
+      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+        .bind(data.email.toLowerCase().trim(), id)
+        .first();
+      if (existing) {
+        return new Response(
+          JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      await env.DB.prepare("UPDATE users SET email = ?, role = ?, is_active = ? WHERE id = ?")
+        .bind(data.email.toLowerCase().trim(), data.role, data.is_active !== 0 ? 1 : 0, id)
+        .run();
+
+      const existingProfile = await env.DB.prepare(
+        "SELECT id FROM musician_profiles WHERE user_id = ?"
+      )
+        .bind(id)
+        .first();
+      if (existingProfile) {
+        await env.DB.prepare(
+          `
+          UPDATE musician_profiles
+          SET first_name = ?, last_name = ?, avatar = ?, date_of_birth = ?, phone = ?,
+              address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
+              harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
+              emergency_contact_last_name = ?, emergency_contact_first_name = ?,
+              emergency_contact_email = ?, emergency_contact_phone = ?, image_consent = ?, adhesion_2025_2026 = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ?
+        `
+        )
+          .bind(
+            data.first_name || null,
+            data.last_name || null,
+            data.avatar || null,
+            data.date_of_birth || null,
+            data.phone || null,
+            data.address_line1 || null,
+            data.address_line2 || null,
+            data.postal_code || null,
+            data.city || null,
+            data.harmonie_start_date || null,
+            data.is_conservatory_student ? 1 : 0,
+            data.music_theory_level || null,
+            data.emergency_contact_last_name || null,
+            data.emergency_contact_first_name || null,
+            data.emergency_contact_email || null,
+            data.emergency_contact_phone || null,
+            data.image_consent ? 1 : 0,
+            data.adhesion_2025_2026 ? 1 : 0,
+            id
+          )
+          .run();
       } else {
-        await env.DB.prepare(`
+        await env.DB.prepare(
+          `
           INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
             address_line1, address_line2, postal_code, city,
             harmonie_start_date, is_conservatory_student, music_theory_level,
-            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          id,
-          data.first_name || null,
-          data.last_name || null,
-          data.avatar || null,
-          data.date_of_birth || null,
-          data.phone || null,
-          data.address_line1 || null,
-          data.address_line2 || null,
-          data.postal_code || null,
-          data.city || null,
-          data.harmonie_start_date || null,
-          data.is_conservatory_student ? 1 : 0,
-          data.music_theory_level || null,
-          data.emergency_contact_last_name || null,
-          data.emergency_contact_first_name || null,
-          data.emergency_contact_email || null,
-          data.emergency_contact_phone || null
-        ).run();
+            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+        )
+          .bind(
+            id,
+            data.first_name || null,
+            data.last_name || null,
+            data.avatar || null,
+            data.date_of_birth || null,
+            data.phone || null,
+            data.address_line1 || null,
+            data.address_line2 || null,
+            data.postal_code || null,
+            data.city || null,
+            data.harmonie_start_date || null,
+            data.is_conservatory_student ? 1 : 0,
+            data.music_theory_level || null,
+            data.emergency_contact_last_name || null,
+            data.emergency_contact_first_name || null,
+            data.emergency_contact_email || null,
+            data.emergency_contact_phone || null,
+            data.image_consent ? 1 : 0,
+            data.adhesion_2025_2026 ? 1 : 0
+          )
+          .run();
       }
 
       await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?").bind(id).run();
@@ -645,16 +817,14 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         for (let i = 0; i < data.instruments.length; i++) {
           const inst = data.instruments[i];
           if (inst.instrument_name?.trim()) {
-            await env.DB.prepare(`
+            await env.DB.prepare(
+              `
               INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
               VALUES (?, ?, ?, ?, ?)
-            `).bind(
-              id,
-              inst.instrument_name.trim(),
-              inst.start_date || null,
-              inst.level || null,
-              i
-            ).run();
+            `
+            )
+              .bind(id, inst.instrument_name.trim(), inst.start_date || null, inst.level || null, i)
+              .run();
           }
         }
       }
@@ -671,12 +841,12 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      
+
       await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM musician_profiles WHERE user_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id).run();
       await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
-      
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -720,7 +890,9 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const image = await env.DB.prepare("SELECT * FROM gallery_images WHERE id = ?").bind(id).first();
+        const image = await env.DB.prepare("SELECT * FROM gallery_images WHERE id = ?")
+          .bind(id)
+          .first();
         return new Response(JSON.stringify(image), {
           headers: { "Content-Type": "application/json" },
         });
@@ -728,7 +900,9 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
       if (category) {
         const images = await env.DB.prepare(
           "SELECT * FROM gallery_images WHERE category = ? ORDER BY sort_order ASC"
-        ).bind(category).all();
+        )
+          .bind(category)
+          .all();
         return new Response(JSON.stringify(images.results), {
           headers: { "Content-Type": "application/json" },
         });
@@ -743,7 +917,7 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
 
     if (request.method === "POST") {
       if (action === "reorder") {
-        const data = await request.json() as ReorderInput;
+        const data = (await request.json()) as ReorderInput;
         if (!data.ids || !Array.isArray(data.ids)) {
           return new Response(JSON.stringify({ error: "ids array required" }), {
             status: 400,
@@ -751,9 +925,9 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
           });
         }
         for (let i = 0; i < data.ids.length; i++) {
-          await env.DB.prepare(
-            "UPDATE gallery_images SET sort_order = ? WHERE id = ?"
-          ).bind(i, data.ids[i]).run();
+          await env.DB.prepare("UPDATE gallery_images SET sort_order = ? WHERE id = ?")
+            .bind(i, data.ids[i])
+            .run();
         }
         await invalidateCache();
         return new Response(JSON.stringify({ success: true }), {
@@ -761,23 +935,27 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
         });
       }
 
-      const data = await request.json() as GalleryImageInput;
+      const data = (await request.json()) as GalleryImageInput;
       const maxOrder = await env.DB.prepare(
         "SELECT MAX(sort_order) as max_order FROM gallery_images WHERE category = ?"
-      ).bind(data.category).first<{ max_order: number | null }>();
+      )
+        .bind(data.category)
+        .first<{ max_order: number | null }>();
       const nextOrder = (maxOrder?.max_order ?? -1) + 1;
 
       const result = await env.DB.prepare(
         `INSERT INTO gallery_images (category, image_url, alt_text, link_url, link_name, sort_order) 
          VALUES (?, ?, ?, ?, ?, ?)`
-      ).bind(
-        data.category,
-        data.image_url,
-        data.alt_text || null,
-        data.link_url || null,
-        data.link_name || null,
-        data.sort_order ?? nextOrder
-      ).run();
+      )
+        .bind(
+          data.category,
+          data.image_url,
+          data.alt_text || null,
+          data.link_url || null,
+          data.link_name || null,
+          data.sort_order ?? nextOrder
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
@@ -791,18 +969,20 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const data = await request.json() as GalleryImageInput;
+      const data = (await request.json()) as GalleryImageInput;
       await env.DB.prepare(
         `UPDATE gallery_images SET category = ?, image_url = ?, alt_text = ?, link_url = ?, link_name = ?, sort_order = ? WHERE id = ?`
-      ).bind(
-        data.category,
-        data.image_url,
-        data.alt_text || null,
-        data.link_url || null,
-        data.link_name || null,
-        data.sort_order ?? 0,
-        id
-      ).run();
+      )
+        .bind(
+          data.category,
+          data.image_url,
+          data.alt_text || null,
+          data.link_url || null,
+          data.link_name || null,
+          data.sort_order ?? 0,
+          id
+        )
+        .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
@@ -816,7 +996,9 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const image = await env.DB.prepare("SELECT image_url FROM gallery_images WHERE id = ?").bind(id).first<{ image_url: string }>();
+      const image = await env.DB.prepare("SELECT image_url FROM gallery_images WHERE id = ?")
+        .bind(id)
+        .first<{ image_url: string }>();
       if (image?.image_url?.includes("/images/r2/")) {
         const r2Path = image.image_url.replace("/images/r2/", "");
         try {
@@ -855,21 +1037,27 @@ export async function handleR2CleanupApi(request: Request): Promise<Response> {
   try {
     const referencedUrls = new Set<string>();
 
-    const galleryImages = await env.DB.prepare("SELECT image_url FROM gallery_images").all<{ image_url: string }>();
+    const galleryImages = await env.DB.prepare("SELECT image_url FROM gallery_images").all<{
+      image_url: string;
+    }>();
     for (const row of galleryImages.results || []) {
       if (row.image_url.includes("/images/r2/")) {
         referencedUrls.add(row.image_url.replace("/images/r2/", ""));
       }
     }
 
-    const eventImages = await env.DB.prepare("SELECT image FROM events WHERE image IS NOT NULL").all<{ image: string }>();
+    const eventImages = await env.DB.prepare(
+      "SELECT image FROM events WHERE image IS NOT NULL"
+    ).all<{ image: string }>();
     for (const row of eventImages.results || []) {
       if (row.image.includes("/images/r2/")) {
         referencedUrls.add(row.image.replace("/images/r2/", ""));
       }
     }
 
-    const avatars = await env.DB.prepare("SELECT avatar FROM musician_profiles WHERE avatar IS NOT NULL").all<{ avatar: string }>();
+    const avatars = await env.DB.prepare(
+      "SELECT avatar FROM musician_profiles WHERE avatar IS NOT NULL"
+    ).all<{ avatar: string }>();
     for (const row of avatars.results || []) {
       if (row.avatar.includes("/images/r2/")) {
         referencedUrls.add(row.avatar.replace("/images/r2/", ""));
@@ -886,8 +1074,8 @@ export async function handleR2CleanupApi(request: Request): Promise<Response> {
       cursor = listed.truncated ? listed.cursor : undefined;
     } while (cursor);
 
-    const orphans = allR2Objects.filter(key => !referencedUrls.has(key));
-    const kept = allR2Objects.filter(key => referencedUrls.has(key));
+    const orphans = allR2Objects.filter((key) => !referencedUrls.has(key));
+    const kept = allR2Objects.filter((key) => referencedUrls.has(key));
 
     if (!dryRun && orphans.length > 0) {
       for (const key of orphans) {
@@ -895,19 +1083,93 @@ export async function handleR2CleanupApi(request: Request): Promise<Response> {
       }
     }
 
-    return new Response(JSON.stringify({
-      dry_run: dryRun,
-      total_r2_objects: allR2Objects.length,
-      referenced_in_db: referencedUrls.size,
-      orphans_found: orphans.length,
-      orphans,
-      kept: kept.length,
-      deleted: dryRun ? 0 : orphans.length,
-    }, null, 2), {
+    return new Response(
+      JSON.stringify(
+        {
+          dry_run: dryRun,
+          total_r2_objects: allR2Objects.length,
+          referenced_in_db: referencedUrls.size,
+          orphans_found: orphans.length,
+          orphans,
+          kept: kept.length,
+          deleted: dryRun ? 0 : orphans.length,
+        },
+        null,
+        2
+      ),
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("R2 cleanup error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleIdeasApi(request: Request): Promise<Response> {
+  const authError = await checkAdminAuth(request);
+  if (authError) return authError;
+
+  const url = new URL(request.url);
+  const id = url.searchParams.get("id");
+
+  try {
+    if (request.method === "GET") {
+      const ideas = await env.DB.prepare(
+        `
+        SELECT i.*, u.email as user_email, mp.first_name as user_first_name, mp.last_name as user_last_name
+        FROM ideas i
+        LEFT JOIN users u ON i.user_id = u.id
+        LEFT JOIN musician_profiles mp ON i.user_id = mp.user_id
+        ORDER BY i.created_at DESC
+      `
+      ).all();
+
+      return new Response(JSON.stringify(ideas.results || []), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "PUT") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const data = (await request.json()) as {
+        status: string;
+        admin_notes?: string;
+        is_public?: number;
+      };
+
+      await env.DB.prepare(
+        "UPDATE ideas SET status = ?, admin_notes = ?, is_public = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      )
+        .bind(
+          data.status,
+          data.admin_notes || null,
+          data.is_public !== undefined ? data.is_public : 0,
+          id
+        )
+        .run();
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("R2 cleanup error:", error);
+    console.error("Ideas API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

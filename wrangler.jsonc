@@ -6,38 +6,36 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
 
-  "routes": [
-    { "pattern": "preview.amis-harmonie-sucy.fr", "custom_domain": true }
-  ],
+  "routes": [{ "pattern": "amis-harmonie-sucy.fr", "custom_domain": true }],
 
   "assets": {
     "binding": "ASSETS",
-    "directory": "public"
+    "directory": "public",
   },
 
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "amis-harmonie-db",
-      "database_id": "edcd3386-ec43-4362-a9e1-ef929123d1a1"
-    }
+      "database_id": "edcd3386-ec43-4362-a9e1-ef929123d1a1",
+    },
   ],
 
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "amis-harmonie-images"
-    }
+      "bucket_name": "amis-harmonie-images",
+    },
   ],
 
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "a562f79648854fb9a3682a8ebef86289"
-    }
+      "id": "a562f79648854fb9a3682a8ebef86289",
+    },
   ],
 
   "observability": {
-    "enabled": true
-  }
+    "enabled": true,
+  },
 }

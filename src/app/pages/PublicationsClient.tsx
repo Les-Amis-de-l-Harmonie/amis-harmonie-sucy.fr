@@ -40,8 +40,7 @@ function InstagramPost({ postId }: { postId: string }) {
           background: "#FFF",
           border: 0,
           borderRadius: "12px",
-          boxShadow:
-            "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+          boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
           margin: 0,
           maxWidth: "100%",
           minWidth: "100%",
@@ -63,11 +62,7 @@ function LoadMoreTrigger({ onLoadMore }: { onLoadMore: () => void }) {
   return <div ref={ref} className="h-1" />;
 }
 
-export function PublicationsClient({
-  publications,
-}: {
-  publications: Publication[];
-}) {
+export function PublicationsClient({ publications }: { publications: Publication[] }) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const columnCount = useColumnCount();
 
@@ -87,9 +82,7 @@ export function PublicationsClient({
   }, [visibleCount]);
 
   const loadMore = useCallback(() => {
-    setVisibleCount((prev) =>
-      prev >= publications.length ? prev : prev + BATCH_SIZE
-    );
+    setVisibleCount((prev) => (prev >= publications.length ? prev : prev + BATCH_SIZE));
   }, [publications.length]);
 
   const columns = useMemo(() => {
@@ -104,9 +97,7 @@ export function PublicationsClient({
   if (publications.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 text-lg mb-4">
-          Aucune publication disponible pour le moment.
-        </p>
+        <p className="text-gray-600 text-lg mb-4">Aucune publication disponible pour le moment.</p>
         <a
           href="https://www.instagram.com/amisdelharmoniedesucy"
           target="_blank"

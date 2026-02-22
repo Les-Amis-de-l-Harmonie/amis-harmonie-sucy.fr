@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { Button } from "@/app/components/ui/button";
@@ -8,7 +8,14 @@ import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import { Card, CardContent } from "@/app/components/ui/card";
-import { isEventPast } from "@/lib/dates";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { isEventPast, formatDateShort } from "@/lib/dates";
 import {
   Table,
   TableBody,
@@ -34,7 +41,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Upload, X, Crop, Check, RefreshCw } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Upload,
+  X,
+  Crop,
+  Check,
+  RefreshCw,
+  Search,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Copy,
+} from "lucide-react";
 import type { Event } from "@/db/types";
 import { getCroppedImg, recompressImage } from "@/lib/image-utils";
 
@@ -70,6 +91,12 @@ export function EventsAdminClient() {
   const [recompressing, setRecompressing] = useState(false);
   const [recompressProgress, setRecompressProgress] = useState({ current: 0, total: 0 });
 
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "upcoming" | "past">("all");
+  const [filterYear, setFilterYear] = useState<string>("all");
+  const [sortField, setSortField] = useState<"date" | "title" | "location" | "price">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
   const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
@@ -99,6 +126,15 @@ export function EventsAdminClient() {
 
   const handleEdit = (event: Event) => {
     setEditingEvent(event);
+    setDialogOpen(true);
+  };
+
+  const handleDuplicate = (event: Event) => {
+    const { id: _id, ...eventWithoutId } = event;
+    setEditingEvent({
+      ...eventWithoutId,
+      title: `${event.title} (copie)`,
+    });
     setDialogOpen(true);
   };
 
@@ -261,15 +297,65 @@ export function EventsAdminClient() {
     }
   };
 
+  const handleSort = (field: "date" | "title" | "location" | "price") => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: "date" | "title" | "location" | "price" }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-40" />;
+    return sortDir === "asc" ? (
+      <ChevronUp className="w-3.5 h-3.5 ml-1" />
+    ) : (
+      <ChevronDown className="w-3.5 h-3.5 ml-1" />
+    );
+  };
+
+  const availableYears = useMemo(
+    () => [...new Set(events.map((e) => e.date.slice(0, 4)))].sort((a, b) => b.localeCompare(a)),
+    [events]
+  );
+
+  const filteredEvents = useMemo(() => {
+    let result = [...events];
+
+    if (filterStatus === "upcoming") result = result.filter((e) => !isEventPast(e.date));
+    if (filterStatus === "past") result = result.filter((e) => isEventPast(e.date));
+    if (filterYear !== "all") result = result.filter((e) => e.date.startsWith(filterYear));
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (e) =>
+          e.title?.toLowerCase().includes(q) ||
+          e.location?.toLowerCase().includes(q) ||
+          e.description?.toLowerCase().includes(q)
+      );
+    }
+
+    result.sort((a, b) => {
+      const aVal = (a[sortField] ?? "").toLowerCase();
+      const bVal = (b[sortField] ?? "").toLowerCase();
+      const cmp = aVal.localeCompare(bVal, "fr");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [events, search, filterStatus, filterYear, sortField, sortDir]);
+
   if (loading) {
-    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+    return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Événements</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+        <h1 className="text-3xl font-bold text-foreground">Événements</h1>
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleRecompressAll} disabled={recompressing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${recompressing ? "animate-spin" : ""}`} />
             {recompressing
@@ -283,33 +369,99 @@ export function EventsAdminClient() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Rechercher (titre, lieu, description…)"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select
+          value={filterStatus}
+          onValueChange={(v) => setFilterStatus(v as "all" | "upcoming" | "past")}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="upcoming">À venir</SelectItem>
+            <SelectItem value="past">Passés</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Années</SelectItem>
+            {availableYears.map((year) => (
+              <SelectItem key={year} value={year}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Titre</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Lieu</TableHead>
-                <TableHead>Prix</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("title")}
+                >
+                  <span className="inline-flex items-center">
+                    Titre <SortIcon field="title" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("date")}
+                >
+                  <span className="inline-flex items-center">
+                    Date <SortIcon field="date" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("location")}
+                >
+                  <span className="inline-flex items-center">
+                    Lieu <SortIcon field="location" />
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("price")}
+                >
+                  <span className="inline-flex items-center">
+                    Prix <SortIcon field="price" />
+                  </span>
+                </TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {events.map((event) => {
+              {filteredEvents.map((event) => {
                 const isPast = isEventPast(event.date);
                 return (
                   <TableRow key={event.id}>
                     <TableCell className="font-medium">{event.title}</TableCell>
-                    <TableCell>{event.date}</TableCell>
+                    <TableCell>{formatDateShort(event.date)}</TableCell>
                     <TableCell>{event.location}</TableCell>
                     <TableCell>{event.price || "-"}</TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           isPast
-                            ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                            ? "bg-muted text-muted-foreground"
                             : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
                         }`}
                       >
@@ -320,6 +472,14 @@ export function EventsAdminClient() {
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDuplicate(event)}
+                        title="Dupliquer"
+                      >
+                        <Copy className="w-4 h-4 text-blue-500" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
@@ -327,13 +487,10 @@ export function EventsAdminClient() {
                   </TableRow>
                 );
               })}
-              {events.length === 0 && (
+              {filteredEvents.length === 0 && (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-gray-500 dark:text-gray-400"
-                  >
-                    Aucun événement
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    {events.length === 0 ? "Aucun événement" : "Aucun résultat pour ces critères"}
                   </TableCell>
                 </TableRow>
               )}
@@ -525,7 +682,7 @@ export function EventsAdminClient() {
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={1}
+                aspect={15 / 8}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
@@ -534,7 +691,7 @@ export function EventsAdminClient() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Zoom:</span>
+            <span className="text-sm text-muted-foreground">Zoom:</span>
             <input
               type="range"
               min={1}
@@ -546,8 +703,9 @@ export function EventsAdminClient() {
             />
           </div>
 
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            L'image sera automatiquement redimensionnée et compressée (600x600 max, WebP 70%).
+          <p className="text-sm text-muted-foreground">
+            Format 15:8 (panoramique). L'image sera automatiquement redimensionnée et compressée
+            (WebP 70%).
           </p>
 
           <DialogFooter>

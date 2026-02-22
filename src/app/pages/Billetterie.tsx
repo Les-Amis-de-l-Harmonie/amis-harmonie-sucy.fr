@@ -2,12 +2,15 @@ import { Suspense } from "react";
 import { env } from "cloudflare:workers";
 import { EventCard } from "../components/EventCard";
 import type { Event } from "@/db/types";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
 
 async function getUpcomingEvents(): Promise<Event[]> {
   const today = new Date().toISOString().split("T")[0];
   const results = await env.DB.prepare(
     "SELECT * FROM events WHERE date >= ? AND reservation_link IS NOT NULL ORDER BY date ASC"
-  ).bind(today).all<Event>();
+  )
+    .bind(today)
+    .all<Event>();
   return results.results || [];
 }
 
@@ -38,24 +41,35 @@ export function Billetterie() {
   return (
     <>
       <title>Billetterie | Les Amis de l'Harmonie de Sucy</title>
-      <meta name="description" content="Réservez vos places pour les concerts et événements de l'Harmonie Municipale de Sucy-en-Brie. Billetterie en ligne sécurisée." />
+      <meta
+        name="description"
+        content="Réservez vos places pour les concerts et événements de l'Harmonie Municipale de Sucy-en-Brie. Billetterie en ligne sécurisée."
+      />
       <meta property="og:title" content="Billetterie | Les Amis de l'Harmonie de Sucy" />
-      <meta property="og:description" content="Réservez vos places pour les concerts et événements de l'Harmonie Municipale de Sucy-en-Brie." />
+      <meta
+        property="og:description"
+        content="Réservez vos places pour les concerts et événements de l'Harmonie Municipale de Sucy-en-Brie."
+      />
       <meta property="og:url" content="https://amis-harmonie-sucy.fr/billetterie" />
       <link rel="canonical" href="https://amis-harmonie-sucy.fr/billetterie" />
       <div className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="font-['Merriweather_Sans'] text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
-              Billetterie
-            </h1>
+            <ScrollReveal>
+              <h1 className="font-['Merriweather_Sans'] text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+                Billetterie
+              </h1>
+            </ScrollReveal>
           </div>
 
           <Suspense
             fallback={
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-gray-100 dark:bg-gray-800 rounded-xl h-96 animate-pulse" />
+                  <div
+                    key={i}
+                    className="bg-gray-100 dark:bg-gray-800 rounded-xl h-96 animate-pulse"
+                  />
                 ))}
               </div>
             }

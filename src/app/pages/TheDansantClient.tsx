@@ -16,7 +16,10 @@ export function TheDansantClient() {
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {videos.map((video) => (
-          <div key={video.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+          <div
+            key={video.id}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden"
+          >
             <div className="aspect-video">
               <LiteYouTubeEmbed
                 id={video.id}

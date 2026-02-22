@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -37,8 +37,9 @@ import {
   X,
   RefreshCw,
   Eye,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
+  RotateCcw,
+  RotateCw,
 } from "lucide-react";
 import type { GalleryImage, GalleryCategory } from "@/db/types";
 import { GALLERY_CATEGORY_CONFIG } from "@/db/types";
@@ -112,12 +113,74 @@ async function compressImageFile(
   targetHeight: number,
   preserveAspect: boolean
 ): Promise<Blob> {
-  const url = URL.createObjectURL(file);
-  try {
-    return await compressImage(url, targetWidth, targetHeight, preserveAspect);
-  } finally {
-    URL.revokeObjectURL(url);
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    bitmap.close();
+    throw new Error("No 2d context");
   }
+
+  let outputWidth: number;
+  let outputHeight: number;
+
+  if (preserveAspect) {
+    const aspectRatio = bitmap.width / bitmap.height;
+    if (bitmap.width > targetWidth) {
+      outputWidth = targetWidth;
+      outputHeight = targetWidth / aspectRatio;
+    } else if (bitmap.height > targetHeight) {
+      outputHeight = targetHeight;
+      outputWidth = targetHeight * aspectRatio;
+    } else {
+      outputWidth = bitmap.width;
+      outputHeight = bitmap.height;
+    }
+  } else {
+    outputWidth = Math.min(bitmap.width, targetWidth);
+    outputHeight = Math.min(bitmap.height, targetHeight);
+  }
+
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  ctx.drawImage(bitmap, 0, 0, outputWidth, outputHeight);
+  bitmap.close();
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Canvas is empty"));
+      },
+      "image/webp",
+      WEBP_QUALITY
+    );
+  });
+}
+
+async function rotateImageBlob(imageUrl: string, degrees: number): Promise<Blob> {
+  const image = await createImage(imageUrl);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("No 2d context");
+  const rad = (degrees * Math.PI) / 180;
+  const isOdd = degrees === 90 || degrees === 270;
+  canvas.width = isOdd ? image.height : image.width;
+  canvas.height = isOdd ? image.width : image.height;
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(image, -image.width / 2, -image.height / 2);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Canvas is empty"));
+      },
+      "image/webp",
+      WEBP_QUALITY
+    );
+  });
 }
 
 const emptyImage: Partial<GalleryImage> = {
@@ -141,13 +204,17 @@ export function GalleryAdminClient() {
   const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [rotation, setRotation] = useState(0);
 
   const [recompressing, setRecompressing] = useState(false);
   const [recompressProgress, setRecompressProgress] = useState({ current: 0, total: 0 });
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const url =
         selectedCategory === "all"
@@ -163,20 +230,22 @@ export function GalleryAdminClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
 
   useEffect(() => {
     fetchImages();
-  }, [selectedCategory]);
+  }, [fetchImages]);
 
   const handleNew = () => {
     const category = selectedCategory === "all" ? "harmonie_gallery" : selectedCategory;
     setEditingImage({ ...emptyImage, category });
+    setRotation(0);
     setDialogOpen(true);
   };
 
   const handleEdit = (image: GalleryImage) => {
     setEditingImage(image);
+    setRotation(0);
     setDialogOpen(true);
   };
 
@@ -369,34 +438,37 @@ export function GalleryAdminClient() {
     fetchImages();
   };
 
-  const handleMoveUp = async (image: GalleryImage, index: number) => {
-    const categoryImages = images.filter((img) => img.category === image.category);
-    if (index === 0) return;
+  const handleDragStart = (id: number) => setDraggedId(id);
 
-    const ids = categoryImages.map((img) => img.id);
-    [ids[index], ids[index - 1]] = [ids[index - 1], ids[index]];
-
-    await fetch("/api/admin/gallery?action=reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids }),
-    });
-    fetchImages();
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
   };
 
-  const handleMoveDown = async (image: GalleryImage, index: number) => {
-    const categoryImages = images.filter((img) => img.category === image.category);
-    if (index === categoryImages.length - 1) return;
+  const handleDrop = async (targetId: number, category: string) => {
+    if (!draggedId || draggedId === targetId) return;
+    const categoryImages = images.filter((img) => img.category === category);
+    const fromIndex = categoryImages.findIndex((img) => img.id === draggedId);
+    const toIndex = categoryImages.findIndex((img) => img.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const reordered = [...categoryImages];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    const ids = reordered.map((img) => img.id);
 
-    const ids = categoryImages.map((img) => img.id);
-    [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
+    setImages((prev) => {
+      const others = prev.filter((img) => img.category !== category);
+      return [...others, ...reordered];
+    });
 
     await fetch("/api/admin/gallery?action=reorder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
-    fetchImages();
+
+    setDraggedId(null);
+    setDragOverId(null);
   };
 
   const handleSave = async () => {
@@ -407,17 +479,45 @@ export function GalleryAdminClient() {
 
     setSaving(true);
     try {
-      const isNew = !editingImage.id;
-      const url = isNew ? "/api/admin/gallery" : `/api/admin/gallery?id=${editingImage.id}`;
+      let imageToSave = { ...editingImage };
+
+      if (rotation !== 0 && editingImage.image_url) {
+        setUploading(true);
+        const rotatedBlob = await rotateImageBlob(editingImage.image_url, rotation);
+        const category = (editingImage.category as GalleryCategory) ?? "harmonie_gallery";
+        const formData = new FormData();
+        formData.append("file", rotatedBlob, "image.webp");
+        formData.append("folder", `gallery/${category}`);
+        const uploadResponse = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadData = (await uploadResponse.json()) as {
+          success?: boolean;
+          url?: string;
+          error?: string;
+        };
+        setUploading(false);
+        if (uploadData.success && uploadData.url) {
+          imageToSave = { ...imageToSave, image_url: uploadData.url };
+        } else {
+          alert(uploadData.error || "Erreur lors de l'upload après rotation");
+          return;
+        }
+      }
+
+      const isNew = !imageToSave.id;
+      const url = isNew ? "/api/admin/gallery" : `/api/admin/gallery?id=${imageToSave.id}`;
       const method = isNew ? "POST" : "PUT";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingImage),
+        body: JSON.stringify(imageToSave),
       });
 
       if (response.ok) {
+        setRotation(0);
         fetchImages();
         setDialogOpen(false);
         setEditingImage(null);
@@ -426,6 +526,7 @@ export function GalleryAdminClient() {
       console.error("Error saving image:", error);
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   };
 
@@ -439,13 +540,13 @@ export function GalleryAdminClient() {
   );
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Chargement...</div>;
+    return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
 
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Galerie</h1>
+        <h1 className="text-3xl font-bold text-foreground">Galerie</h1>
         <div className="flex flex-wrap gap-2">
           <Select
             value={selectedCategory}
@@ -498,24 +599,27 @@ export function GalleryAdminClient() {
             <CardHeader>
               <CardTitle className="text-lg">
                 {GALLERY_CATEGORY_CONFIG[category as GalleryCategory]?.label || category}
-                <span className="text-sm font-normal text-gray-500 ml-2">
+                <span className="text-sm font-normal text-muted-foreground ml-2">
                   ({categoryImages.length} images)
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {categoryImages.map((image, index) => (
+                {categoryImages.map((image) => (
                   <ImageCard
                     key={image.id}
                     image={image}
-                    index={index}
-                    totalInCategory={categoryImages.length}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onPreview={handlePreview}
-                    onMoveUp={handleMoveUp}
-                    onMoveDown={handleMoveDown}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDrop={handleDrop}
+                    onDragEnter={setDragOverId}
+                    onDragLeave={() => setDragOverId(null)}
+                    isDragging={draggedId === image.id}
+                    isDropTarget={dragOverId === image.id && draggedId !== image.id}
                   />
                 ))}
               </div>
@@ -526,22 +630,25 @@ export function GalleryAdminClient() {
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {images.map((image, index) => (
+              {images.map((image) => (
                 <ImageCard
                   key={image.id}
                   image={image}
-                  index={index}
-                  totalInCategory={images.length}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onPreview={handlePreview}
-                  onMoveUp={handleMoveUp}
-                  onMoveDown={handleMoveDown}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  onDrop={handleDrop}
+                  onDragEnter={setDragOverId}
+                  onDragLeave={() => setDragOverId(null)}
+                  isDragging={draggedId === image.id}
+                  isDropTarget={dragOverId === image.id && draggedId !== image.id}
                 />
               ))}
             </div>
             {images.length === 0 && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-muted-foreground">
                 Aucune image dans cette categorie
               </div>
             )}
@@ -582,19 +689,50 @@ export function GalleryAdminClient() {
                 <Label>Image</Label>
                 <div className="space-y-2">
                   {editingImage.image_url && (
-                    <div className="relative inline-block">
-                      <img
-                        src={editingImage.image_url}
-                        alt="Apercu"
-                        className="w-full max-w-[200px] h-auto object-cover rounded border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEditingImage({ ...editingImage, image_url: "" })}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div className="space-y-2">
+                      <div className="relative w-[200px] h-[200px] overflow-hidden rounded border bg-muted flex items-center justify-center">
+                        <img
+                          src={editingImage.image_url}
+                          alt="Aperçu"
+                          style={{
+                            transform: `rotate(${rotation}deg)`,
+                            maxWidth: "140%",
+                            maxHeight: "140%",
+                          }}
+                          className="object-contain transition-transform duration-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingImage({ ...editingImage, image_url: "" });
+                            setRotation(0);
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setRotation((r) => (r - 90 + 360) % 360)}
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setRotation((r) => (r + 90) % 360)}
+                        >
+                          <RotateCw className="w-4 h-4" />
+                        </Button>
+                        {rotation !== 0 && (
+                          <span className="text-xs text-muted-foreground">{rotation}°</span>
+                        )}
+                      </div>
                     </div>
                   )}
                   <div className="flex gap-2">
@@ -615,7 +753,7 @@ export function GalleryAdminClient() {
                       {uploading ? "Traitement..." : "Choisir une image"}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {editingImage.category &&
                       GALLERY_CATEGORY_CONFIG[editingImage.category as GalleryCategory] && (
                         <>
@@ -718,37 +856,51 @@ export function GalleryAdminClient() {
 
 interface ImageCardProps {
   image: GalleryImage;
-  index: number;
-  totalInCategory: number;
-  // eslint-disable-next-line no-unused-vars
   onEdit: (image: GalleryImage) => void;
-  // eslint-disable-next-line no-unused-vars
   onDelete: (image: GalleryImage) => void;
-  // eslint-disable-next-line no-unused-vars
   onPreview: (image: GalleryImage) => void;
-  // eslint-disable-next-line no-unused-vars
-  onMoveUp: (image: GalleryImage, index: number) => void;
-  // eslint-disable-next-line no-unused-vars
-  onMoveDown: (image: GalleryImage, index: number) => void;
+  onDragStart: (id: number) => void;
+  onDragEnd: () => void;
+  onDrop: (targetId: number, category: string) => void;
+  onDragEnter: (id: number) => void;
+  onDragLeave: () => void;
+  isDragging: boolean;
+  isDropTarget: boolean;
 }
-
 function ImageCard({
   image,
-  index,
-  totalInCategory,
   onEdit,
   onDelete,
   onPreview,
-  onMoveUp,
-  onMoveDown,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+  onDragEnter,
+  onDragLeave,
+  isDragging,
+  isDropTarget,
 }: ImageCardProps) {
   return (
-    <div className="group relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden aspect-square">
+    <div
+      draggable
+      onDragStart={() => onDragStart(image.id)}
+      onDragEnd={onDragEnd}
+      onDragEnter={() => onDragEnter(image.id)}
+      onDragLeave={onDragLeave}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop(image.id, image.category);
+      }}
+      className={`group relative bg-muted rounded-lg overflow-hidden aspect-square border-2 transition ${isDragging ? "opacity-50" : "opacity-100"} ${isDropTarget ? "border-primary" : "border-transparent"}`}
+    >
+      <div className="absolute top-1 left-1 z-10 rounded bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
       <img
         src={image.image_url}
         alt={image.alt_text || ""}
-        className="w-full h-full object-cover cursor-pointer"
-        onClick={() => onPreview(image)}
+        className="w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
         <Button
@@ -774,26 +926,6 @@ function ImageCard({
           onClick={() => onDelete(image)}
         >
           <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
-      <div className="absolute top-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          size="icon"
-          variant="secondary"
-          className="h-6 w-6"
-          onClick={() => onMoveUp(image, index)}
-          disabled={index === 0}
-        >
-          <ChevronUp className="w-3 h-3" />
-        </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="h-6 w-6"
-          onClick={() => onMoveDown(image, index)}
-          disabled={index === totalInCategory - 1}
-        >
-          <ChevronDown className="w-3 h-3" />
         </Button>
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate">

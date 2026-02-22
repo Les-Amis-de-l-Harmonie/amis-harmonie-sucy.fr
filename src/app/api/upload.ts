@@ -77,7 +77,7 @@ export async function handleImageUpload(request: Request): Promise<Response> {
     }
 
     const allowedFolders = ["events", "gallery", "avatars", "publications"];
-    if (!allowedFolders.includes(folder)) {
+    if (!allowedFolders.includes(folder.split("/")[0])) {
       return new Response(JSON.stringify({ error: "Invalid folder" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },

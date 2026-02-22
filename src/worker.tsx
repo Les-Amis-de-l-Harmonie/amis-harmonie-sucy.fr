@@ -1,5 +1,7 @@
 import { render, route, layout } from "rwsdk/router";
 import { defineApp } from "rwsdk/worker";
+import { env } from "cloudflare:workers";
+import type { Event } from "@/db/types";
 
 import { Document } from "@/app/Document";
 import { Layout } from "@/app/Layout";
@@ -33,8 +35,14 @@ import {
   handleUsersApi,
   handleGalleryApi,
   handleR2CleanupApi,
+  handleIdeasApi,
 } from "@/app/api/admin-crud";
-import { handleMusicianProfileApi, handleMusicianAvatarApi } from "@/app/api/musician";
+import {
+  handleMusicianProfileApi,
+  handleMusicianAvatarApi,
+  handleMusicianIdeasApi,
+  handleMusicianInsuranceApi,
+} from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
 import { handlePublicGalleryApi } from "@/app/api/gallery";
@@ -48,10 +56,14 @@ import {
   AdminContactPage,
   AdminUsersPage,
   AdminGalleryPage,
+  AdminIdeasPage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
+import { MusicianHomeClient } from "@/app/musician/MusicianHome";
 import { MusicianProfileClient } from "@/app/musician/MusicianProfile";
+import { MusicianIdeeClient } from "@/app/musician/MusicianIdee";
+import { MusicianAssuranceClient } from "@/app/musician/MusicianAssurance";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -72,7 +84,17 @@ async function musicianAuthMiddleware({ request }: { request: Request }) {
     const url = new URL(request.url);
     return Response.redirect(new URL("/musician/login", url.origin).toString());
   }
-  return { email: user.email, userId: user.id };
+  const profile = await env.DB.prepare(
+    "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
+  )
+    .bind(user.id)
+    .first<{ first_name: string | null; last_name: string | null }>();
+  return {
+    email: user.email,
+    userId: user.id,
+    firstName: profile?.first_name || "",
+    lastName: profile?.last_name || "",
+  };
 }
 
 const app = defineApp([
@@ -98,6 +120,27 @@ const app = defineApp([
   }),
 
   route("/api/gallery", ({ request }: { request: Request }) => handlePublicGalleryApi(request)),
+
+  route("/api/events", async () => {
+    try {
+      const results = await env.DB.prepare("SELECT * FROM events ORDER BY date ASC").all<Event>();
+      const events = results.results || [];
+      const now = new Date().toISOString().split("T")[0];
+
+      return new Response(
+        JSON.stringify({
+          upcoming: events.filter((e) => e.date >= now),
+          past: events.filter((e) => e.date < now).reverse(),
+        }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    } catch (_error) {
+      return new Response(JSON.stringify({ error: "Failed to fetch events" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
 
   route("/api/auth/magic-link", {
     post: async ({ request }: { request: Request }) => {
@@ -132,12 +175,19 @@ const app = defineApp([
   route("/api/admin/r2-cleanup", ({ request }: { request: Request }) =>
     handleR2CleanupApi(request)
   ),
+  route("/api/admin/ideas", ({ request }: { request: Request }) => handleIdeasApi(request)),
 
   route("/api/musician/profile", ({ request }: { request: Request }) =>
     handleMusicianProfileApi(request)
   ),
   route("/api/musician/avatar", ({ request }: { request: Request }) =>
     handleMusicianAvatarApi(request)
+  ),
+  route("/api/musician/ideas", ({ request }: { request: Request }) =>
+    handleMusicianIdeasApi(request)
+  ),
+  route("/api/musician/insurance", ({ request }: { request: Request }) =>
+    handleMusicianInsuranceApi(request)
   ),
 
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
@@ -220,14 +270,54 @@ const app = defineApp([
       return <AdminGalleryPage email={auth.email} />;
     }),
 
+    route("/admin/ideas", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminIdeasPage email={auth.email} />;
+    }),
+
     route("/musician/login", () => <MusicianLoginClient />),
+
+    route("/musician/", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+          <MusicianHomeClient
+            userId={auth.userId}
+            firstName={auth.firstName}
+            lastName={auth.lastName}
+          />
+        </MusicianLayout>
+      );
+    }),
 
     route("/musician/profile", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return (
-        <MusicianLayout email={auth.email}>
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
           <MusicianProfileClient userId={auth.userId} />
+        </MusicianLayout>
+      );
+    }),
+
+    route("/musician/idee", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+          <MusicianIdeeClient />
+        </MusicianLayout>
+      );
+    }),
+
+    route("/musician/assurance", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+          <MusicianAssuranceClient />
         </MusicianLayout>
       );
     }),

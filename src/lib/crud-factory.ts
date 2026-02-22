@@ -9,14 +9,12 @@ export interface CrudConfig<T> {
   requireAdminAuth?: boolean;
 }
 
-/* eslint-disable no-unused-vars */
 export type CrudHandlers = {
   handleGet: (request: Request) => Promise<Response>;
   handlePost: (request: Request) => Promise<Response>;
   handlePut: (request: Request) => Promise<Response>;
   handleDelete: (request: Request) => Promise<Response>;
 };
-/* eslint-enable no-unused-vars */
 
 async function checkAuth(
   request: Request,
