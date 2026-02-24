@@ -615,10 +615,19 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           .bind(id)
           .all();
 
+        const harmonieInstruments = await env.DB.prepare(
+          "SELECT instrument_name FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
+        )
+          .bind(id)
+          .all();
+
         return new Response(
           JSON.stringify({
             ...user,
             instruments: instruments.results || [],
+            harmonieInstruments: (harmonieInstruments.results || []).map(
+              (i: Record<string, unknown>) => i.instrument_name
+            ),
           }),
           {
             headers: { "Content-Type": "application/json" },
@@ -637,7 +646,48 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         ORDER BY u.created_at DESC
       `
       ).all();
-      return new Response(JSON.stringify(users.results), {
+
+      // Load instruments and harmonieInstruments for all users
+      const allInstruments = await env.DB.prepare(
+        "SELECT user_id, instrument_name, start_date, level FROM musician_instruments ORDER BY sort_order ASC"
+      ).all();
+      const allHarmonieInstruments = await env.DB.prepare(
+        "SELECT user_id, instrument_name FROM harmonie_instruments ORDER BY instrument_name ASC"
+      ).all();
+
+      const instrumentsByUser = new Map<
+        number,
+        { instrument_name: string; start_date?: string; level?: string }[]
+      >();
+      for (const row of allInstruments.results || []) {
+        const r = row as Record<string, unknown>;
+        const uid = r.user_id as number;
+        if (!instrumentsByUser.has(uid)) instrumentsByUser.set(uid, []);
+        instrumentsByUser.get(uid)!.push({
+          instrument_name: r.instrument_name as string,
+          start_date: r.start_date as string | undefined,
+          level: r.level as string | undefined,
+        });
+      }
+
+      const harmonieByUser = new Map<number, string[]>();
+      for (const row of allHarmonieInstruments.results || []) {
+        const r = row as Record<string, unknown>;
+        const uid = r.user_id as number;
+        if (!harmonieByUser.has(uid)) harmonieByUser.set(uid, []);
+        harmonieByUser.get(uid)!.push(r.instrument_name as string);
+      }
+
+      const usersWithInstruments = (users.results || []).map((u) => {
+        const user = u as Record<string, unknown>;
+        return {
+          ...user,
+          instruments: instrumentsByUser.get(user.id as number) || [],
+          harmonieInstruments: harmonieByUser.get(user.id as number) || [],
+        };
+      });
+
+      return new Response(JSON.stringify(usersWithInstruments), {
         headers: { "Content-Type": "application/json" },
       });
     }
