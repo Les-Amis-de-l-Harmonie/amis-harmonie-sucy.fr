@@ -1,58 +1,47 @@
+import type { DocumentProps } from "rwsdk/router";
 import styles from "./styles.css?url";
+import {
+  SITE_NAME,
+  SITE_URL,
+  DEFAULT_OG_IMAGE,
+  DEFAULT_DESCRIPTION,
+  getPageSeo,
+  isNoIndexPath,
+} from "@/app/seo";
 
-export interface PageMeta {
-  title?: string;
-  description?: string;
-  image?: string;
-  url?: string;
-  type?: "website" | "article";
-  noindex?: boolean;
-}
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: `${SITE_URL}/images/logo.webp`,
+  description: DEFAULT_DESCRIPTION,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Maison des Associations - 14 Place du Clos de Pacy",
+    addressLocality: "Sucy-en-Brie",
+    postalCode: "94370",
+    addressCountry: "FR",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+33783511741",
+    email: "contact@amis-harmonie-sucy.fr",
+    contactType: "customer service",
+  },
+  sameAs: [
+    "https://www.facebook.com/HarmonieMunicipaleDeSucy/",
+    "https://www.instagram.com/harmoniemunicipaledesucy/",
+    "https://youtube.com/@HarmonieMunicipaledeSucy",
+  ],
+};
 
-interface DocumentProps {
-  children: React.ReactNode;
-  meta?: PageMeta;
-}
+const structuredDataJson = JSON.stringify(structuredData);
 
-const SITE_NAME = "Les Amis de l'Harmonie de Sucy";
-const SITE_URL = "https://amis-harmonie-sucy.fr";
-const DEFAULT_IMAGE = `${SITE_URL}/images/og-image.jpg`;
-const DEFAULT_DESCRIPTION =
-  "Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté passionnée de musique.";
-
-export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
-  const title = meta.title ? `${meta.title} | ${SITE_NAME}` : SITE_NAME;
-  const description = meta.description || DEFAULT_DESCRIPTION;
-  const image = meta.image || DEFAULT_IMAGE;
-  const url = meta.url ? `${SITE_URL}${meta.url}` : SITE_URL;
-  const type = meta.type || "website";
-
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: SITE_NAME,
-    url: SITE_URL,
-    logo: `${SITE_URL}/images/logo.webp`,
-    description: DEFAULT_DESCRIPTION,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Maison des Associations - 14 Place du Clos de Pacy",
-      addressLocality: "Sucy-en-Brie",
-      postalCode: "94370",
-      addressCountry: "FR",
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+33783511741",
-      email: "contact@amis-harmonie-sucy.fr",
-      contactType: "customer service",
-    },
-    sameAs: [
-      "https://www.facebook.com/HarmonieMunicipaleDeSucy/",
-      "https://www.instagram.com/harmoniemunicipaledesucy/",
-      "https://youtube.com/@HarmonieMunicipaledeSucy",
-    ],
-  };
+export const Document: React.FC<DocumentProps> = ({ children, path = "/" }) => {
+  const { title, description } = getPageSeo(path);
+  const canonical = `${SITE_URL}${path.replace(/\/+$/, "") || "/"}`;
+  const noindex = isNoIndexPath(path);
 
   return (
     <html lang="fr">
@@ -63,22 +52,29 @@ export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
         <title>{title}</title>
         <meta name="description" content={description} />
 
-        <link rel="canonical" href={url} />
+        <link rel="canonical" href={canonical} />
 
-        {meta.noindex && <meta name="robots" content="noindex, nofollow" />}
+        {noindex ? (
+          <meta name="robots" content="noindex, nofollow" />
+        ) : (
+          <meta name="robots" content="index, follow" />
+        )}
 
-        <meta property="og:type" content={type} />
+        <meta property="og:type" content="website" />
         <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:image" content={image} />
-        <meta property="og:url" content={url} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:url" content={canonical} />
         <meta property="og:locale" content="fr_FR" />
 
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={image} />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
+
+        <meta name="geo.region" content="FR-94" />
+        <meta name="geo.placename" content="Sucy-en-Brie" />
 
         <meta name="theme-color" content="#a5b3e2" />
         <link rel="icon" href="/images/logo.png" type="image/png" />
@@ -95,7 +91,7 @@ export const Document: React.FC<DocumentProps> = ({ children, meta = {} }) => {
 
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: structuredDataJson }}
         />
       </head>
       <body className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-[Plus Jakarta Sans,sans-serif] transition-colors duration-300">
