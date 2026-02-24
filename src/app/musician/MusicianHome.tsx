@@ -77,7 +77,7 @@ export function MusicianHomeClient({
   const [outingSettings, setOutingSettings] = useState<OutingSettings | null>(null);
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [infoSettings, setInfoSettings] = useState<InfoSettings | null>(null);
-  const [cardOrder, setCardOrder] = useState<MusicianCardType[]>([
+  const DEFAULT_CARDS: MusicianCardType[] = [
     "profile",
     "adhesion",
     "assurance",
@@ -85,9 +85,10 @@ export function MusicianHomeClient({
     "partitions",
     "boite-a-idee",
     "outing",
-    "social",
     "birthdays",
-  ]);
+    "social",
+  ];
+  const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
@@ -124,7 +125,13 @@ export function MusicianHomeClient({
         if (cardData.card_order) {
           try {
             const parsed = JSON.parse(cardData.card_order) as MusicianCardType[];
-            setCardOrder(parsed);
+            // Validate that all cards are present
+            const validCards = parsed.filter((card): card is MusicianCardType =>
+              DEFAULT_CARDS.includes(card)
+            );
+            // Add any missing cards
+            const missingCards = DEFAULT_CARDS.filter((card) => !validCards.includes(card));
+            setCardOrder([...validCards, ...missingCards]);
           } catch {
             // Keep default order
           }
