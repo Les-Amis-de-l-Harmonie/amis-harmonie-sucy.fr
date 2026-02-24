@@ -782,51 +782,49 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 </div>
               </div>
 
-              {(editing.role === "MUSICIAN" || editing.email === currentUserEmail) && (
-                <>
-                  <div className="border-t border-border pt-4">
-                    <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label>Prénom</Label>
-                        <Input
-                          value={editing.first_name || ""}
-                          onChange={(e) => setEditing({ ...editing, first_name: e.target.value })}
-                          placeholder="Jean"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Nom</Label>
-                        <Input
-                          value={editing.last_name || ""}
-                          onChange={(e) => setEditing({ ...editing, last_name: e.target.value })}
-                          placeholder="Dupont"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div className="grid gap-2">
-                        <Label>Date de naissance</Label>
-                        <Input
-                          type="date"
-                          value={editing.date_of_birth || ""}
-                          onChange={(e) =>
-                            setEditing({ ...editing, date_of_birth: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Téléphone</Label>
-                        <Input
-                          type="tel"
-                          value={editing.phone || ""}
-                          onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
-                          placeholder="06 12 34 56 78"
-                        />
-                      </div>
-                    </div>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Prénom</Label>
+                    <Input
+                      value={editing.first_name || ""}
+                      onChange={(e) => setEditing({ ...editing, first_name: e.target.value })}
+                      placeholder="Jean"
+                    />
                   </div>
+                  <div className="grid gap-2">
+                    <Label>Nom</Label>
+                    <Input
+                      value={editing.last_name || ""}
+                      onChange={(e) => setEditing({ ...editing, last_name: e.target.value })}
+                      placeholder="Dupont"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid gap-2">
+                    <Label>Date de naissance</Label>
+                    <Input
+                      type="date"
+                      value={editing.date_of_birth || ""}
+                      onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Téléphone</Label>
+                    <Input
+                      type="tel"
+                      value={editing.phone || ""}
+                      onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                      placeholder="06 12 34 56 78"
+                    />
+                  </div>
+                </div>
+              </div>
 
+              {editing.role === "MUSICIAN" && (
+                <>
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
                     <div className="grid gap-4">
