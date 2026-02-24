@@ -1183,7 +1183,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
       {/* View Dialog - Read Only */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Détails de l'utilisateur</DialogTitle>
           </DialogHeader>
@@ -1317,69 +1317,22 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     </div>
                     <div className="grid gap-2 mt-4">
                       <Label className="text-muted-foreground">Droit à l'image</Label>
-                      <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
-                        <p>
-                          Dans le cadre des activités de l'association « Les Amis de l'Harmonie » et
-                          de l'Harmonie Municipale de Sucy-en-Brie, des photographies, vidéos ou
-                          captations numériques peuvent être réalisées.
-                        </p>
-                        <p>Ces images peuvent représenter :</p>
-                        <ul className="list-disc list-inside ml-2 space-y-1">
-                          <li>moi-même</li>
-                          <li>et/ou mon enfant (si représentant légal)</li>
-                        </ul>
-                        <p>
-                          Si vous acceptez, vous autorisez l'association « Les Amis de l'Harmonie »
-                          et l'Harmonie Municipale de Sucy-en-Brie à :
-                        </p>
-                        <ul className="list-disc list-inside ml-2 space-y-1">
-                          <li>
-                            fixer, reproduire et communiquer au public les photographies, vidéos ou
-                            captations numériques réalisées dans ce cadre ;
-                          </li>
-                          <li>
-                            exploiter et utiliser ces images, directement ou par l'intermédiaire de
-                            tiers, sous toute forme et sur tous supports (presse, livre, supports
-                            numériques, exposition, publicité, projection publique, concours, site
-                            internet, réseaux sociaux, etc.) ;
-                          </li>
-                          <li>
-                            utiliser ces images pour un territoire illimité et sans limitation de
-                            durée, intégralement ou par extraits.
-                          </li>
-                        </ul>
-                        <p>
-                          Cette autorisation est consentie à titre gratuit et ne donnera lieu à
-                          aucune rémunération.
-                        </p>
-                        <p>
-                          Les bénéficiaires de l'autorisation s'engagent à ne pas utiliser les
-                          images dans un cadre susceptible de porter atteinte à la vie privée, à la
-                          dignité ou à la réputation des personnes concernées.
-                        </p>
-                        <p>
-                          Vous garantissez ne pas être lié(e), ni la personne que vous représentez
-                          le cas échéant, par un contrat exclusif relatif à l'utilisation de votre
-                          image ou de votre nom.
-                        </p>
-                        <p>
-                          Conformément à la réglementation en vigueur, vous pouvez retirer votre
-                          consentement à tout moment par demande écrite adressée à l'association
-                          (sans effet rétroactif sur les utilisations déjà réalisées).
-                        </p>
-                        <p className="italic">
-                          Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur
-                          scène peut être permise sans solliciter le consentement individuel de
-                          chaque personne photographiée.
-                        </p>
-                        <p className="font-medium mt-4">
-                          Choix actuel :{" "}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            viewing.image_consent === 1
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : viewing.image_consent === 0
+                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
+                          }`}
+                        >
                           {viewing.image_consent === 1
                             ? "Autorisé"
                             : viewing.image_consent === 0
                               ? "Non autorisé"
                               : "Non renseigné"}
-                        </p>
+                        </span>
                       </div>
                     </div>
                   </div>
