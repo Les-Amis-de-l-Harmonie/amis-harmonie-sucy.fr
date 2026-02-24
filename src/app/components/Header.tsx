@@ -17,9 +17,15 @@ function UserMenu() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
-    const cookies = document.cookie;
-    setIsMusicianLoggedIn(cookies.includes("musician_session="));
-    setIsAdminLoggedIn(cookies.includes("admin_session="));
+    fetch("/api/auth/status")
+      .then((res) => res.json() as Promise<{ musician?: boolean; admin?: boolean }>)
+      .then((data) => {
+        setIsMusicianLoggedIn(!!data.musician);
+        setIsAdminLoggedIn(!!data.admin);
+      })
+      .catch(() => {
+        // Ignore errors
+      });
   }, []);
 
   const handleLogout = (type: "musician" | "admin") => {
@@ -41,39 +47,39 @@ function UserMenu() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 border border-gray-100 dark:border-gray-700 z-50">
-            {!isMusicianLoggedIn && !isAdminLoggedIn && (
-              <>
-                <a
-                  href="/musician/portal"
-                  className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-                >
-                  Espace Musicien
-                </a>
-                <a
-                  href="/admin/login"
-                  className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-                >
-                  Espace Admin
-                </a>
-              </>
-            )}
-            {isMusicianLoggedIn && (
-              <button
-                onClick={() => handleLogout("musician")}
-                className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Déconnexion Musicien
-              </button>
-            )}
-            {isAdminLoggedIn && (
-              <button
-                onClick={() => handleLogout("admin")}
-                className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Déconnexion Admin
-              </button>
+            <a
+              href="/musician/portal"
+              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
+            >
+              Espace Musicien
+            </a>
+            <a
+              href={isAdminLoggedIn ? "/admin" : "/admin/login"}
+              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
+            >
+              Espace Admin
+            </a>
+            {(isMusicianLoggedIn || isAdminLoggedIn) && (
+              <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
+                {isMusicianLoggedIn && (
+                  <button
+                    onClick={() => handleLogout("musician")}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Déconnexion Musicien
+                  </button>
+                )}
+                {isAdminLoggedIn && (
+                  <button
+                    onClick={() => handleLogout("admin")}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Déconnexion Admin
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </>

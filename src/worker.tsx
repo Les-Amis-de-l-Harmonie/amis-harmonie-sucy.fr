@@ -111,6 +111,20 @@ const app = defineApp([
     ctx;
   },
 
+  route("/api/auth/status", async ({ request }: { request: Request }) => {
+    const [musicianUser, adminUser] = await Promise.all([
+      verifySession(request, "musician"),
+      verifySession(request, "admin"),
+    ]);
+    return new Response(
+      JSON.stringify({
+        musician: !!musicianUser,
+        admin: !!adminUser,
+      }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  }),
+
   route("/api/contact", {
     post: async ({ request }: { request: Request }) => {
       const rateLimitResponse = await checkRateLimit(request);
