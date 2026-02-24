@@ -1233,33 +1233,34 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 </div>
               </div>
 
-              {(viewing.role === "MUSICIAN" || viewing.email === currentUserEmail) && (
-                <>
-                  <div className="border-t border-border pt-4">
-                    <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                      <div className="grid gap-2">
-                        <Label className="text-muted-foreground">Prénom</Label>
-                        <p className="text-sm font-medium">{viewing.first_name || "-"}</p>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-muted-foreground">Nom</Label>
-                        <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-muted-foreground">Date de naissance</Label>
-                        <p className="text-sm font-medium">
-                          {viewing.date_of_birth
-                            ? new Date(viewing.date_of_birth).toLocaleDateString("fr-FR")
-                            : "-"}
-                        </p>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label className="text-muted-foreground">Téléphone</Label>
-                        <p className="text-sm font-medium">{viewing.phone || "-"}</p>
-                      </div>
-                    </div>
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                  <div className="grid gap-2">
+                    <Label className="text-muted-foreground">Prénom</Label>
+                    <p className="text-sm font-medium">{viewing.first_name || "-"}</p>
                   </div>
+                  <div className="grid gap-2">
+                    <Label className="text-muted-foreground">Nom</Label>
+                    <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-muted-foreground">Date de naissance</Label>
+                    <p className="text-sm font-medium">
+                      {viewing.date_of_birth
+                        ? new Date(viewing.date_of_birth).toLocaleDateString("fr-FR")
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-muted-foreground">Téléphone</Label>
+                    <p className="text-sm font-medium">{viewing.phone || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {viewing.role === "MUSICIAN" && (
+                <>
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
                     <div className="grid gap-4">
