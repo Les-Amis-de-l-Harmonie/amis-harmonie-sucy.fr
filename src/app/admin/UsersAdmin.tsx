@@ -103,6 +103,7 @@ interface UserWithProfile {
   image_consent?: number | null;
   adhesion_2025_2026?: number | null;
   instruments?: { instrument_name: string; start_date?: string; level?: string }[];
+  harmonieInstruments?: string[];
 }
 
 interface UsersAdminClientProps {
@@ -905,7 +906,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                             <input
                               type="radio"
                               name="conservatory"
-                              checked={editing.is_conservatory_student !== 1}
+                              checked={editing.is_conservatory_student === 0}
                               onChange={() =>
                                 setEditing({ ...editing, is_conservatory_student: 0 })
                               }
@@ -917,26 +918,60 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       </div>
                       <div className="grid gap-3">
                         <Label>Droit à l'image</Label>
-                        <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
+                        <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
                           <p>
-                            Dans le cadre des activités de l'Harmonie (répétitions, concerts,
-                            déplacements, voyage en Allemagne 🇩🇪, etc.), des photos et/ou vidéos
-                            pourront être réalisées.
+                            Dans le cadre des activités de l'association « Les Amis de l'Harmonie »
+                            et de l'Harmonie Municipale de Sucy-en-Brie, des photographies, vidéos
+                            ou captations numériques peuvent être réalisées.
                           </p>
-                          <p>
-                            En cochant la case ci-dessous, j'autorise l'association à utiliser mon
-                            image (ou celle de mon enfant mineur) sur les supports de communication
-                            de l'association :
-                          </p>
-                          <ul className="list-disc list-inside ml-2">
-                            <li>site internet</li>
-                            <li>réseaux sociaux</li>
-                            <li>presse locale</li>
-                            <li>supports de communication</li>
+                          <p>Ces images peuvent représenter :</p>
+                          <ul className="list-disc list-inside ml-2 space-y-1">
+                            <li>moi-même</li>
+                            <li>et/ou mon enfant (si représentant légal)</li>
                           </ul>
+                          <p>
+                            Si vous acceptez, vous autorisez l'association « Les Amis de l'Harmonie
+                            » et l'Harmonie Municipale de Sucy-en-Brie à :
+                          </p>
+                          <ul className="list-disc list-inside ml-2 space-y-1">
+                            <li>
+                              fixer, reproduire et communiquer au public les photographies, vidéos
+                              ou captations numériques réalisées dans ce cadre ;
+                            </li>
+                            <li>
+                              exploiter et utiliser ces images, directement ou par l'intermédiaire
+                              de tiers, sous toute forme et sur tous supports (presse, livre,
+                              supports numériques, exposition, publicité, projection publique,
+                              concours, site internet, réseaux sociaux, etc.) ;
+                            </li>
+                            <li>
+                              utiliser ces images pour un territoire illimité et sans limitation de
+                              durée, intégralement ou par extraits.
+                            </li>
+                          </ul>
+                          <p>
+                            Cette autorisation est consentie à titre gratuit et ne donnera lieu à
+                            aucune rémunération.
+                          </p>
+                          <p>
+                            Les bénéficiaires de l'autorisation s'engagent à ne pas utiliser les
+                            images dans un cadre susceptible de porter atteinte à la vie privée, à
+                            la dignité ou à la réputation des personnes concernées.
+                          </p>
+                          <p>
+                            Vous garantissez ne pas être lié(e), ni la personne que vous représentez
+                            le cas échéant, par un contrat exclusif relatif à l'utilisation de votre
+                            image ou de votre nom.
+                          </p>
+                          <p>
+                            Conformément à la réglementation en vigueur, vous pouvez retirer votre
+                            consentement à tout moment par demande écrite adressée à l'association
+                            (sans effet rétroactif sur les utilisations déjà réalisées).
+                          </p>
                           <p className="italic">
-                            Cette autorisation est accordée à titre gratuit et sans limitation de
-                            durée.
+                            Rappel : la reproduction de l'image d'un groupe dans un lieu public ou
+                            sur scène peut être permise sans solliciter le consentement individuel
+                            de chaque personne photographiée.
                           </p>
                         </div>
                         <div className="flex flex-col gap-2 pt-2">
@@ -954,7 +989,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                             <input
                               type="radio"
                               name="image_consent"
-                              checked={editing.image_consent !== 1}
+                              checked={editing.image_consent === 0}
                               onChange={() => setEditing({ ...editing, image_consent: 0 })}
                               className="w-4 h-4 text-primary"
                             />
@@ -1269,19 +1304,85 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                           {viewing.is_conservatory_student === 1 ? "Oui" : "Non"}
                         </p>
                       </div>
-                      <div className="grid gap-2">
-                        <Label className="text-muted-foreground">Droit à l'image</Label>
-                        <p className="text-sm font-medium">
+                    </div>
+                    <div className="grid gap-2 mt-4">
+                      <Label className="text-muted-foreground">
+                        Instrument(s) joué(s) à l'Harmonie
+                      </Label>
+                      <p className="text-sm font-medium">
+                        {viewing.harmonieInstruments && viewing.harmonieInstruments.length > 0
+                          ? viewing.harmonieInstruments.join(", ")
+                          : "-"}
+                      </p>
+                    </div>
+                    <div className="grid gap-2 mt-4">
+                      <Label className="text-muted-foreground">Droit à l'image</Label>
+                      <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
+                        <p>
+                          Dans le cadre des activités de l'association « Les Amis de l'Harmonie » et
+                          de l'Harmonie Municipale de Sucy-en-Brie, des photographies, vidéos ou
+                          captations numériques peuvent être réalisées.
+                        </p>
+                        <p>Ces images peuvent représenter :</p>
+                        <ul className="list-disc list-inside ml-2 space-y-1">
+                          <li>moi-même</li>
+                          <li>et/ou mon enfant (si représentant légal)</li>
+                        </ul>
+                        <p>
+                          Si vous acceptez, vous autorisez l'association « Les Amis de l'Harmonie »
+                          et l'Harmonie Municipale de Sucy-en-Brie à :
+                        </p>
+                        <ul className="list-disc list-inside ml-2 space-y-1">
+                          <li>
+                            fixer, reproduire et communiquer au public les photographies, vidéos ou
+                            captations numériques réalisées dans ce cadre ;
+                          </li>
+                          <li>
+                            exploiter et utiliser ces images, directement ou par l'intermédiaire de
+                            tiers, sous toute forme et sur tous supports (presse, livre, supports
+                            numériques, exposition, publicité, projection publique, concours, site
+                            internet, réseaux sociaux, etc.) ;
+                          </li>
+                          <li>
+                            utiliser ces images pour un territoire illimité et sans limitation de
+                            durée, intégralement ou par extraits.
+                          </li>
+                        </ul>
+                        <p>
+                          Cette autorisation est consentie à titre gratuit et ne donnera lieu à
+                          aucune rémunération.
+                        </p>
+                        <p>
+                          Les bénéficiaires de l'autorisation s'engagent à ne pas utiliser les
+                          images dans un cadre susceptible de porter atteinte à la vie privée, à la
+                          dignité ou à la réputation des personnes concernées.
+                        </p>
+                        <p>
+                          Vous garantissez ne pas être lié(e), ni la personne que vous représentez
+                          le cas échéant, par un contrat exclusif relatif à l'utilisation de votre
+                          image ou de votre nom.
+                        </p>
+                        <p>
+                          Conformément à la réglementation en vigueur, vous pouvez retirer votre
+                          consentement à tout moment par demande écrite adressée à l'association
+                          (sans effet rétroactif sur les utilisations déjà réalisées).
+                        </p>
+                        <p className="italic">
+                          Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur
+                          scène peut être permise sans solliciter le consentement individuel de
+                          chaque personne photographiée.
+                        </p>
+                        <p className="font-medium mt-4">
+                          Choix actuel :{" "}
                           {viewing.image_consent === 1
                             ? "Autorisé"
                             : viewing.image_consent === 0
                               ? "Non autorisé"
-                              : "-"}
+                              : "Non renseigné"}
                         </p>
                       </div>
                     </div>
                   </div>
-
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
                     <div className="grid gap-2">
