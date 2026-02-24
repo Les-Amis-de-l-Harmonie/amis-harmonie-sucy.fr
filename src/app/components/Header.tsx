@@ -30,16 +30,16 @@ function UserMenu() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 border border-gray-100 dark:border-gray-700 z-50">
             <a
+              href="/musician/portal"
+              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
+            >
+              Espace Musicien
+            </a>
+            <a
               href="/admin/login"
               className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
             >
-              Admin
-            </a>
-            <a
-              href="/musician/login"
-              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-            >
-              Musicien
+              Espace Admin
             </a>
           </div>
         </>

@@ -36,12 +36,16 @@ import {
   handleGalleryApi,
   handleR2CleanupApi,
   handleIdeasApi,
+  handleOutingSettingsApi,
+  handleCardOrderSettingsApi,
+  handleInfoSettingsApi,
 } from "@/app/api/admin-crud";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
   handleMusicianIdeasApi,
   handleMusicianInsuranceApi,
+  handleMusicianBirthdaysApi,
 } from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
@@ -57,6 +61,9 @@ import {
   AdminUsersPage,
   AdminGalleryPage,
   AdminIdeasPage,
+  AdminOutingSettingsPage,
+  AdminCardOrderPage,
+  AdminInfoSettingsPage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -71,11 +78,11 @@ export type AppContext = {};
 
 async function adminAuthMiddleware({ request }: { request: Request }) {
   const user = await verifySession(request, "admin");
-  if (!user || user.role !== "ADMIN") {
+  if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
     const url = new URL(request.url);
     return Response.redirect(new URL("/admin/login", url.origin).toString());
   }
-  return { email: user.email };
+  return { email: user.email, role: user.role };
 }
 
 async function musicianAuthMiddleware({ request }: { request: Request }) {
@@ -85,15 +92,16 @@ async function musicianAuthMiddleware({ request }: { request: Request }) {
     return Response.redirect(new URL("/musician/login", url.origin).toString());
   }
   const profile = await env.DB.prepare(
-    "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
+    "SELECT first_name, last_name, avatar FROM musician_profiles WHERE user_id = ?"
   )
     .bind(user.id)
-    .first<{ first_name: string | null; last_name: string | null }>();
+    .first<{ first_name: string | null; last_name: string | null; avatar: string | null }>();
   return {
     email: user.email,
     userId: user.id,
     firstName: profile?.first_name || "",
     lastName: profile?.last_name || "",
+    avatar: profile?.avatar || null,
   };
 }
 
@@ -176,6 +184,15 @@ const app = defineApp([
     handleR2CleanupApi(request)
   ),
   route("/api/admin/ideas", ({ request }: { request: Request }) => handleIdeasApi(request)),
+  route("/api/admin/outing-settings", ({ request }: { request: Request }) =>
+    handleOutingSettingsApi(request)
+  ),
+  route("/api/admin/card-order", ({ request }: { request: Request }) =>
+    handleCardOrderSettingsApi(request)
+  ),
+  route("/api/admin/info-settings", ({ request }: { request: Request }) =>
+    handleInfoSettingsApi(request)
+  ),
 
   route("/api/musician/profile", ({ request }: { request: Request }) =>
     handleMusicianProfileApi(request)
@@ -189,6 +206,38 @@ const app = defineApp([
   route("/api/musician/insurance", ({ request }: { request: Request }) =>
     handleMusicianInsuranceApi(request)
   ),
+  route("/api/musician/birthdays", ({ request }: { request: Request }) =>
+    handleMusicianBirthdaysApi(request)
+  ),
+
+  // Public API for info settings (read-only, returns only active settings)
+  route("/api/info-settings", async ({ request }: { request: Request }) => {
+    if (request.method !== "GET") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const settings = await env.DB.prepare(
+        "SELECT * FROM info_settings WHERE is_active = 1 LIMIT 1"
+      ).first();
+      if (!settings) {
+        return new Response(JSON.stringify({ is_active: 0 }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error fetching info settings:", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
 
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
 
@@ -261,7 +310,7 @@ const app = defineApp([
     route("/admin/users", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminUsersPage email={auth.email} />;
+      return <AdminUsersPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/gallery", async ({ request }: { request: Request }) => {
@@ -276,13 +325,40 @@ const app = defineApp([
       return <AdminIdeasPage email={auth.email} />;
     }),
 
+    route("/admin/outing-settings", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminOutingSettingsPage email={auth.email} />;
+    }),
+
+    route("/admin/card-order", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminCardOrderPage email={auth.email} />;
+    }),
+
+    route("/admin/info-settings", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminInfoSettingsPage email={auth.email} />;
+    }),
+
     route("/musician/login", () => <MusicianLoginClient />),
+
+    route("/musician/portal", async ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const user = await verifySession(request, "musician");
+      if (user) {
+        return Response.redirect(new URL("/musician/", url.origin).toString());
+      }
+      return Response.redirect(new URL("/musician/login", url.origin).toString());
+    }),
 
     route("/musician/", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
           <MusicianHomeClient
             userId={auth.userId}
             firstName={auth.firstName}
@@ -296,7 +372,7 @@ const app = defineApp([
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
           <MusicianProfileClient userId={auth.userId} />
         </MusicianLayout>
       );
@@ -306,7 +382,7 @@ const app = defineApp([
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
           <MusicianIdeeClient />
         </MusicianLayout>
       );
@@ -316,7 +392,7 @@ const app = defineApp([
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName}>
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
           <MusicianAssuranceClient />
         </MusicianLayout>
       );
