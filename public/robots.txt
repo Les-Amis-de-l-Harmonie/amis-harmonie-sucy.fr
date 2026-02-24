@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /musician/
+Disallow: /api/
 
 Sitemap: https://amis-harmonie-sucy.fr/sitemap.xml
