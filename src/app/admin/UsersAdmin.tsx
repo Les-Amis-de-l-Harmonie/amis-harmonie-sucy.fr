@@ -1210,7 +1210,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label className="text-muted-foreground">Email</Label>
                   <p className="text-sm font-medium">{viewing.email || "-"}</p>
@@ -1237,7 +1237,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 <>
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                       <div className="grid gap-2">
                         <Label className="text-muted-foreground">Prénom</Label>
                         <p className="text-sm font-medium">{viewing.first_name || "-"}</p>
@@ -1246,8 +1246,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                         <Label className="text-muted-foreground">Nom</Label>
                         <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
                       <div className="grid gap-2">
                         <Label className="text-muted-foreground">Date de naissance</Label>
                         <p className="text-sm font-medium">
@@ -1262,7 +1260,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       </div>
                     </div>
                   </div>
-
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
                     <div className="grid gap-4">
@@ -1289,7 +1286,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Harmonie</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                       <div className="grid gap-2">
                         <Label className="text-muted-foreground">Date d'entrée à l'Harmonie</Label>
                         <p className="text-sm font-medium">
