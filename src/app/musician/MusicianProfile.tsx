@@ -14,6 +14,7 @@ import { Label } from "@/app/components/ui/label";
 import { Camera, Save, Loader2, Plus, Trash2, Check } from "lucide-react";
 import type { MusicianProfile, MusicianInstrument } from "@/db/types";
 import { HARMONIE_INSTRUMENTS } from "@/db/types";
+import { CircularCropper } from "@/app/components/CircularCropper";
 
 interface ProfileWithInstruments extends Partial<MusicianProfile> {
   instruments?: Partial<MusicianInstrument>[];
@@ -32,7 +33,66 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Regex patterns for validation
+  const REGEX_PATTERNS = {
+    name: /^[a-zA-ZÀ-ÿ\s'-]+$/, // Letters, spaces, hyphens, apostrophes
+    phone: /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, // French phone numbers
+    postalCode: /^\d{5}$/, // Exactly 5 digits
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Basic email validation
+  };
+
+  const validateField = (field: string, value: string): string | null => {
+    if (!value || value.trim() === "") return null; // Empty is handled by required validation
+
+    switch (field) {
+      case "first_name":
+      case "last_name":
+      case "emergency_contact_first_name":
+      case "emergency_contact_last_name":
+        if (!REGEX_PATTERNS.name.test(value)) {
+          return "Caractères autorisés : lettres, espaces, tirets et apostrophes";
+        }
+        break;
+      case "phone":
+      case "emergency_contact_phone":
+        if (!REGEX_PATTERNS.phone.test(value)) {
+          return "Format invalide. Ex: 06 12 34 56 78 ou +33 6 12 34 56 78";
+        }
+        break;
+      case "postal_code":
+        if (!REGEX_PATTERNS.postalCode.test(value)) {
+          return "Le code postal doit contenir 5 chiffres";
+        }
+        break;
+      case "emergency_contact_email":
+        if (value && !REGEX_PATTERNS.email.test(value)) {
+          return "Format d'email invalide";
+        }
+        break;
+      case "city":
+        if (!REGEX_PATTERNS.name.test(value)) {
+          return "Caractères autorisés : lettres, espaces, tirets et apostrophes";
+        }
+        break;
+    }
+    return null;
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    setProfile({ ...profile, [field]: value });
+
+    // Real-time validation
+    const error = validateField(field, value);
+    setFieldErrors((prev) => ({
+      ...prev,
+      [field]: error || "",
+    }));
+  };
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -66,22 +126,38 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "Veuillez sélectionner une image" });
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const maxSize = 5 * 1024 * 1024; // 5 Mo
+
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({
+        type: "error",
+        text: "Format non supporté. Formats acceptés : JPG, PNG ou WebP",
+      });
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "L'image ne doit pas dépasser 5 Mo" });
+    if (file.size > maxSize) {
+      setMessage({
+        type: "error",
+        text: "Fichier trop volumineux. Taille maximale : 5 Mo",
+      });
       return;
     }
 
+    // Open cropper instead of uploading directly
+    setSelectedImage(file);
+    setCropperOpen(true);
+  };
+
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    setCropperOpen(false);
     setUploadingAvatar(true);
     setMessage(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", croppedBlob, "avatar.jpg");
 
       const response = await fetch("/api/musician/avatar", {
         method: "POST",
@@ -152,6 +228,12 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     if (!profile.emergency_contact_first_name?.trim()) errors.push("Prénom du contact d'urgence");
     if (!profile.emergency_contact_last_name?.trim()) errors.push("Nom du contact d'urgence");
     if (!profile.emergency_contact_phone?.trim()) errors.push("Téléphone du contact d'urgence");
+
+    // Check for regex validation errors
+    const regexErrors = Object.entries(fieldErrors).filter(([_, error]) => error);
+    if (regexErrors.length > 0) {
+      return "Veuillez corriger les erreurs dans les champs avant d'enregistrer.";
+    }
 
     if (errors.length > 0) {
       return "Veuillez renseigner les champs obligatoires : " + errors.join(", ");
@@ -279,9 +361,15 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               <Input
                 id="first_name"
                 value={profile.first_name || ""}
-                onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                onChange={(e) => handleFieldChange("first_name", e.target.value)}
                 placeholder="Jean"
+                className={
+                  fieldErrors.first_name ? "border-red-500 focus-visible:ring-red-500" : ""
+                }
               />
+              {fieldErrors.first_name && (
+                <p className="text-xs text-red-500">{fieldErrors.first_name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="last_name">
@@ -290,9 +378,13 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               <Input
                 id="last_name"
                 value={profile.last_name || ""}
-                onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                onChange={(e) => handleFieldChange("last_name", e.target.value)}
                 placeholder="Dupont"
+                className={fieldErrors.last_name ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.last_name && (
+                <p className="text-xs text-red-500">{fieldErrors.last_name}</p>
+              )}
             </div>
           </div>
 
@@ -316,9 +408,11 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 id="phone"
                 type="tel"
                 value={profile.phone || ""}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                onChange={(e) => handleFieldChange("phone", e.target.value)}
                 placeholder="06 12 34 56 78"
+                className={fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
             </div>
           </div>
 
@@ -369,10 +463,16 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                   <Input
                     id="postal_code"
                     value={profile.postal_code || ""}
-                    onChange={(e) => setProfile({ ...profile, postal_code: e.target.value })}
+                    onChange={(e) => handleFieldChange("postal_code", e.target.value)}
                     placeholder="94370"
                     maxLength={5}
+                    className={
+                      fieldErrors.postal_code ? "border-red-500 focus-visible:ring-red-500" : ""
+                    }
                   />
+                  {fieldErrors.postal_code && (
+                    <p className="text-xs text-red-500">{fieldErrors.postal_code}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="city">
@@ -381,9 +481,11 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                   <Input
                     id="city"
                     value={profile.city || ""}
-                    onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                    onChange={(e) => handleFieldChange("city", e.target.value)}
                     placeholder="Sucy-en-Brie"
+                    className={fieldErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {fieldErrors.city && <p className="text-xs text-red-500">{fieldErrors.city}</p>}
                 </div>
               </div>
             </div>
@@ -447,58 +549,6 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 );
               })}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Droit à l'image <span className="text-red-500">*</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
-            <p>
-              Dans le cadre des activités de l'Harmonie (répétitions, concerts, déplacements, voyage
-              en Allemagne 🇩🇪, etc.), des photos et/ou vidéos pourront être réalisées.
-            </p>
-            <p>
-              En cochant la case ci-dessous, j'autorise l'association à utiliser mon image (ou celle
-              de mon enfant mineur) sur les supports de communication de l'association :
-            </p>
-            <ul className="list-disc list-inside ml-2">
-              <li>site internet</li>
-              <li>réseaux sociaux</li>
-              <li>presse locale</li>
-              <li>supports de communication</li>
-            </ul>
-            <p className="italic">
-              Cette autorisation est accordée à titre gratuit et sans limitation de durée.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-              <input
-                type="radio"
-                name="image_consent"
-                checked={profile.image_consent === 1}
-                onChange={() => setProfile({ ...profile, image_consent: 1 })}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm">J'autorise l'utilisation de mon image</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-              <input
-                type="radio"
-                name="image_consent"
-                checked={profile.image_consent !== 1}
-                onChange={() => setProfile({ ...profile, image_consent: 0 })}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm">Je n'autorise pas l'utilisation de mon image</span>
-            </label>
           </div>
         </CardContent>
       </Card>
@@ -617,11 +667,17 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               <Input
                 id="emergency_contact_first_name"
                 value={profile.emergency_contact_first_name || ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, emergency_contact_first_name: e.target.value })
-                }
+                onChange={(e) => handleFieldChange("emergency_contact_first_name", e.target.value)}
                 placeholder="Marie"
+                className={
+                  fieldErrors.emergency_contact_first_name
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }
               />
+              {fieldErrors.emergency_contact_first_name && (
+                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_first_name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="emergency_contact_last_name">
@@ -630,11 +686,17 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               <Input
                 id="emergency_contact_last_name"
                 value={profile.emergency_contact_last_name || ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, emergency_contact_last_name: e.target.value })
-                }
+                onChange={(e) => handleFieldChange("emergency_contact_last_name", e.target.value)}
                 placeholder="Dupont"
+                className={
+                  fieldErrors.emergency_contact_last_name
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }
               />
+              {fieldErrors.emergency_contact_last_name && (
+                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_last_name}</p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -644,11 +706,17 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 id="emergency_contact_email"
                 type="email"
                 value={profile.emergency_contact_email || ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, emergency_contact_email: e.target.value })
-                }
+                onChange={(e) => handleFieldChange("emergency_contact_email", e.target.value)}
                 placeholder="marie.dupont@email.com"
+                className={
+                  fieldErrors.emergency_contact_email
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }
               />
+              {fieldErrors.emergency_contact_email && (
+                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="emergency_contact_phone">
@@ -658,12 +726,106 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 id="emergency_contact_phone"
                 type="tel"
                 value={profile.emergency_contact_phone || ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, emergency_contact_phone: e.target.value })
-                }
+                onChange={(e) => handleFieldChange("emergency_contact_phone", e.target.value)}
                 placeholder="06 12 34 56 78"
+                className={
+                  fieldErrors.emergency_contact_phone
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }
               />
+              {fieldErrors.emergency_contact_phone && (
+                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_phone}</p>
+              )}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Droit à l'image <span className="text-red-500">*</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
+            <p>
+              Dans le cadre des activités de l'association « Les Amis de l'Harmonie » et de
+              l'Harmonie Municipale de Sucy-en-Brie, des photographies, vidéos ou captations
+              numériques peuvent être réalisées.
+            </p>
+            <p>Ces images peuvent représenter :</p>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li>moi-même</li>
+              <li>et/ou mon enfant (si représentant légal)</li>
+            </ul>
+            <p>
+              Si vous acceptez, vous autorisez l'association « Les Amis de l'Harmonie » et
+              l'Harmonie Municipale de Sucy-en-Brie à :
+            </p>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li>
+                fixer, reproduire et communiquer au public les photographies, vidéos ou captations
+                numériques réalisées dans ce cadre ;
+              </li>
+              <li>
+                exploiter et utiliser ces images, directement ou par l'intermédiaire de tiers, sous
+                toute forme et sur tous supports (presse, livre, supports numériques, exposition,
+                publicité, projection publique, concours, site internet, réseaux sociaux, etc.) ;
+              </li>
+              <li>
+                utiliser ces images pour un territoire illimité et sans limitation de durée,
+                intégralement ou par extraits.
+              </li>
+            </ul>
+            <p>
+              Cette autorisation est consentie à titre gratuit et ne donnera lieu à aucune
+              rémunération.
+            </p>
+            <p>
+              Les bénéficiaires de l'autorisation s'engagent à ne pas utiliser les images dans un
+              cadre susceptible de porter atteinte à la vie privée, à la dignité ou à la réputation
+              des personnes concernées.
+            </p>
+            <p>
+              Vous garantissez ne pas être lié(e), ni la personne que vous représentez le cas
+              échéant, par un contrat exclusif relatif à l'utilisation de votre image ou de votre
+              nom.
+            </p>
+            <p>
+              Conformément à la réglementation en vigueur, vous pouvez retirer votre consentement à
+              tout moment par demande écrite adressée à l'association (sans effet rétroactif sur les
+              utilisations déjà réalisées).
+            </p>
+            <p className="italic">
+              Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur scène peut
+              être permise sans solliciter le consentement individuel de chaque personne
+              photographiée.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+              <input
+                type="radio"
+                name="image_consent"
+                checked={profile.image_consent === 1}
+                onChange={() => setProfile({ ...profile, image_consent: 1 })}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm">J'autorise l'utilisation de mon image</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+              <input
+                type="radio"
+                name="image_consent"
+                checked={profile.image_consent !== 1}
+                onChange={() => setProfile({ ...profile, image_consent: 0 })}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm">Je n'autorise pas l'utilisation de mon image</span>
+            </label>
           </div>
         </CardContent>
       </Card>
@@ -686,6 +848,13 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           )}
         </Button>
       </div>
+
+      <CircularCropper
+        imageFile={selectedImage}
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        onConfirm={handleCroppedImage}
+      />
     </div>
   );
 }

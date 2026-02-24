@@ -1,17 +1,20 @@
 "use client";
 
-import { LogOut, Music, Home, Globe } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Home, Globe, ChevronDown } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 
 interface MusicianLayoutProps {
   children: React.ReactNode;
   firstName: string;
   lastName: string;
+  avatar?: string | null;
 }
 
-export function MusicianLayout({ children, firstName, lastName }: MusicianLayoutProps) {
+export function MusicianLayout({ children, firstName, lastName, avatar }: MusicianLayoutProps) {
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : "Musicien";
   const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(path + "/");
@@ -23,12 +26,17 @@ export function MusicianLayout({ children, firstName, lastName }: MusicianLayout
         <div className="max-w-4xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-6">
-              <a
-                href="/musician/"
-                className="flex items-center gap-2 text-xl font-bold text-primary"
-              >
-                <Music className="w-6 h-6" />
-                Espace Musicien
+              <a href="/" className="flex-shrink-0">
+                <img
+                  src="/images/logo.webp"
+                  alt="Les Amis de l'Harmonie de Sucy"
+                  className="h-12 w-auto dark:hidden"
+                />
+                <img
+                  src="/images/logo-dark.webp"
+                  alt="Les Amis de l'Harmonie de Sucy"
+                  className="h-12 w-auto hidden dark:block"
+                />
               </a>
               <div className="hidden sm:flex items-center gap-1">
                 <a
@@ -40,7 +48,7 @@ export function MusicianLayout({ children, firstName, lastName }: MusicianLayout
                   }`}
                 >
                   <Home className="w-4 h-4" />
-                  Accueil
+                  Espace Musicien
                 </a>
                 <a
                   href="/"
@@ -52,17 +60,46 @@ export function MusicianLayout({ children, firstName, lastName }: MusicianLayout
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <div className="hidden sm:flex items-center text-sm text-gray-500 dark:text-gray-400">
-                {displayName}
+              <div className="relative">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {avatar ? (
+                    <img
+                      src={avatar}
+                      alt={`${firstName} ${lastName}`}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-medium">
+                      {firstName?.[0]}
+                      {lastName?.[0]}
+                    </div>
+                  )}
+                  <span>{displayName}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {isMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 z-20">
+                      <a
+                        href="/musician/logout"
+                        className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Déconnexion
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
-              <a
-                href="/musician/logout"
-                className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Déconnexion
-              </a>
+              <ThemeToggle />
             </div>
           </div>
         </div>
