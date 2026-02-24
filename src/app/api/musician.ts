@@ -146,6 +146,33 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         }
       }
 
+      // Save musician instruments (pratique instrumentale)
+      if (data.instruments !== undefined) {
+        await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?")
+          .bind(user.id)
+          .run();
+
+        for (let i = 0; i < data.instruments.length; i++) {
+          const instr = data.instruments[i];
+          if (instr.instrument_name?.trim()) {
+            await env.DB.prepare(
+              `
+              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
+              VALUES (?, ?, ?, ?, ?)
+            `
+            )
+              .bind(
+                user.id,
+                instr.instrument_name.trim(),
+                instr.start_date || null,
+                instr.level || null,
+                i
+              )
+              .run();
+          }
+        }
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -316,7 +343,7 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
         });
       }
 
-      const validCategories: IdeaCategory[] = ["association", "harmonie"];
+      const validCategories: IdeaCategory[] = ["association", "harmonie", "website"];
       if (!validCategories.includes(data.category)) {
         return new Response(JSON.stringify({ error: "Catégorie invalide" }), {
           status: 400,
@@ -513,6 +540,57 @@ export async function handleMusicianInsuranceApi(request: Request): Promise<Resp
     });
   } catch (error) {
     console.error("Musician insurance API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleMusicianBirthdaysApi(request: Request): Promise<Response> {
+  const user = await verifySession(request, "musician");
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (request.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+
+    const results = await env.DB.prepare(
+      `
+      SELECT p.first_name, p.last_name, p.date_of_birth, p.avatar
+      FROM musician_profiles p
+      JOIN users u ON p.user_id = u.id
+      WHERE u.is_active = 1
+        AND p.date_of_birth IS NOT NULL
+        AND substr(p.date_of_birth, 6, 2) = ?
+      ORDER BY CAST(substr(p.date_of_birth, 9, 2) AS INTEGER) ASC
+      `
+    )
+      .bind(month)
+      .all<{
+        first_name: string | null;
+        last_name: string | null;
+        date_of_birth: string;
+        avatar: string | null;
+      }>();
+
+    return new Response(JSON.stringify(results.results || []), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Musician birthdays API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
