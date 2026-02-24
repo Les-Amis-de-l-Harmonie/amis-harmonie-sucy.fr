@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
 import { invalidateCache } from "@/lib/cache";
+import { isAdmin, isSuperAdmin } from "@/db/types";
 import type { GalleryCategory } from "@/db/types";
 
 interface EventInput {
@@ -81,9 +82,20 @@ function parseYouTubeUrl(url: string): { id: string; isShort: boolean } | null {
 
 async function checkAdminAuth(request: Request): Promise<Response | null> {
   const user = await verifySession(request, "admin");
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdmin(user.role)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
+
+async function checkSuperAdminAuth(request: Request): Promise<Response | null> {
+  const user = await verifySession(request, "admin");
+  if (!user || !isSuperAdmin(user.role)) {
+    return new Response(JSON.stringify({ error: "Super admin required" }), {
+      status: 403,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -339,7 +351,7 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
         });
       }
       const pubs = await env.DB.prepare(
-        "SELECT * FROM publications ORDER BY publication_date DESC, created_at DESC"
+        "SELECT * FROM publications ORDER BY COALESCE(publication_date, date(created_at)) DESC, created_at DESC"
       ).all();
       return new Response(JSON.stringify(pubs.results), {
         headers: { "Content-Type": "application/json" },
@@ -348,17 +360,17 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
 
     if (request.method === "POST") {
       const data = (await request.json()) as PublicationInput;
+      const postId = data.instagram_post_id.trim().replace(/\/+$/, "");
       const result = await env.DB.prepare(
         "INSERT INTO publications (instagram_post_id, thumbnail, publication_date) VALUES (?, ?, ?)"
       )
-        .bind(data.instagram_post_id, data.thumbnail || null, data.publication_date || null)
+        .bind(postId, data.thumbnail || null, data.publication_date || null)
         .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         headers: { "Content-Type": "application/json" },
       });
     }
-
     if (request.method === "PUT") {
       if (!id) {
         return new Response(JSON.stringify({ error: "ID required" }), {
@@ -367,10 +379,11 @@ export async function handlePublicationsApi(request: Request): Promise<Response>
         });
       }
       const data = (await request.json()) as PublicationInput;
+      const postId = data.instagram_post_id.trim().replace(/\/+$/, "");
       await env.DB.prepare(
         "UPDATE publications SET instagram_post_id = ?, thumbnail = ?, publication_date = ? WHERE id = ?"
       )
-        .bind(data.instagram_post_id, data.thumbnail || null, data.publication_date || null, id)
+        .bind(postId, data.thumbnail || null, data.publication_date || null, id)
         .run();
       await invalidateCache();
       return new Response(JSON.stringify({ success: true }), {
@@ -568,7 +581,11 @@ interface UserWithProfile {
 }
 
 export async function handleUsersApi(request: Request): Promise<Response> {
-  const authError = await checkAdminAuth(request);
+  // GET is allowed for all admins, but POST/PUT/DELETE require SUPER_ADMIN
+  const isSuperAdminRequest = request.method !== "GET";
+  const authError = isSuperAdminRequest
+    ? await checkSuperAdminAuth(request)
+    : await checkAdminAuth(request);
   if (authError) return authError;
 
   const url = new URL(request.url);
@@ -1143,20 +1160,39 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
       }
 
       const data = (await request.json()) as {
-        status: string;
         admin_notes?: string;
         is_public?: number;
       };
 
-      await env.DB.prepare(
-        "UPDATE ideas SET status = ?, admin_notes = ?, is_public = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-      )
-        .bind(
-          data.status,
-          data.admin_notes || null,
-          data.is_public !== undefined ? data.is_public : 0,
-          id
-        )
+      // Build dynamic update query based on provided fields
+      const updates: string[] = [];
+      const values: (string | number | null)[] = [];
+
+      if (data.admin_notes !== undefined) {
+        updates.push("admin_notes = ?");
+        values.push(data.admin_notes || null);
+      }
+
+      if (data.is_public !== undefined) {
+        updates.push("is_public = ?");
+        values.push(data.is_public);
+      }
+
+      // Always update updated_at
+      updates.push("updated_at = CURRENT_TIMESTAMP");
+
+      if (updates.length === 0) {
+        return new Response(JSON.stringify({ error: "No fields to update" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      values.push(id);
+
+      const query = `UPDATE ideas SET ${updates.join(", ")} WHERE id = ?`;
+      await env.DB.prepare(query)
+        .bind(...values)
         .run();
 
       return new Response(JSON.stringify({ success: true }), {
@@ -1170,6 +1206,252 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
     });
   } catch (error) {
     console.error("Ideas API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleOutingSettingsApi(request: Request): Promise<Response> {
+  const authError = await checkAdminAuth(request);
+  if (authError) return authError;
+
+  try {
+    if (request.method === "GET") {
+      const settings = await env.DB.prepare("SELECT * FROM outing_settings WHERE id = 1").first();
+
+      if (!settings) {
+        return new Response(
+          JSON.stringify({
+            id: 1,
+            title: "Inscription Sortie",
+            subtitle: null,
+            description: null,
+            location: null,
+            price: null,
+            button_text: "S'inscrire",
+            button_link: null,
+            is_active: 0,
+          }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "POST") {
+      const data = (await request.json()) as {
+        title: string;
+        subtitle?: string | null;
+        description?: string | null;
+        location?: string | null;
+        price?: string | null;
+        button_text: string;
+        button_link?: string | null;
+        is_active: number;
+      };
+
+      await env.DB.prepare(
+        `INSERT INTO outing_settings (id, title, subtitle, description, location, price, button_text, button_link, is_active, updated_at)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           subtitle = excluded.subtitle,
+           description = excluded.description,
+           location = excluded.location,
+           price = excluded.price,
+           button_text = excluded.button_text,
+           button_link = excluded.button_link,
+           is_active = excluded.is_active,
+           updated_at = CURRENT_TIMESTAMP`
+      )
+        .bind(
+          data.title,
+          data.subtitle || null,
+          data.description || null,
+          data.location || null,
+          data.price || null,
+          data.button_text,
+          data.button_link || null,
+          data.is_active
+        )
+        .run();
+
+      await invalidateCache();
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Outing settings API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleCardOrderSettingsApi(request: Request): Promise<Response> {
+  const authError = await checkAdminAuth(request);
+  if (authError) return authError;
+
+  try {
+    if (request.method === "GET") {
+      const settings = await env.DB.prepare(
+        "SELECT * FROM card_order_settings WHERE id = 1"
+      ).first();
+
+      if (!settings) {
+        const defaultOrder = [
+          "profile",
+          "adhesion",
+          "assurance",
+          "planning",
+          "partitions",
+          "boite-a-idee",
+          "outing",
+          "social",
+        ];
+        return new Response(
+          JSON.stringify({
+            id: 1,
+            card_order: JSON.stringify(defaultOrder),
+          }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "POST") {
+      const data = (await request.json()) as {
+        card_order: string[];
+      };
+
+      await env.DB.prepare(
+        `INSERT INTO card_order_settings (id, card_order, updated_at)
+         VALUES (1, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(id) DO UPDATE SET
+           card_order = excluded.card_order,
+           updated_at = CURRENT_TIMESTAMP`
+      )
+        .bind(JSON.stringify(data.card_order))
+        .run();
+
+      await invalidateCache();
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Card order settings API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleInfoSettingsApi(request: Request): Promise<Response> {
+  const authError = await checkAdminAuth(request);
+  if (authError) return authError;
+
+  try {
+    if (request.method === "GET") {
+      const settings = await env.DB.prepare("SELECT * FROM info_settings WHERE id = 1").first();
+
+      if (!settings) {
+        return new Response(
+          JSON.stringify({
+            id: 1,
+            title: "Information",
+            subtitle: null,
+            content: null,
+            bg_color: "bg-blue-50",
+            text_color: "text-blue-900",
+            border_color: "border-blue-200",
+            icon: "Info",
+            is_active: 0,
+          }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "POST") {
+      const data = (await request.json()) as {
+        title: string;
+        subtitle?: string | null;
+        content?: string | null;
+        bg_color: string;
+        text_color: string;
+        border_color: string;
+        icon: string;
+        is_active: number;
+      };
+
+      await env.DB.prepare(
+        `INSERT INTO info_settings (id, title, subtitle, content, bg_color, text_color, border_color, icon, is_active, updated_at)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(id) DO UPDATE SET
+           title = excluded.title,
+           subtitle = excluded.subtitle,
+           content = excluded.content,
+           bg_color = excluded.bg_color,
+           text_color = excluded.text_color,
+           border_color = excluded.border_color,
+           icon = excluded.icon,
+           is_active = excluded.is_active,
+           updated_at = CURRENT_TIMESTAMP`
+      )
+        .bind(
+          data.title,
+          data.subtitle || null,
+          data.content || null,
+          data.bg_color,
+          data.text_color,
+          data.border_color,
+          data.icon,
+          data.is_active
+        )
+        .run();
+
+      await invalidateCache();
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Info settings API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
