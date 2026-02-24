@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import type { User, AuthToken, Session, UserRole } from "@/db/types";
+import { isAdmin } from "@/db/types";
 
 function generateToken(): string {
   const array = new Uint8Array(32);
@@ -16,7 +17,7 @@ function generateSessionId(): string {
 type LoginContext = "admin" | "musician";
 
 function getRedirectPath(role: UserRole, context: LoginContext): string {
-  if (context === "admin" && role === "ADMIN") {
+  if (context === "admin" && isAdmin(role)) {
     return "/admin";
   }
   if (context === "musician") {
@@ -76,7 +77,7 @@ export async function handleMagicLinkRequest(
       );
     }
 
-    if (context === "admin" && user.role !== "ADMIN") {
+    if (context === "admin" && !isAdmin(user.role)) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -198,7 +199,7 @@ export async function handleMagicLinkVerify(
       );
     }
 
-    if (context === "admin" && user.role !== "ADMIN") {
+    if (context === "admin" && !isAdmin(user.role)) {
       return Response.redirect(new URL(`${loginPath}?error=unauthorized`, url.origin).toString());
     }
 
@@ -209,6 +210,11 @@ export async function handleMagicLinkVerify(
 
     await env.DB.prepare("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
       .bind(sessionId, user.id, sessionExpiresAt)
+      .run();
+
+    // Update last_login timestamp
+    await env.DB.prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?")
+      .bind(user.id)
       .run();
 
     const redirectPath = getRedirectPath(user.role, context);
@@ -272,11 +278,17 @@ export async function verifySession(
   }
 
   const session = await env.DB.prepare(
-    "SELECT s.*, u.email, u.role, u.is_active, u.created_at as user_created_at FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
+    "SELECT s.*, u.email, u.role, u.is_active, u.created_at as user_created_at, u.last_login FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
   )
     .bind(sessionId)
     .first<
-      Session & { email: string; role: UserRole; is_active: number; user_created_at: string }
+      Session & {
+        email: string;
+        role: UserRole;
+        is_active: number;
+        user_created_at: string;
+        last_login: string | null;
+      }
     >();
 
   if (!session) {
@@ -299,6 +311,7 @@ export async function verifySession(
     role: session.role,
     is_active: session.is_active,
     created_at: session.user_created_at,
+    last_login: session.last_login,
     sessionId: session.session_id,
   };
 }
@@ -306,7 +319,20 @@ export async function verifySession(
 export async function requireAdminAuth(request: Request): Promise<Response | AuthenticatedUser> {
   const user = await verifySession(request, "admin");
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdmin(user.role)) {
+    const url = new URL(request.url);
+    return Response.redirect(new URL("/admin/login", url.origin).toString());
+  }
+
+  return user;
+}
+
+export async function requireSuperAdminAuth(
+  request: Request
+): Promise<Response | AuthenticatedUser> {
+  const user = await verifySession(request, "admin");
+
+  if (!user || user.role !== "SUPER_ADMIN") {
     const url = new URL(request.url);
     return Response.redirect(new URL("/admin/login", url.origin).toString());
   }
