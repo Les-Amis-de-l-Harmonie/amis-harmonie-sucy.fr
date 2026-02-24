@@ -577,7 +577,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 <input
                   type="radio"
                   name="conservatory"
-                  checked={profile.is_conservatory_student !== 1}
+                  checked={profile.is_conservatory_student === 0}
                   onChange={() => setProfile({ ...profile, is_conservatory_student: 0 })}
                   className="w-4 h-4 text-primary"
                 />
@@ -820,7 +820,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               <input
                 type="radio"
                 name="image_consent"
-                checked={profile.image_consent !== 1}
+                checked={profile.image_consent === 0}
                 onChange={() => setProfile({ ...profile, image_consent: 0 })}
                 className="w-4 h-4 text-primary"
               />

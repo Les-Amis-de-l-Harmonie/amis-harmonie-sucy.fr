@@ -603,11 +603,23 @@ export function MusicianHomeClient({
                 <Cake className="w-5 h-5 text-primary" />
                 {birthdays.length === 1 ? "Anniversaire" : "Anniversaires"}
               </CardTitle>
-              <CardDescription>Anniversaires du mois de {currentMonth}</CardDescription>
+              <CardDescription>
+                {birthdays.length === 0
+                  ? `Pas d'anniversaire en ${currentMonth}`
+                  : birthdays.length === 1
+                    ? `Anniversaire du mois de ${currentMonth}`
+                    : `Anniversaires du mois de ${currentMonth}`}
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col overflow-hidden">
               {loading ? (
                 <p className="text-sm text-muted-foreground">Chargement...</p>
+              ) : isDisabled ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground text-center px-4">
+                    Complète ton profil pour accéder à cette fonctionnalité
+                  </p>
+                </div>
               ) : birthdays.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Aucun anniversaire ce mois-ci</p>
               ) : (
