@@ -49,14 +49,23 @@ export interface ContactSubmission {
   created_at: string;
 }
 
-export type UserRole = "ADMIN" | "MUSICIAN";
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "MUSICIAN";
 
 export interface User {
   id: number;
   email: string;
   role: UserRole;
   is_active: number;
+  last_login: string | null;
   created_at: string;
+}
+
+export function isSuperAdmin(role: UserRole): boolean {
+  return role === "SUPER_ADMIN";
+}
+
+export function isAdmin(role: UserRole): boolean {
+  return role === "ADMIN" || role === "SUPER_ADMIN";
 }
 
 export interface MusicianProfile {
@@ -192,9 +201,11 @@ export type AdminSession = Session & { email?: string };
 
 // Instruments de l'Harmonie (ordre alphabétique)
 export const HARMONIE_INSTRUMENTS = [
+  "Basse",
   "Batterie",
   "Clarinette",
   "Clarinette basse",
+  "Contrebasse",
   "Cor",
   "Euphonium",
   "Flûte traversière",
@@ -218,8 +229,7 @@ export interface HarmonieInstrumentRecord {
   created_at: string;
 }
 
-export type IdeaCategory = "association" | "harmonie";
-export type IdeaStatus = "pending" | "reviewed" | "accepted" | "rejected";
+export type IdeaCategory = "association" | "harmonie" | "website";
 
 export interface Idea {
   id: number;
@@ -227,7 +237,6 @@ export interface Idea {
   title: string;
   description: string;
   category: IdeaCategory;
-  status: IdeaStatus;
   is_public: number;
   admin_notes: string | null;
   created_at: string;
@@ -258,3 +267,47 @@ export interface InsuranceInstrument {
   created_at: string;
   updated_at: string;
 }
+
+export interface OutingSettings {
+  id: number;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  location: string | null;
+  price: string | null;
+  button_text: string;
+  button_link: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CardOrderSettings {
+  id: number;
+  card_order: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MusicianCardType =
+  | "profile"
+  | "adhesion"
+  | "assurance"
+  | "planning"
+  | "partitions"
+  | "boite-a-idee"
+  | "outing"
+  | "social"
+  | "birthdays";
+
+export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
+  profile: "Mon Profil",
+  adhesion: "Adhésion",
+  assurance: "Assurance",
+  planning: "Planning",
+  partitions: "Partitions",
+  "boite-a-idee": "Boîte à idée",
+  outing: "Inscription Sortie",
+  social: "Suivez-nous (Réseaux sociaux)",
+  birthdays: "Anniversaires",
+};
