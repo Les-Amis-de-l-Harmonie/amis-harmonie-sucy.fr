@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, LogOut } from "lucide-react";
 import { SocialIcons } from "./SocialIcons";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -13,6 +13,18 @@ interface NavItem {
 
 function UserMenu() {
   const [open, setOpen] = useState(false);
+  const [isMusicianLoggedIn, setIsMusicianLoggedIn] = useState(false);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const cookies = document.cookie;
+    setIsMusicianLoggedIn(cookies.includes("musician_session="));
+    setIsAdminLoggedIn(cookies.includes("admin_session="));
+  }, []);
+
+  const handleLogout = (type: "musician" | "admin") => {
+    window.location.href = type === "musician" ? "/musician/logout" : "/admin/logout";
+  };
 
   return (
     <div className="relative">
@@ -28,19 +40,41 @@ function UserMenu() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 border border-gray-100 dark:border-gray-700 z-50">
-            <a
-              href="/musician/portal"
-              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-            >
-              Espace Musicien
-            </a>
-            <a
-              href="/admin/login"
-              className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
-            >
-              Espace Admin
-            </a>
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 border border-gray-100 dark:border-gray-700 z-50">
+            {!isMusicianLoggedIn && !isAdminLoggedIn && (
+              <>
+                <a
+                  href="/musician/portal"
+                  className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
+                >
+                  Espace Musicien
+                </a>
+                <a
+                  href="/admin/login"
+                  className="block px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary"
+                >
+                  Espace Admin
+                </a>
+              </>
+            )}
+            {isMusicianLoggedIn && (
+              <button
+                onClick={() => handleLogout("musician")}
+                className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Déconnexion Musicien
+              </button>
+            )}
+            {isAdminLoggedIn && (
+              <button
+                onClick={() => handleLogout("admin")}
+                className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Déconnexion Admin
+              </button>
+            )}
           </div>
         </>
       )}
