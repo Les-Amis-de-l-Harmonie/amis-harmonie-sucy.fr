@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -30,48 +30,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  GripVertical,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import type { Video } from "@/db/types";
+
+type SortField = "title" | "type";
 
 function parseYouTubeUrl(url: string): { id: string; isShort: boolean } | null {
   const trimmed = url.trim();
 
-  // Handle shorts URL: https://www.youtube.com/shorts/VIDEO_ID (with optional query params)
   const shortsMatch = trimmed.match(
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/
   );
-  if (shortsMatch) {
-    return { id: shortsMatch[1], isShort: true };
-  }
+  if (shortsMatch) return { id: shortsMatch[1], isShort: true };
 
-  // Handle youtu.be URL with shorts feature flag: https://youtu.be/VIDEO_ID?feature=shorts
   const shortUrlWithFeature = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+).*?(?:\?|&)feature=shorts/);
-  if (shortUrlWithFeature) {
-    return { id: shortUrlWithFeature[1], isShort: true };
-  }
+  if (shortUrlWithFeature) return { id: shortUrlWithFeature[1], isShort: true };
 
-  // Handle watch URL: https://www.youtube.com/watch?v=VIDEO_ID
   const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-  if (watchMatch) {
-    return { id: watchMatch[1], isShort: false };
-  }
+  if (watchMatch) return { id: watchMatch[1], isShort: false };
 
-  // Handle youtu.be URL: https://youtu.be/VIDEO_ID
   const shortUrlMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
-  if (shortUrlMatch) {
-    return { id: shortUrlMatch[1], isShort: false };
-  }
+  if (shortUrlMatch) return { id: shortUrlMatch[1], isShort: false };
 
-  // Handle embed URL: https://www.youtube.com/embed/VIDEO_ID
   const embedMatch = trimmed.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
-  if (embedMatch) {
-    return { id: embedMatch[1], isShort: false };
-  }
+  if (embedMatch) return { id: embedMatch[1], isShort: false };
 
-  // If just an ID (11 characters, alphanumeric with - and _)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-    return { id: trimmed, isShort: false };
-  }
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return { id: trimmed, isShort: false };
 
   return null;
 }
@@ -87,6 +80,10 @@ export function VideosAdminClient() {
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const [youtubeUrlInput, setYoutubeUrlInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "video" | "short">("all");
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,6 +99,45 @@ export function VideosAdminClient() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const isFiltered = search.trim() !== "" || typeFilter !== "all" || sortField !== null;
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const displayed = useMemo(() => {
+    let result = [...videos];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((v) => v.title.toLowerCase().includes(q));
+    }
+
+    if (typeFilter !== "all") {
+      result = result.filter((v) => (typeFilter === "short" ? v.is_short === 1 : v.is_short !== 1));
+    }
+
+    if (sortField) {
+      result.sort((a, b) => {
+        const va = sortField === "title" ? a.title.toLowerCase() : String(a.is_short);
+        const vb = sortField === "title" ? b.title.toLowerCase() : String(b.is_short);
+        return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+
+    return result;
+  }, [videos, search, typeFilter, sortField, sortDir]);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
 
   const handleSave = async () => {
     if (!editing) return;
@@ -142,7 +178,6 @@ export function VideosAdminClient() {
   };
 
   const handleDragStart = (id: number) => setDraggedId(id);
-
   const handleDragEnd = () => {
     setDraggedId(null);
     setDragOverId(null);
@@ -174,11 +209,7 @@ export function VideosAdminClient() {
         <h1 className="text-3xl font-bold text-foreground">Vidéos</h1>
         <Button
           onClick={() => {
-            setEditing({
-              title: "",
-              youtube_id: "",
-              is_short: 0,
-            });
+            setEditing({ title: "", youtube_id: "", is_short: 0 });
             setYoutubeUrlInput("");
             setDialogOpen(true);
           }}
@@ -188,35 +219,99 @@ export function VideosAdminClient() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par titre…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-1">
+          {(["all", "video", "short"] as const).map((f) => (
+            <Button
+              key={f}
+              variant={typeFilter === f ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTypeFilter(f)}
+            >
+              {f === "all" ? "Tout" : f === "video" ? "Vidéo" : "Short"}
+            </Button>
+          ))}
+        </div>
+        {isFiltered && (
+          <span className="text-sm text-muted-foreground">
+            {displayed.length} résultat{displayed.length !== 1 ? "s" : ""}
+          </span>
+        )}
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch("");
+              setTypeFilter("all");
+              setSortField(null);
+            }}
+          >
+            Réinitialiser
+          </Button>
+        )}
+      </div>
+
+      {isFiltered && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Le glisser-déposer est désactivé pendant la recherche / le filtre.
+        </p>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("title")}
+                >
+                  <div className="flex items-center gap-1">
+                    Titre <SortIcon field="title" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("type")}
+                >
+                  <div className="flex items-center gap-1">
+                    Type <SortIcon field="type" />
+                  </div>
+                </TableHead>
                 <TableHead>Aperçu</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {videos.map((video) => (
+              {displayed.map((video) => (
                 <TableRow
                   key={video.id}
-                  draggable
-                  onDragStart={() => handleDragStart(video.id)}
+                  draggable={!isFiltered}
+                  onDragStart={() => !isFiltered && handleDragStart(video.id)}
                   onDragEnd={handleDragEnd}
-                  onDragEnter={() => setDragOverId(video.id)}
+                  onDragEnter={() => !isFiltered && setDragOverId(video.id)}
                   onDragLeave={() => setDragOverId(null)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
-                    handleDrop(video.id);
+                    if (!isFiltered) handleDrop(video.id);
                   }}
                   className={`${draggedId === video.id ? "opacity-50" : "opacity-100"} ${dragOverId === video.id && draggedId !== video.id ? "border-primary bg-muted/30" : ""}`}
                 >
-                  <TableCell className="cursor-grab text-muted-foreground">
+                  <TableCell
+                    className={`${isFiltered ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground"}`}
+                  >
                     <GripVertical className="h-4 w-4" />
                   </TableCell>
                   <TableCell className="font-medium">{video.title}</TableCell>
@@ -259,10 +354,10 @@ export function VideosAdminClient() {
                   </TableCell>
                 </TableRow>
               ))}
-              {videos.length === 0 && (
+              {displayed.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Aucune vidéo
+                    {isFiltered ? "Aucun résultat" : "Aucune vidéo"}
                   </TableCell>
                 </TableRow>
               )}

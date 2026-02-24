@@ -40,6 +40,7 @@ import {
 import {
   Plus,
   Pencil,
+  Eye,
   Trash2,
   Shield,
   Music,
@@ -51,6 +52,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { UserRole } from "@/db/types";
+import { isSuperAdmin } from "@/db/types";
 
 const isProfileComplete = (user: UserWithProfile): boolean => {
   const requiredFields = [
@@ -80,6 +82,7 @@ interface UserWithProfile {
   email: string;
   role: UserRole;
   is_active?: number;
+  last_login?: string | null;
   created_at?: string;
   first_name?: string | null;
   last_name?: string | null;
@@ -102,12 +105,26 @@ interface UserWithProfile {
   instruments?: { instrument_name: string; start_date?: string; level?: string }[];
 }
 
-export function UsersAdminClient() {
+interface UsersAdminClientProps {
+  currentUserRole: UserRole;
+  currentUserEmail: string;
+}
+
+export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdminClientProps) {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
+  const isCurrentUserSuperAdmin = isSuperAdmin(currentUserRole);
+  const isCurrentUserAdmin = currentUserRole === "ADMIN";
+  const canEditUser = (userEmail: string) => {
+    if (isCurrentUserSuperAdmin) return true;
+    if (isCurrentUserAdmin) return userEmail === currentUserEmail;
+    return false;
+  };
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<UserWithProfile> | null>(null);
+  const [viewing, setViewing] = useState<Partial<UserWithProfile> | null>(null);
   const [deleting, setDeleting] = useState<UserWithProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -115,7 +132,7 @@ export function UsersAdminClient() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState<"all" | "ADMIN" | "MUSICIAN">("all");
+  const [filterRole, setFilterRole] = useState<"all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
   const [filterAdhesion, setFilterAdhesion] = useState<"all" | "adherent" | "non_adherent">("all");
   const [filterProfile, setFilterProfile] = useState<"all" | "complete" | "incomplete">("all");
@@ -333,6 +350,14 @@ export function UsersAdminClient() {
   ]);
 
   const getRoleBadge = (role: UserRole) => {
+    if (role === "SUPER_ADMIN") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+          <Shield className="w-3 h-3" />
+          Super Admin
+        </span>
+      );
+    }
     if (role === "ADMIN") {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
@@ -394,16 +419,27 @@ export function UsersAdminClient() {
     setDialogOpen(true);
   };
 
+  const openViewDialog = (user: Partial<UserWithProfile>) => {
+    const userToView = { ...user };
+    if (!userToView.instruments || userToView.instruments.length === 0) {
+      userToView.instruments = [{ instrument_name: "", start_date: "", level: "" }];
+    }
+    setViewing(userToView);
+    setViewDialogOpen(true);
+  };
+
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
         <h1 className="text-3xl font-bold text-foreground">Utilisateurs</h1>
-        <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvel utilisateur
-        </Button>
+        {isCurrentUserSuperAdmin && (
+          <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvel utilisateur
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">
@@ -418,13 +454,14 @@ export function UsersAdminClient() {
         </div>
         <Select
           value={filterRole}
-          onValueChange={(v) => setFilterRole(v as "all" | "ADMIN" | "MUSICIAN")}
+          onValueChange={(v) => setFilterRole(v as "all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN")}
         >
           <SelectTrigger className="w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les rôles</SelectItem>
+            <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
             <SelectItem value="ADMIN">Admin</SelectItem>
             <SelectItem value="MUSICIAN">Musicien</SelectItem>
           </SelectContent>
@@ -502,14 +539,6 @@ export function UsersAdminClient() {
                 </TableHead>
                 <TableHead
                   className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("city")}
-                >
-                  <span className="inline-flex items-center">
-                    Ville <SortIcon field="city" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
                   onClick={() => handleSort("status")}
                 >
                   <span className="inline-flex items-center">
@@ -532,6 +561,7 @@ export function UsersAdminClient() {
                     Profil <SortIcon field="profile" />
                   </span>
                 </TableHead>
+                <TableHead>Dernière connexion</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -552,9 +582,15 @@ export function UsersAdminClient() {
                       <span className="text-muted-foreground italic">Non renseigné</span>
                     )}
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <button
+                      className="hover:underline text-left"
+                      onClick={() => openViewDialog(user)}
+                    >
+                      {user.email}
+                    </button>
+                  </TableCell>
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.city || "-"}</TableCell>
                   <TableCell>
                     {user.is_active !== 0 ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -567,7 +603,9 @@ export function UsersAdminClient() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {user.adhesion_2025_2026 === 1 ? (
+                    {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                      ""
+                    ) : user.adhesion_2025_2026 === 1 ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         Adhérent
                       </span>
@@ -578,7 +616,9 @@ export function UsersAdminClient() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {isProfileComplete(user) ? (
+                    {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                      ""
+                    ) : isProfileComplete(user) ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         Complet
                       </span>
@@ -588,20 +628,39 @@ export function UsersAdminClient() {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {user.last_login
+                      ? new Date(user.last_login).toLocaleDateString("fr-FR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Europe/Paris",
+                        })
+                      : "-"}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
-                      <Pencil className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(user)}>
+                      <Eye className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleting(user);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    {canEditUser(user.email || "") && (
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {isCurrentUserSuperAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(user);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -617,6 +676,7 @@ export function UsersAdminClient() {
         </CardContent>
       </Card>
 
+      {/* Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -688,6 +748,7 @@ export function UsersAdminClient() {
                   >
                     <option value="MUSICIAN">Musicien</option>
                     <option value="ADMIN">Administrateur</option>
+                    <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>
                 <div className="grid gap-2">
@@ -714,338 +775,364 @@ export function UsersAdminClient() {
                       <span className="text-sm">Inactif</span>
                     </label>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
                     Un compte inactif ne pourra plus se connecter à son espace.
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Prénom</Label>
-                    <Input
-                      value={editing.first_name || ""}
-                      onChange={(e) => setEditing({ ...editing, first_name: e.target.value })}
-                      placeholder="Jean"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Nom</Label>
-                    <Input
-                      value={editing.last_name || ""}
-                      onChange={(e) => setEditing({ ...editing, last_name: e.target.value })}
-                      placeholder="Dupont"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="grid gap-2">
-                    <Label>Date de naissance</Label>
-                    <Input
-                      type="date"
-                      value={editing.date_of_birth || ""}
-                      onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Téléphone</Label>
-                    <Input
-                      type="tel"
-                      value={editing.phone || ""}
-                      onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
-                      placeholder="06 12 34 56 78"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label>Adresse</Label>
-                    <Input
-                      value={editing.address_line1 || ""}
-                      onChange={(e) => setEditing({ ...editing, address_line1: e.target.value })}
-                      placeholder="123 rue de la Musique"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Complément d'adresse</Label>
-                    <Input
-                      value={editing.address_line2 || ""}
-                      onChange={(e) => setEditing({ ...editing, address_line2: e.target.value })}
-                      placeholder="Appartement 4B, Bâtiment C"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Code postal</Label>
-                      <Input
-                        value={editing.postal_code || ""}
-                        onChange={(e) => setEditing({ ...editing, postal_code: e.target.value })}
-                        placeholder="94370"
-                        maxLength={5}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Ville</Label>
-                      <Input
-                        value={editing.city || ""}
-                        onChange={(e) => setEditing({ ...editing, city: e.target.value })}
-                        placeholder="Sucy-en-Brie"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">Harmonie</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Date d'entrée à l'Harmonie</Label>
-                    <Input
-                      type="date"
-                      value={editing.harmonie_start_date || ""}
-                      onChange={(e) =>
-                        setEditing({ ...editing, harmonie_start_date: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Élève au Conservatoire</Label>
-                    <div className="flex items-center gap-4 h-10">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="conservatory"
-                          checked={editing.is_conservatory_student === 1}
-                          onChange={() => setEditing({ ...editing, is_conservatory_student: 1 })}
-                          className="w-4 h-4 text-primary"
+              {(editing.role === "MUSICIAN" || editing.email === currentUserEmail) && (
+                <>
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Prénom</Label>
+                        <Input
+                          value={editing.first_name || ""}
+                          onChange={(e) => setEditing({ ...editing, first_name: e.target.value })}
+                          placeholder="Jean"
                         />
-                        <span className="text-sm">Oui</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="conservatory"
-                          checked={editing.is_conservatory_student !== 1}
-                          onChange={() => setEditing({ ...editing, is_conservatory_student: 0 })}
-                          className="w-4 h-4 text-primary"
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Nom</Label>
+                        <Input
+                          value={editing.last_name || ""}
+                          onChange={(e) => setEditing({ ...editing, last_name: e.target.value })}
+                          placeholder="Dupont"
                         />
-                        <span className="text-sm">Non</span>
-                      </label>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="grid gap-2">
+                        <Label>Date de naissance</Label>
+                        <Input
+                          type="date"
+                          value={editing.date_of_birth || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, date_of_birth: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Téléphone</Label>
+                        <Input
+                          type="tel"
+                          value={editing.phone || ""}
+                          onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                          placeholder="06 12 34 56 78"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid gap-3">
-                    <Label>Droit à l'image</Label>
-                    <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
-                      <p>
-                        Dans le cadre des activités de l'Harmonie (répétitions, concerts,
-                        déplacements, voyage en Allemagne 🇩🇪, etc.), des photos et/ou vidéos
-                        pourront être réalisées.
-                      </p>
-                      <p>
-                        En cochant la case ci-dessous, j'autorise l'association à utiliser mon image
-                        (ou celle de mon enfant mineur) sur les supports de communication de
-                        l'association :
-                      </p>
-                      <ul className="list-disc list-inside ml-2">
-                        <li>site internet</li>
-                        <li>réseaux sociaux</li>
-                        <li>presse locale</li>
-                        <li>supports de communication</li>
-                      </ul>
-                      <p className="italic">
-                        Cette autorisation est accordée à titre gratuit et sans limitation de durée.
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-2 pt-2">
-                      <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-                        <input
-                          type="radio"
-                          name="image_consent"
-                          checked={editing.image_consent === 1}
-                          onChange={() => setEditing({ ...editing, image_consent: 1 })}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="text-sm">J'autorise l'utilisation de mon image</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-                        <input
-                          type="radio"
-                          name="image_consent"
-                          checked={editing.image_consent !== 1}
-                          onChange={() => setEditing({ ...editing, image_consent: 0 })}
-                          className="w-4 h-4 text-primary"
-                        />
-                        <span className="text-sm">
-                          Je n'autorise pas l'utilisation de mon image
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
-                <div className="grid gap-2">
-                  <Label>Statut adhésion</Label>
-                  <div className="flex items-center gap-4 h-10">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="adhesion_2025_2026"
-                        checked={editing.adhesion_2025_2026 === 1}
-                        onChange={() => setEditing({ ...editing, adhesion_2025_2026: 1 })}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <span className="text-sm">Adhérent 2025-2026</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="adhesion_2025_2026"
-                        checked={editing.adhesion_2025_2026 !== 1}
-                        onChange={() => setEditing({ ...editing, adhesion_2025_2026: 0 })}
-                        className="w-4 h-4 text-primary"
-                      />
-                      <span className="text-sm">Non adhérent</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">
-                  Pratique instrumentale et formation musicale
-                </h3>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label>Formation Musicale (solfège) - Niveau conservatoire</Label>
-                    <Input
-                      value={editing.music_theory_level || ""}
-                      onChange={(e) =>
-                        setEditing({ ...editing, music_theory_level: e.target.value })
-                      }
-                      placeholder="Ex: Cycle 2, 3ème année"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Instruments</Label>
-                    {(editing.instruments || []).map((instrument, index) => (
-                      <div key={index} className="p-4 border border-border rounded-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">
-                            Instrument {index + 1}
-                          </span>
-                          {(editing.instruments?.length || 0) > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeInstrument(index)}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
-                          )}
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label>Adresse</Label>
+                        <Input
+                          value={editing.address_line1 || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, address_line1: e.target.value })
+                          }
+                          placeholder="123 rue de la Musique"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Complément d'adresse</Label>
+                        <Input
+                          value={editing.address_line2 || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, address_line2: e.target.value })
+                          }
+                          placeholder="Appartement 4B, Bâtiment C"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Code postal</Label>
+                          <Input
+                            value={editing.postal_code || ""}
+                            onChange={(e) =>
+                              setEditing({ ...editing, postal_code: e.target.value })
+                            }
+                            placeholder="94370"
+                            maxLength={5}
+                          />
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="grid gap-2">
-                            <Label>Instrument</Label>
-                            <Input
-                              value={instrument.instrument_name || ""}
-                              onChange={(e) =>
-                                updateInstrument(index, "instrument_name", e.target.value)
-                              }
-                              placeholder="Ex: Clarinette"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Date de début</Label>
-                            <Input
-                              type="date"
-                              value={instrument.start_date || ""}
-                              onChange={(e) =>
-                                updateInstrument(index, "start_date", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Niveau conservatoire</Label>
-                            <Input
-                              value={instrument.level || ""}
-                              onChange={(e) => updateInstrument(index, "level", e.target.value)}
-                              placeholder="Ex: Cycle 3"
-                            />
-                          </div>
+                        <div className="grid gap-2">
+                          <Label>Ville</Label>
+                          <Input
+                            value={editing.city || ""}
+                            onChange={(e) => setEditing({ ...editing, city: e.target.value })}
+                            placeholder="Sucy-en-Brie"
+                          />
                         </div>
                       </div>
-                    ))}
-                    <Button variant="outline" onClick={addInstrument} className="w-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Ajouter un instrument
-                    </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="border-t border-border pt-4">
-                <h3 className="font-medium text-foreground mb-4">
-                  Contact d'urgence / Représentant légal
-                </h3>
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Prénom</Label>
-                      <Input
-                        value={editing.emergency_contact_first_name || ""}
-                        onChange={(e) =>
-                          setEditing({ ...editing, emergency_contact_first_name: e.target.value })
-                        }
-                        placeholder="Marie"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Nom</Label>
-                      <Input
-                        value={editing.emergency_contact_last_name || ""}
-                        onChange={(e) =>
-                          setEditing({ ...editing, emergency_contact_last_name: e.target.value })
-                        }
-                        placeholder="Dupont"
-                      />
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Harmonie</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Date d'entrée à l'Harmonie</Label>
+                        <Input
+                          type="date"
+                          value={editing.harmonie_start_date || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, harmonie_start_date: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Élève au Conservatoire</Label>
+                        <div className="flex items-center gap-4 h-10">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="conservatory"
+                              checked={editing.is_conservatory_student === 1}
+                              onChange={() =>
+                                setEditing({ ...editing, is_conservatory_student: 1 })
+                              }
+                              className="w-4 h-4 text-primary"
+                            />
+                            <span className="text-sm">Oui</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="conservatory"
+                              checked={editing.is_conservatory_student !== 1}
+                              onChange={() =>
+                                setEditing({ ...editing, is_conservatory_student: 0 })
+                              }
+                              className="w-4 h-4 text-primary"
+                            />
+                            <span className="text-sm">Non</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="grid gap-3">
+                        <Label>Droit à l'image</Label>
+                        <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-2">
+                          <p>
+                            Dans le cadre des activités de l'Harmonie (répétitions, concerts,
+                            déplacements, voyage en Allemagne 🇩🇪, etc.), des photos et/ou vidéos
+                            pourront être réalisées.
+                          </p>
+                          <p>
+                            En cochant la case ci-dessous, j'autorise l'association à utiliser mon
+                            image (ou celle de mon enfant mineur) sur les supports de communication
+                            de l'association :
+                          </p>
+                          <ul className="list-disc list-inside ml-2">
+                            <li>site internet</li>
+                            <li>réseaux sociaux</li>
+                            <li>presse locale</li>
+                            <li>supports de communication</li>
+                          </ul>
+                          <p className="italic">
+                            Cette autorisation est accordée à titre gratuit et sans limitation de
+                            durée.
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2 pt-2">
+                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                            <input
+                              type="radio"
+                              name="image_consent"
+                              checked={editing.image_consent === 1}
+                              onChange={() => setEditing({ ...editing, image_consent: 1 })}
+                              className="w-4 h-4 text-primary"
+                            />
+                            <span className="text-sm">J'autorise l'utilisation de mon image</span>
+                          </label>
+                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                            <input
+                              type="radio"
+                              name="image_consent"
+                              checked={editing.image_consent !== 1}
+                              onChange={() => setEditing({ ...editing, image_consent: 0 })}
+                              className="w-4 h-4 text-primary"
+                            />
+                            <span className="text-sm">
+                              Je n'autorise pas l'utilisation de mon image
+                            </span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
                     <div className="grid gap-2">
-                      <Label>Email</Label>
-                      <Input
-                        type="email"
-                        value={editing.emergency_contact_email || ""}
-                        onChange={(e) =>
-                          setEditing({ ...editing, emergency_contact_email: e.target.value })
-                        }
-                        placeholder="marie.dupont@email.com"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Téléphone</Label>
-                      <Input
-                        type="tel"
-                        value={editing.emergency_contact_phone || ""}
-                        onChange={(e) =>
-                          setEditing({ ...editing, emergency_contact_phone: e.target.value })
-                        }
-                        placeholder="06 12 34 56 78"
-                      />
+                      <Label>Statut adhésion</Label>
+                      <div className="flex items-center gap-4 h-10">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="adhesion_2025_2026"
+                            checked={editing.adhesion_2025_2026 === 1}
+                            onChange={() => setEditing({ ...editing, adhesion_2025_2026: 1 })}
+                            className="w-4 h-4 text-primary"
+                          />
+                          <span className="text-sm">Adhérent 2025-2026</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="adhesion_2025_2026"
+                            checked={editing.adhesion_2025_2026 !== 1}
+                            onChange={() => setEditing({ ...editing, adhesion_2025_2026: 0 })}
+                            className="w-4 h-4 text-primary"
+                          />
+                          <span className="text-sm">Non adhérent</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">
+                      Pratique instrumentale et formation musicale
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label>Formation Musicale (solfège) - Niveau conservatoire</Label>
+                        <Input
+                          value={editing.music_theory_level || ""}
+                          onChange={(e) =>
+                            setEditing({ ...editing, music_theory_level: e.target.value })
+                          }
+                          placeholder="Ex: Cycle 2, 3ème année"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Instruments</Label>
+                        {(editing.instruments || []).map((instrument, index) => (
+                          <div
+                            key={index}
+                            className="p-4 border border-border rounded-lg space-y-4"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-foreground">
+                                Instrument {index + 1}
+                              </span>
+                              {(editing.instruments?.length || 0) > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeInstrument(index)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="grid gap-2">
+                                <Label>Instrument</Label>
+                                <Input
+                                  value={instrument.instrument_name || ""}
+                                  onChange={(e) =>
+                                    updateInstrument(index, "instrument_name", e.target.value)
+                                  }
+                                  placeholder="Ex: Clarinette"
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label>Date de début</Label>
+                                <Input
+                                  type="date"
+                                  value={instrument.start_date || ""}
+                                  onChange={(e) =>
+                                    updateInstrument(index, "start_date", e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label>Niveau conservatoire</Label>
+                                <Input
+                                  value={instrument.level || ""}
+                                  onChange={(e) => updateInstrument(index, "level", e.target.value)}
+                                  placeholder="Ex: Cycle 3"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button variant="outline" onClick={addInstrument} className="w-full">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Ajouter un instrument
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">
+                      Contact d'urgence / Représentant légal
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Prénom</Label>
+                          <Input
+                            value={editing.emergency_contact_first_name || ""}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                emergency_contact_first_name: e.target.value,
+                              })
+                            }
+                            placeholder="Marie"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Nom</Label>
+                          <Input
+                            value={editing.emergency_contact_last_name || ""}
+                            onChange={(e) =>
+                              setEditing({
+                                ...editing,
+                                emergency_contact_last_name: e.target.value,
+                              })
+                            }
+                            placeholder="Dupont"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={editing.emergency_contact_email || ""}
+                            onChange={(e) =>
+                              setEditing({ ...editing, emergency_contact_email: e.target.value })
+                            }
+                            placeholder="marie.dupont@email.com"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Téléphone</Label>
+                          <Input
+                            type="tel"
+                            value={editing.emergency_contact_phone || ""}
+                            onChange={(e) =>
+                              setEditing({ ...editing, emergency_contact_phone: e.target.value })
+                            }
+                            placeholder="06 12 34 56 78"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -1054,6 +1141,261 @@ export function UsersAdminClient() {
             </Button>
             <Button onClick={handleSave} disabled={saving || !editing?.email}>
               {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog - Read Only */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails de l'utilisateur</DialogTitle>
+          </DialogHeader>
+          {viewing && (
+            <div className="grid gap-6 py-4">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+                    {viewing.avatar ? (
+                      <img
+                        src={viewing.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Camera className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Photo de profil</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="text-sm font-medium">{viewing.email || "-"}</p>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-muted-foreground">Rôle</Label>
+                  <p className="text-sm font-medium">
+                    {viewing.role === "SUPER_ADMIN"
+                      ? "Super Admin"
+                      : viewing.role === "ADMIN"
+                        ? "Administrateur"
+                        : "Musicien"}
+                  </p>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-muted-foreground">Statut du compte</Label>
+                  <p className="text-sm font-medium">
+                    {viewing.is_active !== 0 ? "Actif" : "Inactif"}
+                  </p>
+                </div>
+              </div>
+
+              {(viewing.role === "MUSICIAN" || viewing.email === currentUserEmail) && (
+                <>
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Prénom</Label>
+                        <p className="text-sm font-medium">{viewing.first_name || "-"}</p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Nom</Label>
+                        <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Date de naissance</Label>
+                        <p className="text-sm font-medium">
+                          {viewing.date_of_birth
+                            ? new Date(viewing.date_of_birth).toLocaleDateString("fr-FR")
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Téléphone</Label>
+                        <p className="text-sm font-medium">{viewing.phone || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Adresse</Label>
+                        <p className="text-sm font-medium">{viewing.address_line1 || "-"}</p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Complément d'adresse</Label>
+                        <p className="text-sm font-medium">{viewing.address_line2 || "-"}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Code postal</Label>
+                          <p className="text-sm font-medium">{viewing.postal_code || "-"}</p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Ville</Label>
+                          <p className="text-sm font-medium">{viewing.city || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Harmonie</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Date d'entrée à l'Harmonie</Label>
+                        <p className="text-sm font-medium">
+                          {viewing.harmonie_start_date
+                            ? new Date(viewing.harmonie_start_date).toLocaleDateString("fr-FR")
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Élève au Conservatoire</Label>
+                        <p className="text-sm font-medium">
+                          {viewing.is_conservatory_student === 1 ? "Oui" : "Non"}
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Droit à l'image</Label>
+                        <p className="text-sm font-medium">
+                          {viewing.image_consent === 1
+                            ? "Autorisé"
+                            : viewing.image_consent === 0
+                              ? "Non autorisé"
+                              : "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
+                    <div className="grid gap-2">
+                      <Label className="text-muted-foreground">Statut adhésion</Label>
+                      <p className="text-sm font-medium">
+                        {viewing.adhesion_2025_2026 === 1 ? "Adhérent 2025-2026" : "Non adhérent"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">
+                      Pratique instrumentale et formation musicale
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">
+                          Formation Musicale (solfège) - Niveau conservatoire
+                        </Label>
+                        <p className="text-sm font-medium">{viewing.music_theory_level || "-"}</p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-muted-foreground">Instruments</Label>
+                        {(viewing.instruments || []).some(
+                          (i) => i.instrument_name || i.start_date || i.level
+                        ) ? (
+                          (viewing.instruments || []).map((instrument, index) =>
+                            instrument.instrument_name ||
+                            instrument.start_date ||
+                            instrument.level ? (
+                              <div
+                                key={index}
+                                className="p-4 border border-border rounded-lg space-y-2"
+                              >
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Instrument
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                      {instrument.instrument_name || "-"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Date de début
+                                    </Label>
+                                    <p className="text-sm font-medium">
+                                      {instrument.start_date
+                                        ? new Date(instrument.start_date).toLocaleDateString(
+                                            "fr-FR"
+                                          )
+                                        : "-"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-muted-foreground">
+                                      Niveau conservatoire
+                                    </Label>
+                                    <p className="text-sm font-medium">{instrument.level || "-"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null
+                          )
+                        ) : (
+                          <p className="text-sm text-muted-foreground">-</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-foreground mb-4">
+                      Contact d'urgence / Représentant légal
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Prénom</Label>
+                          <p className="text-sm font-medium">
+                            {viewing.emergency_contact_first_name || "-"}
+                          </p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Nom</Label>
+                          <p className="text-sm font-medium">
+                            {viewing.emergency_contact_last_name || "-"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Email</Label>
+                          <p className="text-sm font-medium">
+                            {viewing.emergency_contact_email || "-"}
+                          </p>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-muted-foreground">Téléphone</Label>
+                          <p className="text-sm font-medium">
+                            {viewing.emergency_contact_phone || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              Fermer
             </Button>
           </DialogFooter>
         </DialogContent>

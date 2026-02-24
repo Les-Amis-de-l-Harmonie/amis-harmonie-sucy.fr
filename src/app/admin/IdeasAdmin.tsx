@@ -15,7 +15,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Pencil, Search, ArrowUpDown, Globe, Lock } from "lucide-react";
-import type { Idea, IdeaCategory, IdeaStatus } from "@/db/types";
+import type { Idea, IdeaCategory } from "@/db/types";
 import { formatDateShort } from "@/lib/dates";
 
 interface IdeaWithUser extends Idea {
@@ -25,22 +25,9 @@ interface IdeaWithUser extends Idea {
 }
 
 const CATEGORY_LABELS: Record<IdeaCategory, string> = {
-  association: "Association",
-  harmonie: "Harmonie",
-};
-
-const STATUS_LABELS: Record<IdeaStatus, string> = {
-  pending: "En attente",
-  reviewed: "En cours d'examen",
-  accepted: "Acceptée",
-  rejected: "Refusée",
-};
-
-const STATUS_COLORS: Record<IdeaStatus, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  reviewed: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  accepted: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  association: "Les Amis de l'Harmonie de Sucy-en-Brie",
+  harmonie: "Harmonie Municipale de Sucy-en-Brie",
+  website: "Site internet",
 };
 
 const VISIBILITY_LABELS: Record<number, string> = {
@@ -62,11 +49,10 @@ export function IdeasAdminClient() {
   const [savingNotes, setSavingNotes] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<IdeaStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<IdeaCategory | "all">("all");
   const [commentFilter, setCommentFilter] = useState<"all" | "with" | "without">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">("all");
-  const [sortBy, setSortBy] = useState<"date" | "status" | "category">("date");
+  const [sortBy, setSortBy] = useState<"date" | "category">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const fetchData = async () => {
@@ -84,25 +70,6 @@ export function IdeasAdminClient() {
     fetchData();
   }, []);
 
-  const updateStatus = async (id: number, status: IdeaStatus, notes?: string) => {
-    try {
-      const response = await fetch(`/api/admin/ideas?id=${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, admin_notes: notes }),
-      });
-      if (response.ok) {
-        await fetchData();
-        // Also update the viewing item if it's the same
-        if (viewing && viewing.id === id) {
-          setViewing({ ...viewing, status });
-        }
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
   const saveAdminNotes = async () => {
     if (!viewing) return;
     setSavingNotes(true);
@@ -110,7 +77,7 @@ export function IdeasAdminClient() {
       const response = await fetch(`/api/admin/ideas?id=${viewing.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: viewing.status, admin_notes: adminNotes }),
+        body: JSON.stringify({ admin_notes: adminNotes }),
       });
       if (response.ok) {
         await fetchData();
@@ -147,11 +114,6 @@ export function IdeasAdminClient() {
       );
     }
 
-    // Status filter
-    if (statusFilter !== "all") {
-      result = result.filter((item) => item.status === statusFilter);
-    }
-
     if (categoryFilter !== "all") {
       result = result.filter((item) => item.category === categoryFilter);
     }
@@ -174,9 +136,6 @@ export function IdeasAdminClient() {
         case "date":
           comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
           break;
-        case "status":
-          comparison = a.status.localeCompare(b.status);
-          break;
         case "category":
           comparison = a.category.localeCompare(b.category);
           break;
@@ -185,16 +144,7 @@ export function IdeasAdminClient() {
     });
 
     return result;
-  }, [
-    items,
-    searchTerm,
-    statusFilter,
-    categoryFilter,
-    commentFilter,
-    visibilityFilter,
-    sortBy,
-    sortOrder,
-  ]);
+  }, [items, searchTerm, categoryFilter, commentFilter, visibilityFilter, sortBy, sortOrder]);
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
@@ -220,20 +170,6 @@ export function IdeasAdminClient() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Statut</p>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as IdeaStatus | "all")}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="all">Tous</option>
-                <option value="pending">En attente</option>
-                <option value="reviewed">En cours d'examen</option>
-                <option value="accepted">Acceptée</option>
-                <option value="rejected">Refusée</option>
-              </select>
-            </div>
-            <div>
               <p className="text-sm font-medium text-muted-foreground mb-1">Catégorie</p>
               <select
                 value={categoryFilter}
@@ -243,6 +179,7 @@ export function IdeasAdminClient() {
                 <option value="all">Toutes</option>
                 <option value="association">Association</option>
                 <option value="harmonie">Harmonie</option>
+                <option value="website">Site internet</option>
               </select>
             </div>
             <div>
@@ -276,11 +213,10 @@ export function IdeasAdminClient() {
               <div className="flex gap-2">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "date" | "status" | "category")}
+                  onChange={(e) => setSortBy(e.target.value as "date" | "category")}
                   className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm"
                 >
                   <option value="date">Date</option>
-                  <option value="status">Statut</option>
                   <option value="category">Catégorie</option>
                 </select>
                 <Button
@@ -306,7 +242,6 @@ export function IdeasAdminClient() {
                 <TableHead>Musicien</TableHead>
                 <TableHead>Catégorie</TableHead>
                 <TableHead>Titre</TableHead>
-                <TableHead>Statut</TableHead>
                 <TableHead>Visibilité</TableHead>
                 <TableHead>Commentaire</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -323,18 +258,6 @@ export function IdeasAdminClient() {
                   </TableCell>
                   <TableCell>{CATEGORY_LABELS[item.category]}</TableCell>
                   <TableCell className="max-w-xs truncate">{item.title}</TableCell>
-                  <TableCell>
-                    <select
-                      value={item.status}
-                      onChange={(e) => updateStatus(item.id, e.target.value as IdeaStatus)}
-                      className={`px-2 py-1 rounded text-sm font-medium border-0 cursor-pointer ${STATUS_COLORS[item.status]}`}
-                    >
-                      <option value="pending">{STATUS_LABELS.pending}</option>
-                      <option value="reviewed">{STATUS_LABELS.reviewed}</option>
-                      <option value="accepted">{STATUS_LABELS.accepted}</option>
-                      <option value="rejected">{STATUS_LABELS.rejected}</option>
-                    </select>
-                  </TableCell>
                   <TableCell>
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${VISIBILITY_COLORS[item.is_public]}`}
@@ -367,7 +290,7 @@ export function IdeasAdminClient() {
               ))}
               {filteredItems.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Aucune idée trouvée
                   </TableCell>
                 </TableRow>
@@ -378,12 +301,12 @@ export function IdeasAdminClient() {
       </Card>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Modifier l'idée</DialogTitle>
           </DialogHeader>
           {viewing && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Musicien</p>
@@ -428,23 +351,6 @@ export function IdeasAdminClient() {
                 </p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">Statut</p>
-                <div className="flex gap-2">
-                  {(["pending", "reviewed", "accepted", "rejected"] as IdeaStatus[]).map(
-                    (status) => (
-                      <Button
-                        key={status}
-                        variant={viewing.status === status ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => updateStatus(viewing.id, status, adminNotes)}
-                      >
-                        {STATUS_LABELS[status]}
-                      </Button>
-                    )
-                  )}
-                </div>
-              </div>
-              <div>
                 <p className="text-sm font-medium text-muted-foreground mb-2">Visibilité</p>
                 <div className="flex gap-2">
                   <Button
@@ -455,7 +361,6 @@ export function IdeasAdminClient() {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          status: viewing.status,
                           admin_notes: adminNotes,
                           is_public: 1,
                         }),
@@ -476,7 +381,6 @@ export function IdeasAdminClient() {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          status: viewing.status,
                           admin_notes: adminNotes,
                           is_public: 0,
                         }),

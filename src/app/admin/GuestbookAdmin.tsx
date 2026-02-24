@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -31,8 +31,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { GuestbookEntry } from "@/db/types";
+type SortField = "name" | "date";
 
 export function GuestbookAdminClient() {
   const [items, setItems] = useState<GuestbookEntry[]>([]);
@@ -42,6 +43,9 @@ export function GuestbookAdminClient() {
   const [editing, setEditing] = useState<Partial<GuestbookEntry> | null>(null);
   const [deleting, setDeleting] = useState<GuestbookEntry | null>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const fetchData = async () => {
     try {
@@ -57,6 +61,40 @@ export function GuestbookAdminClient() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "date" ? "desc" : "asc");
+    }
+  };
+
+  const displayed = useMemo(() => {
+    let result = [...items];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (item) =>
+          `${item.first_name} ${item.last_name}`.toLowerCase().includes(q) ||
+          item.message.toLowerCase().includes(q)
+      );
+    }
+    result.sort((a, b) => {
+      const va =
+        sortField === "name" ? `${a.first_name} ${a.last_name}`.toLowerCase() : (a.date ?? "");
+      const vb =
+        sortField === "name" ? `${b.first_name} ${b.last_name}`.toLowerCase() : (b.date ?? "");
+      return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    return result;
+  }, [items, search, sortField, sortDir]);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
 
   const handleSave = async () => {
     if (!editing) return;
@@ -118,19 +156,50 @@ export function GuestbookAdminClient() {
         </Button>
       </div>
 
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom ou message…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        {search && (
+          <span className="text-sm text-muted-foreground">
+            {displayed.length} résultat{displayed.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center gap-1">
+                    Nom <SortIcon field="name" />
+                  </div>
+                </TableHead>
                 <TableHead>Message</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("date")}
+                >
+                  <div className="flex items-center gap-1">
+                    Date <SortIcon field="date" />
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {displayed.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     {item.first_name} {item.last_name}
@@ -161,10 +230,10 @@ export function GuestbookAdminClient() {
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && (
+              {displayed.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    Aucune entrée
+                    {search ? "Aucun résultat" : "Aucune entrée"}
                   </TableCell>
                 </TableRow>
               )}

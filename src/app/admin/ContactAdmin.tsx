@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
 import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Table,
@@ -22,9 +23,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { ContactSubmission } from "@/db/types";
 import { formatDateShort } from "@/lib/dates";
+
+type SortField = "name" | "email" | "date";
 
 export function ContactAdminClient() {
   const [items, setItems] = useState<ContactSubmission[]>([]);
@@ -33,6 +36,9 @@ export function ContactAdminClient() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewing, setViewing] = useState<ContactSubmission | null>(null);
   const [deleting, setDeleting] = useState<ContactSubmission | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const fetchData = async () => {
     try {
@@ -48,6 +54,49 @@ export function ContactAdminClient() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "date" ? "desc" : "asc");
+    }
+  };
+
+  const displayed = useMemo(() => {
+    let result = [...items];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (item) =>
+          `${item.prenom} ${item.nom}`.toLowerCase().includes(q) ||
+          item.email.toLowerCase().includes(q) ||
+          item.message.toLowerCase().includes(q)
+      );
+    }
+    result.sort((a, b) => {
+      let va: string;
+      let vb: string;
+      if (sortField === "name") {
+        va = `${a.prenom} ${a.nom}`.toLowerCase();
+        vb = `${b.prenom} ${b.nom}`.toLowerCase();
+      } else if (sortField === "email") {
+        va = a.email.toLowerCase();
+        vb = b.email.toLowerCase();
+      } else {
+        va = a.created_at ?? "";
+        vb = b.created_at ?? "";
+      }
+      return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    return result;
+  }, [items, search, sortField, sortDir]);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
+  };
 
   const confirmDelete = async () => {
     if (!deleting) return;
@@ -70,20 +119,58 @@ export function ContactAdminClient() {
         <h1 className="text-3xl font-bold text-foreground">Messages de contact</h1>
       </div>
 
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par nom, email ou message…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        {search && (
+          <span className="text-sm text-muted-foreground">
+            {displayed.length} résultat{displayed.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center gap-1">
+                    Nom <SortIcon field="name" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("email")}
+                >
+                  <div className="flex items-center gap-1">
+                    Email <SortIcon field="email" />
+                  </div>
+                </TableHead>
                 <TableHead>Message</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none hover:text-foreground"
+                  onClick={() => handleSort("date")}
+                >
+                  <div className="flex items-center gap-1">
+                    Date <SortIcon field="date" />
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {displayed.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     {item.prenom} {item.nom}
@@ -119,10 +206,10 @@ export function ContactAdminClient() {
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && (
+              {displayed.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    Aucun message
+                    {search ? "Aucun résultat" : "Aucun message"}
                   </TableCell>
                 </TableRow>
               )}

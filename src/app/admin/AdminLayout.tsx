@@ -11,9 +11,12 @@ import {
   Users,
   Images,
   Lightbulb,
+  Ticket,
   LogOut,
   Menu,
   X,
+  LayoutGrid,
+  Info,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 
@@ -29,8 +32,11 @@ const navItems = [
   { href: "/admin/videos", label: "Vidéos", icon: Video },
   { href: "/admin/publications", label: "Publications", icon: Instagram },
   { href: "/admin/guestbook", label: "Livre d'Or", icon: BookOpen },
-  { href: "/admin/ideas", label: "Boîte à idées", icon: Lightbulb },
   { href: "/admin/contact", label: "Messages", icon: Mail },
+  { href: "/admin/ideas", label: "Boîte à idées", icon: Lightbulb },
+  { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
+  { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
+  { href: "/admin/card-order", label: "Ordre cartouches", icon: LayoutGrid },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
 ];
 
