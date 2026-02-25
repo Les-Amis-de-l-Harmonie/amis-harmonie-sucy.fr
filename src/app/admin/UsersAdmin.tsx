@@ -796,6 +796,18 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     value={editing.email || ""}
                     onChange={(e) => setEditing({ ...editing, email: e.target.value })}
                     placeholder="email@example.com"
+                    disabled={
+                      isCurrentUserAdmin &&
+                      !isCurrentUserSuperAdmin &&
+                      editing.email === currentUserEmail
+                    }
+                    className={
+                      isCurrentUserAdmin &&
+                      !isCurrentUserSuperAdmin &&
+                      editing.email === currentUserEmail
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }
                   />
                 </div>
                 <div className="grid gap-2">
@@ -803,7 +815,18 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                   <select
                     value={editing.role || "MUSICIAN"}
                     onChange={(e) => setEditing({ ...editing, role: e.target.value as UserRole })}
-                    className="flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className={`flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                      isCurrentUserAdmin &&
+                      !isCurrentUserSuperAdmin &&
+                      editing.email === currentUserEmail
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={
+                      isCurrentUserAdmin &&
+                      !isCurrentUserSuperAdmin &&
+                      editing.email === currentUserEmail
+                    }
                   >
                     <option value="MUSICIAN">Musicien</option>
                     <option value="ADMIN">Administrateur</option>
@@ -813,23 +836,37 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 <div className="grid gap-2">
                   <Label>Statut du compte</Label>
                   <div className="flex items-center gap-4 h-10">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      className={`flex items-center gap-2 ${isCurrentUserAdmin && !isCurrentUserSuperAdmin && editing.email === currentUserEmail ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
                       <input
                         type="radio"
                         name="is_active"
                         checked={editing.is_active !== 0}
                         onChange={() => setEditing({ ...editing, is_active: 1 })}
                         className="w-4 h-4 text-primary"
+                        disabled={
+                          isCurrentUserAdmin &&
+                          !isCurrentUserSuperAdmin &&
+                          editing.email === currentUserEmail
+                        }
                       />
                       <span className="text-sm">Actif</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      className={`flex items-center gap-2 ${isCurrentUserAdmin && !isCurrentUserSuperAdmin && editing.email === currentUserEmail ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    >
                       <input
                         type="radio"
                         name="is_active"
                         checked={editing.is_active === 0}
                         onChange={() => setEditing({ ...editing, is_active: 0 })}
                         className="w-4 h-4 text-primary"
+                        disabled={
+                          isCurrentUserAdmin &&
+                          !isCurrentUserSuperAdmin &&
+                          editing.email === currentUserEmail
+                        }
                       />
                       <span className="text-sm">Inactif</span>
                     </label>
