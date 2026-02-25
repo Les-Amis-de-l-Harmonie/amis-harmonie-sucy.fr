@@ -352,8 +352,8 @@ export function MusicianHomeClient({
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : profileComplete ? (
                   profile?.adhesion_2025_2026 !== 1 ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">
-                      Pas d&apos;assurance, non adhérent
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 mb-3">
+                      Réservé aux adhérents
                     </span>
                   ) : profile?.insurance_complete ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">

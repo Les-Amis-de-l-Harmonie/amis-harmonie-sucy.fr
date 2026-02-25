@@ -91,17 +91,6 @@ async function checkAdminAuth(request: Request): Promise<Response | null> {
   return null;
 }
 
-async function checkSuperAdminAuth(request: Request): Promise<Response | null> {
-  const user = await verifySession(request, "admin");
-  if (!user || !isSuperAdmin(user.role)) {
-    return new Response(JSON.stringify({ error: "Super admin required" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  return null;
-}
-
 export async function handleEventsApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
   if (authError) return authError;
@@ -581,15 +570,47 @@ interface UserWithProfile {
 }
 
 export async function handleUsersApi(request: Request): Promise<Response> {
-  // GET is allowed for all admins, but POST/PUT/DELETE require SUPER_ADMIN
-  const isSuperAdminRequest = request.method !== "GET";
-  const authError = isSuperAdminRequest
-    ? await checkSuperAdminAuth(request)
-    : await checkAdminAuth(request);
-  if (authError) return authError;
-
+  // GET is allowed for all admins
+  // POST requires SUPER_ADMIN (creating new users)
+  // PUT/DELETE: regular admins can only modify their own profile, super admins can modify any
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
+
+  // For non-GET requests, we need to check authentication and permissions
+  if (request.method !== "GET") {
+    const user = await verifySession(request, "admin");
+    if (!user || !isAdmin(user.role)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // POST (create user) always requires SUPER_ADMIN
+    if (request.method === "POST" && !isSuperAdmin(user.role)) {
+      return new Response(JSON.stringify({ error: "Super admin required" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // PUT/DELETE: regular admins can only modify their own profile
+    if ((request.method === "PUT" || request.method === "DELETE") && !isSuperAdmin(user.role)) {
+      if (!id || parseInt(id, 10) !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Vous ne pouvez modifier que votre propre profil" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+  } else {
+    // GET requests just need admin auth
+    const authError = await checkAdminAuth(request);
+    if (authError) return authError;
+  }
 
   try {
     if (request.method === "GET") {
