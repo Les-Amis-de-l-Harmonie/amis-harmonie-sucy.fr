@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { User, AuthToken, Session, UserRole } from "@/db/types";
 import { isAdmin } from "@/db/types";
+import { invalidateCache } from "@/lib/cache";
 
 function generateToken(): string {
   const array = new Uint8Array(32);
@@ -216,6 +217,7 @@ export async function handleMagicLinkVerify(
     await env.DB.prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?")
       .bind(user.id)
       .run();
+    await invalidateCache();
 
     const redirectPath = getRedirectPath(user.role, context);
     const response = Response.redirect(new URL(redirectPath, url.origin).toString());
