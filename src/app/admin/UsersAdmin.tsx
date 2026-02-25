@@ -987,7 +987,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                           </label>
                         </div>
                       </div>
-                      <div className="grid gap-3">
+                      <div className="grid gap-3 col-span-2">
                         <Label>Droit à l'image</Label>
                         <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
                           <p>
