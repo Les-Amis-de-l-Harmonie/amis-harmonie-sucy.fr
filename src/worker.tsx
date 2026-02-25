@@ -39,6 +39,7 @@ import {
   handleOutingSettingsApi,
   handleCardOrderSettingsApi,
   handleInfoSettingsApi,
+  handleInsuranceApi,
 } from "@/app/api/admin-crud";
 import {
   handleMusicianProfileApi,
@@ -49,6 +50,8 @@ import {
 } from "@/app/api/musician";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
+import { sitemapHandler } from "@/app/api/sitemap";
+import { robotsHandler } from "@/app/api/robots";
 import { handlePublicGalleryApi } from "@/app/api/gallery";
 import { AdminLoginPage } from "@/app/admin/Login";
 import {
@@ -64,6 +67,7 @@ import {
   AdminOutingSettingsPage,
   AdminCardOrderPage,
   AdminInfoSettingsPage,
+  AdminInsurancePage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -207,6 +211,7 @@ const app = defineApp([
   route("/api/admin/info-settings", ({ request }: { request: Request }) =>
     handleInfoSettingsApi(request)
   ),
+  route("/api/admin/insurance", ({ request }: { request: Request }) => handleInsuranceApi(request)),
 
   route("/api/musician/profile", ({ request }: { request: Request }) =>
     handleMusicianProfileApi(request)
@@ -254,6 +259,9 @@ const app = defineApp([
   }),
 
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
+
+  route("/sitemap.xml", () => sitemapHandler()),
+  route("/robots.txt", () => robotsHandler()),
 
   route("/admin/verify", ({ request }: { request: Request }) =>
     handleMagicLinkVerify(request, "admin")
@@ -355,6 +363,12 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminInfoSettingsPage email={auth.email} />;
+    }),
+
+    route("/admin/insurance", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminInsurancePage email={auth.email} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),

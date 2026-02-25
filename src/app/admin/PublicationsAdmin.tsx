@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -30,8 +30,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Instagram } from "lucide-react";
 import type { Publication } from "@/db/types";
+import { Pagination } from "@/app/components/ui/pagination";
+import { EmptyState } from "@/app/components/ui/empty-state";
 
 export function PublicationsAdminClient() {
   const [items, setItems] = useState<Publication[]>([]);
@@ -41,6 +43,13 @@ export function PublicationsAdminClient() {
   const [editing, setEditing] = useState<Partial<Publication> | null>(null);
   const [deleting, setDeleting] = useState<Publication | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const paginatedItems = useMemo(
+    () => items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [items, currentPage, pageSize]
+  );
 
   const fetchData = async () => {
     try {
@@ -114,63 +123,90 @@ export function PublicationsAdminClient() {
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lien</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <a
-                      href={`https://www.instagram.com/p/${item.instagram_post_id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Voir sur Instagram
-                    </a>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditing(item);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleting(item);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {items.length === 0 && (
+      {items.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Instagram className="w-12 h-12" />}
+              title="Aucune publication"
+              description="Créez-en une pour commencer !"
+              action={
+                <Button
+                  onClick={() => {
+                    setEditing({ instagram_post_id: "" });
+                    setDialogOpen(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle publication
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                    Aucune publication
-                  </TableCell>
+                  <TableHead>Lien</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <a
+                        href={`https://www.instagram.com/p/${item.instagram_post_id}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Voir sur Instagram
+                      </a>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(item);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(item);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={items.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

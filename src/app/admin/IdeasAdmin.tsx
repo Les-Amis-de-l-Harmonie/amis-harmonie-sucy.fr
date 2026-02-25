@@ -14,9 +14,11 @@ import {
 } from "@/app/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Textarea } from "@/app/components/ui/textarea";
-import { Pencil, Search, ArrowUpDown, Globe, Lock } from "lucide-react";
+import { Pencil, Search, ArrowUpDown, Globe, Lock, Lightbulb } from "lucide-react";
 import type { Idea, IdeaCategory } from "@/db/types";
+import { Pagination } from "@/app/components/ui/pagination";
 import { formatDateShort } from "@/lib/dates";
+import { EmptyState } from "@/app/components/ui/empty-state";
 
 interface IdeaWithUser extends Idea {
   user_email?: string;
@@ -54,6 +56,8 @@ export function IdeasAdminClient() {
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "private">("all");
   const [sortBy, setSortBy] = useState<"date" | "category">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchData = async () => {
     try {
@@ -146,6 +150,15 @@ export function IdeasAdminClient() {
     return result;
   }, [items, searchTerm, categoryFilter, commentFilter, visibilityFilter, sortBy, sortOrder]);
 
+  const paginatedItems = useMemo(
+    () => filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredItems, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, commentFilter, visibilityFilter]);
+
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
@@ -233,72 +246,92 @@ export function IdeasAdminClient() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Musicien</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead>Visibilité</TableHead>
-                <TableHead>Commentaire</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{formatDateShort(item.created_at)}</TableCell>
-                  <TableCell className="font-medium">
-                    {item.user_first_name && item.user_last_name
-                      ? `${item.user_first_name} ${item.user_last_name}`
-                      : item.user_email || "Anonyme"}
-                  </TableCell>
-                  <TableCell>{CATEGORY_LABELS[item.category]}</TableCell>
-                  <TableCell className="max-w-xs truncate">{item.title}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${VISIBILITY_COLORS[item.is_public]}`}
-                    >
-                      {item.is_public === 1 ? (
-                        <Globe className="w-3 h-3" />
-                      ) : (
-                        <Lock className="w-3 h-3" />
-                      )}
-                      {VISIBILITY_LABELS[item.is_public]}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {item.admin_notes ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Oui
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">
-                        Non
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(item)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredItems.length === 0 && (
+      {filteredItems.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Lightbulb className="w-12 h-12" />}
+              title={items.length === 0 ? "Aucune idée" : "Aucune idée trouvée"}
+              description={
+                items.length === 0
+                  ? "Les musiciens n'ont pas encore soumis d'idées."
+                  : "Essayez de modifier vos critères de recherche"
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Aucune idée trouvée
-                  </TableCell>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Musicien</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Titre</TableHead>
+                  <TableHead>Visibilité</TableHead>
+                  <TableHead>Commentaire</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{formatDateShort(item.created_at)}</TableCell>
+                    <TableCell className="font-medium">
+                      {item.user_first_name && item.user_last_name
+                        ? `${item.user_first_name} ${item.user_last_name}`
+                        : item.user_email || "Anonyme"}
+                    </TableCell>
+                    <TableCell>{CATEGORY_LABELS[item.category]}</TableCell>
+                    <TableCell className="max-w-xs truncate">{item.title}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${VISIBILITY_COLORS[item.is_public]}`}
+                      >
+                        {item.is_public === 1 ? (
+                          <Globe className="w-3 h-3" />
+                        ) : (
+                          <Lock className="w-3 h-3" />
+                        )}
+                        {VISIBILITY_LABELS[item.is_public]}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {item.admin_notes ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Oui
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">
+                          Non
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(item)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={filteredItems.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">

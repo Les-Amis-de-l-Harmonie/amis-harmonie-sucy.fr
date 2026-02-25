@@ -31,8 +31,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  BookOpen,
+} from "lucide-react";
 import type { GuestbookEntry } from "@/db/types";
+import { Pagination } from "@/app/components/ui/pagination";
+import { EmptyState } from "@/app/components/ui/empty-state";
 type SortField = "name" | "date";
 
 export function GuestbookAdminClient() {
@@ -46,6 +57,8 @@ export function GuestbookAdminClient() {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchData = async () => {
     try {
@@ -90,6 +103,15 @@ export function GuestbookAdminClient() {
     });
     return result;
   }, [items, search, sortField, sortDir]);
+
+  const paginatedItems = useMemo(
+    () => displayed.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayed, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
@@ -173,74 +195,114 @@ export function GuestbookAdminClient() {
         )}
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center gap-1">
-                    Nom <SortIcon field="name" />
-                  </div>
-                </TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("date")}
-                >
-                  <div className="flex items-center gap-1">
-                    Date <SortIcon field="date" />
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayed.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.first_name} {item.last_name}
-                  </TableCell>
-                  <TableCell className="max-w-md truncate">{item.message}</TableCell>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditing(item);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleting(item);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {displayed.length === 0 && (
+      {displayed.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<BookOpen className="w-12 h-12" />}
+              title={
+                items.length === 0 ? "Aucun message dans le livre d'or" : "Aucun message trouvé"
+              }
+              description={
+                items.length === 0
+                  ? "Créez-en un pour commencer !"
+                  : "Essayez de modifier vos critères de recherche"
+              }
+              action={
+                items.length === 0 ? (
+                  <Button
+                    onClick={() => {
+                      setEditing({
+                        first_name: "",
+                        last_name: "",
+                        message: "",
+                        date: new Date().toISOString().split("T")[0],
+                      });
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvelle entrée
+                  </Button>
+                ) : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    {search ? "Aucun résultat" : "Aucune entrée"}
-                  </TableCell>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Nom <SortIcon field="name" />
+                    </div>
+                  </TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("date")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Date <SortIcon field="date" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.first_name} {item.last_name}
+                    </TableCell>
+                    <TableCell className="max-w-md truncate">{item.message}</TableCell>
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(item);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(item);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={displayed.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

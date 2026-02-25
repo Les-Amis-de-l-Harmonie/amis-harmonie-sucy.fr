@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { formatDateFrench } from "@/lib/dates";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
 
 function GuestbookEntryCard({ entry }: { entry: GuestbookEntry }) {
   const formattedDate = formatDateFrench(entry.date);
@@ -23,7 +24,7 @@ function GuestbookEntryCard({ entry }: { entry: GuestbookEntry }) {
   return (
     <div className="mb-8">
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{capitalizedDate}</p>
-      <Card className="border-0 shadow-md">
+      <Card className="border-0 shadow-md hover-lift">
         <CardContent className="p-6">
           <h3 className="font-['Merriweather_Sans'] text-gray-900 dark:text-gray-100 mb-3">
             <span className="font-bold">{entry.first_name}</span> {entry.last_name}
@@ -127,8 +128,10 @@ export function LivreOrClient({ entries }: { entries: GuestbookEntry[] }) {
         </div>
       ) : (
         <div className="max-w-2xl mx-auto">
-          {entries.map((entry) => (
-            <GuestbookEntryCard key={entry.id} entry={entry} />
+          {entries.map((entry, index) => (
+            <ScrollReveal key={entry.id} staggerIndex={index}>
+              <GuestbookEntryCard entry={entry} />
+            </ScrollReveal>
           ))}
         </div>
       )}

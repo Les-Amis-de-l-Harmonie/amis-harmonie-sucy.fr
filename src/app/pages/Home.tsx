@@ -29,7 +29,10 @@ async function HeroSection() {
       />
       <div className="mx-auto max-w-[1320px]">
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:px-8 gap-8">
-          <ScrollReveal className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center">
+          <ScrollReveal
+            direction="left"
+            className="mt-12 text-center lg:mt-0 lg:text-left order-2 lg:order-1 flex flex-col justify-center"
+          >
             <div>
               <span className="font-bold text-gray-800 dark:text-gray-200 lg:text-[55px]">
                 Les amis de
@@ -82,7 +85,7 @@ async function EventsSection() {
             </ScrollReveal>
             <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {upcoming.map((event, index) => (
-                <ScrollReveal key={event.id} delay={index * 80} className="h-full">
+                <ScrollReveal key={event.id} staggerIndex={index} className="h-full">
                   <EventCard event={event} />
                 </ScrollReveal>
               ))}
@@ -99,7 +102,7 @@ async function EventsSection() {
             </ScrollReveal>
             <div className="grid grid-cols-1 px-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {past.map((event, index) => (
-                <ScrollReveal key={event.id} delay={index * 80} className="h-full">
+                <ScrollReveal key={event.id} staggerIndex={index} className="h-full">
                   <EventCard event={event} />
                 </ScrollReveal>
               ))}

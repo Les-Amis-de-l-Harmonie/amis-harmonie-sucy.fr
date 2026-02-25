@@ -56,6 +56,9 @@ import {
   ChevronDown,
   Copy,
 } from "lucide-react";
+import { Calendar } from "lucide-react";
+import { EmptyState } from "@/app/components/ui/empty-state";
+import { Pagination } from "@/app/components/ui/pagination";
 import type { Event } from "@/db/types";
 import { getCroppedImg, recompressImage } from "@/lib/image-utils";
 
@@ -96,6 +99,8 @@ export function EventsAdminClient() {
   const [filterYear, setFilterYear] = useState<string>("all");
   const [sortField, setSortField] = useState<"date" | "title" | "location" | "price">("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -347,6 +352,15 @@ export function EventsAdminClient() {
     return result;
   }, [events, search, filterStatus, filterYear, sortField, sortDir]);
 
+  const paginatedEvents = useMemo(
+    () => filteredEvents.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredEvents, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, filterYear]);
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
   }
@@ -407,97 +421,124 @@ export function EventsAdminClient() {
         </Select>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("title")}
-                >
-                  <span className="inline-flex items-center">
-                    Titre <SortIcon field="title" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("date")}
-                >
-                  <span className="inline-flex items-center">
-                    Date <SortIcon field="date" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("location")}
-                >
-                  <span className="inline-flex items-center">
-                    Lieu <SortIcon field="location" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("price")}
-                >
-                  <span className="inline-flex items-center">
-                    Prix <SortIcon field="price" />
-                  </span>
-                </TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEvents.map((event) => {
-                const isPast = isEventPast(event.date);
-                return (
-                  <TableRow key={event.id}>
-                    <TableCell className="font-medium">{event.title}</TableCell>
-                    <TableCell>{formatDateShort(event.date)}</TableCell>
-                    <TableCell>{event.location}</TableCell>
-                    <TableCell>{event.price || "-"}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          isPast
-                            ? "bg-muted text-muted-foreground"
-                            : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
-                        }`}
-                      >
-                        {isPast ? "Passé" : "À venir"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDuplicate(event)}
-                        title="Dupliquer"
-                      >
-                        <Copy className="w-4 h-4 text-blue-500" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {filteredEvents.length === 0 && (
+      {filteredEvents.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Calendar className="w-12 h-12" />}
+              title={events.length === 0 ? "Aucun événement" : "Aucun événement trouvé"}
+              description={
+                events.length === 0
+                  ? "Créez-en un pour commencer !"
+                  : "Essayez de modifier vos critères de recherche"
+              }
+              action={
+                events.length === 0 ? (
+                  <Button onClick={handleNew}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvel événement
+                  </Button>
+                ) : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {events.length === 0 ? "Aucun événement" : "Aucun résultat pour ces critères"}
-                  </TableCell>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("title")}
+                  >
+                    <span className="inline-flex items-center">
+                      Titre <SortIcon field="title" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("date")}
+                  >
+                    <span className="inline-flex items-center">
+                      Date <SortIcon field="date" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("location")}
+                  >
+                    <span className="inline-flex items-center">
+                      Lieu <SortIcon field="location" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("price")}
+                  >
+                    <span className="inline-flex items-center">
+                      Prix <SortIcon field="price" />
+                    </span>
+                  </TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedEvents.map((event) => {
+                  const isPast = isEventPast(event.date);
+                  return (
+                    <TableRow key={event.id}>
+                      <TableCell className="font-medium">{event.title}</TableCell>
+                      <TableCell>{formatDateShort(event.date)}</TableCell>
+                      <TableCell>{event.location}</TableCell>
+                      <TableCell>{event.price || "-"}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            isPast
+                              ? "bg-muted text-muted-foreground"
+                              : "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+                          }`}
+                        >
+                          {isPast ? "Passé" : "À venir"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(event)}
+                          title="Dupliquer"
+                        >
+                          <Copy className="w-4 h-4 text-blue-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+      <Pagination
+        totalItems={filteredEvents.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

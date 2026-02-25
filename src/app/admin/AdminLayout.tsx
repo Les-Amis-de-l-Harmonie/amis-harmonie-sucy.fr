@@ -17,6 +17,7 @@ import {
   X,
   LayoutGrid,
   Info,
+  Shield,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/admin/guestbook", label: "Livre d'Or", icon: BookOpen },
   { href: "/admin/contact", label: "Messages", icon: Mail },
   { href: "/admin/ideas", label: "Boîte à idées", icon: Lightbulb },
+  { href: "/admin/insurance", label: "Assurances", icon: Shield },
   { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
   { href: "/admin/card-order", label: "Ordre cartouches", icon: LayoutGrid },

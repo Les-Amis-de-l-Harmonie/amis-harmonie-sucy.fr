@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, LogOut } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { User, LogOut, ChevronDown } from "lucide-react";
 import { SocialIcons } from "./SocialIcons";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -123,6 +123,40 @@ const navItems: NavItem[] = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+    setOpenAccordion(null);
+  }, []);
+
+  const toggleAccordion = useCallback((label: string) => {
+    setOpenAccordion((current) => (current === label ? null : label));
+  }, []);
+
+  // Close menu on Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && mobileMenuOpen) {
+        closeMobileMenu();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen, closeMobileMenu]);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm transition-colors">
@@ -197,63 +231,126 @@ export function Header() {
           </div>
 
           <div className="flex lg:hidden items-center gap-1">
+            <UserMenu />
             <ThemeToggle />
+            {/* Animated Hamburger Button */}
             <button
-              className="p-2 text-gray-900 dark:text-gray-100"
+              className="relative w-11 h-11 flex items-center justify-center text-gray-900 dark:text-gray-100"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Menu"
+              aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={mobileMenuOpen}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
+              <span className="sr-only">{mobileMenuOpen ? "Fermer" : "Menu"}</span>
+              <span className="relative w-6 h-5 flex flex-col justify-between">
+                {/* Top bar */}
+                <span
+                  className={`w-full h-0.5 bg-current rounded-full transform transition-all duration-300 origin-center ${
+                    mobileMenuOpen ? "rotate-45 translate-y-[9px]" : ""
+                  }`}
+                />
+                {/* Middle bar */}
+                <span
+                  className={`w-full h-0.5 bg-current rounded-full transition-all duration-300 ${
+                    mobileMenuOpen ? "opacity-0 scale-0" : "opacity-100 scale-100"
+                  }`}
+                />
+                {/* Bottom bar */}
+                <span
+                  className={`w-full h-0.5 bg-current rounded-full transform transition-all duration-300 origin-center ${
+                    mobileMenuOpen ? "-rotate-45 -translate-y-[9px]" : ""
+                  }`}
+                />
+              </span>
             </button>
           </div>
         </div>
+      </div>
 
-        {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700">
-            {navItems.map((item) => (
-              <div key={item.label} className="py-2">
+      {/* Backdrop Overlay */}
+      <div
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
+          mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+        onClick={closeMobileMenu}
+        aria-hidden="true"
+      />
+
+      {/* Mobile Menu Panel */}
+      <div
+        className={`lg:hidden overflow-hidden transition-all duration-350 ease-in-out ${
+          mobileMenuOpen ? "max-h-[calc(100vh-5rem)] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <nav className="py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          {navItems.map((item, index) => (
+            <div
+              key={item.label}
+              className="transform transition-all duration-300 ease-out"
+              style={{
+                transitionDelay: mobileMenuOpen ? `${index * 50}ms` : "0ms",
+                opacity: mobileMenuOpen ? 1 : 0,
+                transform: mobileMenuOpen ? "translateY(0)" : "translateY(8px)",
+              }}
+            >
+              {item.children ? (
+                // Accordion item
+                <div>
+                  <button
+                    onClick={() => toggleAccordion(item.label)}
+                    className="w-full flex items-center justify-between px-4 py-3 min-h-[48px] text-left text-[17px] font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    aria-expanded={openAccordion === item.label}
+                  >
+                    <span>{item.label}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${
+                        openAccordion === item.label ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {/* Accordion sub-menu */}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      openAccordion === item.label ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+                    }`}
+                  >
+                    <div className="pl-4 bg-gray-50 dark:bg-gray-800/50">
+                      {item.children.map((child) => (
+                        <a
+                          key={child.label}
+                          href={child.href}
+                          onClick={closeMobileMenu}
+                          className="block px-4 py-3 min-h-[48px] text-[15px] text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors"
+                        >
+                          {child.label}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Simple nav link
                 <a
                   href={item.href}
-                  className="block px-4 py-2 text-[15px] font-medium text-gray-900 dark:text-gray-100"
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-3 min-h-[48px] text-[17px] font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   {item.label}
                 </a>
-                {item.children && (
-                  <div className="pl-8">
-                    {item.children.map((child) => (
-                      <a
-                        key={child.label}
-                        href={child.href}
-                        className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400"
-                      >
-                        {child.label}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div className="px-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-              <SocialIcons iconSize={24} />
+              )}
             </div>
+          ))}
+          {/* Social Icons */}
+          <div
+            className="px-4 pt-4 mt-2 border-t border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-out"
+            style={{
+              transitionDelay: mobileMenuOpen ? `${navItems.length * 50}ms` : "0ms",
+              opacity: mobileMenuOpen ? 1 : 0,
+              transform: mobileMenuOpen ? "translateY(0)" : "translateY(8px)",
+            }}
+          >
+            <SocialIcons iconSize={24} />
           </div>
-        )}
+        </nav>
       </div>
     </header>
   );

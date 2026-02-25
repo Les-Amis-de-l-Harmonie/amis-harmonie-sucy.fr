@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import type { Video } from "@/db/types";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
 
 function VideoCard({ video, onPlay }: { video: Video; onPlay: () => void }) {
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden cursor-pointer group hover-lift"
       onClick={onPlay}
     >
       <div className="aspect-video relative overflow-hidden">
@@ -101,8 +102,10 @@ export function VideosClient({ videos }: { videos: Video[] }) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {videos.map((video) => (
-          <VideoCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
+        {videos.map((video, index) => (
+          <ScrollReveal key={video.id} staggerIndex={index}>
+            <VideoCard video={video} onPlay={() => setActiveVideo(video)} />
+          </ScrollReveal>
         ))}
       </div>
 

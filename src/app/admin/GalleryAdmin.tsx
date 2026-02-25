@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -40,10 +40,13 @@ import {
   GripVertical,
   RotateCcw,
   RotateCw,
+  Images,
 } from "lucide-react";
 import type { GalleryImage, GalleryCategory } from "@/db/types";
 import { GALLERY_CATEGORY_CONFIG } from "@/db/types";
 import { IMAGE_CONFIG } from "@/lib/constants";
+import { Pagination } from "@/app/components/ui/pagination";
+import { EmptyState } from "@/app/components/ui/empty-state";
 
 const { WEBP_QUALITY } = IMAGE_CONFIG;
 
@@ -214,6 +217,8 @@ export function GalleryAdminClient() {
   const [recompressing, setRecompressing] = useState(false);
   const [recompressProgress, setRecompressProgress] = useState({ current: 0, total: 0 });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const fetchImages = useCallback(async () => {
     try {
       const url =
@@ -530,7 +535,16 @@ export function GalleryAdminClient() {
     }
   };
 
-  const groupedImages = images.reduce(
+  const paginatedImages = useMemo(
+    () => images.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [images, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory]);
+
+  const groupedImages = paginatedImages.reduce(
     (acc, img) => {
       if (!acc[img.category]) acc[img.category] = [];
       acc[img.category].push(img);
@@ -630,7 +644,7 @@ export function GalleryAdminClient() {
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {images.map((image) => (
+              {paginatedImages.map((image) => (
                 <ImageCard
                   key={image.id}
                   image={image}
@@ -648,13 +662,32 @@ export function GalleryAdminClient() {
               ))}
             </div>
             {images.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucune image dans cette categorie
-              </div>
+              <EmptyState
+                icon={<Images className="w-12 h-12" />}
+                title="Aucune image dans cette catégorie"
+                description="Ajoutez-en une pour commencer !"
+                action={
+                  <Button onClick={handleNew}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvelle image
+                  </Button>
+                }
+              />
             )}
           </CardContent>
         </Card>
       )}
+
+      <Pagination
+        totalItems={images.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">

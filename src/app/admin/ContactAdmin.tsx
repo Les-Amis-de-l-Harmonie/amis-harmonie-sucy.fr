@@ -23,9 +23,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Eye, Trash2, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Eye, Trash2, Search, ArrowUp, ArrowDown, ArrowUpDown, Mail } from "lucide-react";
 import type { ContactSubmission } from "@/db/types";
 import { formatDateShort } from "@/lib/dates";
+import { Pagination } from "@/app/components/ui/pagination";
+import { EmptyState } from "@/app/components/ui/empty-state";
 
 type SortField = "name" | "email" | "date";
 
@@ -39,6 +41,8 @@ export function ContactAdminClient() {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchData = async () => {
     try {
@@ -93,6 +97,15 @@ export function ContactAdminClient() {
     return result;
   }, [items, search, sortField, sortDir]);
 
+  const paginatedItems = useMemo(
+    () => displayed.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayed, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
     return sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
@@ -136,87 +149,107 @@ export function ContactAdminClient() {
         )}
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center gap-1">
-                    Nom <SortIcon field="name" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("email")}
-                >
-                  <div className="flex items-center gap-1">
-                    Email <SortIcon field="email" />
-                  </div>
-                </TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("date")}
-                >
-                  <div className="flex items-center gap-1">
-                    Date <SortIcon field="date" />
-                  </div>
-                </TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayed.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.prenom} {item.nom}
-                  </TableCell>
-                  <TableCell>
-                    <a href={`mailto:${item.email}`} className="text-primary hover:underline">
-                      {item.email}
-                    </a>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{item.message}</TableCell>
-                  <TableCell>{formatDateShort(item.created_at)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setViewing(item);
-                        setViewDialogOpen(true);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleting(item);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {displayed.length === 0 && (
+      {displayed.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Mail className="w-12 h-12" />}
+              title={items.length === 0 ? "Aucun message" : "Aucun message trouvé"}
+              description={
+                items.length === 0
+                  ? "Aucun message de contact pour le moment."
+                  : "Essayez de modifier vos critères de recherche"
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    {search ? "Aucun résultat" : "Aucun message"}
-                  </TableCell>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Nom <SortIcon field="name" />
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("email")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Email <SortIcon field="email" />
+                    </div>
+                  </TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("date")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Date <SortIcon field="date" />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.prenom} {item.nom}
+                    </TableCell>
+                    <TableCell>
+                      <a href={`mailto:${item.email}`} className="text-primary hover:underline">
+                        {item.email}
+                      </a>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{item.message}</TableCell>
+                    <TableCell>{formatDateShort(item.created_at)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setViewing(item);
+                          setViewDialogOpen(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(item);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={displayed.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent>

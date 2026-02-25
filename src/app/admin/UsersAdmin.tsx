@@ -37,8 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { CircularCropper } from "@/app/components/CircularCropper";
 import {
-  Plus,
   Pencil,
   Eye,
   Trash2,
@@ -47,12 +47,16 @@ import {
   Camera,
   Loader2,
   Search,
+  Plus,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
+import { Users } from "lucide-react";
+import { EmptyState } from "@/app/components/ui/empty-state";
 import type { UserRole } from "@/db/types";
 import { isSuperAdmin } from "@/db/types";
+import { Pagination } from "@/app/components/ui/pagination";
 
 const isProfileComplete = (user: UserWithProfile): boolean => {
   const requiredFields = [
@@ -129,6 +133,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [deleting, setDeleting] = useState<UserWithProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -141,6 +147,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile"
   >("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchData = async () => {
     try {
@@ -175,12 +183,19 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       return;
     }
 
+    // Open cropper instead of uploading directly
+    setSelectedImage(file);
+    setCropperOpen(true);
+  };
+
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    setCropperOpen(false);
     setUploadingAvatar(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", croppedBlob, "avatar.jpg");
 
       const response = await fetch("/api/admin/upload", {
         method: "POST",
@@ -350,6 +365,15 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     sortDir,
   ]);
 
+  const paginatedUsers = useMemo(
+    () => filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredUsers, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterRole, filterStatus, filterAdhesion, filterProfile]);
+
   const getRoleBadge = (role: UserRole) => {
     if (role === "SUPER_ADMIN") {
       return (
@@ -508,174 +532,208 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
         </Select>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("name")}
-                >
-                  <span className="inline-flex items-center">
-                    Nom <SortIcon field="name" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("email")}
-                >
-                  <span className="inline-flex items-center">
-                    Email <SortIcon field="email" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("role")}
-                >
-                  <span className="inline-flex items-center">
-                    Rôle <SortIcon field="role" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("status")}
-                >
-                  <span className="inline-flex items-center">
-                    Statut <SortIcon field="status" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("adhesion")}
-                >
-                  <span className="inline-flex items-center">
-                    Adhésion <SortIcon field="adhesion" />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("profile")}
-                >
-                  <span className="inline-flex items-center">
-                    Profil <SortIcon field="profile" />
-                  </span>
-                </TableHead>
-                <TableHead>Dernière connexion</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    {user.avatar ? (
-                      <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Music className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {getDisplayName(user) || (
-                      <span className="text-muted-foreground italic">Non renseigné</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <button
-                      className="hover:underline text-left"
-                      onClick={() => openViewDialog(user)}
-                    >
-                      {user.email}
-                    </button>
-                  </TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>
-                    {user.is_active !== 0 ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Actif
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Inactif
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
-                      ""
-                    ) : user.adhesion_2025_2026 === 1 ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Adhérent
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                        Non adhérent
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
-                      ""
-                    ) : isProfileComplete(user) ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Complet
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Incomplet
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {user.last_login
-                      ? new Date(user.last_login).toLocaleDateString("fr-FR", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "Europe/Paris",
-                        })
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(user)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {canEditUser(user.email || "") && (
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    )}
-                    {isCurrentUserSuperAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setDeleting(user);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredUsers.length === 0 && (
+      {filteredUsers.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<Users className="w-12 h-12" />}
+              title={users.length === 0 ? "Aucun utilisateur" : "Aucun utilisateur trouvé"}
+              description={
+                users.length === 0
+                  ? "Créez-en un pour commencer !"
+                  : "Essayez de modifier vos critères de recherche"
+              }
+              action={
+                users.length === 0 && isCurrentUserSuperAdmin ? (
+                  <Button
+                    onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvel utilisateur
+                  </Button>
+                ) : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    {users.length === 0 ? "Aucun utilisateur" : "Aucun résultat pour ces critères"}
-                  </TableCell>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("name")}
+                  >
+                    <span className="inline-flex items-center">
+                      Nom <SortIcon field="name" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("email")}
+                  >
+                    <span className="inline-flex items-center">
+                      Email <SortIcon field="email" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("role")}
+                  >
+                    <span className="inline-flex items-center">
+                      Rôle <SortIcon field="role" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("status")}
+                  >
+                    <span className="inline-flex items-center">
+                      Statut <SortIcon field="status" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("adhesion")}
+                  >
+                    <span className="inline-flex items-center">
+                      Adhésion <SortIcon field="adhesion" />
+                    </span>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("profile")}
+                  >
+                    <span className="inline-flex items-center">
+                      Profil <SortIcon field="profile" />
+                    </span>
+                  </TableHead>
+                  <TableHead>Dernière connexion</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt=""
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Music className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {getDisplayName(user) || (
+                        <span className="text-muted-foreground italic">Non renseigné</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        className="hover:underline text-left"
+                        onClick={() => openViewDialog(user)}
+                      >
+                        {user.email}
+                      </button>
+                    </TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>
+                      {user.is_active !== 0 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Actif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          Inactif
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                        ""
+                      ) : user.adhesion_2025_2026 === 1 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Adhérent
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                          Non adhérent
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                        ""
+                      ) : isProfileComplete(user) ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Complet
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          Incomplet
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {user.last_login
+                        ? new Date(user.last_login).toLocaleDateString("fr-FR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "Europe/Paris",
+                          })
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(user)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {canEditUser(user.email || "") && (
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {isCurrentUserSuperAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setDeleting(user);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={filteredUsers.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -802,25 +860,40 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="grid gap-2">
-                    <Label>Date de naissance</Label>
-                    <Input
-                      type="date"
-                      value={editing.date_of_birth || ""}
-                      onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })}
-                    />
+                {editing.role === "MUSICIAN" && (
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="grid gap-2">
+                      <Label>Date de naissance</Label>
+                      <Input
+                        type="date"
+                        value={editing.date_of_birth || ""}
+                        onChange={(e) => setEditing({ ...editing, date_of_birth: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Téléphone</Label>
+                      <Input
+                        type="tel"
+                        value={editing.phone || ""}
+                        onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                        placeholder="06 12 34 56 78"
+                      />
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label>Téléphone</Label>
-                    <Input
-                      type="tel"
-                      value={editing.phone || ""}
-                      onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
-                      placeholder="06 12 34 56 78"
-                    />
+                )}
+                {editing.role !== "MUSICIAN" && (
+                  <div className="grid grid-cols-1 gap-4 mt-4">
+                    <div className="grid gap-2">
+                      <Label>Téléphone</Label>
+                      <Input
+                        type="tel"
+                        value={editing.phone || ""}
+                        onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                        placeholder="06 12 34 56 78"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {editing.role === "MUSICIAN" && (
@@ -1178,8 +1251,13 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <CircularCropper
+        imageFile={selectedImage}
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        onConfirm={handleCroppedImage}
+      />
 
-      {/* View Dialog - Read Only */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1242,14 +1320,16 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     <Label className="text-muted-foreground">Nom</Label>
                     <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-muted-foreground">Date de naissance</Label>
-                    <p className="text-sm font-medium">
-                      {viewing.date_of_birth
-                        ? new Date(viewing.date_of_birth).toLocaleDateString("fr-FR")
-                        : "-"}
-                    </p>
-                  </div>
+                  {viewing.role === "MUSICIAN" && (
+                    <div className="grid gap-2">
+                      <Label className="text-muted-foreground">Date de naissance</Label>
+                      <p className="text-sm font-medium">
+                        {viewing.date_of_birth
+                          ? new Date(viewing.date_of_birth).toLocaleDateString("fr-FR")
+                          : "-"}
+                      </p>
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label className="text-muted-foreground">Téléphone</Label>
                     <p className="text-sm font-medium">{viewing.phone || "-"}</p>

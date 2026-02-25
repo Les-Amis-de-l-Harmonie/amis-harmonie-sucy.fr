@@ -39,8 +39,11 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Video as VideoIcon,
 } from "lucide-react";
 import type { Video } from "@/db/types";
+import { Pagination } from "@/app/components/ui/pagination";
+import { EmptyState } from "@/app/components/ui/empty-state";
 
 type SortField = "title" | "type";
 
@@ -84,6 +87,8 @@ export function VideosAdminClient() {
   const [typeFilter, setTypeFilter] = useState<"all" | "video" | "short">("all");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchData = useCallback(async () => {
     try {
@@ -133,6 +138,15 @@ export function VideosAdminClient() {
 
     return result;
   }, [videos, search, typeFilter, sortField, sortDir]);
+
+  const paginatedVideos = useMemo(
+    () => displayed.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayed, currentPage, pageSize]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, typeFilter]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
@@ -267,104 +281,138 @@ export function VideosAdminClient() {
         </p>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("title")}
-                >
-                  <div className="flex items-center gap-1">
-                    Titre <SortIcon field="title" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer select-none hover:text-foreground"
-                  onClick={() => handleSort("type")}
-                >
-                  <div className="flex items-center gap-1">
-                    Type <SortIcon field="type" />
-                  </div>
-                </TableHead>
-                <TableHead>Aperçu</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayed.map((video) => (
-                <TableRow
-                  key={video.id}
-                  draggable={!isFiltered}
-                  onDragStart={() => !isFiltered && handleDragStart(video.id)}
-                  onDragEnd={handleDragEnd}
-                  onDragEnter={() => !isFiltered && setDragOverId(video.id)}
-                  onDragLeave={() => setDragOverId(null)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!isFiltered) handleDrop(video.id);
-                  }}
-                  className={`${draggedId === video.id ? "opacity-50" : "opacity-100"} ${dragOverId === video.id && draggedId !== video.id ? "border-primary bg-muted/30" : ""}`}
-                >
-                  <TableCell
-                    className={`${isFiltered ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground"}`}
+      {displayed.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={<VideoIcon className="w-12 h-12" />}
+              title={videos.length === 0 ? "Aucune vidéo" : "Aucune vidéo trouvée"}
+              description={
+                videos.length === 0
+                  ? "Créez-en une pour commencer !"
+                  : "Essayez de modifier vos critères de recherche"
+              }
+              action={
+                videos.length === 0 ? (
+                  <Button
+                    onClick={() => {
+                      setEditing({ title: "", youtube_id: "", is_short: 0 });
+                      setYoutubeUrlInput("");
+                      setDialogOpen(true);
+                    }}
                   >
-                    <GripVertical className="h-4 w-4" />
-                  </TableCell>
-                  <TableCell className="font-medium">{video.title}</TableCell>
-                  <TableCell className="text-sm">
-                    {video.is_short === 1 ? (
-                      <span className="text-orange-600 font-medium">Short</span>
-                    ) : (
-                      <span className="text-blue-600">Vidéo</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <img
-                      src={`https://img.youtube.com/vi/${video.youtube_id}/default.jpg`}
-                      alt=""
-                      className="w-20 h-auto rounded"
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditing(video);
-                        setYoutubeUrlInput(video.youtube_id);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setDeleting(video);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {displayed.length === 0 && (
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvelle vidéo
+                  </Button>
+                ) : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    {isFiltered ? "Aucun résultat" : "Aucune vidéo"}
-                  </TableCell>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("title")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Titre <SortIcon field="title" />
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("type")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Type <SortIcon field="type" />
+                    </div>
+                  </TableHead>
+                  <TableHead>Aperçu</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {paginatedVideos.map((video) => (
+                  <TableRow
+                    key={video.id}
+                    draggable={!isFiltered}
+                    onDragStart={() => !isFiltered && handleDragStart(video.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragEnter={() => !isFiltered && setDragOverId(video.id)}
+                    onDragLeave={() => setDragOverId(null)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (!isFiltered) handleDrop(video.id);
+                    }}
+                    className={`${draggedId === video.id ? "opacity-50" : "opacity-100"} ${dragOverId === video.id && draggedId !== video.id ? "border-primary bg-muted/30" : ""}`}
+                  >
+                    <TableCell
+                      className={`${isFiltered ? "text-muted-foreground/30" : "cursor-grab text-muted-foreground"}`}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </TableCell>
+                    <TableCell className="font-medium">{video.title}</TableCell>
+                    <TableCell className="text-sm">
+                      {video.is_short === 1 ? (
+                        <span className="text-orange-600 font-medium">Short</span>
+                      ) : (
+                        <span className="text-blue-600">Vidéo</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <img
+                        src={`https://img.youtube.com/vi/${video.youtube_id}/default.jpg`}
+                        alt=""
+                        className="w-20 h-auto rounded"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(video);
+                          setYoutubeUrlInput(video.youtube_id);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setDeleting(video);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <Pagination
+        totalItems={displayed.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+      />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

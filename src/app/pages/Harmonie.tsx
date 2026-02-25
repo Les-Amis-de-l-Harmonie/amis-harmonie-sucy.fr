@@ -113,7 +113,11 @@ export async function Harmonie() {
           <div className="mt-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {galleryImages.map((image, index) => (
-                <ScrollReveal key={image.id} delay={index * 80}>
+                <ScrollReveal
+                  key={image.id}
+                  staggerIndex={index}
+                  direction={index % 2 === 0 ? "left" : "right"}
+                >
                   <div className="w-full aspect-[3/2]">
                     <img
                       src={image.image_url}

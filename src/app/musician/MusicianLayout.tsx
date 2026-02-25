@@ -87,14 +87,16 @@ export function MusicianLayout({ children, firstName, lastName, avatar }: Musici
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setIsMenuOpen(false)} />
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 z-20">
-                      <a
-                        href="/musician/logout"
-                        className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
-                      </a>
+                      <form action="/musician/logout" method="post">
+                        <button
+                          type="submit"
+                          className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Déconnexion
+                        </button>
+                      </form>
                     </div>
                   </>
                 )}

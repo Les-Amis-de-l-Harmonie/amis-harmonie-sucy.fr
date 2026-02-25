@@ -11,6 +11,7 @@ import { IdeasAdminClient } from "./IdeasAdmin";
 import { OutingSettingsClient } from "./OutingSettingsAdmin";
 import { CardOrderClient } from "./CardOrderAdmin";
 import { InfoSettingsClient } from "./InfoSettingsAdmin";
+import { InsuranceAdminClient } from "./InsuranceAdmin";
 
 import type { UserRole } from "@/db/types";
 
@@ -115,6 +116,14 @@ export function AdminInfoSettingsPage({ email }: AdminPageProps) {
   return (
     <AdminLayout email={email}>
       <InfoSettingsClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminInsurancePage({ email }: AdminPageProps) {
+  return (
+    <AdminLayout email={email}>
+      <InsuranceAdminClient />
     </AdminLayout>
   );
 }
