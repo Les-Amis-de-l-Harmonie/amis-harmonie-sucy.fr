@@ -47,6 +47,39 @@ import { EmptyState } from "@/app/components/ui/empty-state";
 import type { UserRole } from "@/db/types";
 import { isSuperAdmin } from "@/db/types";
 import { Pagination } from "@/app/components/ui/pagination";
+function lastSundayOfMonthUTC(year: number, monthIndex0: number) {
+  const d = new Date(Date.UTC(year, monthIndex0 + 1, 0));
+  const dow = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - dow);
+  return d;
+}
+
+function parisOffsetMinutes(utc: Date) {
+  const year = utc.getUTCFullYear();
+  const dstStart = lastSundayOfMonthUTC(year, 2);
+  dstStart.setUTCHours(1, 0, 0, 0);
+  const dstEnd = lastSundayOfMonthUTC(year, 9);
+  dstEnd.setUTCHours(1, 0, 0, 0);
+  return utc >= dstStart && utc < dstEnd ? 120 : 60;
+}
+
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function formatParisDateTime(input: string | number | Date) {
+  const utc = input instanceof Date ? input : new Date(input);
+  const offsetMin = parisOffsetMinutes(utc);
+  const paris = new Date(utc.getTime() + offsetMin * 60_000);
+
+  const dd = pad2(paris.getUTCDate());
+  const mm = pad2(paris.getUTCMonth() + 1);
+  const yyyy = paris.getUTCFullYear();
+  const hh = pad2(paris.getUTCHours());
+  const min = pad2(paris.getUTCMinutes());
+
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+}
 
 const isProfileComplete = (user: UserWithProfile): boolean => {
   const requiredFields = [
@@ -666,16 +699,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {user.last_login
-                        ? new Date(user.last_login).toLocaleDateString("fr-FR", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            timeZone: "Europe/Paris",
-                          })
-                        : "-"}
+                      {user.last_login ? formatParisDateTime(user.last_login) : "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" onClick={() => openViewDialog(user)}>
