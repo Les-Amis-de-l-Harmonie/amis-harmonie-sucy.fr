@@ -68,7 +68,16 @@ function pad2(n: number) {
 }
 
 function formatParisDateTime(input: string | number | Date) {
-  const utc = input instanceof Date ? input : new Date(input);
+  // Force UTC interpretation by adding 'Z' if no timezone specified
+  let utc: Date;
+  if (input instanceof Date) {
+    utc = input;
+  } else if (typeof input === "string" && !input.match(/[TZ]/)) {
+    // SQLite format: '2026-02-26 22:29:00' -> treat as UTC
+    utc = new Date(input.replace(" ", "T") + "Z");
+  } else {
+    utc = new Date(input);
+  }
   const offsetMin = parisOffsetMinutes(utc);
   const paris = new Date(utc.getTime() + offsetMin * 60_000);
 
