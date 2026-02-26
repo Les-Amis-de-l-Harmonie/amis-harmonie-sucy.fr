@@ -339,7 +339,7 @@ export function IdeasAdminClient() {
             <DialogTitle>Modifier l'idée</DialogTitle>
           </DialogHeader>
           {viewing && (
-            <div className="space-y-4 py-4 overflow-y-auto pr-2">
+            <div className="space-y-4 py-4 overflow-y-auto px-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Musicien</p>

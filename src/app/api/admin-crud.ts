@@ -922,23 +922,8 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       });
     }
 
-    if (request.method === "DELETE") {
-      if (!id) {
-        return new Response(JSON.stringify({ error: "ID required" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      await env.DB.prepare("DELETE FROM musician_instruments WHERE user_id = ?").bind(id).run();
-      await env.DB.prepare("DELETE FROM musician_profiles WHERE user_id = ?").bind(id).run();
-      await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id).run();
-      await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    // DELETE endpoint removed - users are deactivated via PUT instead of deleted
+    // This preserves data integrity and allows reactivation if needed
 
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,

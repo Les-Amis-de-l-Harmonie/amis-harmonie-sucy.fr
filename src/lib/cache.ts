@@ -88,6 +88,7 @@ export async function cacheResponse(request: Request, response: Response): Promi
 export function shouldCachePath(pathname: string): boolean {
   return (
     !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/musician") &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/images/r2")
   );

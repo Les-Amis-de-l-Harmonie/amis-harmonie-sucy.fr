@@ -16,7 +16,7 @@ export function Button({
   onClick,
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-colors";
+    "inline-flex items-center justify-center px-6 py-3 rounded-full font-medium cursor-pointer transition-colors";
   const variants = {
     primary: "bg-[#a5b3e2] text-white hover:bg-[#8b9bcc]",
     outline: "border-2 border-[#a5b3e2] text-[#a5b3e2] hover:bg-[#a5b3e2] hover:text-white",

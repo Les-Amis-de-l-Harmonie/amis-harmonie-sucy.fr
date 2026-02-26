@@ -29,6 +29,14 @@ import { Info } from "lucide-react";
 import { formatDateShort } from "@/lib/dates";
 import { SocialIcons } from "@/app/components/SocialIcons";
 
+function MembersOnlyBadge() {
+  return (
+    <span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 mb-3">
+      Réservé aux adhérents
+    </span>
+  );
+}
+
 interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
   email?: string;
@@ -97,8 +105,8 @@ export function MusicianHomeClient({
         await Promise.all([
           fetch("/api/musician/profile"),
           fetch("/api/events"),
-          fetch("/api/admin/outing-settings"),
-          fetch("/api/admin/card-order"),
+          fetch("/api/outing-settings"),
+          fetch("/api/card-order"),
           fetch("/api/info-settings"),
           fetch("/api/musician/birthdays"),
         ]);
@@ -352,9 +360,7 @@ export function MusicianHomeClient({
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : profileComplete ? (
                   profile?.adhesion_2025_2026 !== 1 ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 mb-3">
-                      Réservé aux adhérents
-                    </span>
+                    <MembersOnlyBadge />
                   ) : profile?.insurance_complete ? (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                       Assurance active
@@ -507,36 +513,32 @@ export function MusicianHomeClient({
             }`}
           >
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Ticket className="w-5 h-5 text-primary" />
                 {outingSettings.title}
               </CardTitle>
               {outingSettings.subtitle && (
-                <CardDescription className="text-primary font-medium">
+                <CardDescription className="text-sm text-primary font-medium">
                   {outingSettings.subtitle}
                 </CardDescription>
               )}
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
-              {(!profileComplete || profile?.adhesion_2025_2026 !== 1) && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 mb-3">
-                  Réservé aux adhérents
-                </span>
-              )}
+              {(!profileComplete || profile?.adhesion_2025_2026 !== 1) && <MembersOnlyBadge />}
               {outingSettings.description && (
-                <p className="text-sm text-muted-foreground mb-2">{outingSettings.description}</p>
+                <p className="text-xs text-muted-foreground mb-2">{outingSettings.description}</p>
               )}
               {outingSettings.location && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span>{outingSettings.location}</span>
                 </div>
               )}
               {outingSettings.price && (
-                <p className="text-sm text-muted-foreground mb-4">💰 {outingSettings.price}</p>
+                <p className="text-xs text-muted-foreground mb-4">💰 {outingSettings.price}</p>
               )}
               <div className="flex-1" />
-              {profile?.adhesion_2025_2026 === 1 && outingSettings.button_link ? (
+              {profile?.adhesion_2025_2026 === 1 && outingSettings.button_link && (
                 <a
                   href={outingSettings.button_link}
                   target="_blank"
@@ -548,11 +550,6 @@ export function MusicianHomeClient({
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </a>
-              ) : (
-                <Button variant="outline" className="w-full mt-auto" disabled>
-                  {outingSettings.button_text}
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
               )}
             </CardContent>
           </Card>
@@ -596,7 +593,7 @@ export function MusicianHomeClient({
         return (
           <Card
             key={cardType}
-            className="hover:shadow-md transition-shadow h-[320px] flex flex-col"
+            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -757,12 +754,9 @@ export function MusicianHomeClient({
               )}
               {infoSettings.content && (
                 <div
-                  className={`mt-2 ${infoSettings.text_color} prose prose-sm max-w-none line-clamp-4`}
+                  className={`mt-2 ${infoSettings.text_color} prose prose-sm max-w-none`}
                   dangerouslySetInnerHTML={{
-                    __html:
-                      infoSettings.content.length > 200
-                        ? infoSettings.content.substring(0, 200) + "..."
-                        : infoSettings.content,
+                    __html: infoSettings.content,
                   }}
                 />
               )}

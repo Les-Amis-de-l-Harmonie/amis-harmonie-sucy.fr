@@ -63,7 +63,7 @@ export function MusicianLayout({ children, firstName, lastName, avatar }: Musici
               <div className="relative">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 >
                   {avatar ? (
                     <img
@@ -90,8 +90,7 @@ export function MusicianLayout({ children, firstName, lastName, avatar }: Musici
                       <form action="/musician/logout" method="post">
                         <button
                           type="submit"
-                          className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
-                          onClick={() => setIsMenuOpen(false)}
+                          className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors cursor-pointer"
                         >
                           <LogOut className="w-4 h-4 mr-2" />
                           Déconnexion

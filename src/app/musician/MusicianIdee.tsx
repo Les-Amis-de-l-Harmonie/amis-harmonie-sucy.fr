@@ -227,7 +227,7 @@ export function MusicianIdeeClient() {
       <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setActiveTab("my-ideas")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
             activeTab === "my-ideas"
               ? "border-primary text-primary"
               : "border-transparent text-gray-500 hover:text-gray-700"
@@ -237,7 +237,7 @@ export function MusicianIdeeClient() {
         </button>
         <button
           onClick={() => setActiveTab("public-wall")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
             activeTab === "public-wall"
               ? "border-primary text-primary"
               : "border-transparent text-gray-500 hover:text-gray-700"
@@ -290,7 +290,7 @@ export function MusicianIdeeClient() {
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value as IdeaCategory })
                 }
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
                 <option value="">Sélectionnez une catégorie</option>
                 <option value="association">Les Amis de l'Harmonie</option>
@@ -474,7 +474,7 @@ export function MusicianIdeeClient() {
                         setViewingResponse(idea);
                         setResponseDialogOpen(true);
                       }}
-                      className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium"
+                      className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium cursor-pointer"
                     >
                       <MessageCircle className="w-4 h-4" />
                       Voir la réponse du bureau
@@ -539,7 +539,7 @@ export function MusicianIdeeClient() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -553,7 +553,7 @@ export function MusicianIdeeClient() {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value as "all" | IdeaCategory)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 cursor-pointer"
                     >
                       <option value="all">Toutes</option>
                       <option value="association">Les Amis de l'Harmonie</option>
@@ -568,7 +568,7 @@ export function MusicianIdeeClient() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 cursor-pointer"
                     >
                       <option value="newest">Plus récent</option>
                       <option value="oldest">Plus ancien</option>
@@ -667,7 +667,7 @@ export function MusicianIdeeClient() {
                                   return newSet;
                                 });
                               }}
-                              className="text-xs text-primary hover:text-primary/80 mt-2 font-medium"
+                              className="text-xs text-primary hover:text-primary/80 mt-2 font-medium cursor-pointer"
                             >
                               {expandedDescriptions.has(idea.id) ? "Voir moins" : "Lire la suite"}
                             </button>
@@ -679,7 +679,7 @@ export function MusicianIdeeClient() {
                                   setViewingResponse(idea);
                                   setResponseDialogOpen(true);
                                 }}
-                                className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium"
+                                className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium cursor-pointer"
                               >
                                 <MessageCircle className="w-3 h-3" />
                                 Réponse du bureau

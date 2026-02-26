@@ -75,9 +75,14 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
           (i) => i.instrument_name?.trim() && i.brand?.trim() && i.serial_number?.trim()
         );
 
+      // For fresh profiles (never saved by musician), don't pre-select boolean choices
+      const isFreshProfile = !profile.first_name;
+
       return new Response(
         JSON.stringify({
           ...profile,
+          is_conservatory_student: isFreshProfile ? null : profile.is_conservatory_student,
+          image_consent: isFreshProfile ? null : profile.image_consent,
           email: userData?.email || "",
           instruments: instruments.results || [],
           harmonieInstruments: (harmonieInstruments.results || []).map((i) => i.instrument_name),

@@ -258,6 +258,60 @@ const app = defineApp([
     }
   }),
 
+  route("/api/outing-settings", async ({ request }: { request: Request }) => {
+    if (request.method !== "GET") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const settings = await env.DB.prepare("SELECT * FROM outing_settings WHERE id = 1").first();
+      if (!settings) {
+        return new Response(JSON.stringify({ is_active: 0 }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error fetching outing settings:", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
+
+  route("/api/card-order", async ({ request }: { request: Request }) => {
+    if (request.method !== "GET") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const settings = await env.DB.prepare(
+        "SELECT card_order FROM card_order_settings WHERE id = 1"
+      ).first<{ card_order: string }>();
+      if (!settings) {
+        return new Response(JSON.stringify({ card_order: null }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify(settings), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error fetching card order:", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
+
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
 
   route("/sitemap.xml", () => sitemapHandler()),

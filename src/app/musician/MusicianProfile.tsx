@@ -317,7 +317,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 type="button"
                 onClick={handleAvatarClick}
                 disabled={uploadingAvatar}
-                className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               >
                 {profile.avatar ? (
                   <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
@@ -537,7 +537,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                         });
                       }
                     }}
-                    className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 ${
+                    className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 cursor-pointer ${
                       isSelected
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card border-border hover:bg-muted"

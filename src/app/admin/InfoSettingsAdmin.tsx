@@ -91,7 +91,7 @@ export function InfoSettingsClient() {
     if (!loading && contentRef.current) {
       contentRef.current.innerHTML = settings.content || "";
     }
-  }, [loading, settings.content]);
+  }, [loading]); // Only on load — NOT on settings.content changes, that would reset the cursor on every keystroke
 
   const execCommand = (command: string, value: string = "") => {
     document.execCommand(command, false, value);

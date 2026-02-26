@@ -37,7 +37,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         aria-label="Changer le thème"
       >
         <div className="w-5 h-5" />
@@ -48,7 +48,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      className="p-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       aria-label={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
       title={isDark ? "Mode clair" : "Mode sombre"}
     >
