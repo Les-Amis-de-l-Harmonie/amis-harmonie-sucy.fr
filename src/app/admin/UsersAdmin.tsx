@@ -21,16 +21,6 @@ import {
   DialogFooter,
 } from "@/app/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -127,10 +117,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<UserWithProfile> | null>(null);
   const [viewing, setViewing] = useState<Partial<UserWithProfile> | null>(null);
-  const [deleting, setDeleting] = useState<UserWithProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -140,11 +128,11 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN">("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("active");
   const [filterAdhesion, setFilterAdhesion] = useState<"all" | "adherent" | "non_adherent">("all");
   const [filterProfile, setFilterProfile] = useState<"all" | "complete" | "incomplete">("all");
   const [sortField, setSortField] = useState<
-    "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile"
+    "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile" | "last_login"
   >("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -246,22 +234,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       setSaving(false);
     }
   };
-
-  const confirmDelete = async () => {
-    if (!deleting) return;
-    try {
-      const response = await fetch(`/api/admin/users?id=${deleting.id}`, { method: "DELETE" });
-      if (response.ok) fetchData();
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeleting(null);
-    }
-  };
-
   const handleSort = (
-    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile"
+    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile" | "last_login"
   ) => {
     if (sortField === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -274,7 +248,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const SortIcon = ({
     field,
   }: {
-    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile";
+    field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile" | "last_login";
   }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 opacity-40" />;
     return sortDir === "asc" ? (
@@ -339,6 +313,9 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       } else if (sortField === "profile") {
         aVal = isProfileComplete(a) ? 1 : 0;
         bVal = isProfileComplete(b) ? 1 : 0;
+      } else if (sortField === "last_login") {
+        aVal = a.last_login ? new Date(a.last_login).getTime() : 0;
+        bVal = b.last_login ? new Date(b.last_login).getTime() : 0;
       } else {
         aVal = ((a[sortField] as string) || "").toLowerCase();
         bVal = ((b[sortField] as string) || "").toLowerCase();
@@ -611,8 +588,14 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       Profil <SortIcon field="profile" />
                     </span>
                   </TableHead>
-                  <TableHead>Dernière connexion</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground"
+                    onClick={() => handleSort("last_login")}
+                  >
+                    <span className="inline-flex items-center">
+                      Dernière connexion <SortIcon field="last_login" />
+                    </span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -701,18 +684,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       {canEditUser(user.email || "") && (
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
                           <Pencil className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {isCurrentUserSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setDeleting(user);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       )}
                     </TableCell>
@@ -1567,24 +1538,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'utilisateur ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. L'utilisateur "{deleting?.email}" et toutes ses données
-              seront définitivement supprimés.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
