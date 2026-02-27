@@ -1,6 +1,16 @@
 import { env } from "cloudflare:workers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Calendar, Video, Instagram, BookOpen, Mail, Images, Lightbulb, Users } from "lucide-react";
+import {
+  Calendar,
+  Video,
+  Instagram,
+  BookOpen,
+  Mail,
+  Images,
+  Lightbulb,
+  Users,
+  BarChart3,
+} from "lucide-react";
 
 async function getStats() {
   const [events, videos, publications, guestbook, contacts, galleryImages, ideas, users] =
@@ -132,6 +142,78 @@ export async function AdminDashboard() {
             </Card>
           </a>
         ))}
+      </div>
+
+      {/* Statistiques de visite du site public */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">
+          Statistiques de visite du site public
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-2 border-indigo-100 dark:border-indigo-900">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Visites totales
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900">
+                <BarChart3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">-</div>
+              <p className="text-xs text-muted-foreground mt-1">Depuis le lancement</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-green-100 dark:border-green-900">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                24 dernières heures
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
+                <BarChart3 className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">-</div>
+              <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-blue-100 dark:border-blue-900">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                7 derniers jours
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">-</div>
+              <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-purple-100 dark:border-purple-900">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                30 derniers jours
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
+                <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">-</div>
+              <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
+            </CardContent>
+          </Card>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          * Les statistiques de visite sont fournies par Cloudflare Analytics. Connectez-vous à
+          votre dashboard Cloudflare pour des données détaillées.
+        </p>
       </div>
     </div>
   );
