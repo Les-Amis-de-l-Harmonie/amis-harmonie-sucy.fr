@@ -89,6 +89,8 @@ export function MusicianLoginClient() {
               {errorParam === "account_inactive" &&
                 "Votre compte est inactif. Contactez l'administrateur."}
               {errorParam === "unauthorized" && "Vous n'êtes pas autorisé à accéder à cet espace."}
+              {errorParam === "admin_not_allowed" &&
+                "Les administrateurs ne peuvent pas se connecter à l'espace musicien."}
               {errorParam === "server_error" &&
                 "Une erreur serveur est survenue. Veuillez réessayer."}
             </div>

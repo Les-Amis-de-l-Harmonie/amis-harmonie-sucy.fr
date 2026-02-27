@@ -204,6 +204,13 @@ export async function handleMagicLinkVerify(
       return Response.redirect(new URL(`${loginPath}?error=unauthorized`, url.origin).toString());
     }
 
+    // Prevent admins from logging into musician portal
+    if (context === "musician" && isAdmin(user.role)) {
+      return Response.redirect(
+        new URL(`${loginPath}?error=admin_not_allowed`, url.origin).toString()
+      );
+    }
+
     await env.DB.prepare("UPDATE auth_tokens SET used = 1 WHERE token = ?").bind(token).run();
 
     const sessionId = generateSessionId();
