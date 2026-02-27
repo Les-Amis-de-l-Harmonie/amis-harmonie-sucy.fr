@@ -464,6 +464,48 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
       });
     }
 
+    // DELETE - Delete user's own idea
+    if (request.method === "DELETE") {
+      const url = new URL(request.url);
+      const ideaId = url.searchParams.get("id");
+
+      if (!ideaId) {
+        return new Response(JSON.stringify({ error: "ID manquant" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Check ownership
+      const idea = await env.DB.prepare("SELECT user_id FROM ideas WHERE id = ?")
+        .bind(ideaId)
+        .first<{ user_id: number }>();
+
+      if (!idea) {
+        return new Response(JSON.stringify({ error: "Idée non trouvée" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (idea.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Vous ne pouvez supprimer que vos propres idées" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Delete idea (cascade will handle likes and reads)
+      await env.DB.prepare("DELETE FROM ideas WHERE id = ?").bind(ideaId).run();
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
       headers: { "Content-Type": "application/json" },

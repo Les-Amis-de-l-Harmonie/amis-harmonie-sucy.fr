@@ -25,8 +25,19 @@ import {
   SlidersHorizontal,
   X,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import type { IdeaWithLikes, IdeaCategory } from "@/db/types";
 
 const CATEGORY_LABELS: Record<IdeaCategory, string> = {
@@ -67,6 +78,11 @@ export function MusicianIdeeClient() {
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
   const [viewingResponse, setViewingResponse] = useState<IdeaWithLikes | null>(null);
 
+  // Delete state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [ideaToDelete, setIdeaToDelete] = useState<IdeaWithLikes | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const fetchMyIdeas = useCallback(async () => {
     try {
       const response = await fetch("/api/musician/ideas");
@@ -90,6 +106,30 @@ export function MusicianIdeeClient() {
       console.error("Error fetching public ideas:", err);
     }
   }, []);
+
+  const handleDelete = async () => {
+    if (!ideaToDelete) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/musician/ideas?id=${ideaToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await Promise.all([fetchMyIdeas(), fetchPublicIdeas()]);
+      } else {
+        const data = (await response.json()) as { error?: string };
+        console.error("Erreur lors de la suppression:", data.error);
+      }
+    } catch (err) {
+      console.error("Error deleting idea:", err);
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setIdeaToDelete(null);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -453,6 +493,18 @@ export function MusicianIdeeClient() {
                       {CATEGORY_LABELS[idea.category]} • {formatDate(idea.created_at)}
                     </CardDescription>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0"
+                    onClick={() => {
+                      setIdeaToDelete(idea);
+                      setDeleteDialogOpen(true);
+                    }}
+                    aria-label="Supprimer l'idée"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -747,6 +799,30 @@ export function MusicianIdeeClient() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'idée ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'idée &laquo; {ideaToDelete?.title} &raquo; sera
+              définitivement supprimée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
