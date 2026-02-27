@@ -48,6 +48,7 @@ import {
   handleMusicianInsuranceApi,
   handleMusicianBirthdaysApi,
 } from "@/app/api/musician";
+import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
 import { sitemapHandler } from "@/app/api/sitemap";
@@ -212,6 +213,10 @@ const app = defineApp([
     handleInfoSettingsApi(request)
   ),
   route("/api/admin/insurance", ({ request }: { request: Request }) => handleInsuranceApi(request)),
+
+  route("/api/admin/analytics", ({ request }: { request: Request }) =>
+    handleAdminAnalyticsApi(request)
+  ),
 
   route("/api/musician/profile", ({ request }: { request: Request }) =>
     handleMusicianProfileApi(request)

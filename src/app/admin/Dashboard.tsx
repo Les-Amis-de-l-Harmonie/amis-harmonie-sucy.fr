@@ -40,8 +40,33 @@ async function getStats() {
     users: users?.count || 0,
   };
 }
+
+async function getAnalytics() {
+  try {
+    // In RedwoodSDK, fetch with relative URL might work during SSR and forward cookies
+    const res = await fetch("/api/admin/analytics");
+    if (!res.ok) {
+      console.error("Failed to fetch analytics:", res.statusText);
+      return null;
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching analytics:", error);
+    return null;
+  }
+}
+
+interface AnalyticsData {
+  visits: {
+    total: number;
+    last24h: number;
+    last7d: number;
+    last30d: number;
+  };
+}
 export async function AdminDashboard() {
   const stats = await getStats();
+  const analytics = (await getAnalytics()) as AnalyticsData | null;
 
   const cards = [
     {
@@ -160,7 +185,11 @@ export async function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">-</div>
+              <div className="text-2xl font-bold text-foreground">
+                {analytics?.visits?.total != null
+                  ? new Intl.NumberFormat("fr-FR").format(analytics.visits.total)
+                  : "-"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Depuis le lancement</p>
             </CardContent>
           </Card>
@@ -175,7 +204,11 @@ export async function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">-</div>
+              <div className="text-2xl font-bold text-foreground">
+                {analytics?.visits?.last24h != null
+                  ? new Intl.NumberFormat("fr-FR").format(analytics.visits.last24h)
+                  : "-"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
             </CardContent>
           </Card>
@@ -190,7 +223,11 @@ export async function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">-</div>
+              <div className="text-2xl font-bold text-foreground">
+                {analytics?.visits?.last7d != null
+                  ? new Intl.NumberFormat("fr-FR").format(analytics.visits.last7d)
+                  : "-"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
             </CardContent>
           </Card>
@@ -205,7 +242,11 @@ export async function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">-</div>
+              <div className="text-2xl font-bold text-foreground">
+                {analytics?.visits?.last30d != null
+                  ? new Intl.NumberFormat("fr-FR").format(analytics.visits.last30d)
+                  : "-"}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">Visites uniques</p>
             </CardContent>
           </Card>
