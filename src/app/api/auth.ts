@@ -91,6 +91,20 @@ export async function handleMagicLinkRequest(
       );
     }
 
+    // Prevent admins from requesting magic link for musician portal
+    if (context === "musician" && isAdmin(user.role)) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Si cet email est enregistré, un lien de connexion a été envoyé.",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const token = generateToken();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
