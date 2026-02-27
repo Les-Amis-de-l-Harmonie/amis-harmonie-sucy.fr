@@ -98,10 +98,11 @@ export function MusicianHomeClient({
   ];
   const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
   const [loading, setLoading] = useState(true);
+  const [unreadIdeasCount, setUnreadIdeasCount] = useState(0);
 
   const fetchProfile = useCallback(async () => {
     try {
-      const [profileRes, eventsRes, outingRes, cardOrderRes, infoRes, birthdaysRes] =
+      const [profileRes, eventsRes, outingRes, cardOrderRes, infoRes, birthdaysRes, ideasRes] =
         await Promise.all([
           fetch("/api/musician/profile"),
           fetch("/api/events"),
@@ -109,6 +110,7 @@ export function MusicianHomeClient({
           fetch("/api/card-order"),
           fetch("/api/info-settings"),
           fetch("/api/musician/birthdays"),
+          fetch("/api/musician/ideas?count=unread"),
         ]);
 
       if (profileRes.ok) {
@@ -159,6 +161,11 @@ export function MusicianHomeClient({
       if (birthdaysRes.ok) {
         const birthdaysData = (await birthdaysRes.json()) as Birthday[];
         setBirthdays(birthdaysData);
+      }
+
+      if (ideasRes.ok) {
+        const ideasData = (await ideasRes.json()) as { count: number };
+        setUnreadIdeasCount(ideasData.count);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -481,6 +488,11 @@ export function MusicianHomeClient({
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Lightbulb className="w-5 h-5 text-primary" />
                 Boîte à idée
+                {unreadIdeasCount > 0 && (
+                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 px-1">
+                    {unreadIdeasCount}
+                  </span>
+                )}
               </CardTitle>
               <CardDescription>
                 Vous avez une idée pour faire évoluer l&apos;association ou enrichir la vie de

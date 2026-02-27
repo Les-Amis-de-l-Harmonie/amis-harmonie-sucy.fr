@@ -278,6 +278,29 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
   try {
     if (request.method === "GET") {
       const url = new URL(request.url);
+      const count = url.searchParams.get("count");
+      if (count === "unread") {
+        // Count public ideas from other users that haven't been read
+        const result = await env.DB.prepare(
+          `
+          SELECT COUNT(*) as count
+          FROM ideas i
+          WHERE i.is_public = 1
+          AND i.user_id != ?
+          AND NOT EXISTS (
+            SELECT 1 FROM idea_reads r
+            WHERE r.idea_id = i.id AND r.user_id = ?
+          )
+          `
+        )
+          .bind(user.id, user.id)
+          .first<{ count: number }>();
+
+        return new Response(JSON.stringify({ count: result?.count || 0 }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       const view = url.searchParams.get("view");
 
       if (view === "public") {
@@ -298,6 +321,18 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
         )
           .bind(user.id)
           .all<IdeaWithLikes>();
+
+        // Mark all returned ideas as read for this user
+        const ideaIds = ideas.results?.map((idea) => idea.id) || [];
+        if (ideaIds.length > 0) {
+          for (const ideaId of ideaIds) {
+            await env.DB.prepare(
+              "INSERT OR IGNORE INTO idea_reads (idea_id, user_id) VALUES (?, ?)"
+            )
+              .bind(ideaId, user.id)
+              .run();
+          }
+        }
 
         return new Response(JSON.stringify(ideas.results || []), {
           headers: { "Content-Type": "application/json" },
