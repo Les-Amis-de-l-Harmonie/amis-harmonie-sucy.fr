@@ -274,8 +274,8 @@ export async function handleLogout(
   context: LoginContext = "admin"
 ): Promise<Response> {
   const cookieName = getCookieName(context);
-  const loginPath = getLoginPath(context);
   const cookieHeader = request.headers.get("Cookie") || "";
+  const _loginPath = getLoginPath(context);
   const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionId = sessionMatch ? sessionMatch[1] : null;
 
@@ -284,10 +284,9 @@ export async function handleLogout(
   }
 
   const url = new URL(request.url);
-  const response = Response.redirect(new URL(loginPath, url.origin).toString());
+  const response = Response.redirect(new URL("/?logout=success", url.origin).toString());
   const headers = new Headers(response.headers);
   headers.set("Set-Cookie", `${cookieName}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
-
   return new Response(response.body, {
     status: response.status,
     headers,

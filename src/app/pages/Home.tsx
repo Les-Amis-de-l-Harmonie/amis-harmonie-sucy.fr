@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { env } from "cloudflare:workers";
 import { EventCard } from "../components/EventCard";
 import { HomeSlideshow } from "./HomeClient";
+import { LogoutSuccessMessage } from "./HomeClient";
 import type { Event } from "@/db/types";
 import { getGalleryImages } from "@/app/shared/gallery";
 import { isEventPast } from "@/lib/dates";
@@ -144,6 +145,8 @@ function EventsLoading() {
 export function Home() {
   return (
     <>
+      <LogoutSuccessMessage />
+      <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
       <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
       <meta
         name="description"
