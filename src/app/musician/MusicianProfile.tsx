@@ -83,6 +83,26 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     return null;
   };
 
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: string | null | undefined): number | null => {
+    if (!dateOfBirth) return null;
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Determine emergency contact label based on age
+  const getEmergencyContactTitle = (): string => {
+    const age = calculateAge(profile.date_of_birth);
+    if (age === null) return "Contact d'urgence / Représentant légal";
+    return age < 18 ? "Représentant légal" : "Contact d'urgence";
+  };
+
   const handleFieldChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });
 
@@ -654,9 +674,8 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
       <Card>
         <CardHeader>
           <CardTitle>
-            Contact d'urgence / Représentant légal <span className="text-red-500">*</span>
+            {getEmergencyContactTitle()} <span className="text-red-500">*</span>
           </CardTitle>
-          <CardDescription>Pour les mineurs ou en cas d'urgence</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
