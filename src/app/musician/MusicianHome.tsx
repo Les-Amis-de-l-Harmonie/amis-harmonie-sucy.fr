@@ -505,7 +505,7 @@ export function MusicianHomeClient({
               <div className="flex-1" />
               <a href="/musician/idee" className="mt-auto">
                 <Button variant="outline" className="w-full">
-                  Soumettre une idée
+                  Accéder à la boîte à idées
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </a>
