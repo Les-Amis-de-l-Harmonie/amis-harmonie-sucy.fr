@@ -95,6 +95,17 @@ export async function handleMagicLinkRequest(
     if (context === "musician" && isAdmin(user.role)) {
       return new Response(
         JSON.stringify({
+          error: "Les administrateurs ne peuvent pas se connecter à l'espace musicien.",
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+    if (context === "musician" && isAdmin(user.role)) {
+      return new Response(
+        JSON.stringify({
           success: true,
           message: "Si cet email est enregistré, un lien de connexion a été envoyé.",
         }),
