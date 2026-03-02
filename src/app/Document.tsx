@@ -102,6 +102,11 @@ export const Document: React.FC<DocumentProps> = ({ children, path = "/" }) => {
         />
         <div id="root">{children}</div>
         <script>import("/src/client.tsx")</script>
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "cd11c11941714d998fad0316dca9efee"}'
+        ></script>
       </body>
     </html>
   );
