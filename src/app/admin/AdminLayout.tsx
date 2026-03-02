@@ -20,10 +20,12 @@ import {
   Shield,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import type { UserRole } from "@/db/types";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
   email: string;
+  role: UserRole;
 }
 
 const navItems = [
@@ -42,7 +44,7 @@ const navItems = [
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
 ];
 
-export function AdminLayout({ children, email }: AdminLayoutProps) {
+export function AdminLayout({ children, email, role }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState("");
@@ -127,14 +129,14 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
             </div>
           </div>
 
-          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0">
             {navItems.map((item) => {
               const isActive = currentPage === item.href;
               return (
                 <a
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -155,8 +157,12 @@ export function AdminLayout({ children, email }: AdminLayoutProps) {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{email}</p>
-                <p className="text-xs text-muted-foreground">Administrateur</p>
+                <p className="text-sm font-medium text-foreground truncate capitalize">
+                  {email.split("@")[0]}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {role === "SUPER_ADMIN" ? "Super Admin" : "Admin"}
+                </p>
               </div>
               <ThemeToggle />
             </div>

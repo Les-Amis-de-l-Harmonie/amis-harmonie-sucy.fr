@@ -355,37 +355,37 @@ const app = defineApp([
     route("/admin", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminDashboardPage email={auth.email} />;
+      return <AdminDashboardPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/events", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminEventsPage email={auth.email} />;
+      return <AdminEventsPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/videos", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminVideosPage email={auth.email} />;
+      return <AdminVideosPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/publications", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminPublicationsPage email={auth.email} />;
+      return <AdminPublicationsPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/guestbook", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminGuestbookPage email={auth.email} />;
+      return <AdminGuestbookPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/contact", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminContactPage email={auth.email} />;
+      return <AdminContactPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/users", async ({ request }: { request: Request }) => {
@@ -397,37 +397,37 @@ const app = defineApp([
     route("/admin/gallery", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminGalleryPage email={auth.email} />;
+      return <AdminGalleryPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/ideas", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminIdeasPage email={auth.email} />;
+      return <AdminIdeasPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/outing-settings", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminOutingSettingsPage email={auth.email} />;
+      return <AdminOutingSettingsPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/card-order", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminCardOrderPage email={auth.email} />;
+      return <AdminCardOrderPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/info-settings", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminInfoSettingsPage email={auth.email} />;
+      return <AdminInfoSettingsPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/insurance", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminInsurancePage email={auth.email} />;
+      return <AdminInsurancePage email={auth.email} role={auth.role} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),

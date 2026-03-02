@@ -17,112 +17,108 @@ import type { UserRole } from "@/db/types";
 
 interface AdminPageProps {
   email: string;
+  role: UserRole;
 }
 
-export function AdminDashboardPage({ email }: AdminPageProps) {
+export function AdminDashboardPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <AdminDashboard />
     </AdminLayout>
   );
 }
 
-export function AdminEventsPage({ email }: AdminPageProps) {
+export function AdminEventsPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <EventsAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminVideosPage({ email }: AdminPageProps) {
+export function AdminVideosPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <VideosAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminPublicationsPage({ email }: AdminPageProps) {
+export function AdminPublicationsPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <PublicationsAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminGuestbookPage({ email }: AdminPageProps) {
+export function AdminGuestbookPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <GuestbookAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminContactPage({ email }: AdminPageProps) {
+export function AdminContactPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <ContactAdminClient />
     </AdminLayout>
   );
 }
 
-interface AdminUsersPageProps {
-  email: string;
-  role: UserRole;
-}
-
-export function AdminUsersPage({ email, role }: AdminUsersPageProps) {
+export function AdminUsersPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <UsersAdminClient currentUserRole={role} currentUserEmail={email} />
     </AdminLayout>
   );
 }
 
-export function AdminGalleryPage({ email }: AdminPageProps) {
+export function AdminGalleryPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <GalleryAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminIdeasPage({ email }: AdminPageProps) {
+export function AdminIdeasPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <IdeasAdminClient />
     </AdminLayout>
   );
 }
 
-export function AdminOutingSettingsPage({ email }: AdminPageProps) {
+export function AdminOutingSettingsPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <OutingSettingsClient />
     </AdminLayout>
   );
 }
 
-export function AdminCardOrderPage({ email }: AdminPageProps) {
+export function AdminCardOrderPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <CardOrderClient />
     </AdminLayout>
   );
 }
 
-export function AdminInfoSettingsPage({ email }: AdminPageProps) {
+export function AdminInfoSettingsPage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <InfoSettingsClient />
     </AdminLayout>
   );
 }
 
-export function AdminInsurancePage({ email }: AdminPageProps) {
+export function AdminInsurancePage({ email, role }: AdminPageProps) {
   return (
-    <AdminLayout email={email}>
+    <AdminLayout email={email} role={role}>
       <InsuranceAdminClient />
     </AdminLayout>
   );
