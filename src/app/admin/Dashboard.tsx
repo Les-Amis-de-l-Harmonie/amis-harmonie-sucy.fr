@@ -9,11 +9,12 @@ import {
   Images,
   Lightbulb,
   Users,
+  UserCheck,
   BarChart3,
 } from "lucide-react";
 
 async function getStats() {
-  const [events, videos, publications, guestbook, contacts, galleryImages, ideas, users] =
+  const [events, videos, publications, guestbook, contacts, galleryImages, ideas, users, members] =
     await Promise.all([
       env.DB.prepare("SELECT COUNT(*) as count FROM events").first<{ count: number }>(),
       env.DB.prepare("SELECT COUNT(*) as count FROM videos").first<{ count: number }>(),
@@ -27,6 +28,9 @@ async function getStats() {
       env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'MUSICIAN'").first<{
         count: number;
       }>(),
+      env.DB.prepare(
+        "SELECT COUNT(*) as count FROM musician_profiles WHERE adhesion_2025_2026 = 1"
+      ).first<{ count: number }>(),
     ]);
 
   return {
@@ -38,6 +42,7 @@ async function getStats() {
     galleryImages: galleryImages?.count || 0,
     ideas: ideas?.count || 0,
     users: users?.count || 0,
+    members: members?.count || 0,
   };
 }
 
@@ -168,6 +173,27 @@ export async function AdminDashboard() {
           </a>
         ))}
       </div>
+
+      {/* Taux d'adhésion */}
+      <Card className="border-2 border-emerald-100 dark:border-emerald-900">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Taux d'adhésion 2025-2026
+          </CardTitle>
+          <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900">
+            <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-foreground">
+            {stats.users > 0 ? Math.round((stats.members / stats.users) * 100) : 0}%
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {stats.members} adhérent{stats.members > 1 ? "s" : ""} (sur {stats.users} musicien
+            {stats.users > 1 ? "s" : ""})
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Statistiques de visite du site public */}
       <div className="space-y-4">

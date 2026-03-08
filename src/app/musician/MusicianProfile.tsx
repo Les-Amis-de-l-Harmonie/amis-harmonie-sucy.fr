@@ -817,11 +817,6 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               tout moment par demande écrite adressée à l'association (sans effet rétroactif sur les
               utilisations déjà réalisées).
             </p>
-            <p className="italic">
-              Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur scène peut
-              être permise sans solliciter le consentement individuel de chaque personne
-              photographiée.
-            </p>
           </div>
 
           <div className="flex flex-col gap-2 pt-2">
@@ -845,6 +840,13 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
               />
               <span className="text-sm">Je n'autorise pas l'utilisation de mon image</span>
             </label>
+            {profile.image_consent === 0 && (
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1 px-2">
+                Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur scène
+                peut être permise sans solliciter le consentement individuel de chaque personne
+                photographiée.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
