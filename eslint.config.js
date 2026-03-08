@@ -54,6 +54,7 @@ export default [
         HTMLFormElement: "readonly",
         HTMLTextAreaElement: "readonly",
         // Web APIs
+        DOMParser: "readonly",
         URLSearchParams: "readonly",
         URL: "readonly",
         File: "readonly",

@@ -101,6 +101,26 @@ h4 {
   font-weight: 700;
 }
 
+/* Rich text content (contentEditable output) — links & spacing fixes */
+.rich-text-content a {
+  color: var(--color-primary) !important;
+  text-decoration: underline !important;
+  word-break: break-all;
+}
+
+.rich-text-content a:hover {
+  opacity: 0.8;
+}
+
+.dark .rich-text-content a {
+  color: var(--color-primary) !important;
+}
+
+/* Override text-align:justify from pasted/legacy content */
+.rich-text-content [style*="justify"] {
+  text-align: left !important;
+}
+
 /* Micro-interaction utilities */
 @layer utilities {
   .hover-lift {

@@ -93,10 +93,27 @@ export function InfoSettingsClient() {
     }
   }, [loading]); // Only on load — NOT on settings.content changes, that would reset the cursor on every keystroke
 
+  const sanitizeContent = (html: string): string => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    doc.querySelectorAll("[style]").forEach((el) => {
+      const style = (el as HTMLElement).style;
+      if (style.textAlign === "justify") {
+        style.textAlign = "";
+      }
+    });
+
+    doc.querySelectorAll("a").forEach((link) => {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
+    });
+
+    return doc.body.innerHTML;
+  };
+
   const execCommand = (command: string, value: string = "") => {
     document.execCommand(command, false, value);
-    // Don't update state immediately to avoid cursor jumping
-    // The onInput handler will catch the change
   };
 
   const insertLink = () => {
@@ -123,7 +140,7 @@ export function InfoSettingsClient() {
         body: JSON.stringify({
           title: settings.title,
           subtitle: settings.subtitle || null,
-          content: settings.content || null,
+          content: settings.content ? sanitizeContent(settings.content) : null,
           bg_color: settings.bg_color,
           text_color: settings.text_color,
           border_color: settings.border_color,
@@ -414,7 +431,7 @@ export function InfoSettingsClient() {
                 ref={contentRef}
                 contentEditable
                 onInput={handleContentChange}
-                className="min-h-[200px] p-4 focus:outline-none prose prose-sm max-w-none"
+                className="min-h-[200px] p-4 focus:outline-none rich-text-content"
                 style={{ minHeight: "200px" }}
                 suppressContentEditableWarning={true}
               />
@@ -454,7 +471,7 @@ export function InfoSettingsClient() {
                 )}
                 {settings.content ? (
                   <div
-                    className={`mt-2 ${selectedColor.text} prose prose-sm max-w-none`}
+                    className={`mt-2 ${selectedColor.text} rich-text-content`}
                     dangerouslySetInnerHTML={{ __html: settings.content }}
                   />
                 ) : (

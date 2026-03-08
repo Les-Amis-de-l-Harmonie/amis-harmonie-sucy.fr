@@ -766,7 +766,7 @@ export function MusicianHomeClient({
               )}
               {infoSettings.content && (
                 <div
-                  className={`mt-2 ${infoSettings.text_color} prose prose-sm max-w-none`}
+                  className={`mt-2 ${infoSettings.text_color} rich-text-content`}
                   dangerouslySetInnerHTML={{
                     __html: infoSettings.content,
                   }}
