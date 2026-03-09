@@ -234,39 +234,76 @@ export function MusicianHomeClient({
               <CardDescription>Gérez vos informations personnelles</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4 mb-3">
                 {loading ? (
-                  <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
+                  <div className="w-16 h-16 rounded-full bg-muted animate-pulse flex-shrink-0" />
                 ) : profile?.avatar ? (
                   <img
                     src={profile.avatar}
                     alt=""
-                    className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-primary flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                     <User className="w-8 h-8 text-muted-foreground" />
                   </div>
                 )}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {loading ? (
                     <p className="text-sm text-muted-foreground">Chargement...</p>
-                  ) : profileComplete ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Profil complété
-                    </span>
                   ) : (
-                    <div className="space-y-1">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Profil incomplet
-                      </span>
-                      <p className="text-xs text-red-600 dark:text-red-400">
-                        👉 Complétez votre profil pour accéder à toutes les fonctionnalités.
-                      </p>
-                    </div>
+                    <>
+                      {(profile?.first_name || profile?.last_name) && (
+                        <p className="font-semibold text-foreground truncate">
+                          {profile.first_name} {profile.last_name}
+                        </p>
+                      )}
+                      {profileComplete ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Profil complété
+                        </span>
+                      ) : (
+                        <div className="space-y-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                            Profil incomplet
+                          </span>
+                          <p className="text-xs text-red-600 dark:text-red-400">
+                            👉 Complétez votre profil pour accéder à toutes les fonctionnalités.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
+              {!loading &&
+                profile?.harmonie_start_date &&
+                (() => {
+                  const start = new Date(profile.harmonie_start_date);
+                  const now = new Date();
+                  const totalDays = Math.floor(
+                    (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const years = Math.floor(totalDays / 365);
+                  const remainingDays = totalDays - years * 365;
+                  return (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      🎼 Dans l&apos;Harmonie depuis{" "}
+                      {years > 0 && (
+                        <>
+                          {years} an{years > 1 ? "s" : ""}
+                          {remainingDays > 0 ? " et " : ""}
+                        </>
+                      )}
+                      {remainingDays > 0 && (
+                        <>
+                          {remainingDays} jour{remainingDays > 1 ? "s" : ""}
+                        </>
+                      )}
+                      {years === 0 && remainingDays === 0 && <>aujourd&apos;hui</>}
+                    </p>
+                  );
+                })()}
               <a href="/musician/profile" className="mt-auto">
                 <Button variant="outline" className="w-full">
                   Accéder à mon profil
