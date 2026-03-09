@@ -267,6 +267,27 @@ const app = defineApp([
     }
   }),
 
+  route("/api/videos", async ({ request }: { request: Request }) => {
+    if (request.method !== "GET") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const results = await env.DB.prepare("SELECT * FROM videos ORDER BY sort_order ASC").all();
+      return new Response(JSON.stringify(results.results || []), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
+
   route("/api/outing-settings", async ({ request }: { request: Request }) => {
     if (request.method !== "GET") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
