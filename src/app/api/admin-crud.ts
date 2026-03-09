@@ -729,29 +729,21 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         );
       }
 
-      const result = await env.DB.prepare(
-        "INSERT INTO users (email, role, is_active) VALUES (?, ?, ?)"
-      )
-        .bind(
+      const statements = [
+        env.DB.prepare("INSERT INTO users (email, role, is_active) VALUES (?, ?, ?)").bind(
           data.email.toLowerCase().trim(),
           data.role || "MUSICIAN",
           data.is_active !== 0 ? 1 : 0
-        )
-        .run();
-
-      const userId = result.meta.last_row_id;
-
-      await env.DB.prepare(
+        ),
+        env.DB.prepare(
+          `
+          INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
+            address_line1, address_line2, postal_code, city,
+            harmonie_start_date, is_conservatory_student, music_theory_level,
+            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
+          VALUES ((SELECT last_insert_rowid()), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
-        INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
-          address_line1, address_line2, postal_code, city,
-          harmonie_start_date, is_conservatory_student, music_theory_level,
-          emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
-      )
-        .bind(
-          userId,
+        ).bind(
           data.first_name || null,
           data.last_name || null,
           data.avatar || null,
@@ -770,30 +762,27 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           data.emergency_contact_phone || null,
           data.image_consent == null ? null : data.image_consent ? 1 : 0,
           data.adhesion_2025_2026 ? 1 : 0
-        )
-        .run();
+        ),
+      ];
 
       if (data.instruments) {
         for (let i = 0; i < data.instruments.length; i++) {
           const inst = data.instruments[i];
           if (inst.instrument_name?.trim()) {
-            await env.DB.prepare(
+            statements.push(
+              env.DB.prepare(
+                `
+                INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
+                VALUES ((SELECT last_insert_rowid()), ?, ?, ?, ?)
               `
-              INSERT INTO musician_instruments (user_id, instrument_name, start_date, level, sort_order)
-              VALUES (?, ?, ?, ?, ?)
-            `
-            )
-              .bind(
-                userId,
-                inst.instrument_name.trim(),
-                inst.start_date || null,
-                inst.level || null,
-                i
-              )
-              .run();
+              ).bind(inst.instrument_name.trim(), inst.start_date || null, inst.level || null, i)
+            );
           }
         }
       }
+
+      const results = await env.DB.batch(statements);
+      const userId = results[0].meta.last_row_id;
 
       return new Response(JSON.stringify({ success: true, id: userId }), {
         headers: { "Content-Type": "application/json" },
