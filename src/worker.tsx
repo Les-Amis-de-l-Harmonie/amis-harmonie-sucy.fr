@@ -27,8 +27,6 @@ import {
   verifySession,
 } from "@/app/api/auth";
 import {
-  handleGuestbookApi,
-  handleContactApi,
   handleUsersApi,
   handleGalleryApi,
   handleR2CleanupApi,
@@ -38,6 +36,8 @@ import {
   handleInfoSettingsApi,
   handleInsuranceApi,
 } from "@/app/api/admin-crud";
+import { handleGuestbookApi } from "@/app/api/admin/guestbook";
+import { handleContactApi } from "@/app/api/admin/contact";
 import { handlePublicationsApi } from "@/app/api/admin/publications";
 import { handleEventsApi } from "@/app/api/admin/events";
 import { handleVideosApi } from "@/app/api/admin/videos";
