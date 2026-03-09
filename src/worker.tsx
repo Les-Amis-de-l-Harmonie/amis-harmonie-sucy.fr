@@ -28,12 +28,12 @@ import {
 } from "@/app/api/auth";
 import {
   handleR2CleanupApi,
-  handleIdeasApi,
   handleOutingSettingsApi,
   handleCardOrderSettingsApi,
   handleInfoSettingsApi,
   handleInsuranceApi,
 } from "@/app/api/admin-crud";
+import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
 import { handleGuestbookApi } from "@/app/api/admin/guestbook";
