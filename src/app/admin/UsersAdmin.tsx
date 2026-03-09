@@ -174,6 +174,9 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("active");
   const [filterAdhesion, setFilterAdhesion] = useState<"all" | "adherent" | "non_adherent">("all");
   const [filterProfile, setFilterProfile] = useState<"all" | "complete" | "incomplete">("all");
+  const [filterImageConsent, setFilterImageConsent] = useState<
+    "all" | "authorized" | "refused" | "not_set"
+  >("all");
   const [sortField, setSortField] = useState<
     "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile" | "last_login"
   >("name");
@@ -326,6 +329,16 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       );
     }
 
+    if (filterImageConsent !== "all") {
+      result = result.filter((u) => {
+        if (u.role === "SUPER_ADMIN" || u.role === "ADMIN") return false;
+        if (filterImageConsent === "authorized") return u.image_consent === 1;
+        if (filterImageConsent === "refused") return u.image_consent === 0;
+        if (filterImageConsent === "not_set") return u.image_consent == null;
+        return true;
+      });
+    }
+
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(
@@ -392,7 +405,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, filterRole, filterStatus, filterAdhesion, filterProfile]);
+  }, [search, filterRole, filterStatus, filterAdhesion, filterProfile, filterImageConsent]);
 
   const getRoleBadge = (role: UserRole) => {
     if (role === "SUPER_ADMIN") {
@@ -625,6 +638,22 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
             <SelectItem value="incomplete">Profil incomplet</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={filterImageConsent}
+          onValueChange={(v) =>
+            setFilterImageConsent(v as "all" | "authorized" | "refused" | "not_set")
+          }
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous droits à l'image</SelectItem>
+            <SelectItem value="authorized">Autorisé</SelectItem>
+            <SelectItem value="refused">Refusé</SelectItem>
+            <SelectItem value="not_set">Non renseigné</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {filteredUsers.length === 0 ? (
@@ -706,6 +735,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       Profil <SortIcon field="profile" />
                     </span>
                   </TableHead>
+                  <TableHead>Droit à l'image</TableHead>
                   <TableHead
                     className="cursor-pointer select-none hover:text-foreground"
                     onClick={() => handleSort("last_login")}
@@ -780,6 +810,23 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                           Incomplet
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                        ""
+                      ) : user.image_consent === 1 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          Autorisé
+                        </span>
+                      ) : user.image_consent === 0 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          Refusé
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                          Non renseigné
                         </span>
                       )}
                     </TableCell>
