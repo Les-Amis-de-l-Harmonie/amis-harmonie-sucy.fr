@@ -24,7 +24,12 @@ import {
   MapPin,
   Cake,
 } from "lucide-react";
-import type { MusicianProfile, OutingSettings, MusicianCardType } from "@/db/types";
+import type {
+  MusicianProfile,
+  OutingSettings,
+  MusicianCardType,
+  InsuranceInstrument,
+} from "@/db/types";
 import { Info } from "lucide-react";
 import { formatDateShort } from "@/lib/dates";
 import { SocialIcons } from "@/app/components/SocialIcons";
@@ -42,6 +47,7 @@ interface ProfileWithExtras extends Partial<MusicianProfile> {
   email?: string;
   adhesion_2025_2026?: number;
   insurance_complete?: boolean;
+  insuranceInstruments?: InsuranceInstrument[];
 }
 
 interface UpcomingEvent {
@@ -421,9 +427,26 @@ export function MusicianHomeClient({
                   profile?.adhesion_2025_2026 !== 1 ? (
                     <MembersOnlyBadge />
                   ) : profile?.insurance_complete ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      Assurance active
-                    </span>
+                    <div className="space-y-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Assurance active
+                      </span>
+                      {profile.insuranceInstruments && profile.insuranceInstruments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            Instruments assurés :
+                          </p>
+                          <ul className="text-xs text-foreground space-y-0.5">
+                            {profile.insuranceInstruments.map((inst) => (
+                              <li key={inst.id} className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                {inst.instrument_name} {inst.brand && `(${inst.brand})`}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                       Pas d&apos;assurance, en attente informations
