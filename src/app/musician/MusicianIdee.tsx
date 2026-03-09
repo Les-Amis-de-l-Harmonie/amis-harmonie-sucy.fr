@@ -78,10 +78,12 @@ export function MusicianIdeeClient() {
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
   const [viewingResponse, setViewingResponse] = useState<IdeaWithLikes | null>(null);
 
-  // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ideaToDelete, setIdeaToDelete] = useState<IdeaWithLikes | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [likersDialogOpen, setLikersDialogOpen] = useState(false);
+  const [viewingLikers, setViewingLikers] = useState<IdeaWithLikes | null>(null);
 
   const fetchMyIdeas = useCallback(async () => {
     try {
@@ -743,26 +745,39 @@ export function MusicianIdeeClient() {
                           <span className="text-xs text-gray-500 dark:text-gray-400">
                             {formatDate(idea.created_at)}
                           </span>
-                          <Button
-                            variant={idea.user_has_liked ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => handleLike(idea.id, idea.user_has_liked)}
-                            disabled={likingId === idea.id}
-                            className={`h-8 px-2 ${
-                              idea.user_has_liked
-                                ? "bg-red-500 hover:bg-red-600 border-red-500"
-                                : "bg-background hover:bg-muted"
-                            }`}
-                          >
-                            {likingId === idea.id ? (
-                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                            ) : (
-                              <Heart
-                                className={`w-4 h-4 mr-1 ${idea.user_has_liked ? "fill-white" : "text-red-500"}`}
-                              />
+                          <div className="flex items-center gap-2">
+                            {(idea.likes_count || 0) > 0 && (
+                              <button
+                                onClick={() => {
+                                  setViewingLikers(idea);
+                                  setLikersDialogOpen(true);
+                                }}
+                                className="text-xs text-gray-500 hover:text-primary underline cursor-pointer"
+                              >
+                                Qui a liké ?
+                              </button>
                             )}
-                            <span className="text-xs">{idea.likes_count || 0}</span>
-                          </Button>
+                            <Button
+                              variant={idea.user_has_liked ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handleLike(idea.id, idea.user_has_liked)}
+                              disabled={likingId === idea.id}
+                              className={`h-8 px-2 ${
+                                idea.user_has_liked
+                                  ? "bg-red-500 hover:bg-red-600 border-red-500"
+                                  : "bg-background hover:bg-muted"
+                              }`}
+                            >
+                              {likingId === idea.id ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              ) : (
+                                <Heart
+                                  className={`w-4 h-4 mr-1 ${idea.user_has_liked ? "fill-white" : "text-red-500"}`}
+                                />
+                              )}
+                              <span className="text-xs">{idea.likes_count || 0}</span>
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -800,7 +815,37 @@ export function MusicianIdeeClient() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      <Dialog open={likersDialogOpen} onOpenChange={setLikersDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Personnes qui ont aimé cette idée</DialogTitle>
+          </DialogHeader>
+          {viewingLikers && (
+            <div className="py-4">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                {viewingLikers.title}
+              </p>
+              {viewingLikers.likers && viewingLikers.likers.length > 0 ? (
+                <ul className="space-y-2">
+                  {viewingLikers.likers.map((liker, index) => (
+                    <li key={index} className="flex items-center gap-2 text-sm">
+                      <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                      <span>
+                        {liker.first_name && liker.last_name
+                          ? `${liker.first_name} ${liker.last_name}`
+                          : "Un musicien"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">Aucun like pour le moment.</p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

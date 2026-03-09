@@ -255,6 +255,7 @@ export interface IdeaWithLikes extends Idea {
   user_has_liked: boolean;
   author_first_name?: string;
   author_last_name?: string;
+  likers?: Array<{ first_name: string | null; last_name: string | null }>;
 }
 
 export interface InsuranceInstrument {

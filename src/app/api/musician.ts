@@ -312,7 +312,11 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
             p.first_name as author_first_name,
             p.last_name as author_last_name,
             (SELECT COUNT(*) FROM idea_likes WHERE idea_id = i.id) as likes_count,
-            (SELECT COUNT(*) FROM idea_likes WHERE idea_id = i.id AND user_id = ?) as user_has_liked
+            (SELECT COUNT(*) FROM idea_likes WHERE idea_id = i.id AND user_id = ?) as user_has_liked,
+            (SELECT json_group_array(json_object('first_name', mp.first_name, 'last_name', mp.last_name))
+             FROM idea_likes il
+             JOIN musician_profiles mp ON il.user_id = mp.user_id
+             WHERE il.idea_id = i.id) as likers_json
           FROM ideas i
           LEFT JOIN musician_profiles p ON i.user_id = p.user_id
           WHERE i.is_public = 1
@@ -334,7 +338,23 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
           }
         }
 
-        return new Response(JSON.stringify(ideas.results || []), {
+        const ideasWithLikers = (ideas.results || []).map((idea) => {
+          const ideaWithLikers = { ...idea };
+          if ((idea as unknown as Record<string, string>).likers_json) {
+            try {
+              const likers = JSON.parse(
+                (idea as unknown as Record<string, string>).likers_json
+              ) as Array<{ first_name: string | null; last_name: string | null }>;
+              ideaWithLikers.likers = Array.isArray(likers) ? likers : [];
+            } catch {
+              ideaWithLikers.likers = [];
+            }
+            delete (ideaWithLikers as unknown as Record<string, string>).likers_json;
+          }
+          return ideaWithLikers;
+        });
+
+        return new Response(JSON.stringify(ideasWithLikers), {
           headers: { "Content-Type": "application/json" },
         });
       } else {
