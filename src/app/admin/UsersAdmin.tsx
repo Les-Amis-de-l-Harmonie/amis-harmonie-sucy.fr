@@ -393,6 +393,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     filterStatus,
     filterAdhesion,
     filterProfile,
+    filterImageConsent,
     isProfileComplete,
     sortField,
     sortDir,
