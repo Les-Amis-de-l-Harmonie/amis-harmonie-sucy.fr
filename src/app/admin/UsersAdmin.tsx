@@ -509,7 +509,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       user.first_name ?? "",
       user.last_name ?? "",
       user.date_of_birth ?? "",
-      user.phone ?? "",
+      user.phone ? `"'${user.phone}"` : "",
       user.address_line1
         ? `${user.address_line1}${user.address_line2 ? `, ${user.address_line2}` : ""}`
         : "",
@@ -521,8 +521,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       user.emergency_contact_first_name ?? "",
       user.emergency_contact_last_name ?? "",
       user.emergency_contact_email ?? "",
-      user.emergency_contact_phone ?? "",
-      user.image_consent === 1 ? "Autorisé" : user.image_consent === 0 ? "Refusé" : "",
+      user.emergency_contact_phone ? `"'${user.emergency_contact_phone}"` : "",
+      user.image_consent === 1 ? "Autorisé" : user.image_consent === 0 ? "Refusé" : "Non renseigné",
       user.adhesion_2025_2026 === 1 ? "Oui" : user.adhesion_2025_2026 === 0 ? "Non" : "",
       user.instruments?.map((i) => i.instrument_name).join("; ") ?? "",
       user.harmonieInstruments?.join("; ") ?? "",
