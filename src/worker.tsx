@@ -27,7 +27,6 @@ import {
   verifySession,
 } from "@/app/api/auth";
 import {
-  handlePublicationsApi,
   handleGuestbookApi,
   handleContactApi,
   handleUsersApi,
@@ -39,6 +38,7 @@ import {
   handleInfoSettingsApi,
   handleInsuranceApi,
 } from "@/app/api/admin-crud";
+import { handlePublicationsApi } from "@/app/api/admin/publications";
 import { handleEventsApi } from "@/app/api/admin/events";
 import { handleVideosApi } from "@/app/api/admin/videos";
 import {
