@@ -678,13 +678,12 @@ export function MusicianHomeClient({
                 </CardTitle>
                 <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <SocialIcons iconSize={32} />
-                {firstVideo && (
-                  <div className="mt-4 flex-1">
-                    <p className="text-xs text-muted-foreground mb-2">Dernière vidéo :</p>
+              <CardContent className="flex-1 flex flex-col justify-between">
+                <div className="flex-1 flex flex-col">
+                  <SocialIcons iconSize={28} />
+                  {firstVideo && (
                     <div
-                      className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group"
+                      className="mt-3 relative aspect-video rounded-lg overflow-hidden cursor-pointer group max-h-[120px]"
                       onClick={() => setActiveVideo(firstVideo)}
                     >
                       <img
@@ -698,9 +697,9 @@ export function MusicianHomeClient({
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                           <svg
-                            className="w-5 h-5 text-white ml-0.5"
+                            className="w-4 h-4 text-white ml-0.5"
                             fill="currentColor"
                             viewBox="0 0 24 24"
                           >
@@ -709,9 +708,8 @@ export function MusicianHomeClient({
                         </div>
                       </div>
                     </div>
-                    <p className="text-xs text-foreground mt-1 line-clamp-1">{firstVideo.title}</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
             {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
