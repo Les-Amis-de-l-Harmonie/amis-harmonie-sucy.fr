@@ -29,6 +29,7 @@ import type {
   OutingSettings,
   MusicianCardType,
   InsuranceInstrument,
+  Video,
 } from "@/db/types";
 import { Info } from "lucide-react";
 import { formatDateShort } from "@/lib/dates";
@@ -92,6 +93,8 @@ export function MusicianHomeClient({
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [infoSettings, setInfoSettings] = useState<InfoSettings | null>(null);
   const [planningUrgent, setPlanningUrgent] = useState(false);
+  const [firstVideo, setFirstVideo] = useState<Video | null>(null);
+  const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const DEFAULT_CARDS: MusicianCardType[] = [
     "profile",
     "adhesion",
@@ -118,6 +121,7 @@ export function MusicianHomeClient({
         birthdaysRes,
         ideasRes,
         planningRes,
+        videosRes,
       ] = await Promise.all([
         fetch("/api/musician/profile"),
         fetch("/api/events"),
@@ -127,6 +131,7 @@ export function MusicianHomeClient({
         fetch("/api/musician/birthdays"),
         fetch("/api/musician/ideas?count=unread"),
         fetch("/api/musician/planning-check"),
+        fetch("/api/videos"),
       ]);
 
       if (profileRes.ok) {
@@ -187,6 +192,13 @@ export function MusicianHomeClient({
       if (planningRes.ok) {
         const planningData = (await planningRes.json()) as { urgent: boolean };
         setPlanningUrgent(planningData.urgent);
+      }
+
+      if (videosRes.ok) {
+        const videosData = (await videosRes.json()) as Video[];
+        if (videosData.length > 0) {
+          setFirstVideo(videosData[0]);
+        }
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -434,7 +446,10 @@ export function MusicianHomeClient({
                       {profile.insuranceInstruments && profile.insuranceInstruments.length > 0 && (
                         <div className="mt-2 space-y-1">
                           <p className="text-xs text-muted-foreground font-medium">
-                            Instruments assurés :
+                            {profile.insuranceInstruments.length === 1
+                              ? "Instrument assuré"
+                              : "Instruments assurés"}{" "}
+                            :
                           </p>
                           <ul className="text-xs text-foreground space-y-0.5">
                             {profile.insuranceInstruments.map((inst) => (
@@ -651,21 +666,56 @@ export function MusicianHomeClient({
 
       case "social":
         return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5 text-primary" />
-                Suivez-nous
-              </CardTitle>
-              <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <SocialIcons iconSize={32} />
-            </CardContent>
-          </Card>
+          <>
+            <Card
+              key={cardType}
+              className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="w-5 h-5 text-primary" />
+                  Suivez-nous
+                </CardTitle>
+                <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+                <SocialIcons iconSize={32} />
+                {firstVideo && (
+                  <div className="mt-4 flex-1">
+                    <p className="text-xs text-muted-foreground mb-2">Dernière vidéo :</p>
+                    <div
+                      className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => setActiveVideo(firstVideo)}
+                    >
+                      <img
+                        src={`https://i.ytimg.com/vi/${firstVideo.youtube_id}/mqdefault.jpg`}
+                        alt={firstVideo.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            `https://i.ytimg.com/vi/${firstVideo.youtube_id}/default.jpg`;
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <svg
+                            className="w-5 h-5 text-white ml-0.5"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-foreground mt-1 line-clamp-1">{firstVideo.title}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
+          </>
         );
 
       case "birthdays": {
@@ -755,13 +805,62 @@ export function MusicianHomeClient({
     }
   };
 
+  function VideoModal({ video, onClose }: { video: Video; onClose: () => void }) {
+    const isShort = video.is_short === 1;
+
+    useEffect(() => {
+      const handleKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      document.addEventListener("keydown", handleKey);
+      return () => document.removeEventListener("keydown", handleKey);
+    }, [onClose]);
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        onClick={onClose}
+      >
+        <div
+          className={`relative w-full ${isShort ? "max-w-sm" : "max-w-4xl"}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={onClose}
+            aria-label="Fermer"
+            className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          <div className={isShort ? "aspect-[9/16]" : "aspect-video"}>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}`}
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              className="w-full h-full rounded-lg border-0"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2,
       },
     },
   };
