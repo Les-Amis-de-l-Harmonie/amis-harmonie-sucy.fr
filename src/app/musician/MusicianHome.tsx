@@ -666,54 +666,51 @@ export function MusicianHomeClient({
 
       case "social":
         return (
-          <>
-            <Card
-              key={cardType}
-              className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Users className="w-5 h-5 text-primary" />
-                  Suivez-nous
-                </CardTitle>
-                <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between">
-                <div className="flex-1 flex flex-col">
-                  <SocialIcons iconSize={28} />
-                  {firstVideo && (
-                    <div
-                      className="mt-3 relative aspect-video rounded-lg overflow-hidden cursor-pointer group max-h-[120px]"
-                      onClick={() => setActiveVideo(firstVideo)}
-                    >
-                      <img
-                        src={`https://i.ytimg.com/vi/${firstVideo.youtube_id}/mqdefault.jpg`}
-                        alt={firstVideo.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            `https://i.ytimg.com/vi/${firstVideo.youtube_id}/default.jpg`;
-                        }}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                        <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                          <svg
-                            className="w-4 h-4 text-white ml-0.5"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </div>
+          <Card
+            key={cardType}
+            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="w-5 h-5 text-primary" />
+                Suivez-nous
+              </CardTitle>
+              <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="flex-1 flex flex-col">
+                <SocialIcons iconSize={28} />
+                {firstVideo && (
+                  <div
+                    className="mt-3 relative aspect-video rounded-lg overflow-hidden cursor-pointer group max-h-[120px]"
+                    onClick={() => setActiveVideo(firstVideo)}
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${firstVideo.youtube_id}/mqdefault.jpg`}
+                      alt={firstVideo.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          `https://i.ytimg.com/vi/${firstVideo.youtube_id}/default.jpg`;
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <svg
+                          className="w-4 h-4 text-white ml-0.5"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
                       </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
-          </>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         );
 
       case "birthdays": {
@@ -918,7 +915,8 @@ export function MusicianHomeClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
       <motion.div initial="hidden" animate="visible" variants={headerVariants}>
         <h1 className="text-2xl font-bold text-foreground">Bonjour, {displayName} !</h1>
         <p className="text-muted-foreground">Bienvenue dans votre espace personnel</p>
