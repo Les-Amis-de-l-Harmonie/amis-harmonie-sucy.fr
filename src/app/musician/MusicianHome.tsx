@@ -820,7 +820,7 @@ export function MusicianHomeClient({
         onClick={onClose}
       >
         <div
-          className={`relative w-full ${isShort ? "max-w-sm" : "max-w-4xl"}`}
+          className={`relative w-full ${isShort ? "max-w-md" : "max-w-6xl"}`}
           onClick={(e) => e.stopPropagation()}
         >
           <button
