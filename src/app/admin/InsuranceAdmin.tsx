@@ -12,7 +12,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
-import { Search, ArrowUpDown, ChevronUp, ChevronDown, Download, Shield } from "lucide-react";
+import {
+  Search,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Download,
+  Shield,
+  Trash2,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { formatDateShort } from "@/lib/dates";
 import { Pagination } from "@/app/components/ui/pagination";
 import { EmptyState } from "@/app/components/ui/empty-state";
@@ -48,20 +66,41 @@ export function InsuranceAdminClient() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [deleteTarget, setDeleteTarget] = useState<InsuranceWithUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("/api/admin/insurance");
+      if (response.ok) setItems(await response.json());
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/admin/insurance");
-        if (response.ok) setItems(await response.json());
-      } catch (error) {
-        console.error("Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/insurance?id=${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        await fetchData();
+      }
+    } catch (error) {
+      console.error("Error deleting:", error);
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
@@ -241,6 +280,7 @@ export function InsuranceAdminClient() {
                         <SortIcon field="date" />
                       </button>
                     </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -253,6 +293,16 @@ export function InsuranceAdminClient() {
                       <TableCell>{item.model}</TableCell>
                       <TableCell className="font-mono text-sm">{item.serial_number}</TableCell>
                       <TableCell>{formatDateShort(item.created_at)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(item)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -273,6 +323,36 @@ export function InsuranceAdminClient() {
           }}
         />
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet instrument ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget && (
+                <>
+                  Vous êtes sur le point de supprimer l'instrument{" "}
+                  <strong>
+                    {deleteTarget.instrument_name} {deleteTarget.brand} {deleteTarget.model}
+                  </strong>{" "}
+                  de <strong>{getMusicianName(deleteTarget)}</strong>. Cette action est
+                  irréversible.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

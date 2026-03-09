@@ -1220,7 +1220,6 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
         is_public?: number;
       };
 
-      // Build dynamic update query based on provided fields
       const updates: string[] = [];
       const values: (string | number | null)[] = [];
 
@@ -1234,7 +1233,6 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
         values.push(data.is_public);
       }
 
-      // Always update updated_at
       updates.push("updated_at = CURRENT_TIMESTAMP");
 
       if (updates.length === 0) {
@@ -1251,6 +1249,19 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
         .bind(...values)
         .run();
 
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "DELETE") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      await env.DB.prepare("DELETE FROM ideas WHERE id = ?").bind(id).run();
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -1519,6 +1530,9 @@ export async function handleInsuranceApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
   if (authError) return authError;
 
+  const url = new URL(request.url);
+  const id = url.searchParams.get("id");
+
   try {
     if (request.method === "GET") {
       const instruments = await env.DB.prepare(
@@ -1532,6 +1546,19 @@ export async function handleInsuranceApi(request: Request): Promise<Response> {
       ).all();
 
       return new Response(JSON.stringify(instruments.results || []), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "DELETE") {
+      if (!id) {
+        return new Response(JSON.stringify({ error: "ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      await env.DB.prepare("DELETE FROM insurance_instruments WHERE id = ?").bind(id).run();
+      return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
     }

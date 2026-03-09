@@ -105,7 +105,7 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-[280px] bg-card border-r border-border transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 z-50 h-full w-[220px] bg-card border-r border-border transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 lg:static lg:top-auto lg:left-auto lg:z-auto lg:bg-transparent lg:border-r lg:flex-shrink-0 lg:h-screen lg:sticky lg:top-0`}
       >

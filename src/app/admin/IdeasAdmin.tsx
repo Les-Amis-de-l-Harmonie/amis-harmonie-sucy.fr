@@ -14,7 +14,17 @@ import {
 } from "@/app/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
 import { Textarea } from "@/app/components/ui/textarea";
-import { Pencil, Search, ArrowUpDown, Globe, Lock, Lightbulb } from "lucide-react";
+import { Pencil, Search, ArrowUpDown, Globe, Lock, Lightbulb, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import type { Idea, IdeaCategory } from "@/db/types";
 import { Pagination } from "@/app/components/ui/pagination";
 import { formatDateShort } from "@/lib/dates";
@@ -49,6 +59,8 @@ export function IdeasAdminClient() {
   const [viewing, setViewing] = useState<IdeaWithUser | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<IdeaWithUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<IdeaCategory | "all">("all");
@@ -100,6 +112,24 @@ export function IdeasAdminClient() {
     setViewing(item);
     setAdminNotes(item.admin_notes || "");
     setViewDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/ideas?id=${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        await fetchData();
+      }
+    } catch (error) {
+      console.error("Error deleting:", error);
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   // Filter and sort items
@@ -310,9 +340,19 @@ export function IdeasAdminClient() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(item)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(item)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(item)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -332,6 +372,32 @@ export function IdeasAdminClient() {
           setCurrentPage(1);
         }}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette idée ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget && (
+                <>
+                  Vous êtes sur le point de supprimer l'idée{" "}
+                  <strong>« {deleteTarget.title} »</strong>. Cette action est irréversible.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
