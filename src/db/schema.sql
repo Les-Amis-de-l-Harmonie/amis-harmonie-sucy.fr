@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS musician_profiles (
   emergency_contact_first_name TEXT,
   emergency_contact_email TEXT,
   emergency_contact_phone TEXT,
-  image_consent INTEGER NOT NULL DEFAULT 0,
+  image_consent INTEGER,
   adhesion_2025_2026 INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))

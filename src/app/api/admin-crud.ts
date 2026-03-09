@@ -768,7 +768,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           data.emergency_contact_first_name || null,
           data.emergency_contact_email || null,
           data.emergency_contact_phone || null,
-          data.image_consent ? 1 : 0,
+          data.image_consent == null ? null : data.image_consent ? 1 : 0,
           data.adhesion_2025_2026 ? 1 : 0
         )
         .run();
@@ -861,7 +861,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_first_name || null,
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
-            data.image_consent ? 1 : 0,
+            data.image_consent == null ? null : data.image_consent ? 1 : 0,
             data.adhesion_2025_2026 ? 1 : 0,
             id
           )
@@ -894,7 +894,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_first_name || null,
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
-            data.image_consent ? 1 : 0,
+            data.image_consent == null ? null : data.image_consent ? 1 : 0,
             data.adhesion_2025_2026 ? 1 : 0
           )
           .run();
