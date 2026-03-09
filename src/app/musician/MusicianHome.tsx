@@ -85,6 +85,7 @@ export function MusicianHomeClient({
   const [outingSettings, setOutingSettings] = useState<OutingSettings | null>(null);
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [infoSettings, setInfoSettings] = useState<InfoSettings | null>(null);
+  const [planningUrgent, setPlanningUrgent] = useState(false);
   const DEFAULT_CARDS: MusicianCardType[] = [
     "profile",
     "adhesion",
@@ -102,16 +103,25 @@ export function MusicianHomeClient({
 
   const fetchProfile = useCallback(async () => {
     try {
-      const [profileRes, eventsRes, outingRes, cardOrderRes, infoRes, birthdaysRes, ideasRes] =
-        await Promise.all([
-          fetch("/api/musician/profile"),
-          fetch("/api/events"),
-          fetch("/api/outing-settings"),
-          fetch("/api/card-order"),
-          fetch("/api/info-settings"),
-          fetch("/api/musician/birthdays"),
-          fetch("/api/musician/ideas?count=unread"),
-        ]);
+      const [
+        profileRes,
+        eventsRes,
+        outingRes,
+        cardOrderRes,
+        infoRes,
+        birthdaysRes,
+        ideasRes,
+        planningRes,
+      ] = await Promise.all([
+        fetch("/api/musician/profile"),
+        fetch("/api/events"),
+        fetch("/api/outing-settings"),
+        fetch("/api/card-order"),
+        fetch("/api/info-settings"),
+        fetch("/api/musician/birthdays"),
+        fetch("/api/musician/ideas?count=unread"),
+        fetch("/api/musician/planning-check"),
+      ]);
 
       if (profileRes.ok) {
         const data = (await profileRes.json()) as ProfileWithExtras;
@@ -166,6 +176,11 @@ export function MusicianHomeClient({
       if (ideasRes.ok) {
         const ideasData = (await ideasRes.json()) as { count: number };
         setUnreadIdeasCount(ideasData.count);
+      }
+
+      if (planningRes.ok) {
+        const planningData = (await planningRes.json()) as { urgent: boolean };
+        setPlanningUrgent(planningData.urgent);
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -464,6 +479,13 @@ export function MusicianHomeClient({
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Aucun concert à venir</p>
+                )}
+                {planningUrgent && (
+                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-400">
+                      ⚠️ URGENT : mettre à jour le planning des présences
+                    </p>
+                  </div>
                 )}
               </div>
               <div className="flex-1" />

@@ -699,3 +699,147 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
     });
   }
 }
+
+export async function handleMusicianPlanningCheckApi(request: Request): Promise<Response> {
+  const user = await verifySession(request, "musician");
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (request.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const profile = await env.DB.prepare(
+      "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
+    )
+      .bind(user.id)
+      .first<{ first_name: string | null; last_name: string | null }>();
+
+    if (!profile?.first_name || !profile?.last_name) {
+      return new Response(JSON.stringify({ urgent: false }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const sheetUrl =
+      "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
+    const response = await fetch(sheetUrl, { cf: { cacheTtl: 300 } });
+
+    if (!response.ok) {
+      return new Response(JSON.stringify({ urgent: false }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const csvText = await response.text();
+    const lines = csvText.split("\n");
+
+    if (lines.length < 3) {
+      return new Response(JSON.stringify({ urgent: false }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const parseLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = "";
+      let inQuotes = false;
+
+      for (const char of line) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    let musicianRow: string[] | null = null;
+    for (const line of lines) {
+      const cells = parseLine(line);
+      if (
+        cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
+        cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
+      ) {
+        musicianRow = cells;
+        break;
+      }
+    }
+
+    if (!musicianRow) {
+      return new Response(JSON.stringify({ urgent: false }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const dateRow = parseLine(lines[1]);
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    let hasUrgentEvent = false;
+
+    for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
+      const dateStr = dateRow[i];
+      const response = musicianRow[i]?.toLowerCase().trim();
+
+      if (!dateStr) continue;
+
+      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+      if (!dateMatch) continue;
+
+      const months: Record<string, number> = {
+        janvier: 0,
+        fevrier: 1,
+        mars: 2,
+        avril: 3,
+        mai: 4,
+        juin: 5,
+        juillet: 6,
+        aout: 7,
+        septembre: 8,
+        octobre: 9,
+        novembre: 10,
+        decembre: 11,
+        février: 1,
+        août: 7,
+      };
+
+      const day = parseInt(dateMatch[1]);
+      const month = months[dateMatch[2].toLowerCase()];
+      const year = parseInt(dateMatch[3]);
+
+      if (month === undefined) continue;
+
+      const eventDate = new Date(year, month, day);
+
+      if (eventDate >= now && eventDate <= thirtyDaysLater) {
+        if (!response || response === "" || response.includes("peut")) {
+          hasUrgentEvent = true;
+          break;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ urgent: hasUrgentEvent }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Planning check API error:", error);
+    return new Response(JSON.stringify({ urgent: false }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}

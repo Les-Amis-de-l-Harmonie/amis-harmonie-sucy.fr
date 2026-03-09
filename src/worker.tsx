@@ -47,6 +47,7 @@ import {
   handleMusicianIdeasApi,
   handleMusicianInsuranceApi,
   handleMusicianBirthdaysApi,
+  handleMusicianPlanningCheckApi,
 } from "@/app/api/musician";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
@@ -232,6 +233,9 @@ const app = defineApp([
   ),
   route("/api/musician/birthdays", ({ request }: { request: Request }) =>
     handleMusicianBirthdaysApi(request)
+  ),
+  route("/api/musician/planning-check", ({ request }: { request: Request }) =>
+    handleMusicianPlanningCheckApi(request)
   ),
 
   // Public API for info settings (read-only, returns only active settings)
