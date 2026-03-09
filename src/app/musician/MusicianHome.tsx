@@ -236,16 +236,16 @@ export function MusicianHomeClient({
             <CardContent className="flex-1 flex flex-col">
               <div className="flex items-center gap-4 mb-3">
                 {loading ? (
-                  <div className="w-16 h-16 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                  <div className="w-24 h-24 rounded-full bg-muted animate-pulse flex-shrink-0" />
                 ) : profile?.avatar ? (
                   <img
                     src={profile.avatar}
                     alt=""
-                    className="w-16 h-16 rounded-full object-cover border-2 border-primary flex-shrink-0"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <User className="w-8 h-8 text-muted-foreground" />
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <User className="w-12 h-12 text-muted-foreground" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
