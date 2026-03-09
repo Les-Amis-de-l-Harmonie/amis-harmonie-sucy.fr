@@ -41,6 +41,7 @@ import {
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import { Users } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/empty-state";
@@ -472,18 +473,93 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     setViewDialogOpen(true);
   };
 
+  const exportCSV = () => {
+    const headers = [
+      "ID",
+      "Email",
+      "Rôle",
+      "Statut",
+      "Prénom",
+      "Nom",
+      "Date de naissance",
+      "Téléphone",
+      "Adresse",
+      "Code postal",
+      "Ville",
+      "Date d'entrée Harmonie",
+      "Élève conservatoire",
+      "Niveau solfège",
+      "Contact urgence - Prénom",
+      "Contact urgence - Nom",
+      "Contact urgence - Email",
+      "Contact urgence - Téléphone",
+      "Droit à l'image",
+      "Adhésion 2025-2026",
+      "Instruments personnels",
+      "Instruments Harmonie",
+      "Dernière connexion",
+      "Date de création",
+    ];
+
+    const rows = filteredUsers.map((user) => [
+      user.id ?? "",
+      user.email,
+      user.role,
+      user.is_active === 1 ? "Actif" : "Inactif",
+      user.first_name ?? "",
+      user.last_name ?? "",
+      user.date_of_birth ?? "",
+      user.phone ?? "",
+      user.address_line1
+        ? `${user.address_line1}${user.address_line2 ? `, ${user.address_line2}` : ""}`
+        : "",
+      user.postal_code ?? "",
+      user.city ?? "",
+      user.harmonie_start_date ?? "",
+      user.is_conservatory_student === 1 ? "Oui" : user.is_conservatory_student === 0 ? "Non" : "",
+      user.music_theory_level ?? "",
+      user.emergency_contact_first_name ?? "",
+      user.emergency_contact_last_name ?? "",
+      user.emergency_contact_email ?? "",
+      user.emergency_contact_phone ?? "",
+      user.image_consent === 1 ? "Autorisé" : user.image_consent === 0 ? "Refusé" : "",
+      user.adhesion_2025_2026 === 1 ? "Oui" : user.adhesion_2025_2026 === 0 ? "Non" : "",
+      user.instruments?.map((i) => i.instrument_name).join("; ") ?? "",
+      user.harmonieInstruments?.join("; ") ?? "",
+      user.last_login ? formatParisDateTime(user.last_login) : "",
+      user.created_at ? formatParisDateTime(user.created_at) : "",
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `utilisateurs-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
         <h1 className="text-3xl font-bold text-foreground">Utilisateurs</h1>
-        {isCurrentUserSuperAdmin && (
-          <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvel utilisateur
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCSV} disabled={filteredUsers.length === 0}>
+            <Download className="w-4 h-4 mr-2" />
+            Exporter CSV
           </Button>
-        )}
+          {isCurrentUserSuperAdmin && (
+            <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvel utilisateur
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">
