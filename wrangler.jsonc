@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "amis-harmonie",
+  "account_id": "538519499a3685f43006f3d5d60a6bef",
   "main": "src/worker.tsx",
   "compatibility_date": "2025-08-21",
   "compatibility_flags": ["nodejs_compat"],

@@ -3,7 +3,10 @@ import { invalidateCache } from "@/lib/cache";
 
 export async function handleGuestbookSubmission(request: Request): Promise<Response> {
   if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -13,7 +16,10 @@ export async function handleGuestbookSubmission(request: Request): Promise<Respo
     const message = formData.get("message") as string;
 
     if (!firstName || !lastName || !message) {
-      return new Response("Missing required fields", { status: 400 });
+      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const today = new Date().toISOString().split("T")[0];
@@ -32,6 +38,9 @@ export async function handleGuestbookSubmission(request: Request): Promise<Respo
     });
   } catch (error) {
     console.error("Guestbook submission error:", error);
-    return new Response("Internal server error", { status: 500 });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

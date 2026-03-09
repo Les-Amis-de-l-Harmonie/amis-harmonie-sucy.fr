@@ -147,7 +147,6 @@ export function Home() {
     <>
       <LogoutSuccessMessage />
       <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
-      <title>Les Amis de l'Harmonie de Sucy-en-Brie</title>
       <meta
         name="description"
         content="Association Les Amis de l'Harmonie de Sucy-en-Brie - Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté."

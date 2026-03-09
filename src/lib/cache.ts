@@ -78,7 +78,7 @@ export async function cacheResponse(request: Request, response: Response): Promi
     `public, max-age=${CACHE_CONFIG.MAX_AGE_SECONDS}, s-maxage=${CACHE_CONFIG.TTL_SECONDS}, stale-while-revalidate=${CACHE_CONFIG.STALE_WHILE_REVALIDATE_SECONDS}`
   );
 
-  return new Response(response.body, {
+  return new Response(body, {
     status: response.status,
     statusText: response.statusText,
     headers: newHeaders,
