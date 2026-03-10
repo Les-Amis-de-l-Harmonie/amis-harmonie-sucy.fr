@@ -3,13 +3,31 @@ import { verifySession } from "@/app/api/auth";
 import { isAdmin, isSuperAdmin } from "@/db/types";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 
+import { logger } from "@/lib/logger";
 interface UserInstrument {
   instrument_name: string;
-  start_date?: string;
-  level?: string;
+  start_date?: string | null;
+  level?: string | null;
+}
+
+interface UserIdRow {
+  id: number;
+}
+
+interface UserInstrumentRow {
+  user_id: number;
+  instrument_name: string;
+  start_date: string | null;
+  level: string | null;
+}
+
+interface HarmonieInstrumentRow {
+  user_id: number;
+  instrument_name: string;
 }
 
 export interface UserWithProfile {
+  id: number;
   email: string;
   role: string;
   is_active?: number;
@@ -86,27 +104,25 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         `
         )
           .bind(id)
-          .first();
+          .first<UserWithProfile>();
 
         const instruments = await env.DB.prepare(
           "SELECT instrument_name, start_date, level FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
         )
           .bind(id)
-          .all();
+          .all<UserInstrument>();
 
         const harmonieInstruments = await env.DB.prepare(
           "SELECT instrument_name FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
         )
           .bind(id)
-          .all();
+          .all<Pick<HarmonieInstrumentRow, "instrument_name">>();
 
         return new Response(
           JSON.stringify({
             ...user,
             instruments: instruments.results || [],
-            harmonieInstruments: (harmonieInstruments.results || []).map(
-              (i: Record<string, unknown>) => i.instrument_name
-            ),
+            harmonieInstruments: (harmonieInstruments.results || []).map((i) => i.instrument_name),
           }),
           {
             headers: { "Content-Type": "application/json" },
@@ -124,44 +140,41 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         LEFT JOIN musician_profiles p ON u.id = p.user_id
         ORDER BY u.created_at DESC
       `
-      ).all();
+      ).all<UserWithProfile>();
 
       const allInstruments = await env.DB.prepare(
         "SELECT user_id, instrument_name, start_date, level FROM musician_instruments ORDER BY sort_order ASC"
-      ).all();
+      ).all<UserInstrumentRow>();
       const allHarmonieInstruments = await env.DB.prepare(
         "SELECT user_id, instrument_name FROM harmonie_instruments ORDER BY instrument_name ASC"
-      ).all();
+      ).all<HarmonieInstrumentRow>();
 
       const instrumentsByUser = new Map<
         number,
-        { instrument_name: string; start_date?: string; level?: string }[]
+        { instrument_name: string; start_date?: string | null; level?: string | null }[]
       >();
       for (const row of allInstruments.results || []) {
-        const r = row as Record<string, unknown>;
-        const uid = r.user_id as number;
+        const uid = row.user_id;
         if (!instrumentsByUser.has(uid)) instrumentsByUser.set(uid, []);
         instrumentsByUser.get(uid)!.push({
-          instrument_name: r.instrument_name as string,
-          start_date: r.start_date as string | undefined,
-          level: r.level as string | undefined,
+          instrument_name: row.instrument_name,
+          start_date: row.start_date,
+          level: row.level,
         });
       }
 
       const harmonieByUser = new Map<number, string[]>();
       for (const row of allHarmonieInstruments.results || []) {
-        const r = row as Record<string, unknown>;
-        const uid = r.user_id as number;
+        const uid = row.user_id;
         if (!harmonieByUser.has(uid)) harmonieByUser.set(uid, []);
-        harmonieByUser.get(uid)!.push(r.instrument_name as string);
+        harmonieByUser.get(uid)!.push(row.instrument_name);
       }
 
       const usersWithInstruments = (users.results || []).map((u) => {
-        const user = u as Record<string, unknown>;
         return {
-          ...user,
-          instruments: instrumentsByUser.get(user.id as number) || [],
-          harmonieInstruments: harmonieByUser.get(user.id as number) || [],
+          ...u,
+          instruments: instrumentsByUser.get(u.id as number) || [],
+          harmonieInstruments: harmonieByUser.get(u.id as number) || [],
         };
       });
 
@@ -175,7 +188,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
 
       const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?")
         .bind(data.email.toLowerCase().trim())
-        .first();
+        .first<UserIdRow>();
       if (existing) {
         return new Response(
           JSON.stringify({ error: "Un utilisateur avec cet email existe déjà" }),
@@ -257,7 +270,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
 
       const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
         .bind(data.email.toLowerCase().trim(), id)
-        .first();
+        .first<UserIdRow>();
       if (existing) {
         return new Response(
           JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }),
@@ -276,7 +289,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         "SELECT id FROM musician_profiles WHERE user_id = ?"
       )
         .bind(id)
-        .first();
+        .first<UserIdRow>();
       if (existingProfile) {
         await env.DB.prepare(
           `
@@ -373,7 +386,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Users API error:", error);
+    logger.error("Users API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

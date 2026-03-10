@@ -1,7 +1,7 @@
 import { render, route, layout } from "rwsdk/router";
 import { defineApp } from "rwsdk/worker";
 import { env } from "cloudflare:workers";
-import type { Event } from "@/db/types";
+import type { Event, InfoSettings, OutingSettings, Video } from "@/db/types";
 
 import { Document } from "@/app/Document";
 import { Layout } from "@/app/Layout";
@@ -26,13 +26,6 @@ import {
   handleLogout,
   verifySession,
 } from "@/app/api/auth";
-import {
-  handleR2CleanupApi,
-  handleOutingSettingsApi,
-  handleCardOrderSettingsApi,
-  handleInfoSettingsApi,
-  handleInsuranceApi,
-} from "@/app/api/admin-crud";
 import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
@@ -41,6 +34,11 @@ import { handleContactApi } from "@/app/api/admin/contact";
 import { handlePublicationsApi } from "@/app/api/admin/publications";
 import { handleEventsApi } from "@/app/api/admin/events";
 import { handleVideosApi } from "@/app/api/admin/videos";
+import { handleR2CleanupApi } from "@/app/api/admin/r2-cleanup";
+import { handleOutingSettingsApi } from "@/app/api/admin/outing-settings";
+import { handleCardOrderSettingsApi } from "@/app/api/admin/card-order";
+import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
+import { handleInsuranceApi } from "@/app/api/admin/insurance";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
@@ -80,6 +78,7 @@ import { MusicianAssuranceClient } from "@/app/musician/MusicianAssurance";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+import { logger } from "@/lib/logger";
 export type AppContext = {};
 
 async function adminAuthMiddleware({ request }: { request: Request }) {
@@ -249,7 +248,7 @@ const app = defineApp([
     try {
       const settings = await env.DB.prepare(
         "SELECT * FROM info_settings WHERE is_active = 1 LIMIT 1"
-      ).first();
+      ).first<InfoSettings>();
       if (!settings) {
         return new Response(JSON.stringify({ is_active: 0 }), {
           headers: { "Content-Type": "application/json" },
@@ -259,7 +258,7 @@ const app = defineApp([
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Error fetching info settings:", error);
+      logger.error("Error fetching info settings:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -275,12 +274,14 @@ const app = defineApp([
       });
     }
     try {
-      const results = await env.DB.prepare("SELECT * FROM videos ORDER BY sort_order ASC").all();
+      const results = await env.DB.prepare(
+        "SELECT * FROM videos ORDER BY sort_order ASC"
+      ).all<Video>();
       return new Response(JSON.stringify(results.results || []), {
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Error fetching videos:", error);
+      logger.error("Error fetching videos:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -296,7 +297,9 @@ const app = defineApp([
       });
     }
     try {
-      const settings = await env.DB.prepare("SELECT * FROM outing_settings WHERE id = 1").first();
+      const settings = await env.DB.prepare(
+        "SELECT * FROM outing_settings WHERE id = 1"
+      ).first<OutingSettings>();
       if (!settings) {
         return new Response(JSON.stringify({ is_active: 0 }), {
           headers: { "Content-Type": "application/json" },
@@ -306,7 +309,7 @@ const app = defineApp([
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Error fetching outing settings:", error);
+      logger.error("Error fetching outing settings:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -334,7 +337,7 @@ const app = defineApp([
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Error fetching card order:", error);
+      logger.error("Error fetching card order:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },

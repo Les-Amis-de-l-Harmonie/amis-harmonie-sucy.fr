@@ -1,8 +1,10 @@
 import { env } from "cloudflare:workers";
+import type { GuestbookEntry } from "@/db/types";
 
 import { invalidateCache } from "@/lib/cache";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 
+import { logger } from "@/lib/logger";
 interface GuestbookInput {
   first_name: string;
   last_name: string;
@@ -20,12 +22,16 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const entry = await env.DB.prepare("SELECT * FROM guestbook WHERE id = ?").bind(id).first();
+        const entry = await env.DB.prepare("SELECT * FROM guestbook WHERE id = ?")
+          .bind(id)
+          .first<GuestbookEntry>();
         return new Response(JSON.stringify(entry), {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const entries = await env.DB.prepare("SELECT * FROM guestbook ORDER BY date DESC").all();
+      const entries = await env.DB.prepare(
+        "SELECT * FROM guestbook ORDER BY date DESC"
+      ).all<GuestbookEntry>();
       return new Response(JSON.stringify(entries.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -82,7 +88,7 @@ export async function handleGuestbookApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Guestbook API error:", error);
+    logger.error("Guestbook API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

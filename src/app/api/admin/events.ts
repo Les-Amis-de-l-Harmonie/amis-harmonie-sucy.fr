@@ -1,8 +1,10 @@
 import { env } from "cloudflare:workers";
+import type { Event } from "@/db/types";
 import { invalidateCache } from "@/lib/cache";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 import type { EventInput } from "@/app/api/admin-crud";
 
+import { logger } from "@/lib/logger";
 export async function handleEventsApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
   if (authError) return authError;
@@ -13,12 +15,14 @@ export async function handleEventsApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const event = await env.DB.prepare("SELECT * FROM events WHERE id = ?").bind(id).first();
+        const event = await env.DB.prepare("SELECT * FROM events WHERE id = ?")
+          .bind(id)
+          .first<Event>();
         return new Response(JSON.stringify(event), {
           headers: { "Content-Type": "application/json" },
         });
       }
-      const events = await env.DB.prepare("SELECT * FROM events ORDER BY date DESC").all();
+      const events = await env.DB.prepare("SELECT * FROM events ORDER BY date DESC").all<Event>();
       return new Response(JSON.stringify(events.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -97,7 +101,7 @@ export async function handleEventsApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Events API error:", error);
+    logger.error("Events API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

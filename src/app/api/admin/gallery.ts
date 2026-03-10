@@ -1,8 +1,9 @@
 import { env } from "cloudflare:workers";
-import type { GalleryCategory } from "@/db/types";
+import type { GalleryCategory, GalleryImage } from "@/db/types";
 import { invalidateCache } from "@/lib/cache";
 import { checkAdminAuth } from "../admin-crud";
 
+import { logger } from "@/lib/logger";
 interface GalleryImageInput {
   category: GalleryCategory;
   image_url: string;
@@ -30,7 +31,7 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
       if (id) {
         const image = await env.DB.prepare("SELECT * FROM gallery_images WHERE id = ?")
           .bind(id)
-          .first();
+          .first<GalleryImage>();
         return new Response(JSON.stringify(image), {
           headers: { "Content-Type": "application/json" },
         });
@@ -40,14 +41,14 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
           "SELECT * FROM gallery_images WHERE category = ? ORDER BY sort_order ASC"
         )
           .bind(category)
-          .all();
+          .all<GalleryImage>();
         return new Response(JSON.stringify(images.results), {
           headers: { "Content-Type": "application/json" },
         });
       }
       const images = await env.DB.prepare(
         "SELECT * FROM gallery_images ORDER BY category, sort_order ASC"
-      ).all();
+      ).all<GalleryImage>();
       return new Response(JSON.stringify(images.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -142,7 +143,7 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
         try {
           await env.R2.delete(r2Path);
         } catch (e) {
-          console.error("Error deleting R2 object:", e);
+          logger.error("Error deleting R2 object:", e);
         }
       }
       await env.DB.prepare("DELETE FROM gallery_images WHERE id = ?").bind(id).run();
@@ -157,7 +158,7 @@ export async function handleGalleryApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Gallery API error:", error);
+    logger.error("Gallery API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

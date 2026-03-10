@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { GalleryImage, GalleryCategory } from "@/db/types";
 
+import { logger } from "@/lib/logger";
 export async function handlePublicGalleryApi(request: Request): Promise<Response> {
   if (request.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -32,7 +33,7 @@ export async function handlePublicGalleryApi(request: Request): Promise<Response
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Public Gallery API error:", error);
+    logger.error("Public Gallery API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

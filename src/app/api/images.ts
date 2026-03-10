@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 
+import { logger } from "@/lib/logger";
 export async function handleImageServing(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname.replace("/images/r2/", "");
@@ -22,7 +23,7 @@ export async function handleImageServing(request: Request): Promise<Response> {
 
     return new Response(object.body, { headers });
   } catch (error) {
-    console.error("Image serving error:", error);
+    logger.error("Image serving error:", error);
     return new Response("Internal server error", { status: 500 });
   }
 }

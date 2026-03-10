@@ -16,13 +16,13 @@ describe("Button component", () => {
     expect(screen.getByRole("button")).toHaveClass("bg-primary");
 
     rerender(<Button variant="destructive">Destructive</Button>);
-    expect(screen.getByRole("button")).toHaveClass("bg-red-500");
+    expect(screen.getByRole("button")).toHaveClass("bg-destructive");
 
     rerender(<Button variant="outline">Outline</Button>);
     expect(screen.getByRole("button")).toHaveClass("border");
 
     rerender(<Button variant="ghost">Ghost</Button>);
-    expect(screen.getByRole("button")).toHaveClass("hover:bg-gray-100");
+    expect(screen.getByRole("button")).toHaveClass("hover:bg-accent");
   });
 
   it("should render with different sizes", () => {

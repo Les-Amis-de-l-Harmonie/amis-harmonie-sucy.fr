@@ -8,6 +8,7 @@ import type {
   IdeaWithLikes,
 } from "@/db/types";
 
+import { logger } from "@/lib/logger";
 interface ProfileWithInstruments extends MusicianProfile {
   instruments: MusicianInstrument[];
   harmonieInstruments: string[];
@@ -188,7 +189,7 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Musician profile API error:", error);
+    logger.error("Musician profile API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -258,7 +259,7 @@ export async function handleMusicianAvatarApi(request: Request): Promise<Respons
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Avatar upload error:", error);
+    logger.error("Avatar upload error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -531,7 +532,7 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Musician ideas API error:", error);
+    logger.error("Musician ideas API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -641,7 +642,7 @@ export async function handleMusicianInsuranceApi(request: Request): Promise<Resp
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Musician insurance API error:", error);
+    logger.error("Musician insurance API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -692,7 +693,7 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Musician birthdays API error:", error);
+    logger.error("Musician birthdays API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -837,7 +838,7 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Planning check API error:", error);
+    logger.error("Planning check API error:", error);
     return new Response(JSON.stringify({ urgent: false }), {
       headers: { "Content-Type": "application/json" },
     });

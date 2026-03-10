@@ -1,5 +1,13 @@
 import { env } from "cloudflare:workers";
+import type { Idea } from "@/db/types";
 import { checkAdminAuth } from "../admin-crud";
+
+import { logger } from "@/lib/logger";
+interface IdeaAdminListItem extends Idea {
+  user_email: string | null;
+  user_first_name: string | null;
+  user_last_name: string | null;
+}
 
 export async function handleIdeasApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
@@ -18,7 +26,7 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
         LEFT JOIN musician_profiles mp ON i.user_id = mp.user_id
         ORDER BY i.created_at DESC
       `
-      ).all();
+      ).all<IdeaAdminListItem>();
 
       return new Response(JSON.stringify(ideas.results || []), {
         headers: { "Content-Type": "application/json" },
@@ -90,7 +98,7 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Ideas API error:", error);
+    logger.error("Ideas API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

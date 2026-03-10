@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { invalidateCache } from "@/lib/cache";
 
+import { logger } from "@/lib/logger";
 export async function handleGuestbookSubmission(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -37,7 +38,7 @@ export async function handleGuestbookSubmission(request: Request): Promise<Respo
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Guestbook submission error:", error);
+    logger.error("Guestbook submission error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

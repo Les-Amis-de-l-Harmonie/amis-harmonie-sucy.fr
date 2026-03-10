@@ -1,5 +1,6 @@
 import { requireAdminAuth } from "@/app/api/auth";
 
+import { logger } from "@/lib/logger";
 const CLOUDFLARE_API_TOKEN = "7cvjvmdYnGEdxIHiw6-1CweeHzkpl7OA3CjymNv9";
 const ZONE_TAG = "amis-harmonie-sucy.fr";
 
@@ -73,7 +74,7 @@ export async function handleAdminAnalyticsApi(request: Request): Promise<Respons
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Cloudflare Analytics API error:", errorText);
+      logger.error("Cloudflare Analytics API error:", errorText);
       return new Response(JSON.stringify({ error: "Failed to fetch analytics from Cloudflare" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -95,7 +96,7 @@ export async function handleAdminAnalyticsApi(request: Request): Promise<Respons
     };
 
     if (data.errors) {
-      console.error("GraphQL errors:", data.errors);
+      logger.error("GraphQL errors:", data.errors);
       return new Response(JSON.stringify({ error: "GraphQL query failed", details: data.errors }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -179,7 +180,7 @@ export async function handleAdminAnalyticsApi(request: Request): Promise<Respons
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Analytics API error:", error);
+    logger.error("Analytics API error:", error);
     return new Response(JSON.stringify({ error: "Failed to fetch analytics" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

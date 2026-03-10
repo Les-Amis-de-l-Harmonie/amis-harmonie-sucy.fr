@@ -1,8 +1,10 @@
 import { env } from "cloudflare:workers";
+import type { Video } from "@/db/types";
 
 import { checkAdminAuth } from "@/app/api/admin-crud";
 import { invalidateCache } from "@/lib/cache";
 
+import { logger } from "@/lib/logger";
 interface VideoInput {
   title: string;
   youtube_id: string;
@@ -59,14 +61,16 @@ export async function handleVideosApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const video = await env.DB.prepare("SELECT * FROM videos WHERE id = ?").bind(id).first();
+        const video = await env.DB.prepare("SELECT * FROM videos WHERE id = ?")
+          .bind(id)
+          .first<Video>();
         return new Response(JSON.stringify(video), {
           headers: { "Content-Type": "application/json" },
         });
       }
       const videos = await env.DB.prepare(
         "SELECT * FROM videos ORDER BY sort_order ASC, publication_date DESC, created_at DESC"
-      ).all();
+      ).all<Video>();
       return new Response(JSON.stringify(videos.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -168,7 +172,7 @@ export async function handleVideosApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Videos API error:", error);
+    logger.error("Videos API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

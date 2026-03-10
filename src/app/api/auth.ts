@@ -3,6 +3,7 @@ import type { User, AuthToken, Session, UserRole } from "@/db/types";
 import { isAdmin } from "@/db/types";
 import { invalidateCache } from "@/lib/cache";
 
+import { logger } from "@/lib/logger";
 function generateToken(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
@@ -159,7 +160,7 @@ export async function handleMagicLinkRequest(
 
     if (!emailResponse.ok) {
       const errorData = await emailResponse.text();
-      console.error("Resend error:", errorData);
+      logger.error("Resend error:", errorData);
       return new Response(JSON.stringify({ error: "Erreur lors de l'envoi de l'email" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -177,7 +178,7 @@ export async function handleMagicLinkRequest(
       }
     );
   } catch (error) {
-    console.error("Magic link error:", error);
+    logger.error("Magic link error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -264,7 +265,7 @@ export async function handleMagicLinkVerify(
       headers,
     });
   } catch (error) {
-    console.error("Token verification error:", error);
+    logger.error("Token verification error:", error);
     return Response.redirect(new URL(`${loginPath}?error=server_error`, url.origin).toString());
   }
 }
@@ -275,7 +276,6 @@ export async function handleLogout(
 ): Promise<Response> {
   const cookieName = getCookieName(context);
   const cookieHeader = request.headers.get("Cookie") || "";
-  const _loginPath = getLoginPath(context);
   const sessionMatch = cookieHeader.match(new RegExp(`${cookieName}=([^;]+)`));
   const sessionId = sessionMatch ? sessionMatch[1] : null;
 

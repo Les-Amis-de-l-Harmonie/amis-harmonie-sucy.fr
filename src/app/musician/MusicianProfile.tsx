@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -11,13 +11,14 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
-import { Camera, Save, Loader2, Plus, Trash2, Check } from "lucide-react";
-import type { MusicianProfile, MusicianInstrument } from "@/db/types";
+import { Save, Loader2, Check } from "lucide-react";
+import type { MusicianProfile } from "@/db/types";
 import { HARMONIE_INSTRUMENTS } from "@/db/types";
-import { CircularCropper } from "@/app/components/CircularCropper";
+import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
+import { InstrumentEditor, type Instrument } from "@/app/components/shared/InstrumentEditor";
 
 interface ProfileWithInstruments extends Partial<MusicianProfile> {
-  instruments?: Partial<MusicianInstrument>[];
+  instruments?: Instrument[];
   harmonieInstruments?: string[];
   email?: string;
 }
@@ -30,13 +31,9 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Regex patterns for validation
   const REGEX_PATTERNS = {
@@ -137,93 +134,6 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    const maxSize = 5 * 1024 * 1024; // 5 Mo
-
-    if (!allowedTypes.includes(file.type)) {
-      setMessage({
-        type: "error",
-        text: "Format non supporté. Formats acceptés : JPG, PNG ou WebP",
-      });
-      return;
-    }
-
-    if (file.size > maxSize) {
-      setMessage({
-        type: "error",
-        text: "Fichier trop volumineux. Taille maximale : 5 Mo",
-      });
-      return;
-    }
-
-    // Open cropper instead of uploading directly
-    setSelectedImage(file);
-    setCropperOpen(true);
-  };
-
-  const handleCroppedImage = async (croppedBlob: Blob) => {
-    setCropperOpen(false);
-    setUploadingAvatar(true);
-    setMessage(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", croppedBlob, "avatar.jpg");
-
-      const response = await fetch("/api/musician/avatar", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json()) as { url?: string; error?: string };
-
-      if (response.ok && data.url) {
-        setProfile({ ...profile, avatar: data.url });
-        setMessage({ type: "success", text: "Photo de profil mise à jour" });
-      } else {
-        setMessage({ type: "error", text: data.error || "Erreur lors du téléchargement" });
-      }
-    } catch (err) {
-      console.error("Error uploading avatar:", err);
-      setMessage({ type: "error", text: "Erreur lors du téléchargement" });
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
-  const addInstrument = () => {
-    setProfile({
-      ...profile,
-      instruments: [
-        ...(profile.instruments || []),
-        { instrument_name: "", start_date: "", level: "" },
-      ],
-    });
-  };
-
-  const removeInstrument = (index: number) => {
-    const newInstruments = [...(profile.instruments || [])];
-    newInstruments.splice(index, 1);
-    if (newInstruments.length === 0) {
-      newInstruments.push({ instrument_name: "", start_date: "", level: "" });
-    }
-    setProfile({ ...profile, instruments: newInstruments });
-  };
-
-  const updateInstrument = (index: number, field: keyof MusicianInstrument, value: string) => {
-    const newInstruments = [...(profile.instruments || [])];
-    newInstruments[index] = { ...newInstruments[index], [field]: value };
-    setProfile({ ...profile, instruments: newInstruments });
-  };
 
   const validateProfile = (): string | null => {
     const errors: string[] = [];
@@ -331,39 +241,20 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                disabled={uploadingAvatar}
-                className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              >
-                {profile.avatar ? (
-                  <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Camera className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                  </div>
-                )}
-                {uploadingAvatar && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-white" />
-                  </div>
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              <p>Format : JPG, PNG ou WebP</p>
-              <p>Taille max : 5 Mo</p>
-            </div>
+          <AvatarUploader
+            avatar={profile.avatar}
+            onUpload={(url) => {
+              setProfile({ ...profile, avatar: url });
+              setMessage({ type: "success", text: "Photo de profil mise à jour" });
+            }}
+            uploadEndpoint="/api/musician/avatar"
+            size={96}
+            showInstructions={false}
+            onError={(errorMsg) => setMessage({ type: "error", text: errorMsg })}
+          />
+          <div className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            <p>Format : JPG, PNG ou WebP</p>
+            <p>Taille max : 5 Mo</p>
           </div>
         </CardContent>
       </Card>
@@ -618,56 +509,10 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
             />
           </div>
 
-          <div className="space-y-4">
-            <Label>Instruments</Label>
-            {(profile.instruments || []).map((instrument, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Instrument {index + 1}
-                  </span>
-                  {(profile.instruments?.length || 0) > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeInstrument(index)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Instrument</Label>
-                    <Input
-                      value={instrument.instrument_name || ""}
-                      onChange={(e) => updateInstrument(index, "instrument_name", e.target.value)}
-                      placeholder="Ex: Clarinette"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Date de début</Label>
-                    <Input
-                      type="date"
-                      value={instrument.start_date || ""}
-                      onChange={(e) => updateInstrument(index, "start_date", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Niveau conservatoire</Label>
-                    <Input
-                      value={instrument.level || ""}
-                      onChange={(e) => updateInstrument(index, "level", e.target.value)}
-                      placeholder="Ex: Cycle 3"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Button variant="outline" onClick={addInstrument} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un instrument
-            </Button>
-          </div>
+          <InstrumentEditor
+            instruments={(profile.instruments || []) as Instrument[]}
+            onChange={(instruments) => setProfile({ ...profile, instruments })}
+          />
         </CardContent>
       </Card>
 
@@ -869,13 +714,6 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           )}
         </Button>
       </div>
-
-      <CircularCropper
-        imageFile={selectedImage}
-        isOpen={cropperOpen}
-        onClose={() => setCropperOpen(false)}
-        onConfirm={handleCroppedImage}
-      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 
+import { logger } from "@/lib/logger";
 export async function handleContactSubmission(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -27,7 +28,7 @@ export async function handleContactSubmission(request: Request): Promise<Respons
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Contact submission error:", error);
+    logger.error("Contact submission error:", error);
     return new Response("Internal server error", { status: 500 });
   }
 }

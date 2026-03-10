@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -27,23 +27,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { CircularCropper } from "@/app/components/CircularCropper";
 import {
   Pencil,
   Eye,
-  Trash2,
   Shield,
   Music,
   Camera,
-  Loader2,
   Search,
   Plus,
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
   Download,
+  Users,
 } from "lucide-react";
-import { Users } from "lucide-react";
+import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
+import { InstrumentEditor } from "@/app/components/shared/InstrumentEditor";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import type { UserRole } from "@/db/types";
 import { isSuperAdmin } from "@/db/types";
@@ -139,7 +138,7 @@ interface UserWithProfile {
   emergency_contact_phone?: string | null;
   image_consent?: number | null;
   adhesion_2025_2026?: number | null;
-  instruments?: { instrument_name: string; start_date?: string; level?: string }[];
+  instruments?: { instrument_name: string; start_date?: string | null; level?: string | null }[];
   harmonieInstruments?: string[];
 }
 
@@ -163,11 +162,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [editing, setEditing] = useState<Partial<UserWithProfile> | null>(null);
   const [viewing, setViewing] = useState<Partial<UserWithProfile> | null>(null);
   const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN">("all");
@@ -198,58 +193,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !editing) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Veuillez sélectionner une image");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("L'image ne doit pas dépasser 5 Mo");
-      return;
-    }
-
-    // Open cropper instead of uploading directly
-    setSelectedImage(file);
-    setCropperOpen(true);
-  };
-
-  const handleCroppedImage = async (croppedBlob: Blob) => {
-    setCropperOpen(false);
-    setUploadingAvatar(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", croppedBlob, "avatar.jpg");
-
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json()) as { url?: string; error?: string };
-
-      if (response.ok && data.url) {
-        setEditing({ ...editing, avatar: data.url });
-      } else {
-        setError(data.error || "Erreur lors du téléchargement");
-      }
-    } catch (err) {
-      console.error("Error uploading avatar:", err);
-      setError("Erreur lors du téléchargement");
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
 
   const handleSave = async () => {
     if (!editing) return;
@@ -438,34 +381,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       return `${user.first_name || ""} ${user.last_name || ""}`.trim();
     }
     return null;
-  };
-
-  const addInstrument = () => {
-    if (!editing) return;
-    setEditing({
-      ...editing,
-      instruments: [
-        ...(editing.instruments || []),
-        { instrument_name: "", start_date: "", level: "" },
-      ],
-    });
-  };
-
-  const removeInstrument = (index: number) => {
-    if (!editing) return;
-    const newInstruments = [...(editing.instruments || [])];
-    newInstruments.splice(index, 1);
-    if (newInstruments.length === 0) {
-      newInstruments.push({ instrument_name: "", start_date: "", level: "" });
-    }
-    setEditing({ ...editing, instruments: newInstruments });
-  };
-
-  const updateInstrument = (index: number, field: string, value: string) => {
-    if (!editing) return;
-    const newInstruments = [...(editing.instruments || [])];
-    newInstruments[index] = { ...newInstruments[index], [field]: value };
-    setEditing({ ...editing, instruments: newInstruments });
   };
 
   const openEditDialog = (user: Partial<UserWithProfile>) => {
@@ -877,44 +792,13 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 </div>
               )}
 
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={handleAvatarClick}
-                    disabled={uploadingAvatar}
-                    className="relative w-20 h-20 rounded-full overflow-hidden bg-muted hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  >
-                    {editing.avatar ? (
-                      <img
-                        src={editing.avatar}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Camera className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    {uploadingAvatar && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin text-white" />
-                      </div>
-                    )}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Photo de profil</p>
-                  <p>Cliquez pour changer</p>
-                </div>
-              </div>
+              <AvatarUploader
+                avatar={editing.avatar}
+                onUpload={(url) => setEditing({ ...editing, avatar: url })}
+                uploadEndpoint="/api/admin/upload"
+                size={80}
+                onError={setError}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -1282,64 +1166,10 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                           placeholder="Ex: Cycle 2, 3ème année"
                         />
                       </div>
-                      <div className="grid gap-2">
-                        <Label>Instruments</Label>
-                        {(editing.instruments || []).map((instrument, index) => (
-                          <div
-                            key={index}
-                            className="p-4 border border-border rounded-lg space-y-4"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-foreground">
-                                Instrument {index + 1}
-                              </span>
-                              {(editing.instruments?.length || 0) > 1 && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeInstrument(index)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="grid gap-2">
-                                <Label>Instrument</Label>
-                                <Input
-                                  value={instrument.instrument_name || ""}
-                                  onChange={(e) =>
-                                    updateInstrument(index, "instrument_name", e.target.value)
-                                  }
-                                  placeholder="Ex: Clarinette"
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label>Date de début</Label>
-                                <Input
-                                  type="date"
-                                  value={instrument.start_date || ""}
-                                  onChange={(e) =>
-                                    updateInstrument(index, "start_date", e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label>Niveau conservatoire</Label>
-                                <Input
-                                  value={instrument.level || ""}
-                                  onChange={(e) => updateInstrument(index, "level", e.target.value)}
-                                  placeholder="Ex: Cycle 3"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <Button variant="outline" onClick={addInstrument} className="w-full">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Ajouter un instrument
-                        </Button>
-                      </div>
+                      <InstrumentEditor
+                        instruments={editing.instruments || []}
+                        onChange={(instruments) => setEditing({ ...editing, instruments })}
+                      />
                     </div>
                   </div>
 
@@ -1416,13 +1246,6 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <CircularCropper
-        imageFile={selectedImage}
-        isOpen={cropperOpen}
-        onClose={() => setCropperOpen(false)}
-        onConfirm={handleCroppedImage}
-      />
-
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Event } from "@/db/types";
 import { ExpandableDescription } from "./ExpandableDescription";
 import { isEventPast, formatDateFrench } from "@/lib/dates";
@@ -6,7 +7,7 @@ interface EventCardProps {
   event: Event;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const isPast = isEventPast(event.date);
   return (
     <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/80 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
@@ -94,4 +95,4 @@ export function EventCard({ event }: EventCardProps) {
       </div>
     </div>
   );
-}
+});

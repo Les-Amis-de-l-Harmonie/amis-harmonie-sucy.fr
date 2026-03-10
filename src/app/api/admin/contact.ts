@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
+import type { ContactSubmission } from "@/db/types";
 
 import { checkAdminAuth } from "@/app/api/admin-crud";
 
+import { logger } from "@/lib/logger";
 export async function handleContactApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
   if (authError) return authError;
@@ -14,14 +16,14 @@ export async function handleContactApi(request: Request): Promise<Response> {
       if (id) {
         const sub = await env.DB.prepare("SELECT * FROM contact_submissions WHERE id = ?")
           .bind(id)
-          .first();
+          .first<ContactSubmission>();
         return new Response(JSON.stringify(sub), {
           headers: { "Content-Type": "application/json" },
         });
       }
       const subs = await env.DB.prepare(
         "SELECT * FROM contact_submissions ORDER BY created_at DESC"
-      ).all();
+      ).all<ContactSubmission>();
       return new Response(JSON.stringify(subs.results), {
         headers: { "Content-Type": "application/json" },
       });
@@ -45,7 +47,7 @@ export async function handleContactApi(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Contact API error:", error);
+    logger.error("Contact API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

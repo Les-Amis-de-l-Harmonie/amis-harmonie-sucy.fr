@@ -134,6 +134,21 @@ export function Header() {
     setOpenAccordion((current) => (current === label ? null : label));
   }, []);
 
+  const handleMouseEnter = useCallback(
+    (label: string) => {
+      setOpenDropdown(label);
+    },
+    [setOpenDropdown]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    setOpenDropdown(null);
+  }, [setOpenDropdown]);
+
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
+
   // Close menu on Escape key
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -180,8 +195,8 @@ export function Header() {
               <div
                 key={item.label}
                 className="relative group"
-                onMouseEnter={() => item.children && setOpenDropdown(item.label)}
-                onMouseLeave={() => setOpenDropdown(null)}
+                onMouseEnter={() => item.children && handleMouseEnter(item.label)}
+                onMouseLeave={handleMouseLeave}
               >
                 <a
                   href={item.href}
@@ -236,7 +251,7 @@ export function Header() {
             {/* Animated Hamburger Button */}
             <button
               className="relative w-11 h-11 flex items-center justify-center text-gray-900 dark:text-gray-100"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={toggleMobileMenu}
               aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
               aria-expanded={mobileMenuOpen}
             >

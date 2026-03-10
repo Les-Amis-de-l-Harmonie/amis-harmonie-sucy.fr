@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
 import { UPLOAD_CONFIG } from "@/lib/constants";
 
+import { logger } from "@/lib/logger";
 function validateFileSignature(buffer: ArrayBuffer): string | null {
   const bytes = new Uint8Array(buffer);
 
@@ -106,7 +107,7 @@ export async function handleImageUpload(request: Request): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    logger.error("Upload error:", error);
     return new Response(JSON.stringify({ error: "Upload failed" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
