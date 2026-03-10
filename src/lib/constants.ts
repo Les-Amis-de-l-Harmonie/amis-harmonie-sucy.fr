@@ -1,3 +1,4 @@
+// Static configuration - safe for client and server
 export const IMAGE_CONFIG = {
   EVENT_TARGET_WIDTH: 600,
   EVENT_TARGET_HEIGHT: 600,
@@ -17,14 +18,6 @@ export const IMAGE_CONFIG = {
   },
 } as const;
 
-import { env } from "cloudflare:workers";
-
-export const CACHE_CONFIG = {
-  TTL_SECONDS: parseInt(env.CACHE_TTL_SECONDS || "3600", 10),
-  STALE_WHILE_REVALIDATE_SECONDS: parseInt(env.CACHE_STALE_WHILE_REVALIDATE_SECONDS || "86400", 10),
-  MAX_AGE_SECONDS: 0,
-} as const;
-
 export const UPLOAD_CONFIG = {
   MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024,
   ALLOWED_FOLDERS: ["events", "gallery", "avatars", "publications"] as const,
@@ -37,25 +30,6 @@ export const UPLOAD_CONFIG = {
   } as const,
 } as const;
 
-export const RATE_LIMIT_CONFIG = {
-  AUTH_MAGIC_LINK: {
-    maxRequests: parseInt(env.RATE_LIMIT_AUTH_MAX || "5", 10),
-    windowMs: 15 * 60 * 1000,
-  },
-  CONTACT_FORM: {
-    maxRequests: parseInt(env.RATE_LIMIT_CONTACT_MAX || "3", 10),
-    windowMs: 60 * 60 * 1000,
-  },
-  GUESTBOOK: {
-    maxRequests: parseInt(env.RATE_LIMIT_GUESTBOOK_MAX || "3", 10),
-    windowMs: 60 * 60 * 1000,
-  },
-  ADMIN_UPLOAD: {
-    maxRequests: parseInt(env.RATE_LIMIT_UPLOAD_MAX || "10", 10),
-    windowMs: 60 * 1000,
-  },
-} as const;
-
 export const AUTH_CONFIG = {
   SESSION_DURATION_SECONDS: 7 * 24 * 60 * 60,
   COOKIE_NAME: "session",
@@ -64,5 +38,32 @@ export const AUTH_CONFIG = {
     secure: true,
     sameSite: "lax" as const,
     path: "/",
+  },
+} as const;
+
+// Default values for environment-dependent config
+// These are overridden by env-config.ts on the server
+export const CACHE_CONFIG = {
+  TTL_SECONDS: 3600,
+  STALE_WHILE_REVALIDATE_SECONDS: 86400,
+  MAX_AGE_SECONDS: 0,
+} as const;
+
+export const RATE_LIMIT_CONFIG = {
+  AUTH_MAGIC_LINK: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000,
+  },
+  CONTACT_FORM: {
+    maxRequests: 3,
+    windowMs: 60 * 60 * 1000,
+  },
+  GUESTBOOK: {
+    maxRequests: 3,
+    windowMs: 60 * 60 * 1000,
+  },
+  ADMIN_UPLOAD: {
+    maxRequests: 10,
+    windowMs: 60 * 1000,
   },
 } as const;

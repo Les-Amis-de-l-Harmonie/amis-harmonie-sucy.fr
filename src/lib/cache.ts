@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { CACHE_CONFIG } from "./constants";
+import { CACHE_CONFIG } from "./env-config";
 
 const CACHE_VERSION_KEY = "cache_version";
 const CACHE_TTL = 60 * 60 * 24;

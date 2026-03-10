@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { RATE_LIMIT_CONFIG } from "./constants";
+import { RATE_LIMIT_CONFIG } from "./env-config";
 
 export interface RateLimitConfig {
   maxRequests: number;
