@@ -27,6 +27,9 @@ async function HeroSection() {
         src="/images/banner-bg-shape.svg"
         alt=""
         className="absolute bottom-0 left-0 z-[-1] w-full dark:opacity-20"
+        width={1920}
+        height={420}
+        loading="eager"
       />
       <div className="mx-auto max-w-[1320px]">
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:px-8 gap-8">

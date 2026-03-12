@@ -31,6 +31,9 @@ export async function Harmonie() {
               src="/images/harmonie25.webp"
               alt="L'Harmonie Municipale de Sucy-en-Brie"
               className="w-full"
+              width={1920}
+              height={1080}
+              loading="eager"
             />
           </ScrollReveal>
 
@@ -86,6 +89,8 @@ export async function Harmonie() {
                 src="/images/i.webp"
                 alt="Information"
                 loading="lazy"
+                width={512}
+                height={512}
               />
             </div>
             <div className="w-full md:w-3/4 text-center md:text-left text-white md:pl-16 py-6 md:py-10 px-4">
@@ -124,6 +129,8 @@ export async function Harmonie() {
                       alt={image.alt_text || ""}
                       className="rounded-lg shadow-md object-cover w-full h-full"
                       loading="lazy"
+                      width={1200}
+                      height={800}
                     />
                   </div>
                 </ScrollReveal>

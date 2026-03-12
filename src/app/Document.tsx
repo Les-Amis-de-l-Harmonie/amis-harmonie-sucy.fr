@@ -77,8 +77,10 @@ export const Document: React.FC<DocumentProps> = ({ children, path = "/" }) => {
         <meta name="geo.placename" content="Sucy-en-Brie" />
 
         <meta name="theme-color" content="#a5b3e2" />
-        <link rel="icon" href="/images/logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/images/logo.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/images/logo.webp" type="image/webp" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.webp" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/images/logo.webp" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

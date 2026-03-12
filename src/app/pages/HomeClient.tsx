@@ -26,6 +26,9 @@ export function HomeSlideshow({ images }: HomeSlideshowProps) {
           src={image.image_url}
           alt={image.alt_text || ""}
           className="absolute inset-0 w-full h-full object-contain transition-transform duration-1000 ease-in-out rounded-xl"
+          width={1280}
+          height={720}
+          loading={index === 0 ? "eager" : "lazy"}
           style={{
             transform: `translateX(${(index - currentSlide) * 100}%)`,
           }}

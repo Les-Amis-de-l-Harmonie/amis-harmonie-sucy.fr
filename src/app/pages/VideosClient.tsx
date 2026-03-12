@@ -33,6 +33,8 @@ const VideoCard = memo(function VideoCard({
           alt={video.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
+          width={1280}
+          height={720}
           onError={handleImageError}
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">

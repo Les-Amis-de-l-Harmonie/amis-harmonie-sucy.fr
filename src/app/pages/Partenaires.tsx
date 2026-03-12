@@ -41,6 +41,8 @@ export async function Partenaires() {
                     alt={partner.alt_text || ""}
                     className="max-h-24 w-auto object-contain"
                     loading="lazy"
+                    width={240}
+                    height={96}
                   />
                 </div>
               </ScrollReveal>

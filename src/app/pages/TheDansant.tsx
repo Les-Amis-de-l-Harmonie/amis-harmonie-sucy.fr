@@ -94,8 +94,10 @@ export async function TheDansant() {
                 key={flyer.id}
                 src={flyer.image_url}
                 alt={flyer.alt_text || "Flyer Thé Dansant"}
-                className="w-full rounded-lg shadow-lg"
+                className="w-full h-auto rounded-lg shadow-lg"
                 loading="lazy"
+                width={1200}
+                height={1600}
               />
             ))}
           </div>
@@ -149,7 +151,14 @@ export async function TheDansant() {
               </p>
               <div className="flex justify-center mb-8">
                 <a href="https://www.ville-sucy.fr/" target="_blank" rel="noopener noreferrer">
-                  <img src="/images/logo-sucy.webp" alt="Ville de Sucy-en-Brie" className="h-24" />
+                  <img
+                    src="/images/logo-sucy.webp"
+                    alt="Ville de Sucy-en-Brie"
+                    className="h-24 w-auto"
+                    width={240}
+                    height={96}
+                    loading="eager"
+                  />
                 </a>
               </div>
 
@@ -174,6 +183,9 @@ export async function TheDansant() {
                       src={sponsor.image_url}
                       alt={sponsor.alt_text || ""}
                       className="max-h-16 w-auto object-contain"
+                      loading="lazy"
+                      width={160}
+                      height={64}
                     />
                   </a>
                 ))}
@@ -213,6 +225,8 @@ export async function TheDansant() {
                       alt={a.name}
                       className="max-h-16 w-auto object-contain"
                       loading="lazy"
+                      width={160}
+                      height={64}
                     />
                   </a>
                 ))}
@@ -231,6 +245,9 @@ export async function TheDansant() {
                       src={image.image_url}
                       alt={image.alt_text || "Thé Dansant"}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      width={1200}
+                      height={800}
                     />
                   </div>
                 </ScrollReveal>

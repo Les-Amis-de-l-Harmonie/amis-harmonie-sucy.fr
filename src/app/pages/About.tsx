@@ -98,7 +98,14 @@ export async function About() {
                   delay={index * 100}
                   className="w-full sm:w-1/2 md:w-1/3 max-w-[275px] mb-6 px-2"
                 >
-                  <img src={member.image_url} alt={name} className="mb-3 w-full" loading="lazy" />
+                  <img
+                    src={member.image_url}
+                    alt={name}
+                    className="mb-3 w-full h-auto"
+                    loading="lazy"
+                    width={800}
+                    height={1000}
+                  />
                   <h5 className="text-primary font-bold">{name}</h5>
                   <p className="text-gray-700 dark:text-gray-300">{role}</p>
                 </ScrollReveal>
@@ -120,6 +127,8 @@ export async function About() {
                       alt={image.alt_text || ""}
                       className="rounded-lg shadow-md object-cover w-full h-full"
                       loading="lazy"
+                      width={1200}
+                      height={800}
                     />
                   </div>
                 </ScrollReveal>

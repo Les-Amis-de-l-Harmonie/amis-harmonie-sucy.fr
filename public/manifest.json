@@ -1,0 +1,21 @@
+{
+  "name": "Amis de l'Harmonie de Sucy",
+  "short_name": "Harmonie Sucy",
+  "theme_color": "#a5b3e2",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/images/logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "/images/logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}
