@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { LogOut, Home, Globe, ChevronDown, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { MusicianNav } from "@/app/components/MusicianNav";
 
 interface MusicianLayoutProps {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ export function MusicianLayout({ children, firstName, lastName, avatar }: Musici
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 transition-colors">
+      <MusicianNav />
       <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 transition-colors">
         <div className="max-w-4xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
