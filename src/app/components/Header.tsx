@@ -292,7 +292,7 @@ export function Header() {
 
       {/* Mobile Menu Panel */}
       <div
-        className={`lg:hidden overflow-hidden transition-all duration-350 ease-in-out ${
+        className={`lg:hidden overflow-hidden transition-all duration-350 ease-in-out z-50 ${
           mobileMenuOpen ? "max-h-[calc(100vh-5rem)] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
