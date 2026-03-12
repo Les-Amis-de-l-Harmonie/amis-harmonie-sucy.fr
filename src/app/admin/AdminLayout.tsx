@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   Info,
   Shield,
+  Globe,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import type { UserRole } from "@/db/types";
@@ -42,6 +43,10 @@ const navItems = [
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
   { href: "/admin/card-order", label: "Ordre cartouches", icon: LayoutGrid },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
+];
+
+const externalLinks = [
+  { href: "https://amis-harmonie-sucy.fr", label: "Voir le site", icon: Globe },
 ];
 
 export function AdminLayout({ children, email, role }: AdminLayoutProps) {
@@ -149,6 +154,21 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
             })}
           </nav>
 
+          <div className="px-4 py-2 border-t border-border">
+            {externalLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </a>
+            ))}
+          </div>
+
           <div className="hidden lg:block px-4 py-4 border-t border-border">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
@@ -188,31 +208,8 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
       </aside>
 
       <main className="min-h-[calc(100vh-64px)] lg:min-h-screen lg:flex-1 lg:min-w-0">
-        <div className="px-4 py-4 sm:px-6 lg:px-8 pb-24 sm:pb-28 lg:pb-8">{children}</div>
+        <div className="px-4 py-4 sm:px-6 lg:px-8 pb-8">{children}</div>
       </main>
-
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border">
-        <div className="flex items-center justify-around py-2 px-1 overflow-x-auto">
-          {navItems.map((item) => {
-            const isActive = currentPage === item.href;
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-[60px] ${
-                  isActive ? "text-primary bg-primary/5" : "text-muted-foreground"
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
-                <span className="text-[10px] leading-tight text-center">
-                  {item.label.split(" ")[0]}
-                </span>
-              </a>
-            );
-          })}
-        </div>
-        <div className="h-[env(safe-area-inset-bottom,0px)] bg-card" />
-      </div>
     </div>
   );
 }
