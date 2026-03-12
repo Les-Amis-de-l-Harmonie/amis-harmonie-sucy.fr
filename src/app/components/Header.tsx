@@ -292,11 +292,11 @@ export function Header() {
 
       {/* Mobile Menu Panel */}
       <div
-        className={`lg:hidden overflow-hidden transition-all duration-350 ease-in-out z-50 ${
-          mobileMenuOpen ? "max-h-[calc(100vh-5rem)] opacity-100" : "max-h-0 opacity-0"
+        className={`lg:hidden fixed left-0 right-0 top-20 bottom-0 z-50 transition-all duration-350 ease-in-out ${
+          mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
       >
-        <nav className="py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <nav className="h-full overflow-y-auto py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           {navItems.map((item, index) => (
             <div
               key={item.label}
