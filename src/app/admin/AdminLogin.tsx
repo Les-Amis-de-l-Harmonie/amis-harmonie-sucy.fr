@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -12,6 +11,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
+import { ArrowLeft } from "lucide-react";
 
 export function AdminLoginClient() {
   const [email, setEmail] = useState("");
@@ -60,6 +60,14 @@ export function AdminLoginClient() {
     typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const errorParam = urlParams?.get("error");
 
+  const errorMessages: Record<string, string> = {
+    invalid_token: "Le lien de connexion est invalide ou a déjà été utilisé.",
+    expired_token: "Le lien de connexion a expiré. Veuillez en demander un nouveau.",
+    account_inactive: "Votre compte est inactif. Contactez l'administrateur.",
+    server_error: "Une erreur serveur est survenue. Veuillez réessayer.",
+    unauthorized: "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors">
       <Card className="w-full max-w-md">
@@ -81,14 +89,7 @@ export function AdminLoginClient() {
         <CardContent>
           {errorParam && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-md text-sm">
-              {errorParam === "invalid_token" &&
-                "Le lien de connexion est invalide ou a déjà été utilisé."}
-              {errorParam === "expired_token" &&
-                "Le lien de connexion a expiré. Veuillez en demander un nouveau."}
-              {errorParam === "account_inactive" &&
-                "Votre compte est inactif. Contactez l'administrateur."}
-              {errorParam === "server_error" &&
-                "Une erreur serveur est survenue. Veuillez réessayer."}
+              {errorMessages[errorParam] || "Une erreur est survenue."}
             </div>
           )}
 
@@ -103,11 +104,12 @@ export function AdminLoginClient() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Envoi en cours..." : "Envoyer le lien magique"}
+              {loading ? "Envoi en cours..." : "Envoyer le lien de connexion"}
             </Button>
           </form>
 
@@ -137,6 +139,18 @@ export function AdminLoginClient() {
               </a>
             </div>
           )}
+
+          <div className="mt-6 pt-4 border-t border-border text-center">
+            <p className="text-xs text-muted-foreground">
+              Problème de connexion?{" "}
+              <a
+                href="mailto:contact@amis-harmonie-sucy.fr"
+                className="text-primary hover:underline"
+              >
+                Contactez le support
+              </a>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

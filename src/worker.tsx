@@ -26,6 +26,8 @@ import {
   handleLogout,
   verifySession,
 } from "@/app/api/auth";
+import { handleUserCheckRequest } from "@/app/api/check-user";
+import { handleDebugAuthRequest } from "@/app/api/debug-auth";
 import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
@@ -184,6 +186,9 @@ const app = defineApp([
       return handleMagicLinkRequest(request, "musician");
     },
   }),
+
+  route("/api/check-user", ({ request }: { request: Request }) => handleUserCheckRequest(request)),
+  route("/api/debug-auth", ({ request }: { request: Request }) => handleDebugAuthRequest(request)),
 
   route("/api/admin/events", ({ request }: { request: Request }) => handleEventsApi(request)),
   route("/api/admin/videos", ({ request }: { request: Request }) => handleVideosApi(request)),
