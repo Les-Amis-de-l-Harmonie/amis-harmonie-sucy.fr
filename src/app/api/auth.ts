@@ -137,7 +137,7 @@ export async function handleMagicLinkRequest(
         "User-Agent": "amis-harmonie-app/1.0",
       },
       body: JSON.stringify({
-        from: "Les Amis de l'Harmonie <onboarding@resend.dev>",
+        from: "Les Amis de l'Harmonie <noreply@notifications.amis-harmonie-sucy.fr>",
         to: email,
         subject: "Votre lien de connexion - Les Amis de l'Harmonie",
         html: `
