@@ -78,6 +78,7 @@ import { MusicianHomeClient } from "@/app/musician/MusicianHome";
 import { MusicianProfileClient } from "@/app/musician/MusicianProfile";
 import { MusicianIdeeClient } from "@/app/musician/MusicianIdee";
 import { MusicianAssuranceClient } from "@/app/musician/MusicianAssurance";
+import { MusicianTrombinoscopeClient } from "@/app/musician/MusicianTrombinoscope";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
 

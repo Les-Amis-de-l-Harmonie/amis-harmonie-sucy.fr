@@ -52,7 +52,7 @@ interface ProfileWithExtras extends Partial<MusicianProfile> {
 }
 
 interface UpcomingEvent {
-  id: number;
+  id?: number;
   title: string;
   date: string;
 }
@@ -114,7 +114,6 @@ export function MusicianHomeClient({
     try {
       const [
         profileRes,
-        eventsRes,
         outingRes,
         cardOrderRes,
         infoRes,
@@ -124,7 +123,6 @@ export function MusicianHomeClient({
         videosRes,
       ] = await Promise.all([
         fetch("/api/musician/profile"),
-        fetch("/api/events"),
         fetch("/api/outing-settings"),
         fetch("/api/card-order"),
         fetch("/api/info-settings"),
@@ -137,13 +135,6 @@ export function MusicianHomeClient({
       if (profileRes.ok) {
         const data = (await profileRes.json()) as ProfileWithExtras;
         setProfile(data);
-      }
-
-      if (eventsRes.ok) {
-        const eventsData = (await eventsRes.json()) as { upcoming: UpcomingEvent[] };
-        if (eventsData.upcoming && eventsData.upcoming.length > 0) {
-          setNextEvent(eventsData.upcoming[0]);
-        }
       }
 
       if (outingRes.ok) {
@@ -190,8 +181,14 @@ export function MusicianHomeClient({
       }
 
       if (planningRes.ok) {
-        const planningData = (await planningRes.json()) as { urgent: boolean };
+        const planningData = (await planningRes.json()) as {
+          urgent: boolean;
+          nextEvent: UpcomingEvent | null;
+        };
         setPlanningUrgent(planningData.urgent);
+        if (planningData.nextEvent) {
+          setNextEvent(planningData.nextEvent);
+        }
       }
 
       if (videosRes.ok) {
@@ -960,18 +957,25 @@ export function MusicianHomeClient({
         variants={containerVariants}
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch"
       >
-        {cardOrder.map((cardType) => (
-          <motion.div
-            key={cardType}
-            variants={itemVariants}
-            initial="rest"
-            whileHover="hover"
-            animate="rest"
-            style={{ cursor: "pointer" }}
-          >
-            <motion.div variants={cardHoverVariants}>{renderCard(cardType)}</motion.div>
-          </motion.div>
-        ))}
+        {cardOrder
+          .filter((cardType) => {
+            if (cardType === "outing" && outingSettings?.is_active !== 1) {
+              return false;
+            }
+            return true;
+          })
+          .map((cardType) => (
+            <motion.div
+              key={cardType}
+              variants={itemVariants}
+              initial="rest"
+              whileHover="hover"
+              animate="rest"
+              style={{ cursor: "pointer" }}
+            >
+              <motion.div variants={cardHoverVariants}>{renderCard(cardType)}</motion.div>
+            </motion.div>
+          ))}
       </motion.div>
     </div>
   );
