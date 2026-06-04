@@ -13,8 +13,8 @@ interface TrombinoscopeEntry {
   image_consent: number;
 }
 
-function getAnciennete(startDate: string | null): string {
-  if (!startDate) return "Non renseignée";
+function getAnciennete(startDate: string | null) {
+  if (!startDate) return <span className="text-sm text-gray-500 dark:text-gray-400">Non renseignée</span>;
   const start = new Date(startDate);
   const now = new Date();
 
@@ -35,15 +35,18 @@ function getAnciennete(startDate: string | null): string {
     year: "numeric",
   });
 
-  let anciennete = `Depuis le ${dateStr}`;
-  if (years > 0 || months > 0) {
-    const parts: string[] = [];
-    if (years > 0) parts.push(`${years} an${years > 1 ? "s" : ""}`);
-    if (months > 0) parts.push(`${months} mois`);
-    anciennete += ` (${parts.join(" et ")})`;
-  }
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} an${years > 1 ? "s" : ""}`);
+  if (months > 0) parts.push(`${months} mois`);
+  const duree = parts.length > 0 ? `(${parts.join(" et ")})` : null;
 
-  return anciennete;
+  return (
+    <span className="text-sm text-gray-500 dark:text-gray-400">
+      Depuis le {dateStr}
+      {duree && <br />}
+      {duree && <span>{duree}</span>}
+    </span>
+  );
 }
 
 function getInitials(firstName: string | null, lastName: string | null): string {
@@ -350,9 +353,7 @@ export function MusicianTrombinoscopeClient() {
               )}
 
               {/* Seniority */}
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {getAnciennete(musician.harmonie_start_date)}
-              </p>
+              {getAnciennete(musician.harmonie_start_date)}
             </div>
           ))}
         </div>
