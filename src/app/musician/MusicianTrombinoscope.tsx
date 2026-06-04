@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Users, User, RefreshCw, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Users, User, RefreshCw, Loader2, Search, X } from "lucide-react";
 
 interface TrombinoscopeEntry {
   user_id: number;
@@ -17,15 +17,33 @@ function getAnciennete(startDate: string | null): string {
   if (!startDate) return "Non renseignée";
   const start = new Date(startDate);
   const now = new Date();
+
   let years = now.getFullYear() - start.getFullYear();
-  if (
-    now.getMonth() < start.getMonth() ||
-    (now.getMonth() === start.getMonth() && now.getDate() < start.getDate())
-  ) {
-    years--;
+  let months = now.getMonth() - start.getMonth();
+
+  if (now.getDate() < start.getDate()) {
+    months--;
   }
-  if (years < 1) return "Moins d'un an";
-  return `${years} an${years > 1 ? "s" : ""}`;
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  const dateStr = start.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  let anciennete = `Depuis le ${dateStr}`;
+  if (years > 0 || months > 0) {
+    const parts: string[] = [];
+    if (years > 0) parts.push(`${years} an${years > 1 ? "s" : ""}`);
+    if (months > 0) parts.push(`${months} mois`);
+    anciennete += ` (${parts.join(" et ")})`;
+  }
+
+  return anciennete;
 }
 
 function getInitials(firstName: string | null, lastName: string | null): string {
@@ -43,6 +61,9 @@ export function MusicianTrombinoscopeClient() {
   const [musicians, setMusicians] = useState<TrombinoscopeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "seniority" | "instrument">("name");
+  const [filterInstrument, setFilterInstrument] = useState<string>("");
 
   const fetchMusicians = useCallback(async () => {
     setLoading(true);
@@ -67,8 +88,84 @@ export function MusicianTrombinoscopeClient() {
     fetchMusicians();
   }, [fetchMusicians]);
 
+  const uniqueInstruments = useMemo(() => {
+    const set = new Set<string>();
+    musicians.forEach((m) => m.instruments.forEach((i) => set.add(i)));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
+  }, [musicians]);
+
+  const filteredMusicians = useMemo(() => {
+    let result = [...musicians];
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      result = result.filter((m) => {
+        const firstName = (m.first_name || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        const lastName = (m.last_name || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        return firstName.includes(q) || lastName.includes(q);
+      });
+    }
+
+    // Filter by instrument
+    if (filterInstrument) {
+      result = result.filter((m) => m.instruments.includes(filterInstrument));
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortBy === "name") {
+        const nameA = (a.last_name || "").toLowerCase();
+        const nameB = (b.last_name || "").toLowerCase();
+        if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
+        const firstA = (a.first_name || "").toLowerCase();
+        const firstB = (b.first_name || "").toLowerCase();
+        return firstA.localeCompare(firstB, "fr");
+      }
+      if (sortBy === "seniority") {
+        if (!a.harmonie_start_date && !b.harmonie_start_date) return 0;
+        if (!a.harmonie_start_date) return 1;
+        if (!b.harmonie_start_date) return -1;
+        return a.harmonie_start_date.localeCompare(b.harmonie_start_date);
+      }
+      if (sortBy === "instrument") {
+        const instA = a.instruments.length > 0 ? a.instruments[0].toLowerCase() : "";
+        const instB = b.instruments.length > 0 ? b.instruments[0].toLowerCase() : "";
+        if (instA !== instB) return instA.localeCompare(instB, "fr");
+        const nameA = (a.last_name || "").toLowerCase();
+        const nameB = (b.last_name || "").toLowerCase();
+        if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
+        const firstA = (a.first_name || "").toLowerCase();
+        const firstB = (b.first_name || "").toLowerCase();
+        return firstA.localeCompare(firstB, "fr");
+      }
+      return 0;
+    });
+
+    return result;
+  }, [musicians, searchQuery, filterInstrument, sortBy]);
+
+  const hasActiveFilters = searchQuery.trim() !== "" || filterInstrument !== "";
+
+  function resetFilters() {
+    setSearchQuery("");
+    setFilterInstrument("");
+    setSortBy("name");
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
@@ -77,11 +174,79 @@ export function MusicianTrombinoscopeClient() {
           </h1>
           {!loading && !error && (
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-              {musicians.length} musicien{musicians.length > 1 ? "s" : ""}
+              {hasActiveFilters
+                ? `${filteredMusicians.length} musicien${filteredMusicians.length > 1 ? "s" : ""} trouvé${filteredMusicians.length > 1 ? "s" : ""}`
+                : `${musicians.length} musicien${musicians.length > 1 ? "s" : ""}`}
             </p>
           )}
         </div>
       </div>
+
+      {/* Search, Sort, Filter bar */}
+      {!loading && !error && musicians.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search input */}
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Rechercher un musicien..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Sort select */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "name" | "seniority" | "instrument")}
+            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="name">Tri : Nom</option>
+            <option value="seniority">Tri : Ancienneté</option>
+            <option value="instrument">Tri : Instrument</option>
+          </select>
+
+          {/* Instrument filter select */}
+          <select
+            value={filterInstrument}
+            onChange={(e) => setFilterInstrument(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="">Instrument : Tous</option>
+            {uniqueInstruments.map((inst) => (
+              <option key={inst} value={inst}>
+                {inst}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Active filters indicator */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <span>
+            {filteredMusicians.length} résultat{filteredMusicians.length > 1 ? "s" : ""}
+            {searchQuery.trim() ? ` pour « ${searchQuery.trim()} »` : ""}
+          </span>
+          <button
+            onClick={resetFilters}
+            className="text-primary hover:text-primary/80 underline underline-offset-2 text-sm font-medium"
+          >
+            Réinitialiser
+          </button>
+        </div>
+      )}
 
       {/* Loading state */}
       {loading && (
@@ -107,7 +272,7 @@ export function MusicianTrombinoscopeClient() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state (no musicians at all) */}
       {!loading && !error && musicians.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
           <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800">
@@ -119,10 +284,29 @@ export function MusicianTrombinoscopeClient() {
         </div>
       )}
 
+      {/* Empty filtered state */}
+      {!loading && !error && musicians.length > 0 && filteredMusicians.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
+          <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800">
+            <Search className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            Aucun musicien ne correspond à votre recherche.
+          </p>
+          <button
+            onClick={resetFilters}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Réinitialiser les filtres
+          </button>
+        </div>
+      )}
+
       {/* Musician grid */}
-      {!loading && !error && musicians.length > 0 && (
+      {!loading && !error && filteredMusicians.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {musicians.map((musician) => (
+          {filteredMusicians.map((musician) => (
             <div
               key={musician.user_id}
               className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 flex flex-col items-center text-center space-y-3 transition-shadow hover:shadow-md"
