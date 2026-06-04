@@ -180,3 +180,27 @@ CREATE INDEX IF NOT EXISTS idx_ideas_user_id ON ideas(user_id);
 CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
 CREATE INDEX IF NOT EXISTS idx_ideas_created_at ON ideas(created_at);
 CREATE INDEX IF NOT EXISTS idx_insurance_user_id ON insurance_instruments(user_id);
+
+CREATE TABLE IF NOT EXISTS planning_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  date TEXT NOT NULL,
+  time TEXT,
+  location TEXT,
+  address TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS planning_availability (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  planning_event_id INTEGER NOT NULL REFERENCES planning_events(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK(status IN ('oui', 'non', 'peut-etre')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(planning_event_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_planning_events_date ON planning_events(date);
+CREATE INDEX IF NOT EXISTS idx_planning_availability_event ON planning_availability(planning_event_id);
+CREATE INDEX IF NOT EXISTS idx_planning_availability_user ON planning_availability(user_id);

@@ -78,6 +78,13 @@ export function MusicianNav() {
               >
                 <span>Boîte à idées</span>
               </a>
+              <a
+                href="/musician/disponibilites"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-3 text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+              >
+                <span>Disponibilités</span>
+              </a>
             </nav>
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
               <a

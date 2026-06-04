@@ -318,6 +318,36 @@ export type MusicianCardType =
   | "birthdays"
   | "trombinoscope";
 
+export interface PlanningEvent {
+  id: number;
+  name: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PlanningAvailability {
+  id: number;
+  planning_event_id: number;
+  user_id: number;
+  status: "oui" | "non" | "peut-etre";
+  updated_at: string;
+}
+
+export type PlanningStatus = "oui" | "non" | "peut-etre";
+
+export interface PlanningInput {
+  name: string;
+  date: string;
+  time?: string | null;
+  location?: string | null;
+  address?: string | null;
+  sort_order?: number;
+}
+
 export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
   profile: "Mon Profil",
   adhesion: "Adhésion",

@@ -6,6 +6,8 @@ import type {
   IdeaCategory,
   InsuranceInstrument,
   IdeaWithLikes,
+  PlanningEvent,
+  PlanningAvailability,
 } from "@/db/types";
 
 import { logger } from "@/lib/logger";
@@ -727,155 +729,50 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   }
 
   try {
-    const profile = await env.DB.prepare(
-      "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
+    const today = new Date().toISOString().split("T")[0];
+    const thirtyDaysFromNow = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
     )
-      .bind(user.id)
-      .first<{ first_name: string | null; last_name: string | null }>();
+      .toISOString()
+      .split("T")[0];
 
-    const sheetUrl =
-      "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
-    const response = await fetch(sheetUrl, { cf: { cacheTtl: 300 } });
+    const upcomingEvents = await env.DB.prepare(
+      "SELECT id, name, date FROM planning_events WHERE date >= ? ORDER BY date ASC LIMIT 20"
+    )
+      .bind(today)
+      .all<{ id: number; name: string; date: string }>();
 
-    if (!response.ok) {
-      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    const eventsList = upcomingEvents.results || [];
+    const nextEvent = eventsList.length > 0 ? eventsList[0] : null;
 
-    const csvText = await response.text();
-    const lines = csvText.split("\n");
+    let urgent = false;
+    if (eventsList.length > 0) {
+      const urgentEventIds = eventsList
+        .filter((e) => e.date <= thirtyDaysFromNow)
+        .map((e) => e.id);
 
-    if (lines.length < 3) {
-      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+      if (urgentEventIds.length > 0) {
+        const placeholders = urgentEventIds.map(() => "?").join(",");
+        const userResponses = await env.DB.prepare(
+          `SELECT planning_event_id FROM planning_availability
+           WHERE user_id = ? AND planning_event_id IN (${placeholders})`
+        )
+          .bind(user.id, ...urgentEventIds)
+          .all<{ planning_event_id: number }>();
 
-    const parseLine = (line: string): string[] => {
-      const result: string[] = [];
-      let current = "";
-      let inQuotes = false;
+        const respondedIds = new Set(
+          (userResponses.results || []).map((r) => r.planning_event_id)
+        );
 
-      for (const char of line) {
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === "," && !inQuotes) {
-          result.push(current.trim());
-          current = "";
-        } else {
-          current += char;
-        }
-      }
-      result.push(current.trim());
-      return result;
-    };
-
-    const headerRow = parseLine(lines[0]);
-    const dateRow = parseLine(lines[1]);
-    const now = new Date();
-    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const months: Record<string, number> = {
-      janvier: 0,
-      fevrier: 1,
-      mars: 2,
-      avril: 3,
-      mai: 4,
-      juin: 5,
-      juillet: 6,
-      aout: 7,
-      septembre: 8,
-      octobre: 9,
-      novembre: 10,
-      decembre: 11,
-      février: 1,
-      août: 7,
-    };
-
-    interface SheetEvent {
-      title: string;
-      date: string;
-      eventDate: Date;
-    }
-
-    const events: SheetEvent[] = [];
-    for (let i = 1; i < dateRow.length; i++) {
-      const dateStr = dateRow[i];
-      if (!dateStr) continue;
-
-      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-      if (!dateMatch) continue;
-
-      const day = parseInt(dateMatch[1]);
-      const month = months[dateMatch[2].toLowerCase()];
-      const year = parseInt(dateMatch[3]);
-
-      if (month === undefined) continue;
-
-      const eventDate = new Date(year, month, day);
-
-      if (eventDate >= now) {
-        const title = headerRow[i]?.trim() || `Événement du ${dateStr}`;
-        events.push({
-          title,
-          date: eventDate.toISOString().split("T")[0],
-          eventDate,
-        });
-      }
-    }
-
-    events.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
-    const nextEvent = events[0] || null;
-
-    let hasUrgentEvent = false;
-
-    if (profile?.first_name && profile?.last_name) {
-      let musicianRow: string[] | null = null;
-      for (const line of lines) {
-        const cells = parseLine(line);
-        if (
-          cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
-          cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
-        ) {
-          musicianRow = cells;
-          break;
-        }
-      }
-
-      if (musicianRow) {
-        for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
-          const dateStr = dateRow[i];
-          const response = musicianRow[i]?.toLowerCase().trim();
-
-          if (!dateStr) continue;
-
-          const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-          if (!dateMatch) continue;
-
-          const day = parseInt(dateMatch[1]);
-          const month = months[dateMatch[2].toLowerCase()];
-          const year = parseInt(dateMatch[3]);
-
-          if (month === undefined) continue;
-
-          const eventDate = new Date(year, month, day);
-
-          if (eventDate >= now && eventDate <= thirtyDaysLater) {
-            if (!response || response === "" || response.includes("peut")) {
-              hasUrgentEvent = true;
-              break;
-            }
-          }
-        }
+        urgent = urgentEventIds.some((id) => !respondedIds.has(id));
       }
     }
 
     return new Response(
       JSON.stringify({
-        urgent: hasUrgentEvent,
+        urgent,
         nextEvent: nextEvent
-          ? { title: nextEvent.title, date: nextEvent.date }
+          ? { title: nextEvent.name, date: nextEvent.date }
           : null,
       }),
       {
@@ -944,6 +841,135 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
     });
   } catch (error) {
     logger.error("Trombinoscope API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleMusicianAvailabilityApi(request: Request): Promise<Response> {
+  const user = await verifySession(request, "musician");
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    if (request.method === "GET") {
+      const events = await env.DB.prepare(
+        "SELECT * FROM planning_events ORDER BY date ASC, sort_order ASC"
+      ).all<PlanningEvent>();
+
+      const musicians = await env.DB.prepare(
+        `
+        SELECT u.id as user_id, mp.first_name, mp.last_name,
+          COALESCE(hi.instrument_name, '') as instrument
+        FROM users u
+        JOIN musician_profiles mp ON mp.user_id = u.id
+        LEFT JOIN (
+          SELECT user_id, GROUP_CONCAT(instrument_name, ', ') as instrument_name
+          FROM harmonie_instruments
+          GROUP BY user_id
+        ) hi ON hi.user_id = u.id
+        WHERE u.role = 'MUSICIAN' AND u.is_active = 1
+        ORDER BY mp.last_name ASC, mp.first_name ASC
+        `
+      ).all<{
+        user_id: number;
+        first_name: string | null;
+        last_name: string | null;
+        instrument: string;
+      }>();
+
+      const availabilityRecords = await env.DB.prepare(
+        "SELECT * FROM planning_availability"
+      ).all<PlanningAvailability>();
+
+      // Build availabilities map: userId → { eventId → status }
+      const availMap = new Map<number, Record<string, string>>();
+      for (const record of availabilityRecords.results || []) {
+        let map = availMap.get(record.user_id);
+        if (!map) {
+          map = {};
+          availMap.set(record.user_id, map);
+        }
+        map[String(record.planning_event_id)] = record.status;
+      }
+
+      const rows = (musicians.results || []).map((m) => ({
+        userId: m.user_id,
+        firstName: m.first_name || "",
+        lastName: m.last_name || "",
+        instrument: m.instrument,
+        availabilities: availMap.get(m.user_id) || {},
+      }));
+
+      return new Response(
+        JSON.stringify({
+          events: events.results || [],
+          rows,
+          currentUserId: user.id,
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (request.method === "PUT") {
+      const data = (await request.json()) as {
+        eventId?: number;
+        status?: "oui" | "non" | "peut-etre" | null;
+      };
+
+      if (data.eventId === undefined || data.eventId === null) {
+        return new Response(JSON.stringify({ error: "eventId est requis" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const validStatuses = ["oui", "non", "peut-etre"];
+      if (data.status !== null && !validStatuses.includes(data.status as string)) {
+        return new Response(
+          JSON.stringify({ error: "Status invalide. Utilisez oui, non, peut-etre ou null" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (data.status === null) {
+        await env.DB.prepare(
+          "DELETE FROM planning_availability WHERE planning_event_id = ? AND user_id = ?"
+        )
+          .bind(data.eventId, user.id)
+          .run();
+      } else {
+        await env.DB.prepare(
+          `INSERT INTO planning_availability (planning_event_id, user_id, status)
+           VALUES (?, ?, ?)
+           ON CONFLICT(planning_event_id, user_id) DO UPDATE SET status = ?, updated_at = datetime('now')`
+        )
+          .bind(data.eventId, user.id, data.status, data.status)
+          .run();
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    logger.error("Musician availability API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

@@ -19,6 +19,7 @@ import {
   Info,
   Shield,
   Globe,
+  ClipboardList,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import type { UserRole } from "@/db/types";
@@ -39,6 +40,7 @@ const navItems = [
   { href: "/admin/contact", label: "Messages", icon: Mail },
   { href: "/admin/ideas", label: "Boîte à idées", icon: Lightbulb },
   { href: "/admin/insurance", label: "Assurances", icon: Shield },
+  { href: "/admin/planning", label: "Présences", icon: ClipboardList },
   { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
   { href: "/admin/card-order", label: "Ordre cartouches", icon: LayoutGrid },

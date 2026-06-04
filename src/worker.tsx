@@ -41,6 +41,7 @@ import { handleOutingSettingsApi } from "@/app/api/admin/outing-settings";
 import { handleCardOrderSettingsApi } from "@/app/api/admin/card-order";
 import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
 import { handleInsuranceApi } from "@/app/api/admin/insurance";
+import { handlePlanningEventsApi } from "@/app/api/admin/planning-events";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
@@ -49,6 +50,7 @@ import {
   handleMusicianBirthdaysApi,
   handleMusicianPlanningCheckApi,
   handleMusicianTrombinoscopeApi,
+  handleMusicianAvailabilityApi,
 } from "@/app/api/musician";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
@@ -71,6 +73,7 @@ import {
   AdminCardOrderPage,
   AdminInfoSettingsPage,
   AdminInsurancePage,
+  AdminPlanningEventsPage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -79,6 +82,7 @@ import { MusicianProfileClient } from "@/app/musician/MusicianProfile";
 import { MusicianIdeeClient } from "@/app/musician/MusicianIdee";
 import { MusicianAssuranceClient } from "@/app/musician/MusicianAssurance";
 import { MusicianTrombinoscopeClient } from "@/app/musician/MusicianTrombinoscope";
+import { MusicianDisponibilites } from "@/app/musician/MusicianDisponibilites";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -223,6 +227,10 @@ const app = defineApp([
   ),
   route("/api/admin/insurance", ({ request }: { request: Request }) => handleInsuranceApi(request)),
 
+  route("/api/admin/planning-events", ({ request }: { request: Request }) =>
+    handlePlanningEventsApi(request)
+  ),
+
   route("/api/admin/analytics", ({ request }: { request: Request }) =>
     handleAdminAnalyticsApi(request)
   ),
@@ -247,6 +255,9 @@ const app = defineApp([
   ),
   route("/api/musician/trombinoscope", ({ request }: { request: Request }) =>
     handleMusicianTrombinoscopeApi(request)
+  ),
+  route("/api/musician/availability", ({ request }: { request: Request }) =>
+    handleMusicianAvailabilityApi(request)
   ),
 
   // Public API for info settings (read-only, returns only active settings)
@@ -470,6 +481,12 @@ const app = defineApp([
       return <AdminInsurancePage email={auth.email} role={auth.role} />;
     }),
 
+    route("/admin/planning", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminPlanningEventsPage email={auth.email} role={auth.role} />;
+    }),
+
     route("/musician/login", () => <MusicianLoginClient />),
 
     route("/musician/portal", async ({ request }: { request: Request }) => {
@@ -531,6 +548,20 @@ const app = defineApp([
       return (
         <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
           <MusicianTrombinoscopeClient />
+        </MusicianLayout>
+      );
+    }),
+
+    route("/musician/disponibilites", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+          <MusicianDisponibilites
+            userId={auth.userId}
+            firstName={auth.firstName}
+            lastName={auth.lastName}
+          />
         </MusicianLayout>
       );
     }),
