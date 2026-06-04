@@ -24,7 +24,7 @@ interface ParsedSheetEvent {
 
 interface ParsedSheetResponse {
   name: string;
-  columns: Record<number, string>; // col index → "oui" | "non" | "peut-etre"
+  columns: Map<number, string>; // CSV column index → "oui" | "non" | "peut-etre"
 }
 
 const SHEET_CSV_URL =
@@ -54,18 +54,88 @@ const FRENCH_MONTHS: Record<string, number> = {
   fevrier: 1, aout: 7,
 };
 
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function parseSheetDate(dateStr: string): string | null {
+  const trimmed = dateStr.trim();
+  if (!trimmed) return null;
+
+  // First, try with a week day prefix and year: "dimanche 7 juin 2026"
+  let match = trimmed.match(
+    /[a-zéû]+\s+(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i
+  );
+  if (match) {
+    const day = parseInt(match[1]);
+    const month = FRENCH_MONTHS[match[2].toLowerCase()];
+    const year = parseInt(match[3]);
+    if (month !== undefined) {
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  // Try: "dimanche 7 juin" (week day, no year)
+  match = trimmed.match(/[a-zéû]+\s+(\d{1,2})\s+([a-zéû]+)/i);
+  if (match) {
+    const day = parseInt(match[1]);
+    const month = FRENCH_MONTHS[match[2].toLowerCase()];
+    if (month !== undefined) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      let date = new Date(currentYear, month, day);
+      if (date < now) {
+        date = new Date(currentYear + 1, month, day);
+      }
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  // Try: "7 juin 2026" (no week day, with year)
+  match = trimmed.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+  if (match) {
+    const day = parseInt(match[1]);
+    const month = FRENCH_MONTHS[match[2].toLowerCase()];
+    const year = parseInt(match[3]);
+    if (month !== undefined) {
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  // Try: "7 juin" (no week day, no year)
+  match = trimmed.match(/(\d{1,2})\s+([a-zéû]+)/i);
+  if (match) {
+    const day = parseInt(match[1]);
+    const month = FRENCH_MONTHS[match[2].toLowerCase()];
+    if (month !== undefined) {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      let date = new Date(currentYear, month, day);
+      if (date < now) {
+        date = new Date(currentYear + 1, month, day);
+      }
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+  }
+
+  return null;
+}
+
 async function parseGoogleSheet(): Promise<{
-  events: ParsedSheetEvent[];
+  eventsByCol: Map<number, ParsedSheetEvent>;
   responses: ParsedSheetResponse[];
 }> {
   try {
     const res = await fetch(SHEET_CSV_URL);
-    if (!res.ok) return { events: [], responses: [] };
+    if (!res.ok) return { eventsByCol: new Map(), responses: [] };
 
     const csvText = await res.text();
     const lines = csvText.split("\n").filter((l) => l.trim());
 
-    if (lines.length < 6) return { events: [], responses: [] };
+    if (lines.length < 6) return { eventsByCol: new Map(), responses: [] };
 
     const nameRow = parseCSVLine(lines[0]);
     const dateRow = parseCSVLine(lines[1]);
@@ -74,24 +144,18 @@ async function parseGoogleSheet(): Promise<{
     const addressRow = parseCSVLine(lines[4]);
 
     const maxCols = Math.max(dateRow.length, nameRow.length);
-    const events: ParsedSheetEvent[] = [];
+    const eventsByCol = new Map<number, ParsedSheetEvent>();
 
     for (let i = 1; i < maxCols; i++) {
       const dateStr = dateRow[i]?.trim();
       if (!dateStr) continue;
 
-      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-      if (!dateMatch) continue;
+      const parsedDate = parseSheetDate(dateStr);
+      if (!parsedDate) continue;
 
-      const day = parseInt(dateMatch[1]);
-      const month = FRENCH_MONTHS[dateMatch[2].toLowerCase()];
-      const year = parseInt(dateMatch[3]);
-      if (month === undefined) continue;
-
-      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      events.push({
+      eventsByCol.set(i, {
         name: nameRow[i]?.trim() || `Événement du ${dateStr}`,
-        date,
+        date: parsedDate,
         time: timeRow[i]?.trim() || null,
         location: locationRow[i]?.trim() || null,
         address: addressRow[i]?.trim() || null,
@@ -105,32 +169,32 @@ async function parseGoogleSheet(): Promise<{
       if (!name) continue;
 
       // Skip summary rows (e.g. "15 Oui", "7 Non", percentages)
-      if (/^\d+/.test(name)) continue;
+      if (/^\d+/.test(name) || /%/.test(name)) continue;
 
-      const columns: Record<number, string> = {};
+      const columns = new Map<number, string>();
       for (let i = 1; i < cells.length; i++) {
         const cell = cells[i]?.trim().toLowerCase();
         if (!cell) continue;
-        if (cell === "oui") columns[i - 1] = "oui";
-        else if (cell === "non") columns[i - 1] = "non";
-        else if (cell.includes("peut")) columns[i - 1] = "peut-etre";
+        if (cell === "oui") columns.set(i, "oui");
+        else if (cell === "non") columns.set(i, "non");
+        else if (cell.startsWith("peut")) columns.set(i, "peut-etre");
       }
       responses.push({ name, columns });
     }
 
-    return { events, responses };
+    return { eventsByCol, responses };
   } catch {
-    return { events: [], responses: [] };
+    return { eventsByCol: new Map(), responses: [] };
   }
 }
 
 async function importFromGoogleSheet(): Promise<number> {
-  const { events, responses } = await parseGoogleSheet();
-  if (events.length === 0) return 0;
+  const { eventsByCol, responses } = await parseGoogleSheet();
+  if (eventsByCol.size === 0) return 0;
 
   // Insert events (one by one to avoid duplicates)
   let imported = 0;
-  for (const e of events) {
+  for (const e of eventsByCol.values()) {
     const existing = await env.DB.prepare(
       "SELECT id FROM planning_events WHERE name = ? AND date = ?"
     )
@@ -167,12 +231,14 @@ async function importFromGoogleSheet(): Promise<number> {
 
   // Match musicians and insert availability
   for (const resp of responses) {
-    const nameLower = resp.name.toLowerCase();
+    const nameNormalized = normalizeName(resp.name);
     let matchedUserId: number | null = null;
 
     for (const profile of profileList) {
-      const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim().toLowerCase();
-      if (fullName && nameLower.includes(fullName)) {
+      const fullName = normalizeName(
+        `${profile.first_name || ""} ${profile.last_name || ""}`.trim()
+      );
+      if (fullName && nameNormalized.includes(fullName)) {
         matchedUserId = profile.user_id;
         break;
       }
@@ -180,9 +246,8 @@ async function importFromGoogleSheet(): Promise<number> {
 
     if (!matchedUserId) continue;
 
-    for (const [colIdx, status] of Object.entries(resp.columns)) {
-      const colNum = parseInt(colIdx);
-      const sheetEvent = events[colNum];
+    for (const [colIdx, status] of resp.columns) {
+      const sheetEvent = eventsByCol.get(colIdx);
       if (!sheetEvent) continue;
 
       const eventId = eventMap.get(`${sheetEvent.name}|${sheetEvent.date}`);
