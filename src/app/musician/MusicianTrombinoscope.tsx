@@ -156,8 +156,11 @@ export function MusicianTrombinoscopeClient() {
         return a.harmonie_start_date.localeCompare(b.harmonie_start_date);
       }
       if (sortBy === "instrument") {
-        const instA = a.instruments.length > 0 ? getInstrumentSortKey(a.instruments[0]) : "";
-        const instB = b.instruments.length > 0 ? getInstrumentSortKey(b.instruments[0]) : "";
+        const aHasInstruments = a.instruments.length > 0;
+        const bHasInstruments = b.instruments.length > 0;
+        if (aHasInstruments !== bHasInstruments) return aHasInstruments ? -1 : 1;
+        const instA = aHasInstruments ? getInstrumentSortKey(a.instruments[0]) : "";
+        const instB = bHasInstruments ? getInstrumentSortKey(b.instruments[0]) : "";
         if (instA !== instB) return instA.localeCompare(instB, "fr");
         const nameA = (a.last_name || "").toLowerCase();
         const nameB = (b.last_name || "").toLowerCase();
