@@ -313,7 +313,8 @@ export type MusicianCardType =
   | "boite-a-idee"
   | "outing"
   | "social"
-  | "birthdays";
+  | "birthdays"
+  | "trombinoscope";
 
 export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
   profile: "Mon Profil",
@@ -325,4 +326,5 @@ export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
   outing: "Inscription Sortie",
   social: "Suivez-nous (Réseaux sociaux)",
   birthdays: "Anniversaires",
+  trombinoscope: "Trombinoscope",
 };

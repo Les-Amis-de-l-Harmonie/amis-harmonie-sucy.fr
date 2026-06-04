@@ -17,6 +17,7 @@ import {
   Download,
   CalendarDays,
   FolderOpen,
+  LayoutGrid,
   Lightbulb,
   Shield,
   Users,
@@ -105,6 +106,7 @@ export function MusicianHomeClient({
     "outing",
     "birthdays",
     "social",
+    "trombinoscope",
   ];
   const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
   const [loading, setLoading] = useState(true);
@@ -792,6 +794,72 @@ export function MusicianHomeClient({
           </Card>
         );
       }
+      case "trombinoscope":
+        return (
+          <Card
+            key={cardType}
+            className="hover:shadow-md transition-shadow h-[320px] flex flex-col"
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <LayoutGrid className="w-5 h-5 text-primary" />
+                Menu
+              </CardTitle>
+              <CardDescription>Accédez aux différentes sections</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href="/musician/trombinoscope"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <Users className="w-4 h-4 text-primary" />
+                  Trombinoscope
+                </a>
+                <a
+                  href="/musician/profile"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <User className="w-4 h-4 text-primary" />
+                  Mon Profil
+                </a>
+                <a
+                  href="/musician/assurance"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <Shield className="w-4 h-4 text-primary" />
+                  Assurance
+                </a>
+                <a
+                  href="/musician/idee"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <Lightbulb className="w-4 h-4 text-primary" />
+                  Boîte à idées
+                </a>
+                <a
+                  href="https://drive.google.com/drive/folders/1pUqqJonhyugZCuT3SrWrpNTQ_NFI0BAz?usp=drive_link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <FolderOpen className="w-4 h-4 text-primary" />
+                  Partitions
+                </a>
+                <a
+                  href="https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/edit?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  <CalendarDays className="w-4 h-4 text-primary" />
+                  Planning
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
       default:
         return null;
     }
