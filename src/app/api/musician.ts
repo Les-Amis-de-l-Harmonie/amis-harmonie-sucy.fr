@@ -729,50 +729,155 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   }
 
   try {
-    const today = new Date().toISOString().split("T")[0];
-    const thirtyDaysFromNow = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
+    const profile = await env.DB.prepare(
+      "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
     )
-      .toISOString()
-      .split("T")[0];
+      .bind(user.id)
+      .first<{ first_name: string | null; last_name: string | null }>();
 
-    const upcomingEvents = await env.DB.prepare(
-      "SELECT id, name, date FROM planning_events WHERE date >= ? ORDER BY date ASC LIMIT 20"
-    )
-      .bind(today)
-      .all<{ id: number; name: string; date: string }>();
+    const sheetUrl =
+      "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
+    const response = await fetch(sheetUrl, { cf: { cacheTtl: 300 } });
 
-    const eventsList = upcomingEvents.results || [];
-    const nextEvent = eventsList.length > 0 ? eventsList[0] : null;
+    if (!response.ok) {
+      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-    let urgent = false;
-    if (eventsList.length > 0) {
-      const urgentEventIds = eventsList
-        .filter((e) => e.date <= thirtyDaysFromNow)
-        .map((e) => e.id);
+    const csvText = await response.text();
+    const lines = csvText.split("\n");
 
-      if (urgentEventIds.length > 0) {
-        const placeholders = urgentEventIds.map(() => "?").join(",");
-        const userResponses = await env.DB.prepare(
-          `SELECT planning_event_id FROM planning_availability
-           WHERE user_id = ? AND planning_event_id IN (${placeholders})`
-        )
-          .bind(user.id, ...urgentEventIds)
-          .all<{ planning_event_id: number }>();
+    if (lines.length < 3) {
+      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-        const respondedIds = new Set(
-          (userResponses.results || []).map((r) => r.planning_event_id)
-        );
+    const parseLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = "";
+      let inQuotes = false;
 
-        urgent = urgentEventIds.some((id) => !respondedIds.has(id));
+      for (const char of line) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headerRow = parseLine(lines[0]);
+    const dateRow = parseLine(lines[1]);
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const months: Record<string, number> = {
+      janvier: 0,
+      fevrier: 1,
+      mars: 2,
+      avril: 3,
+      mai: 4,
+      juin: 5,
+      juillet: 6,
+      aout: 7,
+      septembre: 8,
+      octobre: 9,
+      novembre: 10,
+      decembre: 11,
+      février: 1,
+      août: 7,
+    };
+
+    interface SheetEvent {
+      title: string;
+      date: string;
+      eventDate: Date;
+    }
+
+    const events: SheetEvent[] = [];
+    for (let i = 1; i < dateRow.length; i++) {
+      const dateStr = dateRow[i];
+      if (!dateStr) continue;
+
+      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+      if (!dateMatch) continue;
+
+      const day = parseInt(dateMatch[1]);
+      const month = months[dateMatch[2].toLowerCase()];
+      const year = parseInt(dateMatch[3]);
+
+      if (month === undefined) continue;
+
+      const eventDate = new Date(year, month, day);
+
+      if (eventDate >= now) {
+        const title = headerRow[i]?.trim() || `Événement du ${dateStr}`;
+        events.push({
+          title,
+          date: eventDate.toISOString().split("T")[0],
+          eventDate,
+        });
+      }
+    }
+
+    events.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
+    const nextEvent = events[0] || null;
+
+    let hasUrgentEvent = false;
+
+    if (profile?.first_name && profile?.last_name) {
+      let musicianRow: string[] | null = null;
+      for (const line of lines) {
+        const cells = parseLine(line);
+        if (
+          cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
+          cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
+        ) {
+          musicianRow = cells;
+          break;
+        }
+      }
+
+      if (musicianRow) {
+        for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
+          const dateStr = dateRow[i];
+          const response = musicianRow[i]?.toLowerCase().trim();
+
+          if (!dateStr) continue;
+
+          const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+          if (!dateMatch) continue;
+
+          const day = parseInt(dateMatch[1]);
+          const month = months[dateMatch[2].toLowerCase()];
+          const year = parseInt(dateMatch[3]);
+
+          if (month === undefined) continue;
+
+          const eventDate = new Date(year, month, day);
+
+          if (eventDate >= now && eventDate <= thirtyDaysLater) {
+            if (!response || response === "" || response.includes("peut")) {
+              hasUrgentEvent = true;
+              break;
+            }
+          }
+        }
       }
     }
 
     return new Response(
       JSON.stringify({
-        urgent,
+        urgent: hasUrgentEvent,
         nextEvent: nextEvent
-          ? { title: nextEvent.name, date: nextEvent.date }
+          ? { title: nextEvent.title, date: nextEvent.date }
           : null,
       }),
       {

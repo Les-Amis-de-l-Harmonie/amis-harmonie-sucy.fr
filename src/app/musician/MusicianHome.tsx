@@ -526,7 +526,9 @@ export function MusicianHomeClient({
               </div>
               <div className="flex-1" />
               <a
-                href="/musician/disponibilites"
+                href="https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/edit?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-auto"
               >
                 <Button variant="outline" className="w-full">
