@@ -160,12 +160,16 @@ export function MusicianTrombinoscopeClient() {
         const aHasInstruments = a.instruments.length > 0;
         const bHasInstruments = b.instruments.length > 0;
         if (aHasInstruments !== bHasInstruments) return aHasInstruments ? -1 : 1;
-        const instA = aHasInstruments ? a.instruments[0] : "";
-        const instB = bHasInstruments ? b.instruments[0] : "";
-        const prioA = getInstrumentPriority(instA);
-        const prioB = getInstrumentPriority(instB);
+        const prioA = Math.min(...a.instruments.map(getInstrumentPriority));
+        const prioB = Math.min(...b.instruments.map(getInstrumentPriority));
         if (prioA !== prioB) return prioA - prioB;
-        if (instA !== instB) return instA.localeCompare(instB, "fr");
+        const bestInstA = a.instruments.reduce((best, i) =>
+          getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
+        );
+        const bestInstB = b.instruments.reduce((best, i) =>
+          getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
+        );
+        if (bestInstA !== bestInstB) return bestInstA.localeCompare(bestInstB, "fr");
         const nameA = (a.last_name || "").toLowerCase();
         const nameB = (b.last_name || "").toLowerCase();
         if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
