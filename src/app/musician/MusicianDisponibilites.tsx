@@ -228,20 +228,14 @@ export function MusicianDisponibilites({
     );
   }
 
-  const currentRow = data.rows.find((r) => r.userId === data.currentUserId);
-  const otherRows = data.rows.filter((r) => r.userId !== data.currentUserId);
-
   // Split events: upcoming (date >= today) vs past
   const today = new Date().toISOString().split("T")[0];
   const upcomingEvents = data.events.filter((e) => e.date >= today);
   const pastEvents = data.events.filter((e) => e.date < today);
   const visibleEvents = showPast ? data.events : upcomingEvents;
 
-  // Reorder: current user first, then others sorted by instrument (like trombinoscope)
-  const sortedOthers = sortRowsByInstrument(otherRows);
-  const orderedRows = currentRow
-    ? [currentRow, ...sortedOthers]
-    : sortRowsByInstrument(data.rows);
+  // Sort all rows by instrument (like trombinoscope), current user stays in its natural position
+  const orderedRows = sortRowsByInstrument(data.rows);
 
   return (
     <div className="space-y-6">
