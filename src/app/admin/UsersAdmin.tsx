@@ -40,12 +40,13 @@ import {
   ChevronDown,
   Download,
   Users,
+  Check,
 } from "lucide-react";
 import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
 import { InstrumentEditor } from "@/app/components/shared/InstrumentEditor";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import type { UserRole } from "@/db/types";
-import { isSuperAdmin } from "@/db/types";
+import { isSuperAdmin, HARMONIE_INSTRUMENTS } from "@/db/types";
 import { Pagination } from "@/app/components/ui/pagination";
 function lastSundayOfMonthUTC(year: number, monthIndex0: number) {
   const d = new Date(Date.UTC(year, monthIndex0 + 1, 0));
@@ -1034,6 +1035,44 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                             />
                             <span className="text-sm">Non</span>
                           </label>
+                        </div>
+                      </div>
+                      <div className="grid gap-2 col-span-2">
+                        <Label>
+                          Instrument(s) joué(s) à l'Harmonie
+                        </Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {HARMONIE_INSTRUMENTS.map((instrument) => {
+                            const isSelected = editing.harmonieInstruments?.includes(instrument);
+                            return (
+                              <button
+                                key={instrument}
+                                type="button"
+                                onClick={() => {
+                                  const current = editing.harmonieInstruments || [];
+                                  if (isSelected) {
+                                    setEditing({
+                                      ...editing,
+                                      harmonieInstruments: current.filter((i) => i !== instrument),
+                                    });
+                                  } else {
+                                    setEditing({
+                                      ...editing,
+                                      harmonieInstruments: [...current, instrument],
+                                    });
+                                  }
+                                }}
+                                className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 cursor-pointer ${
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-card border-border hover:bg-muted"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 flex-shrink-0" />}
+                                {instrument}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                       <div className="grid gap-3 col-span-2">
