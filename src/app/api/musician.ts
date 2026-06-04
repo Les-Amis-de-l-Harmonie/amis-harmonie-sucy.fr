@@ -11,6 +11,195 @@ import type {
 } from "@/db/types";
 
 import { logger } from "@/lib/logger";
+
+// ── Google Sheets sync ──────────────────────────────────────────────
+
+interface ParsedSheetEvent {
+  name: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+}
+
+interface ParsedSheetResponse {
+  name: string;
+  columns: Record<number, string>; // col index → "oui" | "non" | "peut-etre"
+}
+
+const SHEET_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (const char of line) {
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+const FRENCH_MONTHS: Record<string, number> = {
+  janvier: 0, février: 0, mars: 2, avril: 3, mai: 4, juin: 5,
+  juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11,
+  fevrier: 1, aout: 7,
+};
+
+async function parseGoogleSheet(): Promise<{
+  events: ParsedSheetEvent[];
+  responses: ParsedSheetResponse[];
+}> {
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) return { events: [], responses: [] };
+
+    const csvText = await res.text();
+    const lines = csvText.split("\n").filter((l) => l.trim());
+
+    if (lines.length < 6) return { events: [], responses: [] };
+
+    const nameRow = parseCSVLine(lines[0]);
+    const dateRow = parseCSVLine(lines[1]);
+    const timeRow = parseCSVLine(lines[2]);
+    const locationRow = parseCSVLine(lines[3]);
+    const addressRow = parseCSVLine(lines[4]);
+
+    const maxCols = Math.max(dateRow.length, nameRow.length);
+    const events: ParsedSheetEvent[] = [];
+
+    for (let i = 1; i < maxCols; i++) {
+      const dateStr = dateRow[i]?.trim();
+      if (!dateStr) continue;
+
+      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+      if (!dateMatch) continue;
+
+      const day = parseInt(dateMatch[1]);
+      const month = FRENCH_MONTHS[dateMatch[2].toLowerCase()];
+      const year = parseInt(dateMatch[3]);
+      if (month === undefined) continue;
+
+      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      events.push({
+        name: nameRow[i]?.trim() || `Événement du ${dateStr}`,
+        date,
+        time: timeRow[i]?.trim() || null,
+        location: locationRow[i]?.trim() || null,
+        address: addressRow[i]?.trim() || null,
+      });
+    }
+
+    const responses: ParsedSheetResponse[] = [];
+    for (let r = 5; r < lines.length; r++) {
+      const cells = parseCSVLine(lines[r]);
+      const name = cells[0]?.trim();
+      if (!name) continue;
+
+      // Skip summary rows (e.g. "15 Oui", "7 Non", percentages)
+      if (/^\d+/.test(name)) continue;
+
+      const columns: Record<number, string> = {};
+      for (let i = 1; i < cells.length; i++) {
+        const cell = cells[i]?.trim().toLowerCase();
+        if (!cell) continue;
+        if (cell === "oui") columns[i - 1] = "oui";
+        else if (cell === "non") columns[i - 1] = "non";
+        else if (cell.includes("peut")) columns[i - 1] = "peut-etre";
+      }
+      responses.push({ name, columns });
+    }
+
+    return { events, responses };
+  } catch {
+    return { events: [], responses: [] };
+  }
+}
+
+async function importFromGoogleSheet(): Promise<number> {
+  const { events, responses } = await parseGoogleSheet();
+  if (events.length === 0) return 0;
+
+  // Insert events (one by one to avoid duplicates)
+  let imported = 0;
+  for (const e of events) {
+    const existing = await env.DB.prepare(
+      "SELECT id FROM planning_events WHERE name = ? AND date = ?"
+    )
+      .bind(e.name, e.date)
+      .first<{ id: number }>();
+    if (!existing) {
+      await env.DB.prepare(
+        "INSERT INTO planning_events (name, date, time, location, address) VALUES (?, ?, ?, ?, ?)"
+      )
+        .bind(e.name, e.date, e.time, e.location, e.address)
+        .run();
+      imported++;
+    }
+  }
+
+  // Get all event IDs for mapping
+  const allEvents = await env.DB.prepare(
+    "SELECT id, name, date FROM planning_events"
+  ).all<{ id: number; name: string; date: string }>();
+  const eventMap = new Map<string, number>();
+  for (const ev of allEvents.results || []) {
+    eventMap.set(`${ev.name}|${ev.date}`, ev.id);
+  }
+
+  // Get musician profiles for name matching
+  const profiles = await env.DB.prepare(
+    `SELECT mp.user_id, mp.first_name, mp.last_name
+     FROM musician_profiles mp
+     JOIN users u ON u.id = mp.user_id
+     WHERE u.role = 'MUSICIAN' AND u.is_active = 1`
+  ).all<{ user_id: number; first_name: string | null; last_name: string | null }>();
+
+  const profileList = profiles.results || [];
+
+  // Match musicians and insert availability
+  for (const resp of responses) {
+    const nameLower = resp.name.toLowerCase();
+    let matchedUserId: number | null = null;
+
+    for (const profile of profileList) {
+      const fullName = `${profile.first_name || ""} ${profile.last_name || ""}`.trim().toLowerCase();
+      if (fullName && nameLower.includes(fullName)) {
+        matchedUserId = profile.user_id;
+        break;
+      }
+    }
+
+    if (!matchedUserId) continue;
+
+    for (const [colIdx, status] of Object.entries(resp.columns)) {
+      const colNum = parseInt(colIdx);
+      const sheetEvent = events[colNum];
+      if (!sheetEvent) continue;
+
+      const eventId = eventMap.get(`${sheetEvent.name}|${sheetEvent.date}`);
+      if (!eventId) continue;
+
+      await env.DB.prepare(
+        `INSERT INTO planning_availability (planning_event_id, user_id, status)
+         VALUES (?, ?, ?)
+         ON CONFLICT(planning_event_id, user_id) DO UPDATE SET status = ?, updated_at = datetime('now')`
+      )
+        .bind(eventId, matchedUserId, status, status)
+        .run();
+    }
+  }
+
+  return imported;
+}
 interface ProfileWithInstruments extends MusicianProfile {
   instruments: MusicianInstrument[];
   harmonieInstruments: string[];
@@ -964,6 +1153,14 @@ export async function handleMusicianAvailabilityApi(request: Request): Promise<R
 
   try {
     if (request.method === "GET") {
+      // Auto-import from Google Sheets if no events exist
+      const countRes = await env.DB.prepare(
+        "SELECT COUNT(*) as cnt FROM planning_events"
+      ).first<{ cnt: number }>();
+      if (!countRes || countRes.cnt === 0) {
+        await importFromGoogleSheet();
+      }
+
       const events = await env.DB.prepare(
         "SELECT * FROM planning_events ORDER BY date ASC, sort_order ASC"
       ).all<PlanningEvent>();
