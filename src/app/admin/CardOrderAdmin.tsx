@@ -33,6 +33,7 @@ const DEFAULT_CARDS: MusicianCardType[] = [
   "outing",
   "birthdays",
   "social",
+  "trombinoscope",
 ];
 
 interface SortableCardItemProps {
