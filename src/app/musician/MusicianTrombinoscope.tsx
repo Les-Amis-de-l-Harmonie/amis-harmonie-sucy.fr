@@ -66,12 +66,8 @@ const INSTRUMENT_ORDER: Record<string, number> = {
   percussions: 2,
 };
 
-function getInstrumentSortKey(instrument: string): string {
-  const lower = instrument.toLowerCase();
-  if (lower in INSTRUMENT_ORDER) {
-    return String.fromCharCode(0).repeat(1) + String.fromCharCode(INSTRUMENT_ORDER[lower]);
-  }
-  return instrument;
+function getInstrumentPriority(instrument: string): number {
+  return INSTRUMENT_ORDER[instrument.toLowerCase()] ?? 999;
 }
 
 export function MusicianTrombinoscopeClient() {
@@ -108,7 +104,12 @@ export function MusicianTrombinoscopeClient() {
   const uniqueInstruments = useMemo(() => {
     const set = new Set<string>();
     musicians.forEach((m) => m.instruments.forEach((i) => set.add(i)));
-    return Array.from(set).sort((a, b) => getInstrumentSortKey(a).localeCompare(getInstrumentSortKey(b), "fr"));
+    return Array.from(set).sort((a, b) => {
+      const prioA = getInstrumentPriority(a);
+      const prioB = getInstrumentPriority(b);
+      if (prioA !== prioB) return prioA - prioB;
+      return a.localeCompare(b, "fr");
+    });
   }, [musicians]);
 
   const filteredMusicians = useMemo(() => {
@@ -159,8 +160,11 @@ export function MusicianTrombinoscopeClient() {
         const aHasInstruments = a.instruments.length > 0;
         const bHasInstruments = b.instruments.length > 0;
         if (aHasInstruments !== bHasInstruments) return aHasInstruments ? -1 : 1;
-        const instA = aHasInstruments ? getInstrumentSortKey(a.instruments[0]) : "";
-        const instB = bHasInstruments ? getInstrumentSortKey(b.instruments[0]) : "";
+        const instA = aHasInstruments ? a.instruments[0] : "";
+        const instB = bHasInstruments ? b.instruments[0] : "";
+        const prioA = getInstrumentPriority(instA);
+        const prioB = getInstrumentPriority(instB);
+        if (prioA !== prioB) return prioA - prioB;
         if (instA !== instB) return instA.localeCompare(instB, "fr");
         const nameA = (a.last_name || "").toLowerCase();
         const nameB = (b.last_name || "").toLowerCase();
