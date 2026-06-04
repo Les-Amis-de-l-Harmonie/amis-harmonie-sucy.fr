@@ -524,6 +524,16 @@ const app = defineApp([
         </MusicianLayout>
       );
     }),
+
+    route("/musician/trombinoscope", async ({ request }: { request: Request }) => {
+      const auth = await musicianAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return (
+        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+          <MusicianTrombinoscopeClient />
+        </MusicianLayout>
+      );
+    }),
   ]),
 ]);
 

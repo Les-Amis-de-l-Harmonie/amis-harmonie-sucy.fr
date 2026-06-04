@@ -58,6 +58,13 @@ export function MusicianNav() {
                 <span>Mon Profil</span>
               </a>
               <a
+                href="/musician/trombinoscope"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-3 text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
+              >
+                <span>Trombinoscope</span>
+              </a>
+              <a
                 href="/musician/assurance"
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3 text-gray-900 dark:text-gray-100 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"
