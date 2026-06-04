@@ -87,23 +87,39 @@ function EventSummary({
     else vide++;
   }
 
+  const total = oui + non + vide;
+  if (total === 0) return null;
+
+  const ouiPct = Math.round((oui / total) * 100);
+  const nonPct = Math.round((non / total) * 100);
+  // Adjust last segment so total = 100%
+  const nonAdjusted = ouiPct + nonPct > 100 ? nonPct - (ouiPct + nonPct - 100) : nonPct;
+
   return (
-    <span className="text-[10px] leading-tight text-gray-400 dark:text-gray-500 whitespace-nowrap">
-      {oui > 0 && <span className="text-green-500">{oui}✓</span>}
-      {non > 0 && (
-        <>
-          {" "}
-          <span className="text-red-400">{non}✗</span>
-        </>
-      )}
-      {vide > 0 && (
-        <>
-          {" "}
-          <span className="text-gray-400">{vide}—</span>
-        </>
-      )}
-      {oui === 0 && non === 0 && vide === 0 && ""}
-    </span>
+    <div className="flex flex-col items-center gap-1 w-full px-0.5">
+      {/* Stacked bar */}
+      <div className="flex w-full h-1.5 rounded-full overflow-hidden bg-gray-150 dark:bg-gray-700">
+        {oui > 0 && (
+          <div
+            className="bg-green-400 dark:bg-green-500 h-full transition-all"
+            style={{ width: `${ouiPct}%` }}
+          />
+        )}
+        {non > 0 && (
+          <div
+            className="bg-red-400 dark:bg-red-500 h-full transition-all"
+            style={{ width: `${nonAdjusted}%` }}
+          />
+        )}
+      </div>
+      {/* Counts */}
+      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 leading-none">
+        <span className="text-green-600 dark:text-green-400">{oui}</span>
+        <span className="text-gray-400 dark:text-gray-500">
+          {" / "}{total}
+        </span>
+      </span>
+    </div>
   );
 }
 
