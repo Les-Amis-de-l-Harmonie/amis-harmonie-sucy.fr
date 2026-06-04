@@ -50,6 +50,7 @@ export interface UserWithProfile {
   image_consent?: number;
   adhesion_2025_2026?: number;
   instruments?: UserInstrument[];
+  harmonieInstruments?: string[];
 }
 
 export async function handleUsersApi(request: Request): Promise<Response> {
@@ -371,6 +372,19 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             `
             )
               .bind(id, inst.instrument_name.trim(), inst.start_date || null, inst.level || null, i)
+              .run();
+          }
+        }
+      }
+
+      await env.DB.prepare("DELETE FROM harmonie_instruments WHERE user_id = ?").bind(id).run();
+      if (data.harmonieInstruments && data.harmonieInstruments.length > 0) {
+        for (const instrumentName of data.harmonieInstruments) {
+          if (instrumentName?.trim()) {
+            await env.DB.prepare(
+              "INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (?, ?)"
+            )
+              .bind(id, instrumentName.trim())
               .run();
           }
         }
