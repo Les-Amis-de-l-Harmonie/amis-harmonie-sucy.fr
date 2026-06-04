@@ -676,6 +676,7 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       FROM musician_profiles p
       JOIN users u ON p.user_id = u.id
       WHERE u.is_active = 1
+        AND u.role = 'MUSICIAN'
         AND p.date_of_birth IS NOT NULL
         AND substr(p.date_of_birth, 6, 2) = ?
       ORDER BY CAST(substr(p.date_of_birth, 9, 2) AS INTEGER) ASC
@@ -689,7 +690,15 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
         avatar: string | null;
       }>();
 
-    return new Response(JSON.stringify(results.results || []), {
+    const seen = new Set<string>();
+    const uniqueBirthdays = (results.results || []).filter((b) => {
+      const key = `${b.first_name || ""}|${b.last_name || ""}|${b.date_of_birth}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return new Response(JSON.stringify(uniqueBirthdays), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
@@ -724,18 +733,12 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
       .bind(user.id)
       .first<{ first_name: string | null; last_name: string | null }>();
 
-    if (!profile?.first_name || !profile?.last_name) {
-      return new Response(JSON.stringify({ urgent: false }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
     const sheetUrl =
       "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
     const response = await fetch(sheetUrl, { cf: { cacheTtl: 300 } });
 
     if (!response.ok) {
-      return new Response(JSON.stringify({ urgent: false }), {
+      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -744,7 +747,7 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
     const lines = csvText.split("\n");
 
     if (lines.length < 3) {
-      return new Response(JSON.stringify({ urgent: false }), {
+      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -768,55 +771,41 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
       return result;
     };
 
-    let musicianRow: string[] | null = null;
-    for (const line of lines) {
-      const cells = parseLine(line);
-      if (
-        cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
-        cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
-      ) {
-        musicianRow = cells;
-        break;
-      }
-    }
-
-    if (!musicianRow) {
-      return new Response(JSON.stringify({ urgent: false }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
+    const headerRow = parseLine(lines[0]);
     const dateRow = parseLine(lines[1]);
     const now = new Date();
     const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    let hasUrgentEvent = false;
+    const months: Record<string, number> = {
+      janvier: 0,
+      fevrier: 1,
+      mars: 2,
+      avril: 3,
+      mai: 4,
+      juin: 5,
+      juillet: 6,
+      aout: 7,
+      septembre: 8,
+      octobre: 9,
+      novembre: 10,
+      decembre: 11,
+      février: 1,
+      août: 7,
+    };
 
-    for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
+    interface SheetEvent {
+      title: string;
+      date: string;
+      eventDate: Date;
+    }
+
+    const events: SheetEvent[] = [];
+    for (let i = 1; i < dateRow.length; i++) {
       const dateStr = dateRow[i];
-      const response = musicianRow[i]?.toLowerCase().trim();
-
       if (!dateStr) continue;
 
       const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
       if (!dateMatch) continue;
-
-      const months: Record<string, number> = {
-        janvier: 0,
-        fevrier: 1,
-        mars: 2,
-        avril: 3,
-        mai: 4,
-        juin: 5,
-        juillet: 6,
-        aout: 7,
-        septembre: 8,
-        octobre: 9,
-        novembre: 10,
-        decembre: 11,
-        février: 1,
-        août: 7,
-      };
 
       const day = parseInt(dateMatch[1]);
       const month = months[dateMatch[2].toLowerCase()];
@@ -826,20 +815,137 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
 
       const eventDate = new Date(year, month, day);
 
-      if (eventDate >= now && eventDate <= thirtyDaysLater) {
-        if (!response || response === "" || response.includes("peut")) {
-          hasUrgentEvent = true;
+      if (eventDate >= now) {
+        const title = headerRow[i]?.trim() || `Événement du ${dateStr}`;
+        events.push({
+          title,
+          date: eventDate.toISOString().split("T")[0],
+          eventDate,
+        });
+      }
+    }
+
+    events.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
+    const nextEvent = events[0] || null;
+
+    let hasUrgentEvent = false;
+
+    if (profile?.first_name && profile?.last_name) {
+      let musicianRow: string[] | null = null;
+      for (const line of lines) {
+        const cells = parseLine(line);
+        if (
+          cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
+          cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
+        ) {
+          musicianRow = cells;
           break;
+        }
+      }
+
+      if (musicianRow) {
+        for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
+          const dateStr = dateRow[i];
+          const response = musicianRow[i]?.toLowerCase().trim();
+
+          if (!dateStr) continue;
+
+          const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
+          if (!dateMatch) continue;
+
+          const day = parseInt(dateMatch[1]);
+          const month = months[dateMatch[2].toLowerCase()];
+          const year = parseInt(dateMatch[3]);
+
+          if (month === undefined) continue;
+
+          const eventDate = new Date(year, month, day);
+
+          if (eventDate >= now && eventDate <= thirtyDaysLater) {
+            if (!response || response === "" || response.includes("peut")) {
+              hasUrgentEvent = true;
+              break;
+            }
+          }
         }
       }
     }
 
-    return new Response(JSON.stringify({ urgent: hasUrgentEvent }), {
+    return new Response(
+      JSON.stringify({
+        urgent: hasUrgentEvent,
+        nextEvent: nextEvent
+          ? { title: nextEvent.title, date: nextEvent.date }
+          : null,
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    logger.error("Planning check API error:", error);
+    return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+export async function handleMusicianTrombinoscopeApi(request: Request): Promise<Response> {
+  const user = await verifySession(request, "musician");
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (request.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const results = await env.DB.prepare(
+      `
+      SELECT
+        u.id as user_id,
+        mp.first_name,
+        mp.last_name,
+        mp.avatar,
+        mp.harmonie_start_date,
+        mp.image_consent,
+        GROUP_CONCAT(hi.instrument_name, ', ') as instruments
+      FROM users u
+      INNER JOIN musician_profiles mp ON mp.user_id = u.id
+      LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
+      WHERE u.role = 'MUSICIAN' AND u.is_active = 1
+      GROUP BY u.id
+      ORDER BY mp.last_name ASC, mp.first_name ASC
+      `
+    ).all<{
+      user_id: number;
+      first_name: string | null;
+      last_name: string | null;
+      avatar: string | null;
+      harmonie_start_date: string | null;
+      image_consent: number | null;
+      instruments: string | null;
+    }>();
+
+    const musicians = (results.results || []).map((m) => ({
+      ...m,
+      instruments: m.instruments ? m.instruments.split(", ") : [],
+    }));
+
+    return new Response(JSON.stringify({ musicians }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    logger.error("Planning check API error:", error);
-    return new Response(JSON.stringify({ urgent: false }), {
+    logger.error("Trombinoscope API error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }

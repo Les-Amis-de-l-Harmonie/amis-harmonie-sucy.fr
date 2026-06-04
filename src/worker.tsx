@@ -27,7 +27,7 @@ import {
   verifySession,
 } from "@/app/api/auth";
 import { handleUserCheckRequest } from "@/app/api/check-user";
-import { handleDebugAuthRequest } from "@/app/api/debug-auth";
+import { handleDiagnoseAuthRequest } from "@/app/api/diagnose-auth";
 import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
@@ -48,6 +48,7 @@ import {
   handleMusicianInsuranceApi,
   handleMusicianBirthdaysApi,
   handleMusicianPlanningCheckApi,
+  handleMusicianTrombinoscopeApi,
 } from "@/app/api/musician";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
@@ -188,7 +189,9 @@ const app = defineApp([
   }),
 
   route("/api/check-user", ({ request }: { request: Request }) => handleUserCheckRequest(request)),
-  route("/api/debug-auth", ({ request }: { request: Request }) => handleDebugAuthRequest(request)),
+  route("/api/diagnose-auth", ({ request }: { request: Request }) =>
+    handleDiagnoseAuthRequest(request)
+  ),
 
   route("/api/admin/events", ({ request }: { request: Request }) => handleEventsApi(request)),
   route("/api/admin/videos", ({ request }: { request: Request }) => handleVideosApi(request)),
@@ -240,6 +243,9 @@ const app = defineApp([
   ),
   route("/api/musician/planning-check", ({ request }: { request: Request }) =>
     handleMusicianPlanningCheckApi(request)
+  ),
+  route("/api/musician/trombinoscope", ({ request }: { request: Request }) =>
+    handleMusicianTrombinoscopeApi(request)
   ),
 
   // Public API for info settings (read-only, returns only active settings)
