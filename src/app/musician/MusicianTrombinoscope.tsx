@@ -160,6 +160,14 @@ export function MusicianTrombinoscopeClient() {
         const aHasInstruments = a.instruments.length > 0;
         const bHasInstruments = b.instruments.length > 0;
         if (aHasInstruments !== bHasInstruments) return aHasInstruments ? -1 : 1;
+        if (!aHasInstruments) {
+          const nameA = (a.last_name || "").toLowerCase();
+          const nameB = (b.last_name || "").toLowerCase();
+          if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
+          const firstA = (a.first_name || "").toLowerCase();
+          const firstB = (b.first_name || "").toLowerCase();
+          return firstA.localeCompare(firstB, "fr");
+        }
         const prioA = Math.min(...a.instruments.map(getInstrumentPriority));
         const prioB = Math.min(...b.instruments.map(getInstrumentPriority));
         if (prioA !== prioB) return prioA - prioB;
