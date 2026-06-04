@@ -218,6 +218,8 @@ export const HARMONIE_INSTRUMENTS = [
   "Trombone",
   "Trompette",
   "Tuba",
+  "Chef d'orchestre",
+  "Chef adjoint",
 ] as const;
 
 export type HarmonieInstrument = (typeof HARMONIE_INSTRUMENTS)[number];
