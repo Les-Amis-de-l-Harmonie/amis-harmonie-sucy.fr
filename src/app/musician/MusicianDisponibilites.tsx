@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, X, HelpCircle, Minus, Loader2, RefreshCw, Calendar } from "lucide-react";
+import { Check, X, HelpCircle, Minus, Loader2, RefreshCw, Calendar, ChevronDown, ChevronRight } from "lucide-react";
 import type { PlanningEvent } from "@/db/types";
 import { formatDateShort } from "@/lib/dates";
 
@@ -94,6 +94,7 @@ export function MusicianDisponibilites({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingEventId, setUpdatingEventId] = useState<number | null>(null);
+  const [showPast, setShowPast] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -197,7 +198,7 @@ export function MusicianDisponibilites({
     );
   }
 
-  // Empty state (no events)
+  // Empty state (no events at all)
   if (!data || data.events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
@@ -213,6 +214,12 @@ export function MusicianDisponibilites({
 
   const currentRow = data.rows.find((r) => r.userId === data.currentUserId);
   const otherRows = data.rows.filter((r) => r.userId !== data.currentUserId);
+
+  // Split events: upcoming (date >= today) vs past
+  const today = new Date().toISOString().split("T")[0];
+  const upcomingEvents = data.events.filter((e) => e.date >= today);
+  const pastEvents = data.events.filter((e) => e.date < today);
+  const visibleEvents = showPast ? data.events : upcomingEvents;
 
   // Reorder: current user first, then others
   const orderedRows = currentRow
@@ -254,6 +261,23 @@ export function MusicianDisponibilites({
         </span>
       </div>
 
+      {/* Past events toggle */}
+      {pastEvents.length > 0 && (
+        <button
+          onClick={() => setShowPast((prev) => !prev)}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        >
+          {showPast ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+          {showPast
+            ? "Masquer les prestations passées"
+            : `Afficher les prestations passées (${pastEvents.length})`}
+        </button>
+      )}
+
       {/* Table wrapped in a full-width scroll container */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         <div className="mx-4 sm:mx-6 lg:mx-8 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -268,7 +292,7 @@ export function MusicianDisponibilites({
                 >
                   Musicien
                 </th>
-                {data.events.map((event) => (
+                {visibleEvents.map((event) => (
                   <th
                     key={event.id}
                     scope="col"
@@ -340,7 +364,7 @@ export function MusicianDisponibilites({
                     </td>
 
                     {/* Event columns */}
-                    {data.events.map((event) => {
+                    {visibleEvents.map((event) => {
                       const status: StatusValue =
                         row.availabilities[String(event.id)] ?? null;
 
@@ -430,7 +454,7 @@ export function MusicianDisponibilites({
                     Résumé
                   </span>
                 </td>
-                {data.events.map((event) => (
+                {visibleEvents.map((event) => (
                   <td
                     key={event.id}
                     className="border-t border-gray-200 dark:border-gray-700 px-2 py-2 text-center"
