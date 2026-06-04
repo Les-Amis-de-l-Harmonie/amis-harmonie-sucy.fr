@@ -798,7 +798,7 @@ export function MusicianHomeClient({
         return (
           <Card
             key={cardType}
-            className="hover:shadow-md transition-shadow h-[320px] flex flex-col"
+            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
