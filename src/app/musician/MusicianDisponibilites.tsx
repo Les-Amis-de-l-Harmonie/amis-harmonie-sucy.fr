@@ -28,6 +28,47 @@ function getFullName(firstName: string | null, lastName: string | null): string 
   return [firstName, lastName].filter(Boolean).join(" ");
 }
 
+// Instrument ordering matching the trombinoscope
+const INSTRUMENT_ORDER: Record<string, number> = {
+  "chef d'orchestre": 0,
+  "chef adjoint": 1,
+  percussions: 2,
+};
+
+function getInstrumentPriority(instrument: string): number {
+  return INSTRUMENT_ORDER[instrument.toLowerCase()] ?? 999;
+}
+
+function sortRowsByInstrument(rows: AvailabilityRow[]): AvailabilityRow[] {
+  return [...rows].sort((a, b) => {
+    const aInstruments = a.instrument ? a.instrument.split(", ").filter(Boolean) : [];
+    const bInstruments = b.instrument ? b.instrument.split(", ").filter(Boolean) : [];
+    const aHas = aInstruments.length > 0;
+    const bHas = bInstruments.length > 0;
+    if (aHas !== bHas) return aHas ? -1 : 1;
+    if (!aHas) {
+      const nameA = (a.lastName || "").toLowerCase();
+      const nameB = (b.lastName || "").toLowerCase();
+      if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
+      return (a.firstName || "").toLowerCase().localeCompare((b.firstName || "").toLowerCase(), "fr");
+    }
+    const prioA = Math.min(...aInstruments.map(getInstrumentPriority));
+    const prioB = Math.min(...bInstruments.map(getInstrumentPriority));
+    if (prioA !== prioB) return prioA - prioB;
+    const bestA = aInstruments.reduce((best, i) =>
+      getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
+    );
+    const bestB = bInstruments.reduce((best, i) =>
+      getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
+    );
+    if (bestA !== bestB) return bestA.localeCompare(bestB, "fr");
+    const nameA = (a.lastName || "").toLowerCase();
+    const nameB = (b.lastName || "").toLowerCase();
+    if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
+    return (a.firstName || "").toLowerCase().localeCompare((b.firstName || "").toLowerCase(), "fr");
+  });
+}
+
 function EventSummary({
   eventId,
   rows,
@@ -196,10 +237,11 @@ export function MusicianDisponibilites({
   const pastEvents = data.events.filter((e) => e.date < today);
   const visibleEvents = showPast ? data.events : upcomingEvents;
 
-  // Reorder: current user first, then others
+  // Reorder: current user first, then others sorted by instrument (like trombinoscope)
+  const sortedOthers = sortRowsByInstrument(otherRows);
   const orderedRows = currentRow
-    ? [currentRow, ...otherRows]
-    : data.rows;
+    ? [currentRow, ...sortedOthers]
+    : sortRowsByInstrument(data.rows);
 
   return (
     <div className="space-y-6">
