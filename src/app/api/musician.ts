@@ -1224,7 +1224,7 @@ export async function handleMusicianAvailabilityApi(request: Request): Promise<R
     if (request.method === "PUT") {
       const data = (await request.json()) as {
         eventId?: number;
-        status?: "oui" | "non" | "peut-etre" | null;
+        status?: "oui" | "non" | null;
       };
 
       if (data.eventId === undefined || data.eventId === null) {
@@ -1234,10 +1234,10 @@ export async function handleMusicianAvailabilityApi(request: Request): Promise<R
         });
       }
 
-      const validStatuses = ["oui", "non", "peut-etre"];
+      const validStatuses = ["oui", "non"];
       if (data.status !== null && !validStatuses.includes(data.status as string)) {
         return new Response(
-          JSON.stringify({ error: "Status invalide. Utilisez oui, non, peut-etre ou null" }),
+          JSON.stringify({ error: "Status invalide. Utilisez oui ou non" }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, X, HelpCircle, Minus, Loader2, RefreshCw, Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { Check, X, Minus, Loader2, RefreshCw, Calendar, ChevronDown, ChevronRight } from "lucide-react";
 import type { PlanningEvent } from "@/db/types";
 import { formatDateShort } from "@/lib/dates";
 
@@ -21,12 +21,7 @@ interface AvailabilityData {
 
 type StatusValue = "oui" | "non" | "peut-etre" | null;
 
-const STATUS_CYCLE: StatusValue[] = [null, "oui", "non", "peut-etre"];
-
-function getNextStatus(current: StatusValue): StatusValue {
-  const idx = STATUS_CYCLE.indexOf(current);
-  return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
-}
+// Only oui/non/null are offered in the select — peut-etre is kept for imported legacy data
 
 function getFullName(firstName: string | null, lastName: string | null): string {
   if (!firstName && !lastName) return "Anonyme";
@@ -42,14 +37,12 @@ function EventSummary({
 }) {
   let oui = 0;
   let non = 0;
-  let peutetre = 0;
   let vide = 0;
 
   for (const row of rows) {
     const status = row.availabilities[eventId];
     if (status === "oui") oui++;
     else if (status === "non") non++;
-    else if (status === "peut-etre") peutetre++;
     else vide++;
   }
 
@@ -62,19 +55,13 @@ function EventSummary({
           <span className="text-red-400">{non}✗</span>
         </>
       )}
-      {peutetre > 0 && (
-        <>
-          {" "}
-          <span className="text-amber-500">{peutetre}?</span>
-        </>
-      )}
       {vide > 0 && (
         <>
           {" "}
           <span className="text-gray-400">{vide}—</span>
         </>
       )}
-      {oui === 0 && non === 0 && peutetre === 0 && vide === 0 && ""}
+      {oui === 0 && non === 0 && vide === 0 && ""}
     </span>
   );
 }
@@ -119,19 +106,10 @@ export function MusicianDisponibilites({
     fetchData();
   }, [fetchData]);
 
-  const handleCellClick = useCallback(
-    async (eventId: number) => {
+  const handleStatusChange = useCallback(
+    async (eventId: number, newStatus: StatusValue) => {
       if (!data) return;
-      const currentRow = data.rows.find(
-        (r) => r.userId === data.currentUserId
-      );
-      if (!currentRow) return;
-
-      const currentStatus: StatusValue =
-        currentRow.availabilities[String(eventId)] ?? null;
-      const newStatus = getNextStatus(currentStatus);
-
-      // Optimistic update
+      // optimistic update
       setData((prev) => {
         if (!prev) return prev;
         return {
@@ -148,7 +126,6 @@ export function MusicianDisponibilites({
           }),
         };
       });
-
       setUpdatingEventId(eventId);
       try {
         const response = await fetch("/api/musician/availability", {
@@ -157,11 +134,9 @@ export function MusicianDisponibilites({
           body: JSON.stringify({ eventId, status: newStatus }),
         });
         if (!response.ok) {
-          // Revert on error
           fetchData();
         }
       } catch {
-        // Revert on error
         fetchData();
       } finally {
         setUpdatingEventId(null);
@@ -250,10 +225,6 @@ export function MusicianDisponibilites({
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium">
           <X className="w-3.5 h-3.5" />
           Absent
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-medium">
-          <HelpCircle className="w-3.5 h-3.5" />
-          Peut-être
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs font-medium">
           <Minus className="w-3.5 h-3.5" />
@@ -369,41 +340,35 @@ export function MusicianDisponibilites({
                         row.availabilities[String(event.id)] ?? null;
 
                       if (isCurrentUser) {
+                        const selectId = `status-${row.userId}-${event.id}`;
                         return (
                           <td
                             key={event.id}
                             className="border-b border-gray-200 dark:border-gray-700 p-1 text-center"
                           >
-                            <button
-                              onClick={() => handleCellClick(event.id)}
+                            <select
+                              id={selectId}
+                              value={status ?? ""}
                               disabled={updatingEventId === event.id}
-                              className={`w-full h-full min-h-[44px] rounded-lg cursor-pointer transition-all duration-150 font-medium text-xs flex items-center justify-center gap-1 ${
-                                updatingEventId === event.id
-                                  ? "opacity-60"
-                                  : ""
-                              } ${
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleStatusChange(
+                                  event.id,
+                                  val === "" ? null : (val as "oui" | "non")
+                                );
+                              }}
+                              className={`w-full min-h-[38px] rounded-lg cursor-pointer text-xs font-medium text-center appearance-none px-1 transition-colors ${
                                 status === "oui"
-                                  ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 ring-1 ring-green-300 dark:ring-green-700"
+                                  ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700"
                                   : status === "non"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 ring-1 ring-red-300 dark:ring-red-700"
-                                    : status === "peut-etre"
-                                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 ring-1 ring-amber-300 dark:ring-amber-700"
-                                      : "bg-gray-50 dark:bg-gray-800/30 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/40 ring-1 ring-transparent hover:ring-gray-300 dark:hover:ring-gray-600"
-                              }`}
-                              aria-label={`Changer la disponibilité pour ${event.name}`}
+                                    ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700"
+                                    : "bg-gray-50 dark:bg-gray-800/30 text-gray-400 border-gray-200 dark:border-gray-700"
+                              } border focus:outline-none focus:ring-2 focus:ring-primary/40`}
                             >
-                              {updatingEventId === event.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : status === "oui" ? (
-                                <Check className="w-3.5 h-3.5" />
-                              ) : status === "non" ? (
-                                <X className="w-3.5 h-3.5" />
-                              ) : status === "peut-etre" ? (
-                                <HelpCircle className="w-3.5 h-3.5" />
-                              ) : (
-                                <Minus className="w-3.5 h-3.5" />
-                              )}
-                            </button>
+                              <option value="">—</option>
+                              <option value="oui">Présent</option>
+                              <option value="non">Absent</option>
+                            </select>
                           </td>
                         );
                       }
@@ -420,17 +385,13 @@ export function MusicianDisponibilites({
                                 ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
                                 : status === "non"
                                   ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                                  : status === "peut-etre"
-                                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
-                                    : "bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500"
+                                  : "bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500"
                             }`}
                           >
                             {status === "oui" ? (
                               <Check className="w-3.5 h-3.5" />
                             ) : status === "non" ? (
                               <X className="w-3.5 h-3.5" />
-                            ) : status === "peut-etre" ? (
-                              <HelpCircle className="w-3.5 h-3.5" />
                             ) : (
                               <Minus className="w-3.5 h-3.5" />
                             )}
@@ -473,7 +434,7 @@ export function MusicianDisponibilites({
 
       {/* Click hint (only shown when there are events) */}
       <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-        Cliquez sur une cellule de votre ligne pour changer votre statut.
+        Sélectionnez votre statut pour chaque prestation.
       </p>
     </div>
   );
