@@ -60,12 +60,26 @@ function getFullName(firstName: string | null, lastName: string | null): string 
   return [firstName, lastName].filter(Boolean).join(" ");
 }
 
+const INSTRUMENT_ORDER: Record<string, number> = {
+  "chef d'orchestre": 0,
+  "chef adjoint": 1,
+  percussions: 2,
+};
+
+function getInstrumentSortKey(instrument: string): string {
+  const lower = instrument.toLowerCase();
+  if (lower in INSTRUMENT_ORDER) {
+    return String.fromCharCode(0).repeat(1) + String.fromCharCode(INSTRUMENT_ORDER[lower]);
+  }
+  return instrument;
+}
+
 export function MusicianTrombinoscopeClient() {
   const [musicians, setMusicians] = useState<TrombinoscopeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "seniority" | "instrument">("name");
+  const [sortBy, setSortBy] = useState<"name" | "seniority" | "instrument">("instrument");
   const [filterInstrument, setFilterInstrument] = useState<string>("");
 
   const fetchMusicians = useCallback(async () => {
@@ -94,7 +108,7 @@ export function MusicianTrombinoscopeClient() {
   const uniqueInstruments = useMemo(() => {
     const set = new Set<string>();
     musicians.forEach((m) => m.instruments.forEach((i) => set.add(i)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
+    return Array.from(set).sort((a, b) => getInstrumentSortKey(a).localeCompare(getInstrumentSortKey(b), "fr"));
   }, [musicians]);
 
   const filteredMusicians = useMemo(() => {
@@ -142,8 +156,8 @@ export function MusicianTrombinoscopeClient() {
         return a.harmonie_start_date.localeCompare(b.harmonie_start_date);
       }
       if (sortBy === "instrument") {
-        const instA = a.instruments.length > 0 ? a.instruments[0].toLowerCase() : "";
-        const instB = b.instruments.length > 0 ? b.instruments[0].toLowerCase() : "";
+        const instA = a.instruments.length > 0 ? getInstrumentSortKey(a.instruments[0]) : "";
+        const instB = b.instruments.length > 0 ? getInstrumentSortKey(b.instruments[0]) : "";
         if (instA !== instB) return instA.localeCompare(instB, "fr");
         const nameA = (a.last_name || "").toLowerCase();
         const nameB = (b.last_name || "").toLowerCase();
@@ -163,7 +177,7 @@ export function MusicianTrombinoscopeClient() {
   function resetFilters() {
     setSearchQuery("");
     setFilterInstrument("");
-    setSortBy("name");
+    setSortBy("instrument");
   }
 
   return (
