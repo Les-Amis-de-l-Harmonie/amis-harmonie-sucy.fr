@@ -17,7 +17,6 @@ import {
   Download,
   CalendarDays,
   FolderOpen,
-  LayoutGrid,
   Lightbulb,
   Shield,
   Users,
@@ -802,60 +801,22 @@ export function MusicianHomeClient({
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <LayoutGrid className="w-5 h-5 text-primary" />
-                Menu
+                <Users className="w-5 h-5 text-primary" />
+                Trombinoscope
               </CardTitle>
-              <CardDescription>Accédez aux différentes sections</CardDescription>
+              <CardDescription>
+                Découvrez les musiciens de l&apos;orchestre : photos, instruments et
+                ancienneté.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href="/musician/trombinoscope"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <Users className="w-4 h-4 text-primary" />
-                  Trombinoscope
-                </a>
-                <a
-                  href="/musician/profile"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <User className="w-4 h-4 text-primary" />
-                  Mon Profil
-                </a>
-                <a
-                  href="/musician/assurance"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <Shield className="w-4 h-4 text-primary" />
-                  Assurance
-                </a>
-                <a
-                  href="/musician/idee"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <Lightbulb className="w-4 h-4 text-primary" />
-                  Boîte à idées
-                </a>
-                <a
-                  href="https://drive.google.com/drive/folders/1pUqqJonhyugZCuT3SrWrpNTQ_NFI0BAz?usp=drive_link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <FolderOpen className="w-4 h-4 text-primary" />
-                  Partitions
-                </a>
-                <a
-                  href="https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/edit?usp=sharing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-primary/10 hover:text-primary transition-colors text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <CalendarDays className="w-4 h-4 text-primary" />
-                  Planning
-                </a>
-              </div>
+            <CardContent className="flex-1 flex flex-col">
+              <div className="flex-1" />
+              <a href="/musician/trombinoscope" className="mt-auto">
+                <Button variant="outline" className="w-full">
+                  Voir le trombinoscope
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </a>
             </CardContent>
           </Card>
         );
