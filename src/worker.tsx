@@ -23,6 +23,7 @@ import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import {
   handleMagicLinkRequest,
   handleMagicLinkVerify,
+  handleMagicLinkVerifyGet,
   handleLogout,
   verifySession,
 } from "@/app/api/auth";
@@ -373,14 +374,16 @@ const app = defineApp([
   route("/sitemap.xml", () => sitemapHandler()),
   route("/robots.txt", () => robotsHandler()),
 
-  route("/admin/verify", ({ request }: { request: Request }) =>
-    handleMagicLinkVerify(request, "admin")
-  ),
+  route("/admin/verify", {
+    get: ({ request }: { request: Request }) => handleMagicLinkVerifyGet(request, "admin"),
+    post: ({ request }: { request: Request }) => handleMagicLinkVerify(request, "admin"),
+  }),
   route("/admin/logout", ({ request }: { request: Request }) => handleLogout(request, "admin")),
 
-  route("/musician/verify", ({ request }: { request: Request }) =>
-    handleMagicLinkVerify(request, "musician")
-  ),
+  route("/musician/verify", {
+    get: ({ request }: { request: Request }) => handleMagicLinkVerifyGet(request, "musician"),
+    post: ({ request }: { request: Request }) => handleMagicLinkVerify(request, "musician"),
+  }),
   route("/musician/logout", ({ request }: { request: Request }) =>
     handleLogout(request, "musician")
   ),

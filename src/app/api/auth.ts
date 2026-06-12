@@ -187,10 +187,106 @@ export async function handleMagicLinkRequest(
   }
 }
 
+export async function handleMagicLinkVerifyGet(
+  request: Request,
+  context: LoginContext = "admin"
+): Promise<Response> {
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token");
+  const loginPath = getLoginPath(context);
+  const contextLabel = context === "admin" ? "l'administration" : "l'espace musicien";
+
+  if (!token) {
+    return Response.redirect(new URL(`${loginPath}?error=invalid_token`, url.origin).toString());
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - Les Amis de l'Harmonie de Sucy</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { font-size: 1.25rem; color: #1f2937; margin-bottom: 0.5rem; }
+    p { color: #6b7280; font-size: 0.875rem; }
+    .btn {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .btn:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h1>Connexion en cours...</h1>
+    <p>Veuillez patienter, vous allez être redirigé vers ${contextLabel}.</p>
+    <noscript>
+      <p style="margin-top:1rem; color:#dc2626;">JavaScript semble désactivé. Veuillez cliquer sur le bouton ci-dessous.</p>
+      <form method="POST" action="${url.pathname}?token=${encodeURIComponent(token!)}">
+        <button type="submit" class="btn">Se connecter</button>
+      </form>
+    </noscript>
+  </div>
+  <form id="auto-form" method="POST" action="${url.pathname}?token=${encodeURIComponent(token!)}" style="display:none;"></form>
+  <script>document.getElementById('auto-form').submit();</script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
+
 export async function handleMagicLinkVerify(
   request: Request,
   context: LoginContext = "admin"
 ): Promise<Response> {
+  // Only accept POST for token verification (prevents email link scanners from consuming tokens)
+  if (request.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
   const loginPath = getLoginPath(context);
