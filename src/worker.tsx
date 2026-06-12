@@ -375,13 +375,15 @@ const app = defineApp([
   route("/robots.txt", () => robotsHandler()),
 
   route("/admin/verify", {
-    get: ({ request }: { request: Request }) => handleMagicLinkVerifyGet(request, "admin"),
+    get: ({ request, rw }: { request: Request; rw: { nonce: string } }) =>
+      handleMagicLinkVerifyGet(request, "admin", rw.nonce),
     post: ({ request }: { request: Request }) => handleMagicLinkVerify(request, "admin"),
   }),
   route("/admin/logout", ({ request }: { request: Request }) => handleLogout(request, "admin")),
 
   route("/musician/verify", {
-    get: ({ request }: { request: Request }) => handleMagicLinkVerifyGet(request, "musician"),
+    get: ({ request, rw }: { request: Request; rw: { nonce: string } }) =>
+      handleMagicLinkVerifyGet(request, "musician", rw.nonce),
     post: ({ request }: { request: Request }) => handleMagicLinkVerify(request, "musician"),
   }),
   route("/musician/logout", ({ request }: { request: Request }) =>

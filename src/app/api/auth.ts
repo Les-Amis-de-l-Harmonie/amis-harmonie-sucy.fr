@@ -189,7 +189,8 @@ export async function handleMagicLinkRequest(
 
 export async function handleMagicLinkVerifyGet(
   request: Request,
-  context: LoginContext = "admin"
+  context: LoginContext = "admin",
+  nonce?: string
 ): Promise<Response> {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
@@ -200,6 +201,7 @@ export async function handleMagicLinkVerifyGet(
     return Response.redirect(new URL(`${loginPath}?error=invalid_token`, url.origin).toString());
   }
 
+  const nonceAttr = nonce ? ` nonce="${nonce}"` : "";
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -226,8 +228,18 @@ export async function handleMagicLinkVerifyGet(
       text-align: center;
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
     }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     h1 { font-size: 1.25rem; color: #1f2937; margin-bottom: 0.5rem; }
-    p { color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem; }
+    p { color: #6b7280; font-size: 0.875rem; }
     .btn {
       display: inline-block;
       background: #2563eb;
@@ -238,7 +250,7 @@ export async function handleMagicLinkVerifyGet(
       font-size: 1rem;
       border: none;
       cursor: pointer;
-      margin-top: 0.5rem;
+      margin-top: 1rem;
       font-family: inherit;
     }
     .btn:hover { background: #1d4ed8; }
@@ -246,12 +258,18 @@ export async function handleMagicLinkVerifyGet(
 </head>
 <body>
   <div class="card">
-    <h1>Connexion</h1>
-    <p>Vous allez accéder à ${contextLabel}.</p>
-    <form method="POST" action="${url.pathname}?token=${encodeURIComponent(token!)}">
-      <button type="submit" class="btn">Continuer</button>
-    </form>
+    <div class="spinner"></div>
+    <h1>Connexion en cours...</h1>
+    <p>Veuillez patienter, vous allez être redirigé vers ${contextLabel}.</p>
+    <noscript>
+      <p style="margin-top:1rem; color:#dc2626;">JavaScript semble désactivé. Veuillez cliquer sur le bouton ci-dessous.</p>
+      <form method="POST" action="${url.pathname}?token=${encodeURIComponent(token!)}">
+        <button type="submit" class="btn">Se connecter</button>
+      </form>
+    </noscript>
   </div>
+  <form id="auto-form" method="POST" action="${url.pathname}?token=${encodeURIComponent(token!)}" style="display:none;"></form>
+  <script${nonceAttr}>document.getElementById('auto-form').submit();</script>
 </body>
 </html>`;
 
