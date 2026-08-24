@@ -29,7 +29,7 @@ async function getStats() {
         count: number;
       }>(),
       env.DB.prepare(
-        "SELECT COUNT(*) as count FROM musician_profiles WHERE adhesion_2025_2026 = 1"
+        "SELECT COUNT(*) as count FROM musician_profiles WHERE adhesion_2026_2027 = 1"
       ).first<{ count: number }>(),
     ]);
 
@@ -178,7 +178,7 @@ export async function AdminDashboard() {
       <Card className="border-2 border-emerald-100 dark:border-emerald-900">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Taux d'adhésion 2025-2026
+            Taux d'adhésion 2026-2027
           </CardTitle>
           <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900">
             <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

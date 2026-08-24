@@ -88,7 +88,7 @@ export interface MusicianProfile {
   emergency_contact_email: string | null;
   emergency_contact_phone: string | null;
   image_consent: number;
-  adhesion_2025_2026: number;
+  adhesion_2026_2027: number;
   updated_at: string;
   created_at: string;
 }

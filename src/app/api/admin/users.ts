@@ -48,7 +48,7 @@ export interface UserWithProfile {
   emergency_contact_email?: string;
   emergency_contact_phone?: string;
   image_consent?: number;
-  adhesion_2025_2026?: number;
+  adhesion_2026_2027?: number;
   instruments?: UserInstrument[];
   harmonieInstruments?: string[];
 }
@@ -98,7 +98,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
                  p.address_line1, p.address_line2, p.postal_code, p.city,
                  p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
                  p.emergency_contact_last_name, p.emergency_contact_first_name,
-                 p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2025_2026
+                 p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
           FROM users u
           LEFT JOIN musician_profiles p ON u.id = p.user_id
           WHERE u.id = ?
@@ -136,7 +136,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
                p.address_line1, p.address_line2, p.postal_code, p.city,
                p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
                p.emergency_contact_last_name, p.emergency_contact_first_name,
-               p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2025_2026
+               p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
         FROM users u
         LEFT JOIN musician_profiles p ON u.id = p.user_id
         ORDER BY u.created_at DESC
@@ -211,7 +211,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
             address_line1, address_line2, postal_code, city,
             harmonie_start_date, is_conservatory_student, music_theory_level,
-            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
+            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2026_2027)
           VALUES ((SELECT last_insert_rowid()), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         ).bind(
@@ -232,7 +232,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           data.emergency_contact_email || null,
           data.emergency_contact_phone || null,
           data.image_consent == null ? null : data.image_consent ? 1 : 0,
-          data.adhesion_2025_2026 ? 1 : 0
+          data.adhesion_2026_2027 ? 1 : 0
         ),
       ];
 
@@ -299,7 +299,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
               address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
               harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
               emergency_contact_last_name = ?, emergency_contact_first_name = ?,
-              emergency_contact_email = ?, emergency_contact_phone = ?, image_consent = ?, adhesion_2025_2026 = ?,
+              emergency_contact_email = ?, emergency_contact_phone = ?, image_consent = ?, adhesion_2026_2027 = ?,
               updated_at = CURRENT_TIMESTAMP
           WHERE user_id = ?
         `
@@ -322,7 +322,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
             data.image_consent == null ? null : data.image_consent ? 1 : 0,
-            data.adhesion_2025_2026 ? 1 : 0,
+            data.adhesion_2026_2027 ? 1 : 0,
             id
           )
           .run();
@@ -332,7 +332,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           INSERT INTO musician_profiles (user_id, first_name, last_name, avatar, date_of_birth, phone,
             address_line1, address_line2, postal_code, city,
             harmonie_start_date, is_conservatory_student, music_theory_level,
-            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2025_2026)
+            emergency_contact_last_name, emergency_contact_first_name, emergency_contact_email, emergency_contact_phone, image_consent, adhesion_2026_2027)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
         )
@@ -355,7 +355,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
             data.image_consent == null ? null : data.image_consent ? 1 : 0,
-            data.adhesion_2025_2026 ? 1 : 0
+            data.adhesion_2026_2027 ? 1 : 0
           )
           .run();
       }

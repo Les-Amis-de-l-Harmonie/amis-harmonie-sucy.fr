@@ -46,7 +46,7 @@ function MembersOnlyBadge() {
 interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
   email?: string;
-  adhesion_2025_2026?: number;
+  adhesion_2026_2027?: number;
   insurance_complete?: boolean;
   insuranceInstruments?: InsuranceInstrument[];
 }
@@ -366,10 +366,10 @@ export function MusicianHomeClient({
                 {loading ? (
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : profileComplete ? (
-                  profile?.adhesion_2025_2026 === 1 ? (
+                  profile?.adhesion_2026_2027 === 1 ? (
                     <div className="space-y-2">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Adhérent 2025-2026
+                        Adhérent 2026-2027
                       </span>
                       <p className="text-sm text-muted-foreground italic">
                         Merci pour votre soutien !
@@ -378,14 +378,14 @@ export function MusicianHomeClient({
                   ) : (
                     <div className="space-y-2">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Non adhérent en 2025-2026
+                        Non adhérent en 2026-2027
                       </span>
                     </div>
                   )
                 ) : null}
               </div>
               <div className="mt-auto space-y-3">
-                {!loading && profile?.adhesion_2025_2026 !== 1 && (
+                {!loading && profile?.adhesion_2026_2027 !== 1 && (
                   <a href="/adhesion" className="block">
                     <Button className="w-full">
                       Adhérer maintenant
@@ -414,7 +414,7 @@ export function MusicianHomeClient({
           <Card
             key={cardType}
             className={`h-[320px] flex flex-col ${
-              !profileComplete || profile?.adhesion_2025_2026 !== 1
+              !profileComplete || profile?.adhesion_2026_2027 !== 1
                 ? "opacity-50 pointer-events-none grayscale"
                 : "hover:shadow-md transition-shadow"
             }`}
@@ -434,7 +434,7 @@ export function MusicianHomeClient({
                 {loading ? (
                   <p className="text-sm text-muted-foreground">Chargement...</p>
                 ) : profileComplete ? (
-                  profile?.adhesion_2025_2026 !== 1 ? (
+                  profile?.adhesion_2026_2027 !== 1 ? (
                     <MembersOnlyBadge />
                   ) : profile?.insurance_complete ? (
                     <div className="space-y-2">
@@ -467,7 +467,7 @@ export function MusicianHomeClient({
                   )
                 ) : null}
               </div>
-              {profile?.adhesion_2025_2026 === 1 ? (
+              {profile?.adhesion_2026_2027 === 1 ? (
                 <a href="/musician/assurance" className="mt-auto">
                   <Button variant="outline" className="w-full">
                     {profile?.insurance_complete
@@ -614,7 +614,7 @@ export function MusicianHomeClient({
           <Card
             key={cardType}
             className={`h-[320px] flex flex-col ${
-              !profileComplete || profile?.adhesion_2025_2026 !== 1
+              !profileComplete || profile?.adhesion_2026_2027 !== 1
                 ? "opacity-50 pointer-events-none grayscale"
                 : "hover:shadow-md transition-shadow"
             }`}
@@ -631,7 +631,7 @@ export function MusicianHomeClient({
               )}
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
-              {(!profileComplete || profile?.adhesion_2025_2026 !== 1) && <MembersOnlyBadge />}
+              {(!profileComplete || profile?.adhesion_2026_2027 !== 1) && <MembersOnlyBadge />}
               {outingSettings.description && (
                 <p className="text-xs text-muted-foreground mb-2">{outingSettings.description}</p>
               )}
@@ -645,7 +645,7 @@ export function MusicianHomeClient({
                 <p className="text-xs text-muted-foreground mb-4">💰 {outingSettings.price}</p>
               )}
               <div className="flex-1" />
-              {profile?.adhesion_2025_2026 === 1 && outingSettings.button_link && (
+              {profile?.adhesion_2026_2027 === 1 && outingSettings.button_link && (
                 <a
                   href={outingSettings.button_link}
                   target="_blank"

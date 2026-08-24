@@ -138,7 +138,7 @@ interface UserWithProfile {
   emergency_contact_email?: string | null;
   emergency_contact_phone?: string | null;
   image_consent?: number | null;
-  adhesion_2025_2026?: number | null;
+  adhesion_2026_2027?: number | null;
   instruments?: { instrument_name: string; start_date?: string | null; level?: string | null }[];
   harmonieInstruments?: string[];
 }
@@ -263,7 +263,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
     if (filterAdhesion !== "all") {
       result = result.filter((u) =>
-        filterAdhesion === "adherent" ? u.adhesion_2025_2026 === 1 : u.adhesion_2025_2026 !== 1
+        filterAdhesion === "adherent" ? u.adhesion_2026_2027 === 1 : u.adhesion_2026_2027 !== 1
       );
     }
 
@@ -308,8 +308,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
         aVal = a.is_active !== 0 ? 1 : 0;
         bVal = b.is_active !== 0 ? 1 : 0;
       } else if (sortField === "adhesion") {
-        aVal = a.adhesion_2025_2026 === 1 ? 1 : 0;
-        bVal = b.adhesion_2025_2026 === 1 ? 1 : 0;
+        aVal = a.adhesion_2026_2027 === 1 ? 1 : 0;
+        bVal = b.adhesion_2026_2027 === 1 ? 1 : 0;
       } else if (sortField === "profile") {
         aVal = isProfileComplete(a) ? 1 : 0;
         bVal = isProfileComplete(b) ? 1 : 0;
@@ -424,7 +424,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       "Contact urgence - Email",
       "Contact urgence - Téléphone",
       "Droit à l'image",
-      "Adhésion 2025-2026",
+      "Adhésion 2026-2027",
       "Instruments personnels",
       "Instruments Harmonie",
       "Dernière connexion",
@@ -453,7 +453,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       user.emergency_contact_email ?? "",
       user.emergency_contact_phone ?? "",
       user.image_consent === 1 ? "Autorisé" : user.image_consent === 0 ? "Refusé" : "Non renseigné",
-      user.adhesion_2025_2026 === 1 ? "Oui" : user.adhesion_2025_2026 === 0 ? "Non" : "",
+      user.adhesion_2026_2027 === 1 ? "Oui" : user.adhesion_2026_2027 === 0 ? "Non" : "",
       user.instruments?.map((i) => i.instrument_name).join("; ") ?? "",
       user.harmonieInstruments?.join("; ") ?? "",
       user.last_login ? formatParisDateTime(user.last_login) : "",
@@ -538,7 +538,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes adhésions</SelectItem>
-            <SelectItem value="adherent">Adhérent 2025-26</SelectItem>
+            <SelectItem value="adherent">Adhérent 2026-27</SelectItem>
             <SelectItem value="non_adherent">Non adhérent</SelectItem>
           </SelectContent>
         </Select>
@@ -707,7 +707,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     <TableCell>
                       {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
                         ""
-                      ) : user.adhesion_2025_2026 === 1 ? (
+                      ) : user.adhesion_2026_2027 === 1 ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                           Adhérent
                         </span>
@@ -1162,26 +1162,26 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                   </div>
 
                   <div className="border-t border-border pt-4">
-                    <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
+                    <h3 className="font-medium text-foreground mb-4">Adhésion 2026-2027</h3>
                     <div className="grid gap-2">
                       <Label>Statut adhésion</Label>
                       <div className="flex items-center gap-4 h-10">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
-                            name="adhesion_2025_2026"
-                            checked={editing.adhesion_2025_2026 === 1}
-                            onChange={() => setEditing({ ...editing, adhesion_2025_2026: 1 })}
+                            name="adhesion_2026_2027"
+                            checked={editing.adhesion_2026_2027 === 1}
+                            onChange={() => setEditing({ ...editing, adhesion_2026_2027: 1 })}
                             className="w-4 h-4 text-primary"
                           />
-                          <span className="text-sm">Adhérent 2025-2026</span>
+                          <span className="text-sm">Adhérent 2026-2027</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
-                            name="adhesion_2025_2026"
-                            checked={editing.adhesion_2025_2026 !== 1}
-                            onChange={() => setEditing({ ...editing, adhesion_2025_2026: 0 })}
+                            name="adhesion_2026_2027"
+                            checked={editing.adhesion_2026_2027 !== 1}
+                            onChange={() => setEditing({ ...editing, adhesion_2026_2027: 0 })}
                             className="w-4 h-4 text-primary"
                           />
                           <span className="text-sm">Non adhérent</span>
@@ -1440,11 +1440,11 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     </div>
                   </div>
                   <div className="border-t border-border pt-4">
-                    <h3 className="font-medium text-foreground mb-4">Adhésion 2025-2026</h3>
+                    <h3 className="font-medium text-foreground mb-4">Adhésion 2026-2027</h3>
                     <div className="grid gap-2">
                       <Label className="text-muted-foreground">Statut adhésion</Label>
                       <p className="text-sm font-medium">
-                        {viewing.adhesion_2025_2026 === 1 ? "Adhérent 2025-2026" : "Non adhérent"}
+                        {viewing.adhesion_2026_2027 === 1 ? "Adhérent 2026-2027" : "Non adhérent"}
                       </p>
                     </div>
                   </div>
