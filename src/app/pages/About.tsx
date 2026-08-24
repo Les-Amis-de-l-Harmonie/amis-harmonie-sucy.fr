@@ -61,7 +61,7 @@ export async function About() {
 
           <ScrollReveal delay={200} className="mb-12">
             <a
-              href="https://drive.google.com/file/d/1rVXEI46FWbo0NTyN9MzTsuIL0zYR1HGp/view?usp=sharing"
+              href="/plaquette-association.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline block"
@@ -86,7 +86,7 @@ export async function About() {
             </a>
           </ScrollReveal>
 
-          <div className="flex flex-wrap text-center md:max-w-[1000px] md:mx-auto justify-center mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-[1200px] mx-auto mb-16">
             {teamImages.map((member, index) => {
               const name = member.alt_text || "";
               const role = member.link_name?.includes(" - ")
@@ -96,7 +96,7 @@ export async function About() {
                 <ScrollReveal
                   key={member.id}
                   delay={index * 100}
-                  className="w-full sm:w-1/2 md:w-1/3 max-w-[275px] mb-6 px-2"
+                  className="min-w-0"
                 >
                   <img
                     src={member.image_url}

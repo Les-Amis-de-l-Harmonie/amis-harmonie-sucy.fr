@@ -394,7 +394,7 @@ export function MusicianHomeClient({
                   </a>
                 )}
                 <a
-                  href="https://drive.google.com/file/d/1rVXEI46FWbo0NTyN9MzTsuIL0zYR1HGp/view?usp=sharing"
+                  href="/plaquette-association.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
