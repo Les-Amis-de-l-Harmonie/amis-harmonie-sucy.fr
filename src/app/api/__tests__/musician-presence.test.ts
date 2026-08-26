@@ -42,6 +42,7 @@ interface FakeDb {
   prepare(sql: string): FakeStatement;
   calls: FakeCall[];
   ownPresence: FakePresence;
+  otherPresence: FakePresence;
   event: {
     id: number;
     title: string;
@@ -71,6 +72,12 @@ function createFakeDb(): FakeDb {
     ownPresence: {
       status: "present",
       comment: "MON_PROPRE_COMMENTAIRE",
+      updated_at: "2026-08-20 12:00:00",
+      status_changed_at: "2026-08-20 12:00:00",
+    },
+    otherPresence: {
+      status: "absent",
+      comment: "SENTINEL_SECRET_COMMENT",
       updated_at: "2026-08-20 12:00:00",
       status_changed_at: "2026-08-20 12:00:00",
     },
@@ -123,8 +130,16 @@ function createFakeDb(): FakeDb {
                 firstName: "Autre",
                 lastName: "Musicien",
                 instrument: null,
-                status: "absent" as const,
-                statusChangedAt: "2026-08-20 12:00:00",
+                status: db.otherPresence.status,
+                statusChangedAt: db.otherPresence.status_changed_at,
+              },
+              {
+                userId: 9,
+                firstName: "Sans",
+                lastName: "Réponse",
+                instrument: "Cor",
+                status: null,
+                statusChangedAt: null,
               },
             ].filter((member) => db.callerEligible || member.userId !== 7);
             return { results } as { results: T[] };
@@ -185,6 +200,15 @@ describe("handleMusicianPresenceApi", () => {
     expect(wire).not.toContain("SENTINEL_SECRET_COMMENT");
     expect(wire).toContain("MON_PROPRE_COMMENTAIRE");
     expect(body.events[0]?.roster.length).toBeGreaterThan(0);
+    expect(
+      body.events[0]?.roster.some(
+        (entry) =>
+          typeof entry === "object" && entry !== null && "status" in entry && entry.status === null
+      )
+    ).toBe(true);
+    for (const entry of body.events[0]?.roster ?? []) {
+      expect(Object.keys(entry as object)).not.toContain("comment");
+    }
     const own = fakeDb.calls.find((call) => call.sql.includes("FROM event_presences WHERE"));
     expect(own?.binds).toEqual([12, caller.id]);
     expect(fakeDb.calls.find((call) => call.sql === PRESENCE_MEMBER_QUERY)?.sql).not.toContain(
@@ -248,7 +272,7 @@ describe("handleMusicianPresenceApi", () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
-      error: "Vous n'êtes pas membre adhérent de l'harmonie.",
+      error: "Vous ne faites pas partie de l'effectif de référence de l'harmonie.",
     });
   });
 

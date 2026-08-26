@@ -30,6 +30,53 @@ WHERE u.is_active = 1
     OR EXISTS (SELECT 1 FROM harmonie_instruments h WHERE h.user_id = u.id)
   )`;
 
+// Les deux variantes d'enregistrement d'une réponse sont placées côte à côte :
+// elles ne diffèrent que par la ligne `comment`, et cette différence est délibérée.
+//
+// Dans les deux cas, `updated_at` est posé à la main (SQLite n'a pas de sémantique
+// ON UPDATE) et `status_changed_at` ne bouge QUE lors d'un vrai changement de statut :
+// modifier un commentaire ne doit pas déclencher la fausse alerte « réponse modifiée
+// après la date limite ».
+
+/**
+ * Variante MUSICIEN : le commentaire est remplacé tel quel.
+ * C'est correct ici, car un musicien soumet toujours son commentaire en même temps
+ * que son statut — vider le champ signifie donc bien « supprimer mon commentaire ».
+ */
+export const PRESENCE_UPSERT_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, status_changed_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+ON CONFLICT(event_id, user_id) DO UPDATE SET
+  status = excluded.status,
+  comment = excluded.comment,
+  updated_at = datetime('now'),
+  status_changed_at = CASE
+    WHEN excluded.status <> event_presences.status THEN datetime('now')
+    ELSE event_presences.status_changed_at
+  END`;
+
+/**
+ * Variante ADMINISTRATEUR : un commentaire absent de la requête est PRÉSERVÉ.
+ *
+ * La grille d'administration ne modifie que le statut. Avec un remplacement pur,
+ * corriger une case effaçait silencieusement le commentaire écrit par le musicien
+ * (« Je suis en congés cette semaine-là. ») — c'est-à-dire exactement le contexte
+ * sur lequel se fonde la décision d'embaucher un renfort, perdu sans avertissement
+ * ni moyen de le récupérer.
+ *
+ * Conséquence assumée : un administrateur ne peut pas vider un commentaire. Aucune
+ * interface ne le propose, et préserver est le sens sûr.
+ */
+export const PRESENCE_UPSERT_ADMIN_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, status_changed_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+ON CONFLICT(event_id, user_id) DO UPDATE SET
+  status = excluded.status,
+  comment = COALESCE(excluded.comment, event_presences.comment),
+  updated_at = datetime('now'),
+  status_changed_at = CASE
+    WHEN excluded.status <> event_presences.status THEN datetime('now')
+    ELSE event_presences.status_changed_at
+  END`;
+
 export interface PresenceRow {
   userId: number;
   firstName: string | null;

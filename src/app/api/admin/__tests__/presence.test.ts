@@ -4,6 +4,7 @@ import type { Event } from "@/db/types";
 import { PRESENCE_MEMBER_QUERY, type PresenceRow } from "@/lib/presence";
 import { handleAdminPresenceApi } from "../presence";
 import { checkAdminAuth } from "../../admin-crud";
+import { invalidateCache } from "@/lib/cache";
 
 vi.mock("../../admin-crud", () => ({
   checkAdminAuth: vi.fn(),
@@ -16,6 +17,10 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
+vi.mock("@/lib/cache", () => ({
+  invalidateCache: vi.fn(),
+}));
+
 interface PresenceCommentRow {
   userId: number;
   comment: string | null;
@@ -25,6 +30,7 @@ interface FakeStatement {
   bind(...values: unknown[]): FakeStatement;
   first<T>(): Promise<T | null>;
   all<T>(): Promise<{ results: T[] }>;
+  run(): Promise<{ meta: { last_row_id: number } }>;
 }
 
 interface FakeDb {
@@ -36,31 +42,102 @@ interface FakeDbFixture {
   events: Array<Pick<Event, "id" | "title" | "date" | "response_deadline" | "is_public">>;
   rows: PresenceRow[];
   comments: PresenceCommentRow[];
+  gridEvents: Array<{
+    id: number;
+    title: string;
+    date: string;
+    response_deadline: string | null;
+  }>;
+  answers: Array<{ eventId: number; userId: number; status: "present" | "absent" }>;
 }
 
-function statementFor(firstResult: unknown, allResult: unknown[]): FakeStatement {
+function statementFor(
+  firstResult: unknown,
+  allResult: unknown[],
+  runHandler: (...values: unknown[]) => void = () => undefined
+): FakeStatement {
+  let boundValues: unknown[] = [];
   const statement: FakeStatement = {
-    bind: (..._values: unknown[]) => statement,
+    bind: (...values: unknown[]) => {
+      boundValues = values;
+      return statement;
+    },
     first: async <T>() => firstResult as T | null,
     all: async <T>() => ({ results: allResult as T[] }),
+    run: async () => {
+      runHandler(...boundValues);
+      return { meta: { last_row_id: 1 } };
+    },
   };
   return statement;
 }
 
 function applySqlDispatchingDb(fixture: FakeDbFixture): FakeDb {
+  let currentRows = fixture.rows.map((row) => ({ ...row }));
+  let currentComments = fixture.comments.map((row) => ({ ...row }));
+  let currentAnswers = fixture.answers.map((row) => ({ ...row }));
   const db: FakeDb = {
     prepare: vi.fn((sql: string) => {
       if (sql === "SELECT * FROM events WHERE id = ? AND presence_required = 1") {
         return statementFor(fixture.event, []);
       }
+      if (sql.includes("date >= date('now')") && !sql.includes("is_public")) {
+        return statementFor(null, fixture.gridEvents);
+      }
       if (sql.includes("WHERE presence_required = 1")) {
         return statementFor(null, fixture.events);
       }
       if (sql === PRESENCE_MEMBER_QUERY) {
-        return statementFor(null, fixture.rows);
+        return statementFor(null, currentRows);
       }
       if (sql.startsWith("SELECT user_id AS userId, comment")) {
-        return statementFor(null, fixture.comments);
+        return statementFor(null, currentComments);
+      }
+      if (sql.startsWith("DELETE FROM event_presences")) {
+        return statementFor(null, [], (...values) => {
+          const userId = values[1];
+          currentRows = currentRows.map((row) =>
+            row.userId === userId ? { ...row, status: null, statusChangedAt: null } : row
+          );
+          currentComments = currentComments.filter((row) => row.userId !== userId);
+          currentAnswers = currentAnswers.filter(
+            (answer) => !(answer.eventId === values[0] && answer.userId === userId)
+          );
+        });
+      }
+      if (sql.startsWith("INSERT INTO event_presences")) {
+        return statementFor(null, [], (...values) => {
+          const eventId = values[0];
+          const userId = values[1];
+          const status = values[2];
+          const comment = values[3];
+          currentRows = currentRows.map((row) =>
+            row.userId === userId
+              ? {
+                  ...row,
+                  status: status as "present" | "absent",
+                  statusChangedAt: "2026-09-03 10:00:00",
+                }
+              : row
+          );
+          currentComments = [
+            ...currentComments.filter((row) => row.userId !== userId),
+            { userId: userId as number, comment: comment as string | null },
+          ];
+          currentAnswers = [
+            ...currentAnswers.filter(
+              (answer) => !(answer.eventId === eventId && answer.userId === userId)
+            ),
+            {
+              eventId: eventId as number,
+              userId: userId as number,
+              status: status as "present" | "absent",
+            },
+          ];
+        });
+      }
+      if (sql.includes("SELECT event_id AS eventId, user_id AS userId, status")) {
+        return statementFor(null, currentAnswers);
       }
       throw new Error(`Unexpected SQL: ${sql}`);
     }),
@@ -137,6 +214,25 @@ const fixture: FakeDbFixture = {
   ],
   rows,
   comments: [{ userId: 2, comment: "Blessure au poignet" }],
+  gridEvents: [
+    {
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      response_deadline: event.response_deadline,
+    },
+    {
+      id: 43,
+      title: "Concert d'hiver",
+      date: "2026-12-15",
+      response_deadline: null,
+    },
+  ],
+  answers: [
+    { eventId: event.id, userId: 1, status: "present" },
+    { eventId: 43, userId: 1, status: "absent" },
+    { eventId: 43, userId: 2, status: "present" },
+  ],
 };
 
 describe("handleAdminPresenceApi", () => {
@@ -157,15 +253,15 @@ describe("handleAdminPresenceApi", () => {
     expect(await response.json()).toEqual({ error: "Unauthorized" });
   });
 
-  it("refuse les méthodes autres que GET", async () => {
+  it("refuse les méthodes autres que GET et POST", async () => {
     vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
 
     const response = await handleAdminPresenceApi(
-      new Request("https://test.local/api/admin/presence", { method: "POST" })
+      new Request("https://test.local/api/admin/presence", { method: "PATCH" })
     );
 
     expect(response.status).toBe(405);
-    expect(await response.json()).toEqual({ error: "Method not allowed" });
+    expect(await response.json()).toEqual({ error: "Méthode non autorisée" });
   });
 
   it("retourne la liste des événements nécessitant une présence", async () => {
@@ -266,5 +362,162 @@ describe("handleAdminPresenceApi", () => {
     expect(data.lateChanges).toEqual([
       expect.objectContaining({ userId: 2, comment: "Blessure au poignet" }),
     ]);
+  });
+
+  it("enregistre une réponse administrativement et renvoie le récapitulatif recalculé", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValue(null);
+    applySqlDispatchingDb(fixture);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({
+          eventId: 42,
+          userId: 3,
+          status: "present",
+          comment: "Saisi par l'administration",
+        }),
+      })
+    );
+    const data = (await response.json()) as {
+      event: Event;
+      present: number;
+      noAnswer: number;
+      nonResponders: Array<{ userId: number }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(data.event).toEqual(event);
+    expect(data.present).toBe(2);
+    expect(data.noAnswer).toBe(0);
+    expect(data.nonResponders).toEqual([]);
+    expect(invalidateCache).not.toHaveBeenCalled();
+  });
+
+  it("supprime une réponse administrative et remet le membre sans réponse", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValue(null);
+    applySqlDispatchingDb(fixture);
+
+    await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 42, userId: 3, status: "present" }),
+      })
+    );
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 42, userId: 3, status: null }),
+      })
+    );
+    const data = (await response.json()) as {
+      noAnswer: number;
+      nonResponders: Array<{ userId: number }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(data.noAnswer).toBe(1);
+    expect(data.nonResponders).toEqual([expect.objectContaining({ userId: 3 })]);
+    expect(invalidateCache).not.toHaveBeenCalled();
+  });
+
+  it("refuse un statut qui n'est pas présent, absent ou sans réponse", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 42, userId: 3, status: "peut-etre" }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Les données de présence sont invalides." });
+  });
+
+  it("refuse un musicien hors de l'effectif de référence", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    applySqlDispatchingDb(fixture);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 42, userId: 999, status: "present" }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Ce musicien ne fait pas partie de l'effectif de référence.",
+    });
+  });
+
+  it("refuse un événement qui ne nécessite pas de présence", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    applySqlDispatchingDb({ ...fixture, event: null });
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 42, userId: 3, status: "present" }),
+      })
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Événement introuvable." });
+  });
+
+  it("refuse un commentaire de plus de 1000 caractères", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence", {
+        method: "POST",
+        body: JSON.stringify({
+          eventId: 42,
+          userId: 3,
+          status: "present",
+          comment: "a".repeat(1001),
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Le commentaire ne peut pas dépasser 1000 caractères.",
+    });
+  });
+
+  it("retourne le tableau croisé avec une réponse par événement et par membre", async () => {
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    applySqlDispatchingDb(fixture);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence?grid=1")
+    );
+    const data = (await response.json()) as {
+      events: Array<{ id: number }>;
+      members: Array<{
+        userId: number;
+        instruments: string[];
+        answers: Record<string, "present" | "absent" | null>;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(data.events.map((gridEvent) => gridEvent.id)).toEqual([42, 43]);
+    expect(data.members.map((member) => member.userId)).toEqual([2, 1, 3]);
+    expect(data.members.filter((member) => member.userId === 1)).toHaveLength(1);
+    expect(data.members.find((member) => member.userId === 1)?.instruments).toEqual([
+      "Trombone",
+      "Trompette",
+    ]);
+    for (const member of data.members) {
+      expect(Object.keys(member.answers)).toEqual(["42", "43"]);
+    }
+    expect(data.members.find((member) => member.userId === 3)?.answers).toEqual({
+      "42": null,
+      "43": null,
+    });
   });
 });

@@ -3,8 +3,8 @@ import { verifySession } from "./auth";
 import { logger } from "@/lib/logger";
 import {
   PRESENCE_MEMBER_QUERY,
+  PRESENCE_UPSERT_SQL,
   summarisePresence,
-  type PresenceMember,
   type PresenceRow,
 } from "@/lib/presence";
 
@@ -28,7 +28,8 @@ interface PresenceRosterEntry {
   userId: number;
   firstName: string | null;
   lastName: string | null;
-  status: "present" | "absent";
+  instruments: string[];
+  status: "present" | "absent" | null;
 }
 
 interface PresenceResponse {
@@ -60,17 +61,6 @@ interface PresenceRequestBody {
   status: "present" | "absent";
   comment?: string | null;
 }
-
-export const PRESENCE_UPSERT_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, status_changed_at, created_at, updated_at)
-VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
-ON CONFLICT(event_id, user_id) DO UPDATE SET
-  status = excluded.status,
-  comment = excluded.comment,
-  updated_at = datetime('now'),
-  status_changed_at = CASE
-    WHEN excluded.status <> event_presences.status THEN datetime('now')
-    ELSE event_presences.status_changed_at
-  END`;
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -106,17 +96,13 @@ async function readPresenceEvent(
 
   const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
   const summary = summarisePresence(memberRows.results || [], event.response_deadline);
-  const roster: PresenceRosterEntry[] = summary.members
-    .filter(
-      (member): member is PresenceMember & { status: "present" | "absent" } =>
-        member.status !== null
-    )
-    .map((member) => ({
-      userId: member.userId,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      status: member.status,
-    }));
+  const roster: PresenceRosterEntry[] = summary.members.map((member) => ({
+    userId: member.userId,
+    firstName: member.firstName,
+    lastName: member.lastName,
+    instruments: member.instruments,
+    status: member.status,
+  }));
 
   return {
     ...event,
@@ -151,7 +137,11 @@ async function handleGet(request: Request, userId: number): Promise<Response> {
     (events.results || []).map((event) => readPresenceEvent(event, userId))
   );
 
-  return jsonResponse({ events: eventStates });
+  // `currentUserId` évite à l'interface un second appel à /api/musician/profile
+  // uniquement pour savoir qui est connecté : sans lui, un échec de cet appel ferait
+  // disparaître silencieusement la mise en avant et l'icône d'édition de sa propre ligne.
+  // C'est l'identifiant de session, jamais une valeur fournie par le client.
+  return jsonResponse({ currentUserId: userId, events: eventStates });
 }
 
 async function handlePost(request: Request, userId: number): Promise<Response> {
@@ -188,7 +178,13 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
 
   const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
   if (!(memberRows.results || []).some((member) => member.userId === userId)) {
-    return jsonResponse({ error: "Vous n'êtes pas membre adhérent de l'harmonie." }, 403);
+    // L'adhésion n'entre plus dans l'effectif de référence : ce refus ne concerne
+    // pas la cotisation, mais l'appartenance à l'effectif (compte désactivé, ou
+    // administrateur sans instrument).
+    return jsonResponse(
+      { error: "Vous ne faites pas partie de l'effectif de référence de l'harmonie." },
+      403
+    );
   }
 
   await env.DB.prepare(PRESENCE_UPSERT_SQL).bind(event.id, userId, body.status, comment).run();
