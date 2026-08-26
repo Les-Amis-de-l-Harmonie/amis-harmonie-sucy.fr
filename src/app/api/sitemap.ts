@@ -1,3 +1,4 @@
+// L'autre implémentation est generateSitemap() dans src/lib/sitemap.ts.
 import { SITE_URL } from "@/app/seo";
 
 export function sitemapHandler(): Response {

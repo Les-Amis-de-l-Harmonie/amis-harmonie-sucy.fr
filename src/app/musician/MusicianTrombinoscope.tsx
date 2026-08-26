@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Users, User, RefreshCw, Loader2, Search, X } from "lucide-react";
+import { getInstrumentPriority } from "@/lib/instruments";
 
 interface TrombinoscopeEntry {
   user_id: number;
@@ -58,16 +59,6 @@ function getInitials(firstName: string | null, lastName: string | null): string 
 function getFullName(firstName: string | null, lastName: string | null): string {
   if (!firstName && !lastName) return "Anonyme";
   return [firstName, lastName].filter(Boolean).join(" ");
-}
-
-const INSTRUMENT_ORDER: Record<string, number> = {
-  "chef d'orchestre": 0,
-  "chef adjoint": 1,
-  percussions: 2,
-};
-
-function getInstrumentPriority(instrument: string): number {
-  return INSTRUMENT_ORDER[instrument.toLowerCase()] ?? 999;
 }
 
 export function MusicianTrombinoscopeClient() {

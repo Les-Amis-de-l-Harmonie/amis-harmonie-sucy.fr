@@ -89,7 +89,7 @@ describe("handleEventsApi", () => {
     expect(invalidateCache).toHaveBeenCalledTimes(1);
   });
 
-  it("updates event on PUT", async () => {
+  it("preserves is_public when a partial PUT omits it", async () => {
     const mockDb = createMockDb();
     applyMockEnv(mockDb);
     vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
@@ -105,7 +105,57 @@ describe("handleEventsApi", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
+    expect(mockDb.calls[0]?.binds[9]).toBeNull();
+    expect(mockDb.calls[0]?.sql).toContain("is_public = COALESCE(?, is_public)");
     expect(invalidateCache).toHaveBeenCalledTimes(1);
+  });
+
+  it("efface la date limite quand un PUT reçoit une chaîne vide", async () => {
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    mockDb.queueRun({ meta: { last_row_id: 1 } });
+
+    const response = await handleEventsApi(
+      new Request("https://test.local/api/admin/events?id=9", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Mis a jour",
+          date: "2026-12-31",
+          response_deadline: "",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDb.calls[0]?.binds[12]).toBe("");
+    expect(mockDb.calls[0]?.sql).toContain(
+      "response_deadline = NULLIF(COALESCE(?, response_deadline), '')"
+    );
+  });
+
+  it("refuse une date limite qui n'est pas au format AAAA-MM-JJ", async () => {
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
+    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+
+    const response = await handleEventsApi(
+      new Request("https://test.local/api/admin/events?id=9", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Mis a jour",
+          date: "2026-12-31",
+          response_deadline: "01/09/2026",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "La date limite de réponse doit être au format AAAA-MM-JJ.",
+    });
   });
 
   it("returns 400 when PUT has no id", async () => {

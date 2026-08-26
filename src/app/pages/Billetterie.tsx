@@ -3,11 +3,12 @@ import { env } from "cloudflare:workers";
 import { EventCard } from "../components/EventCard";
 import type { Event } from "@/db/types";
 import { ScrollReveal } from "@/app/components/ScrollReveal";
+import { PUBLIC_EVENTS_BILLETTERIE_QUERY } from "@/lib/public-events";
 
 async function getUpcomingEvents(): Promise<Event[]> {
   const today = new Date().toISOString().split("T")[0];
   const results = await env.DB.prepare(
-    "SELECT * FROM events WHERE date >= ? AND reservation_link IS NOT NULL ORDER BY date ASC"
+    PUBLIC_EVENTS_BILLETTERIE_QUERY
   )
     .bind(today)
     .all<Event>();

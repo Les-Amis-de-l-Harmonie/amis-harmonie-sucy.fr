@@ -71,3 +71,6 @@ coverage
 
 # Screenshots (temporary debug files)
 *.png
+# Deepwork orchestrator state
+.slim/deepwork/
+.ignore

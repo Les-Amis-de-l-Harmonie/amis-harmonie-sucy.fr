@@ -7,8 +7,16 @@ CREATE TABLE IF NOT EXISTS events (
   date TEXT NOT NULL,
   time TEXT,
   price TEXT,
+  -- Colonne héritée de migrations/0001_initial.sql, inutilisée dans src/.
+  is_past INTEGER DEFAULT 0,
   details_link TEXT,
   reservation_link TEXT,
+  is_public INTEGER NOT NULL DEFAULT 1,
+  presence_required INTEGER NOT NULL DEFAULT 0,
+  address TEXT,
+  response_deadline TEXT
+    CHECK (response_deadline IS NULL
+           OR response_deadline GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -204,3 +212,17 @@ CREATE TABLE IF NOT EXISTS planning_availability (
 CREATE INDEX IF NOT EXISTS idx_planning_events_date ON planning_events(date);
 CREATE INDEX IF NOT EXISTS idx_planning_availability_event ON planning_availability(planning_event_id);
 CREATE INDEX IF NOT EXISTS idx_planning_availability_user ON planning_availability(user_id);
+
+CREATE TABLE IF NOT EXISTS event_presences (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK(status IN ('present', 'absent')),
+  comment TEXT,
+  status_changed_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(event_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_presences_user ON event_presences(user_id);

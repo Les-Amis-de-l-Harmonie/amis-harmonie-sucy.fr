@@ -7,9 +7,12 @@ import type { Event } from "@/db/types";
 import { getGalleryImages } from "@/app/shared/gallery";
 import { isEventPast } from "@/lib/dates";
 import { ScrollReveal } from "@/app/components/ScrollReveal";
+import { PUBLIC_EVENTS_HOME_QUERY } from "@/lib/public-events";
 
 async function getEvents(): Promise<{ upcoming: Event[]; past: Event[] }> {
-  const results = await env.DB.prepare("SELECT * FROM events ORDER BY date ASC").all<Event>();
+  const results = await env.DB.prepare(
+    PUBLIC_EVENTS_HOME_QUERY
+  ).all<Event>();
 
   const events = results.results || [];
   return {

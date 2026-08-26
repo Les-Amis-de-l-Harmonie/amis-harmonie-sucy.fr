@@ -1,5 +1,7 @@
+// L'implémentation routée est sitemapHandler() dans src/app/api/sitemap.ts.
 import { env } from "cloudflare:workers";
 import type { Event, Video, Publication } from "@/db/types";
+import { PUBLIC_EVENTS_SITEMAP_QUERY } from "@/lib/public-events";
 
 const SITE_URL = "https://amis-harmonie-sucy.fr";
 
@@ -36,7 +38,7 @@ export async function generateSitemap(): Promise<string> {
   try {
     // Dynamic events
     const events = await env.DB.prepare(
-      "SELECT id, updated_at FROM events WHERE date >= date('now') ORDER BY date DESC"
+      PUBLIC_EVENTS_SITEMAP_QUERY
     ).all<Event>();
 
     for (const event of events.results || []) {

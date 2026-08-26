@@ -93,6 +93,7 @@ export function MusicianHomeClient({
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [infoSettings, setInfoSettings] = useState<InfoSettings | null>(null);
   const [planningUrgent, setPlanningUrgent] = useState(false);
+  const [urgentEvent, setUrgentEvent] = useState<UpcomingEvent | null>(null);
   const [firstVideo, setFirstVideo] = useState<Video | null>(null);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const DEFAULT_CARDS: MusicianCardType[] = [
@@ -185,11 +186,13 @@ export function MusicianHomeClient({
         const planningData = (await planningRes.json()) as {
           urgent: boolean;
           nextEvent: UpcomingEvent | null;
+          urgentEvent?: UpcomingEvent | null;
         };
         setPlanningUrgent(planningData.urgent);
         if (planningData.nextEvent) {
           setNextEvent(planningData.nextEvent);
         }
+        setUrgentEvent(planningData.urgentEvent ?? null);
       }
 
       if (videosRes.ok) {
@@ -490,15 +493,15 @@ export function MusicianHomeClient({
         return (
           <Card
             key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
+            className="h-[320px] flex flex-col hover:shadow-md transition-shadow"
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CalendarDays className="w-5 h-5 text-primary" />
-                Planning
+                Mes prestations
               </CardTitle>
               <CardDescription>
-                Merci de le mettre à jour le plus régulièrement possible !
+                Indiquez si vous serez présent aux prochaines prestations.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
@@ -514,25 +517,25 @@ export function MusicianHomeClient({
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Aucun concert à venir</p>
+                  <p className="text-sm text-muted-foreground">Aucune prestation à venir</p>
                 )}
                 {planningUrgent && (
                   <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
                     <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-                      ⚠️ URGENT : mettre à jour le planning des présences
+                      À répondre : {urgentEvent ? urgentEvent.title : "une prestation à venir"}
                     </p>
+                    {urgentEvent && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                        {formatDateShort(urgentEvent.date)}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
               <div className="flex-1" />
-              <a
-                href="https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/edit?usp=sharing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-auto"
-              >
+              <a href="/musician/disponibilites" className="mt-auto">
                 <Button variant="outline" className="w-full">
-                  Accéder au planning
+                  Indiquer mes présences
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </a>
@@ -805,8 +808,7 @@ export function MusicianHomeClient({
                 Trombinoscope
               </CardTitle>
               <CardDescription>
-                Découvrez les musiciens de l&apos;orchestre : photos, instruments et
-                ancienneté.
+                Découvrez les musiciens de l&apos;orchestre : photos, instruments et ancienneté.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">

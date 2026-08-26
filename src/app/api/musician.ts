@@ -6,265 +6,10 @@ import type {
   IdeaCategory,
   InsuranceInstrument,
   IdeaWithLikes,
-  PlanningEvent,
-  PlanningAvailability,
 } from "@/db/types";
 
 import { logger } from "@/lib/logger";
 
-// ── Google Sheets sync ──────────────────────────────────────────────
-
-interface ParsedSheetEvent {
-  name: string;
-  date: string;
-  time: string | null;
-  location: string | null;
-  address: string | null;
-}
-
-interface ParsedSheetResponse {
-  name: string;
-  columns: Map<number, string>; // CSV column index → "oui" | "non" | "peut-etre"
-}
-
-const SHEET_CSV_URL =
-  "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (const char of line) {
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
-
-const FRENCH_MONTHS: Record<string, number> = {
-  janvier: 0, février: 0, mars: 2, avril: 3, mai: 4, juin: 5,
-  juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11,
-  fevrier: 1, aout: 7,
-};
-
-function normalizeName(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function parseSheetDate(dateStr: string): string | null {
-  const trimmed = dateStr.trim();
-  if (!trimmed) return null;
-
-  // First, try with a week day prefix and year: "dimanche 7 juin 2026"
-  let match = trimmed.match(
-    /[a-zéû]+\s+(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i
-  );
-  if (match) {
-    const day = parseInt(match[1]);
-    const month = FRENCH_MONTHS[match[2].toLowerCase()];
-    const year = parseInt(match[3]);
-    if (month !== undefined) {
-      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
-  }
-
-  // Try: "dimanche 7 juin" (week day, no year)
-  match = trimmed.match(/[a-zéû]+\s+(\d{1,2})\s+([a-zéû]+)/i);
-  if (match) {
-    const day = parseInt(match[1]);
-    const month = FRENCH_MONTHS[match[2].toLowerCase()];
-    if (month !== undefined) {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      let date = new Date(currentYear, month, day);
-      if (date < now) {
-        date = new Date(currentYear + 1, month, day);
-      }
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    }
-  }
-
-  // Try: "7 juin 2026" (no week day, with year)
-  match = trimmed.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-  if (match) {
-    const day = parseInt(match[1]);
-    const month = FRENCH_MONTHS[match[2].toLowerCase()];
-    const year = parseInt(match[3]);
-    if (month !== undefined) {
-      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
-  }
-
-  // Try: "7 juin" (no week day, no year)
-  match = trimmed.match(/(\d{1,2})\s+([a-zéû]+)/i);
-  if (match) {
-    const day = parseInt(match[1]);
-    const month = FRENCH_MONTHS[match[2].toLowerCase()];
-    if (month !== undefined) {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      let date = new Date(currentYear, month, day);
-      if (date < now) {
-        date = new Date(currentYear + 1, month, day);
-      }
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    }
-  }
-
-  return null;
-}
-
-async function parseGoogleSheet(): Promise<{
-  eventsByCol: Map<number, ParsedSheetEvent>;
-  responses: ParsedSheetResponse[];
-}> {
-  try {
-    const res = await fetch(SHEET_CSV_URL);
-    if (!res.ok) return { eventsByCol: new Map(), responses: [] };
-
-    const csvText = await res.text();
-    const lines = csvText.split("\n").filter((l) => l.trim());
-
-    if (lines.length < 6) return { eventsByCol: new Map(), responses: [] };
-
-    const nameRow = parseCSVLine(lines[0]);
-    const dateRow = parseCSVLine(lines[1]);
-    const timeRow = parseCSVLine(lines[2]);
-    const locationRow = parseCSVLine(lines[3]);
-    const addressRow = parseCSVLine(lines[4]);
-
-    const maxCols = Math.max(dateRow.length, nameRow.length);
-    const eventsByCol = new Map<number, ParsedSheetEvent>();
-
-    for (let i = 1; i < maxCols; i++) {
-      const dateStr = dateRow[i]?.trim();
-      if (!dateStr) continue;
-
-      const parsedDate = parseSheetDate(dateStr);
-      if (!parsedDate) continue;
-
-      eventsByCol.set(i, {
-        name: nameRow[i]?.trim() || `Événement du ${dateStr}`,
-        date: parsedDate,
-        time: timeRow[i]?.trim() || null,
-        location: locationRow[i]?.trim() || null,
-        address: addressRow[i]?.trim() || null,
-      });
-    }
-
-    const responses: ParsedSheetResponse[] = [];
-    for (let r = 5; r < lines.length; r++) {
-      const cells = parseCSVLine(lines[r]);
-      const name = cells[0]?.trim();
-      if (!name) continue;
-
-      // Skip summary rows (e.g. "15 Oui", "7 Non", percentages)
-      if (/^\d+/.test(name) || /%/.test(name)) continue;
-
-      const columns = new Map<number, string>();
-      for (let i = 1; i < cells.length; i++) {
-        const cell = cells[i]?.trim().toLowerCase();
-        if (!cell) continue;
-        if (cell === "oui") columns.set(i, "oui");
-        else if (cell === "non") columns.set(i, "non");
-        else if (cell.startsWith("peut")) columns.set(i, "peut-etre");
-      }
-      responses.push({ name, columns });
-    }
-
-    return { eventsByCol, responses };
-  } catch {
-    return { eventsByCol: new Map(), responses: [] };
-  }
-}
-
-async function importFromGoogleSheet(): Promise<number> {
-  const { eventsByCol, responses } = await parseGoogleSheet();
-  if (eventsByCol.size === 0) return 0;
-
-  // Insert events (one by one to avoid duplicates)
-  let imported = 0;
-  for (const e of eventsByCol.values()) {
-    const existing = await env.DB.prepare(
-      "SELECT id FROM planning_events WHERE name = ? AND date = ?"
-    )
-      .bind(e.name, e.date)
-      .first<{ id: number }>();
-    if (!existing) {
-      await env.DB.prepare(
-        "INSERT INTO planning_events (name, date, time, location, address) VALUES (?, ?, ?, ?, ?)"
-      )
-        .bind(e.name, e.date, e.time, e.location, e.address)
-        .run();
-      imported++;
-    }
-  }
-
-  // Get all event IDs for mapping
-  const allEvents = await env.DB.prepare(
-    "SELECT id, name, date FROM planning_events"
-  ).all<{ id: number; name: string; date: string }>();
-  const eventMap = new Map<string, number>();
-  for (const ev of allEvents.results || []) {
-    eventMap.set(`${ev.name}|${ev.date}`, ev.id);
-  }
-
-  // Get musician profiles for name matching
-  const profiles = await env.DB.prepare(
-    `SELECT mp.user_id, mp.first_name, mp.last_name
-     FROM musician_profiles mp
-     JOIN users u ON u.id = mp.user_id
-     WHERE u.role = 'MUSICIAN' AND u.is_active = 1`
-  ).all<{ user_id: number; first_name: string | null; last_name: string | null }>();
-
-  const profileList = profiles.results || [];
-
-  // Match musicians and insert availability
-  for (const resp of responses) {
-    const nameNormalized = normalizeName(resp.name);
-    let matchedUserId: number | null = null;
-
-    for (const profile of profileList) {
-      const fullName = normalizeName(
-        `${profile.first_name || ""} ${profile.last_name || ""}`.trim()
-      );
-      if (fullName && nameNormalized.includes(fullName)) {
-        matchedUserId = profile.user_id;
-        break;
-      }
-    }
-
-    if (!matchedUserId) continue;
-
-    for (const [colIdx, status] of resp.columns) {
-      const sheetEvent = eventsByCol.get(colIdx);
-      if (!sheetEvent) continue;
-
-      const eventId = eventMap.get(`${sheetEvent.name}|${sheetEvent.date}`);
-      if (!eventId) continue;
-
-      await env.DB.prepare(
-        `INSERT INTO planning_availability (planning_event_id, user_id, status)
-         VALUES (?, ?, ?)
-         ON CONFLICT(planning_event_id, user_id) DO UPDATE SET status = ?, updated_at = datetime('now')`
-      )
-        .bind(eventId, matchedUserId, status, status)
-        .run();
-    }
-  }
-
-  return imported;
-}
 interface ProfileWithInstruments extends MusicianProfile {
   instruments: MusicianInstrument[];
   harmonieInstruments: string[];
@@ -983,156 +728,38 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   }
 
   try {
-    const profile = await env.DB.prepare(
-      "SELECT first_name, last_name FROM musician_profiles WHERE user_id = ?"
+    const nextEvent = await env.DB.prepare(
+      `SELECT title, date
+       FROM events
+       WHERE presence_required = 1 AND date >= date('now')
+       ORDER BY date ASC
+       LIMIT 1`
+    ).first<{ title: string; date: string }>();
+
+    const urgentEvent = await env.DB.prepare(
+      `SELECT e.title, e.date
+       FROM events e
+       LEFT JOIN event_presences ep ON ep.event_id = e.id AND ep.user_id = ?
+       -- L'urgence suit la date limite de réponse, pas la date de l'événement.
+       WHERE e.presence_required = 1
+         AND e.date >= date('now')
+         AND ep.id IS NULL
+         AND (
+           (e.response_deadline IS NOT NULL AND e.response_deadline <= date('now', '+14 days'))
+           OR (e.response_deadline IS NULL AND e.date <= date('now', '+30 days'))
+         )
+       ORDER BY CASE WHEN e.response_deadline IS NULL THEN e.date ELSE e.response_deadline END ASC,
+                e.date ASC
+       LIMIT 1`
     )
       .bind(user.id)
-      .first<{ first_name: string | null; last_name: string | null }>();
-
-    const sheetUrl =
-      "https://docs.google.com/spreadsheets/d/17UAV3DKOReGBluVfPCSybkAj1OxObkC9fUiSsljZOac/export?format=csv";
-    const response = await fetch(sheetUrl, { cf: { cacheTtl: 300 } });
-
-    if (!response.ok) {
-      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const csvText = await response.text();
-    const lines = csvText.split("\n");
-
-    if (lines.length < 3) {
-      return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const parseLine = (line: string): string[] => {
-      const result: string[] = [];
-      let current = "";
-      let inQuotes = false;
-
-      for (const char of line) {
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === "," && !inQuotes) {
-          result.push(current.trim());
-          current = "";
-        } else {
-          current += char;
-        }
-      }
-      result.push(current.trim());
-      return result;
-    };
-
-    const headerRow = parseLine(lines[0]);
-    const dateRow = parseLine(lines[1]);
-    const now = new Date();
-    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const months: Record<string, number> = {
-      janvier: 0,
-      fevrier: 1,
-      mars: 2,
-      avril: 3,
-      mai: 4,
-      juin: 5,
-      juillet: 6,
-      aout: 7,
-      septembre: 8,
-      octobre: 9,
-      novembre: 10,
-      decembre: 11,
-      février: 1,
-      août: 7,
-    };
-
-    interface SheetEvent {
-      title: string;
-      date: string;
-      eventDate: Date;
-    }
-
-    const events: SheetEvent[] = [];
-    for (let i = 1; i < dateRow.length; i++) {
-      const dateStr = dateRow[i];
-      if (!dateStr) continue;
-
-      const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-      if (!dateMatch) continue;
-
-      const day = parseInt(dateMatch[1]);
-      const month = months[dateMatch[2].toLowerCase()];
-      const year = parseInt(dateMatch[3]);
-
-      if (month === undefined) continue;
-
-      const eventDate = new Date(year, month, day);
-
-      if (eventDate >= now) {
-        const title = headerRow[i]?.trim() || `Événement du ${dateStr}`;
-        events.push({
-          title,
-          date: eventDate.toISOString().split("T")[0],
-          eventDate,
-        });
-      }
-    }
-
-    events.sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
-    const nextEvent = events[0] || null;
-
-    let hasUrgentEvent = false;
-
-    if (profile?.first_name && profile?.last_name) {
-      let musicianRow: string[] | null = null;
-      for (const line of lines) {
-        const cells = parseLine(line);
-        if (
-          cells[0]?.toLowerCase().includes(profile.first_name.toLowerCase()) &&
-          cells[0]?.toLowerCase().includes(profile.last_name.toLowerCase())
-        ) {
-          musicianRow = cells;
-          break;
-        }
-      }
-
-      if (musicianRow) {
-        for (let i = 1; i < dateRow.length && i < musicianRow.length; i++) {
-          const dateStr = dateRow[i];
-          const response = musicianRow[i]?.toLowerCase().trim();
-
-          if (!dateStr) continue;
-
-          const dateMatch = dateStr.match(/(\d{1,2})\s+([a-zéû]+)\s+(\d{4})/i);
-          if (!dateMatch) continue;
-
-          const day = parseInt(dateMatch[1]);
-          const month = months[dateMatch[2].toLowerCase()];
-          const year = parseInt(dateMatch[3]);
-
-          if (month === undefined) continue;
-
-          const eventDate = new Date(year, month, day);
-
-          if (eventDate >= now && eventDate <= thirtyDaysLater) {
-            if (!response || response === "" || response.includes("peut")) {
-              hasUrgentEvent = true;
-              break;
-            }
-          }
-        }
-      }
-    }
+      .first<{ title: string; date: string }>();
 
     return new Response(
       JSON.stringify({
-        urgent: hasUrgentEvent,
-        nextEvent: nextEvent
-          ? { title: nextEvent.title, date: nextEvent.date }
-          : null,
+        urgent: !!urgentEvent,
+        nextEvent: nextEvent ? { title: nextEvent.title, date: nextEvent.date } : null,
+        urgentEvent: urgentEvent ? { title: urgentEvent.title, date: urgentEvent.date } : null,
       }),
       {
         headers: { "Content-Type": "application/json" },
@@ -1140,7 +767,7 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
     );
   } catch (error) {
     logger.error("Planning check API error:", error);
-    return new Response(JSON.stringify({ urgent: false, nextEvent: null }), {
+    return new Response(JSON.stringify({ urgent: false, nextEvent: null, urgentEvent: null }), {
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -1200,143 +827,6 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
     });
   } catch (error) {
     logger.error("Trombinoscope API error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-}
-
-export async function handleMusicianAvailabilityApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  try {
-    if (request.method === "GET") {
-      // Auto-import from Google Sheets if no events exist
-      const countRes = await env.DB.prepare(
-        "SELECT COUNT(*) as cnt FROM planning_events"
-      ).first<{ cnt: number }>();
-      if (!countRes || countRes.cnt === 0) {
-        await importFromGoogleSheet();
-      }
-
-      const events = await env.DB.prepare(
-        "SELECT * FROM planning_events ORDER BY date ASC, sort_order ASC"
-      ).all<PlanningEvent>();
-
-      const musicians = await env.DB.prepare(
-        `
-        SELECT u.id as user_id, mp.first_name, mp.last_name,
-          COALESCE(hi.instrument_name, '') as instrument
-        FROM users u
-        JOIN musician_profiles mp ON mp.user_id = u.id
-        LEFT JOIN (
-          SELECT user_id, GROUP_CONCAT(instrument_name, ', ') as instrument_name
-          FROM harmonie_instruments
-          GROUP BY user_id
-        ) hi ON hi.user_id = u.id
-        WHERE u.role = 'MUSICIAN' AND u.is_active = 1
-        ORDER BY mp.last_name ASC, mp.first_name ASC
-        `
-      ).all<{
-        user_id: number;
-        first_name: string | null;
-        last_name: string | null;
-        instrument: string;
-      }>();
-
-      const availabilityRecords = await env.DB.prepare(
-        "SELECT * FROM planning_availability"
-      ).all<PlanningAvailability>();
-
-      // Build availabilities map: userId → { eventId → status }
-      const availMap = new Map<number, Record<string, string>>();
-      for (const record of availabilityRecords.results || []) {
-        let map = availMap.get(record.user_id);
-        if (!map) {
-          map = {};
-          availMap.set(record.user_id, map);
-        }
-        map[String(record.planning_event_id)] = record.status;
-      }
-
-      const rows = (musicians.results || []).map((m) => ({
-        userId: m.user_id,
-        firstName: m.first_name || "",
-        lastName: m.last_name || "",
-        instrument: m.instrument,
-        availabilities: availMap.get(m.user_id) || {},
-      }));
-
-      return new Response(
-        JSON.stringify({
-          events: events.results || [],
-          rows,
-          currentUserId: user.id,
-        }),
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (request.method === "PUT") {
-      const data = (await request.json()) as {
-        eventId?: number;
-        status?: "oui" | "non" | null;
-      };
-
-      if (data.eventId === undefined || data.eventId === null) {
-        return new Response(JSON.stringify({ error: "eventId est requis" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      const validStatuses = ["oui", "non"];
-      if (data.status !== null && !validStatuses.includes(data.status as string)) {
-        return new Response(
-          JSON.stringify({ error: "Status invalide. Utilisez oui ou non" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      if (data.status === null) {
-        await env.DB.prepare(
-          "DELETE FROM planning_availability WHERE planning_event_id = ? AND user_id = ?"
-        )
-          .bind(data.eventId, user.id)
-          .run();
-      } else {
-        await env.DB.prepare(
-          `INSERT INTO planning_availability (planning_event_id, user_id, status)
-           VALUES (?, ?, ?)
-           ON CONFLICT(planning_event_id, user_id) DO UPDATE SET status = ?, updated_at = datetime('now')`
-        )
-          .bind(data.eventId, user.id, data.status, data.status)
-          .run();
-      }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    logger.error("Musician availability API error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

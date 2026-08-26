@@ -1,159 +1,466 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Check, X, Minus, Loader2, RefreshCw, Calendar, ChevronDown, ChevronRight } from "lucide-react";
-import type { PlanningEvent } from "@/db/types";
-import { formatDateShort } from "@/lib/dates";
+import { useCallback, useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  Calendar,
+  Check,
+  ChevronDown,
+  Clock,
+  Loader2,
+  MapPin,
+  MessageSquare,
+  RefreshCw,
+  Users,
+  X,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Textarea } from "@/app/components/ui/textarea";
+import { EmptyState } from "@/app/components/ui/empty-state";
+import { formatDateFrench, formatDateLong } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 
-interface AvailabilityRow {
+type PresenceStatus = "present" | "absent";
+
+interface PresenceRosterEntry {
   userId: number;
   firstName: string | null;
   lastName: string | null;
-  instrument: string;
-  availabilities: Record<string, "oui" | "non" | "peut-etre">;
+  status: PresenceStatus;
 }
 
-interface AvailabilityData {
-  events: PlanningEvent[];
-  rows: AvailabilityRow[];
-  currentUserId: number;
+interface PresenceEvent {
+  id: number;
+  title: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  response_deadline: string | null;
+  response: {
+    status: PresenceStatus | null;
+    comment: string | null;
+    updated_at: string | null;
+  };
+  roster: PresenceRosterEntry[];
+  counts: {
+    present: number;
+    absent: number;
+    noAnswer: number;
+    totalMembers: number;
+  };
 }
 
-type StatusValue = "oui" | "non" | "peut-etre" | null;
+interface PresenceApiResponse {
+  events: PresenceEvent[];
+}
 
-// Only oui/non/null are offered in the select — peut-etre is kept for imported legacy data
+interface PresenceSubmitResponse {
+  success?: boolean;
+  event?: PresenceEvent;
+  error?: string;
+}
 
 function getFullName(firstName: string | null, lastName: string | null): string {
   if (!firstName && !lastName) return "Anonyme";
   return [firstName, lastName].filter(Boolean).join(" ");
 }
 
-// Instrument ordering matching the trombinoscope
-const INSTRUMENT_ORDER: Record<string, number> = {
-  "chef d'orchestre": 0,
-  "chef adjoint": 1,
-  percussions: 2,
-};
-
-function getInstrumentPriority(instrument: string): number {
-  return INSTRUMENT_ORDER[instrument.toLowerCase()] ?? 999;
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
-function sortRowsByInstrument(rows: AvailabilityRow[]): AvailabilityRow[] {
-  return [...rows].sort((a, b) => {
-    const aInstruments = a.instrument ? a.instrument.split(", ").filter(Boolean) : [];
-    const bInstruments = b.instrument ? b.instrument.split(", ").filter(Boolean) : [];
-    const aHas = aInstruments.length > 0;
-    const bHas = bInstruments.length > 0;
-    if (aHas !== bHas) return aHas ? -1 : 1;
-    if (!aHas) {
-      const nameA = (a.lastName || "").toLowerCase();
-      const nameB = (b.lastName || "").toLowerCase();
-      if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
-      return (a.firstName || "").toLowerCase().localeCompare((b.firstName || "").toLowerCase(), "fr");
-    }
-    const prioA = Math.min(...aInstruments.map(getInstrumentPriority));
-    const prioB = Math.min(...bInstruments.map(getInstrumentPriority));
-    if (prioA !== prioB) return prioA - prioB;
-    const bestA = aInstruments.reduce((best, i) =>
-      getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
-    );
-    const bestB = bInstruments.reduce((best, i) =>
-      getInstrumentPriority(i) < getInstrumentPriority(best) ? i : best
-    );
-    if (bestA !== bestB) return bestA.localeCompare(bestB, "fr");
-    const nameA = (a.lastName || "").toLowerCase();
-    const nameB = (b.lastName || "").toLowerCase();
-    if (nameA !== nameB) return nameA.localeCompare(nameB, "fr");
-    return (a.firstName || "").toLowerCase().localeCompare((b.firstName || "").toLowerCase(), "fr");
-  });
+function daysBetween(fromIso: string, toIso: string): number {
+  const from = new Date(`${fromIso}T00:00:00`);
+  const to = new Date(`${toIso}T00:00:00`);
+  return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
 
-function EventSummary({
-  eventId,
-  rows,
-}: {
-  eventId: string;
-  rows: AvailabilityRow[];
-}) {
-  let oui = 0;
-  let non = 0;
-  let vide = 0;
+/** La date limite est considérée comme proche dans les deux semaines : ce seuil
+ * correspond à l'alerte du serveur pour la carte de planning. */
+const CLOSE_DEADLINE_DAYS = 14;
 
-  for (const row of rows) {
-    const status = row.availabilities[eventId];
-    if (status === "oui") oui++;
-    else if (status === "non") non++;
-    else vide++;
+function getDeadlineTone(
+  deadline: string | null,
+  answered: boolean
+): { label: string; tone: "muted" | "warning" | "danger" } {
+  if (!deadline) {
+    return { label: "Pas de date limite fixée", tone: "muted" };
   }
 
-  const total = oui + non + vide;
-  if (total === 0) return null;
+  const today = todayIso();
+  const diffDays = daysBetween(today, deadline);
+  const label = formatDateLong(deadline);
 
-  const ouiPct = Math.round((oui / total) * 100);
-  const nonPct = Math.round((non / total) * 100);
-  // Adjust last segment so total = 100%
-  const nonAdjusted = ouiPct + nonPct > 100 ? nonPct - (ouiPct + nonPct - 100) : nonPct;
+  if (diffDays < 0) {
+    return {
+      label: `Date limite dépassée (${label})`,
+      tone: answered ? "muted" : "danger",
+    };
+  }
+
+  if (answered) {
+    return { label: `Date limite : ${label}`, tone: "muted" };
+  }
+
+  if (diffDays <= CLOSE_DEADLINE_DAYS) {
+    return { label: `À répondre avant le ${label}`, tone: "warning" };
+  }
+
+  return { label: `À répondre avant le ${label}`, tone: "muted" };
+}
+
+function StatusPill({ status }: { status: PresenceStatus | null }) {
+  if (status === "present") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-300">
+        <Check className="h-3.5 w-3.5" />
+        Présent
+      </span>
+    );
+  }
+  if (status === "absent") {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+        <X className="h-3.5 w-3.5" />
+        Absent
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+      <AlertTriangle className="h-3.5 w-3.5" />À répondre
+    </span>
+  );
+}
+
+function RosterPanel({ event }: { event: PresenceEvent }) {
+  const present = event.roster.filter((member) => member.status === "present");
+  const absent = event.roster.filter((member) => member.status === "absent");
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full px-0.5">
-      {/* Stacked bar */}
-      <div className="flex w-full h-1.5 rounded-full overflow-hidden bg-gray-150 dark:bg-gray-700">
-        {oui > 0 && (
-          <div
-            className="bg-green-400 dark:bg-green-500 h-full transition-all"
-            style={{ width: `${ouiPct}%` }}
-          />
-        )}
-        {non > 0 && (
-          <div
-            className="bg-red-400 dark:bg-red-500 h-full transition-all"
-            style={{ width: `${nonAdjusted}%` }}
-          />
-        )}
-      </div>
-      {/* Counts */}
-      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 leading-none">
-        <span className="text-green-600 dark:text-green-400">{oui}</span>
-        <span className="text-gray-400 dark:text-gray-500">
-          {" / "}{total}
+    <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/40">
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
+        <span className="text-green-700 dark:text-green-400">
+          {event.counts.present} présent{event.counts.present > 1 ? "s" : ""}
         </span>
-      </span>
+        <span className="text-red-700 dark:text-red-400">
+          {event.counts.absent} absent{event.counts.absent > 1 ? "s" : ""}
+        </span>
+        <span className="text-gray-500 dark:text-gray-400">
+          {event.counts.noAnswer} sans réponse
+        </span>
+      </div>
+
+      {present.length === 0 && absent.length === 0 ? (
+        <p className="text-sm italic text-gray-500 dark:text-gray-400">
+          Personne n&apos;a encore répondu.
+        </p>
+      ) : (
+        <div className="space-y-2.5">
+          {present.length > 0 && (
+            <div>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">
+                Présents
+              </p>
+              <ul className="space-y-0.5">
+                {present.map((member) => (
+                  <li
+                    key={member.userId}
+                    className="truncate text-sm text-gray-800 dark:text-gray-200"
+                  >
+                    {getFullName(member.firstName, member.lastName)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {absent.length > 0 && (
+            <div>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-400">
+                Absents
+              </p>
+              <ul className="space-y-0.5">
+                {absent.map((member) => (
+                  <li
+                    key={member.userId}
+                    className="truncate text-sm text-gray-800 dark:text-gray-200"
+                  >
+                    {getFullName(member.firstName, member.lastName)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-interface MusicianDisponibilitesProps {
-  userId: number;
-  firstName: string;
-  lastName: string;
+interface PresenceCardProps {
+  event: PresenceEvent;
+  onUpdate: (event: PresenceEvent) => void;
 }
 
-export function MusicianDisponibilites({
-  userId: _userId,
-  firstName: _firstName,
-  lastName: _lastName,
-}: MusicianDisponibilitesProps) {
-  const [data, setData] = useState<AvailabilityData | null>(null);
+function PresenceCard({ event, onUpdate }: PresenceCardProps) {
+  const [comment, setComment] = useState(event.response.comment ?? "");
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<PresenceStatus | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (saveState !== "saved") return;
+
+    const timeoutId = window.setTimeout(() => setSaveState("idle"), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [saveState]);
+
+  const status = event.response.status;
+  const answered = status !== null;
+  const deadlineInfo = getDeadlineTone(event.response_deadline, answered);
+  const answeredCount = event.counts.present + event.counts.absent;
+
+  const submit = useCallback(
+    async (newStatus: PresenceStatus) => {
+      setPendingStatus(newStatus);
+      setSaveState("idle");
+      setErrorMessage(null);
+      try {
+        const response = await fetch("/api/musician/presence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eventId: event.id,
+            status: newStatus,
+            comment: comment.trim() || null,
+          }),
+        });
+        const data = (await response.json()) as PresenceSubmitResponse;
+        if (!response.ok || !data.success || !data.event) {
+          throw new Error(data.error || "La réponse n'a pas pu être enregistrée.");
+        }
+        setComment(data.event.response.comment ?? "");
+        onUpdate(data.event);
+        setSaveState("saved");
+      } catch (err) {
+        setSaveState("error");
+        setErrorMessage(
+          err instanceof Error ? err.message : "La réponse n'a pas pu être enregistrée."
+        );
+      } finally {
+        setPendingStatus(null);
+      }
+    },
+    [comment, event.id, onUpdate]
+  );
+
+  const commentDirty = comment.trim() !== (event.response.comment ?? "").trim();
+
+  return (
+    <Card
+      className={cn(
+        "flex flex-col overflow-hidden border-l-4 transition-colors",
+        !answered && deadlineInfo.tone === "danger"
+          ? "border-l-red-500 bg-red-50/40 dark:bg-red-950/10"
+          : !answered
+            ? "border-l-amber-400 bg-amber-50/40 dark:bg-amber-950/10"
+            : "border-l-gray-200 dark:border-l-gray-700"
+      )}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-heading text-lg font-bold leading-tight text-gray-900 dark:text-gray-100">
+              {event.title}
+            </h2>
+            <p className="mt-1 text-sm capitalize text-gray-600 dark:text-gray-400">
+              {formatDateFrench(event.date)}
+              {event.time && <> · {event.time}</>}
+            </p>
+          </div>
+          <StatusPill status={status} />
+        </div>
+
+        {(event.location || event.address) && (
+          <p className="mt-1 flex items-start gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              {event.location}
+              {event.location && event.address && " — "}
+              {event.address}
+            </span>
+          </p>
+        )}
+
+        <p
+          className={cn(
+            "mt-2 inline-flex w-fit items-center gap-1.5 text-xs font-medium",
+            deadlineInfo.tone === "danger"
+              ? "text-red-600 dark:text-red-400"
+              : deadlineInfo.tone === "warning"
+                ? "text-amber-700 dark:text-amber-400"
+                : "text-gray-500 dark:text-gray-400"
+          )}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          {deadlineInfo.label}
+        </p>
+      </CardHeader>
+
+      <CardContent className="flex flex-1 flex-col pt-0">
+        <div className="grid gap-4 md:grid-cols-[1fr_240px]">
+          {/* Action column */}
+          <div className="flex flex-col">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => submit("present")}
+                disabled={pendingStatus !== null}
+                aria-pressed={status === "present"}
+                className={cn(
+                  "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
+                  status === "present"
+                    ? "border-green-500 bg-green-500 text-white shadow-sm"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-green-900/20"
+                )}
+              >
+                {pendingStatus === "present" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Présent
+              </button>
+              <button
+                type="button"
+                onClick={() => submit("absent")}
+                disabled={pendingStatus !== null}
+                aria-pressed={status === "absent"}
+                className={cn(
+                  "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
+                  status === "absent"
+                    ? "border-red-500 bg-red-500 text-white shadow-sm"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-red-400 hover:bg-red-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-red-900/20"
+                )}
+              >
+                {pendingStatus === "absent" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
+                Absent
+              </button>
+            </div>
+
+            <div className="mt-2 min-h-[18px]">
+              {saveState === "saved" && (
+                <p className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
+                  <Check className="h-3.5 w-3.5" />
+                  Réponse enregistrée
+                </p>
+              )}
+              {saveState === "error" && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {errorMessage}
+                </p>
+              )}
+            </div>
+
+            {/* Comment disclosure */}
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => setCommentOpen((open) => !open)}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                {event.response.comment ? "Modifier mon commentaire" : "Ajouter un commentaire"}
+                <ChevronDown
+                  className={cn("h-3 w-3 transition-transform", commentOpen && "rotate-180")}
+                />
+              </button>
+
+              {commentOpen && (
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value.slice(0, 1000))}
+                    maxLength={1000}
+                    placeholder="Un mot pour l'équipe (facultatif)"
+                    className="min-h-[80px] text-sm"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                      {comment.length}/1000
+                    </span>
+                    {answered ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => submit(status)}
+                        disabled={pendingStatus !== null || !commentDirty}
+                      >
+                        Enregistrer le commentaire
+                      </Button>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                        Envoyé avec votre réponse
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Roster column */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setRosterOpen((open) => !open)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary md:hidden"
+            >
+              <Users className="h-3.5 w-3.5" />
+              {rosterOpen
+                ? "Masquer qui a répondu"
+                : `Voir qui a répondu (${answeredCount}/${event.counts.totalMembers})`}
+              <ChevronDown
+                className={cn("h-3 w-3 transition-transform", rosterOpen && "rotate-180")}
+              />
+            </button>
+            <div className={cn(rosterOpen ? "block" : "hidden", "md:block")}>
+              <RosterPanel event={event} />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function MusicianDisponibilites() {
+  const [events, setEvents] = useState<PresenceEvent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingEventId, setUpdatingEventId] = useState<number | null>(null);
-  const [showPast, setShowPast] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/musician/availability");
+      const response = await fetch("/api/musician/presence");
       if (!response.ok) {
-        throw new Error("Erreur lors du chargement des disponibilités");
+        throw new Error("Erreur lors du chargement des prestations.");
       }
-      const result = (await response.json()) as AvailabilityData;
-      setData(result);
+      const result = (await response.json()) as PresenceApiResponse;
+      setEvents(result.events);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Une erreur inattendue est survenue"
-      );
+      setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
     } finally {
       setLoading(false);
     }
@@ -163,331 +470,66 @@ export function MusicianDisponibilites({
     fetchData();
   }, [fetchData]);
 
-  const handleStatusChange = useCallback(
-    async (eventId: number, newStatus: StatusValue) => {
-      if (!data) return;
-      // optimistic update
-      setData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          rows: prev.rows.map((row) => {
-            if (row.userId !== prev.currentUserId) return row;
-            const newAvailabilities = { ...row.availabilities };
-            if (newStatus === null) {
-              delete newAvailabilities[String(eventId)];
-            } else {
-              newAvailabilities[String(eventId)] = newStatus;
-            }
-            return { ...row, availabilities: newAvailabilities };
-          }),
-        };
-      });
-      setUpdatingEventId(eventId);
-      try {
-        const response = await fetch("/api/musician/availability", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ eventId, status: newStatus }),
-        });
-        if (!response.ok) {
-          fetchData();
-        }
-      } catch {
-        fetchData();
-      } finally {
-        setUpdatingEventId(null);
-      }
-    },
-    [data, fetchData]
-  );
+  const handleUpdate = useCallback((updatedEvent: PresenceEvent) => {
+    setEvents((prev) =>
+      prev ? prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)) : prev
+    );
+  }, []);
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-        <div className="p-4 rounded-full bg-red-50 dark:bg-red-900/20">
-          <Calendar className="w-8 h-8 text-red-500" />
+      <div className="flex flex-col items-center justify-center space-y-4 py-16 text-center">
+        <div className="rounded-full bg-red-50 p-4 dark:bg-red-900/20">
+          <Calendar className="h-8 w-8 text-red-500" />
         </div>
-        <p className="text-red-600 dark:text-red-400 text-lg font-medium">{error}</p>
+        <p className="text-lg font-medium text-red-600 dark:text-red-400">{error}</p>
         <button
           onClick={fetchData}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="h-4 w-4" />
           Réessayer
         </button>
       </div>
     );
   }
 
-  // Empty state (no events at all)
-  if (!data || data.events.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-        <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800">
-          <Calendar className="w-8 h-8 text-gray-400" />
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">
-          Aucune prestation prévue pour le moment.
-        </p>
-      </div>
-    );
-  }
-
-  // Split events: upcoming (date >= today) vs past
-  const today = new Date().toISOString().split("T")[0];
-  const upcomingEvents = data.events.filter((e) => e.date >= today);
-  const pastEvents = data.events.filter((e) => e.date < today);
-  const visibleEvents = showPast ? data.events : upcomingEvents;
-
-  // Sort all rows by instrument (like trombinoscope), current user stays in its natural position
-  const orderedRows = sortRowsByInstrument(data.rows);
+  const unansweredCount = (events ?? []).filter((e) => e.response.status === null).length;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Mes disponibilités
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Indiquez votre présence pour chaque prestation
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mes prestations</h1>
+        <p className="mt-1 text-gray-500 dark:text-gray-400">
+          {events && events.length > 0
+            ? unansweredCount > 0
+              ? `${unansweredCount} prestation${unansweredCount > 1 ? "s" : ""} en attente de votre réponse`
+              : "Vous avez répondu pour toutes les prestations à venir"
+            : "Indiquez votre présence pour chaque prestation"}
         </p>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="text-gray-600 dark:text-gray-400 font-medium text-xs uppercase tracking-wider">
-          Légende&nbsp;:
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-medium">
-          <Check className="w-3.5 h-3.5" />
-          Présent
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium">
-          <X className="w-3.5 h-3.5" />
-          Absent
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs font-medium">
-          <Minus className="w-3.5 h-3.5" />
-          Non répondu
-        </span>
-      </div>
-
-      {/* Past events toggle */}
-      {pastEvents.length > 0 && (
-        <button
-          onClick={() => setShowPast((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        >
-          {showPast ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-          {showPast
-            ? "Masquer les prestations passées"
-            : `Afficher les prestations passées (${pastEvents.length})`}
-        </button>
-      )}
-
-      {/* Table wrapped in a full-width scroll container */}
-      <div className="-mx-4 sm:-mx-6 lg:-mx-8">
-        <div className="mx-4 sm:mx-6 lg:mx-8 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-          <table className="w-full min-w-max table-fixed border-collapse">
-            {/* Table Header */}
-            <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800/50">
-                <th
-                  scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/50 border-r border-b border-gray-200 dark:border-gray-700 px-3 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                  style={{ width: 200, minWidth: 180, maxWidth: 220 }}
-                >
-                  Musicien
-                </th>
-                {visibleEvents.map((event) => (
-                  <th
-                    key={event.id}
-                    scope="col"
-                    className="border-b border-gray-200 dark:border-gray-700 px-2 py-3 text-center align-top"
-                    style={{ width: 120, minWidth: 110, maxWidth: 140 }}
-                  >
-                    <div className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                      {event.name}
-                    </div>
-                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
-                      {formatDateShort(event.date)}
-                      {event.time && <> • {event.time}</>}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            {/* Table Body */}
-            <tbody>
-              {orderedRows.map((row, rowIdx) => {
-                const isCurrentUser = row.userId === data.currentUserId;
-                return (
-                  <tr
-                    key={row.userId}
-                    className={`transition-colors ${
-                      isCurrentUser
-                        ? "bg-primary/5 dark:bg-primary/10"
-                        : rowIdx % 2 === 0
-                          ? "bg-white dark:bg-gray-900"
-                          : "bg-gray-50/50 dark:bg-gray-800/20"
-                    }`}
-                  >
-                    {/* Sticky musician column */}
-                    <td
-                      className={`sticky left-0 z-10 border-r border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 ${
-                        isCurrentUser
-                          ? "bg-primary/5 dark:bg-primary/10"
-                          : rowIdx % 2 === 0
-                            ? "bg-white dark:bg-gray-900"
-                            : "bg-gray-50/50 dark:bg-gray-800/20"
-                      }`}
-                      style={{ width: 200, minWidth: 180, maxWidth: 220 }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isCurrentUser && (
-                          <span className="w-1 h-8 rounded-full bg-primary shrink-0" />
-                        )}
-                        <div className="min-w-0">
-                          <div
-                            className={`text-sm font-medium truncate ${
-                              isCurrentUser
-                                ? "text-primary"
-                                : "text-gray-900 dark:text-gray-100"
-                            }`}
-                          >
-                            {getFullName(row.firstName, row.lastName)}
-                          </div>
-                          <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate">
-                            {row.instrument}
-                          </div>
-                        </div>
-                        {isCurrentUser && (
-                          <span className="ml-auto text-[10px] font-medium text-primary/70 uppercase tracking-wider shrink-0">
-                            Moi
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Event columns */}
-                    {visibleEvents.map((event) => {
-                      const status: StatusValue =
-                        row.availabilities[String(event.id)] ?? null;
-
-                      if (isCurrentUser) {
-                        const selectId = `status-${row.userId}-${event.id}`;
-                        return (
-                          <td
-                            key={event.id}
-                            className="border-b border-gray-200 dark:border-gray-700 p-1 text-center"
-                          >
-                            <select
-                              id={selectId}
-                              value={status ?? ""}
-                              disabled={updatingEventId === event.id}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                handleStatusChange(
-                                  event.id,
-                                  val === "" ? null : (val as "oui" | "non")
-                                );
-                              }}
-                              className={`w-full min-h-[38px] rounded-lg cursor-pointer text-xs font-medium text-center appearance-none px-1 transition-colors ${
-                                status === "oui"
-                                  ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700"
-                                  : status === "non"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700"
-                                    : "bg-gray-50 dark:bg-gray-800/30 text-gray-400 border-gray-200 dark:border-gray-700"
-                              } border focus:outline-none focus:ring-2 focus:ring-primary/40`}
-                            >
-                              <option value="">—</option>
-                              <option value="oui">Présent</option>
-                              <option value="non">Absent</option>
-                            </select>
-                          </td>
-                        );
-                      }
-
-                      // Read-only rows
-                      return (
-                        <td
-                          key={event.id}
-                          className="border-b border-gray-200 dark:border-gray-700 p-1 text-center"
-                        >
-                          <span
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium ${
-                              status === "oui"
-                                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                                : status === "non"
-                                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                                  : "bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500"
-                            }`}
-                          >
-                            {status === "oui" ? (
-                              <Check className="w-3.5 h-3.5" />
-                            ) : status === "non" ? (
-                              <X className="w-3.5 h-3.5" />
-                            ) : (
-                              <Minus className="w-3.5 h-3.5" />
-                            )}
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-
-            {/* Summary footer */}
-            <tfoot>
-              <tr className="bg-gray-50 dark:bg-gray-800/30">
-                <td
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800/30 border-t border-r border-gray-200 dark:border-gray-700 px-3 py-2"
-                  style={{ width: 200, minWidth: 180, maxWidth: 220 }}
-                >
-                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                    Résumé
-                  </span>
-                </td>
-                {visibleEvents.map((event) => (
-                  <td
-                    key={event.id}
-                    className="border-t border-gray-200 dark:border-gray-700 px-2 py-2 text-center"
-                  >
-                    <EventSummary
-                      eventId={String(event.id)}
-                      rows={data.rows}
-                    />
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+      {!events || events.length === 0 ? (
+        <EmptyState
+          icon={<Calendar className="h-10 w-10" />}
+          title="Aucune prestation ne nécessite votre réponse pour le moment."
+          description="Revenez ici dès qu'une nouvelle date sera annoncée."
+        />
+      ) : (
+        <div className="space-y-4">
+          {events.map((event) => (
+            <PresenceCard key={event.id} event={event} onUpdate={handleUpdate} />
+          ))}
         </div>
-      </div>
-
-      {/* Click hint (only shown when there are events) */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-        Sélectionnez votre statut pour chaque prestation.
-      </p>
+      )}
     </div>
   );
 }

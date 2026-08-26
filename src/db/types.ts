@@ -9,6 +9,10 @@ export interface Event {
   price: string | null;
   details_link: string | null;
   reservation_link: string | null;
+  is_public: number;
+  presence_required: number;
+  address: string | null;
+  response_deadline: string | null;
   created_at: string;
 }
 
@@ -231,6 +235,19 @@ export interface HarmonieInstrumentRecord {
   created_at: string;
 }
 
+export type PresenceStatus = "present" | "absent";
+
+export interface EventPresence {
+  id: number;
+  event_id: number;
+  user_id: number;
+  status: PresenceStatus;
+  comment: string | null;
+  status_changed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type IdeaCategory = "association" | "harmonie" | "website";
 
 export interface Idea {
@@ -318,41 +335,17 @@ export type MusicianCardType =
   | "birthdays"
   | "trombinoscope";
 
-export interface PlanningEvent {
-  id: number;
-  name: string;
-  date: string;
-  time: string | null;
-  location: string | null;
-  address: string | null;
-  sort_order: number;
-  created_at: string;
-}
-
-export interface PlanningAvailability {
-  id: number;
-  planning_event_id: number;
-  user_id: number;
-  status: "oui" | "non" | "peut-etre";
-  updated_at: string;
-}
-
-export type PlanningStatus = "oui" | "non" | "peut-etre";
-
-export interface PlanningInput {
-  name: string;
-  date: string;
-  time?: string | null;
-  location?: string | null;
-  address?: string | null;
-  sort_order?: number;
-}
+// Les types PlanningEvent / PlanningAvailability / PlanningStatus / PlanningInput
+// ont été supprimés : la table `events` est désormais la source unique, et les
+// présences sont modélisées par `EventPresence` (statut à deux valeurs, sans
+// « peut-être »). Les tables planning_events / planning_availability subsistent
+// en base ; leur suppression fera l'objet d'une migration ultérieure séparée.
 
 export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
   profile: "Mon Profil",
   adhesion: "Adhésion",
   assurance: "Assurance",
-  planning: "Planning",
+  planning: "Mes prestations",
   partitions: "Partitions",
   "boite-a-idee": "Boîte à idée",
   outing: "Inscription Sortie",

@@ -1,7 +1,8 @@
 import { render, route, layout } from "rwsdk/router";
 import { defineApp } from "rwsdk/worker";
 import { env } from "cloudflare:workers";
-import type { Event, InfoSettings, OutingSettings, Video } from "@/db/types";
+import type { InfoSettings, OutingSettings, Video } from "@/db/types";
+import { PUBLIC_EVENTS_API_QUERY, type PublicEventRow } from "@/lib/public-events";
 
 import { Document } from "@/app/Document";
 import { Layout } from "@/app/Layout";
@@ -42,7 +43,7 @@ import { handleOutingSettingsApi } from "@/app/api/admin/outing-settings";
 import { handleCardOrderSettingsApi } from "@/app/api/admin/card-order";
 import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
 import { handleInsuranceApi } from "@/app/api/admin/insurance";
-import { handlePlanningEventsApi } from "@/app/api/admin/planning-events";
+import { handleAdminPresenceApi } from "@/app/api/admin/presence";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
@@ -51,8 +52,8 @@ import {
   handleMusicianBirthdaysApi,
   handleMusicianPlanningCheckApi,
   handleMusicianTrombinoscopeApi,
-  handleMusicianAvailabilityApi,
 } from "@/app/api/musician";
+import { handleMusicianPresenceApi } from "@/app/api/musician-presence";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
@@ -74,7 +75,7 @@ import {
   AdminCardOrderPage,
   AdminInfoSettingsPage,
   AdminInsurancePage,
-  AdminPlanningEventsPage,
+  AdminPresencePage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -159,7 +160,7 @@ const app = defineApp([
 
   route("/api/events", async () => {
     try {
-      const results = await env.DB.prepare("SELECT * FROM events ORDER BY date ASC").all<Event>();
+      const results = await env.DB.prepare(PUBLIC_EVENTS_API_QUERY).all<PublicEventRow>();
       const events = results.results || [];
       const now = new Date().toISOString().split("T")[0];
 
@@ -228,8 +229,8 @@ const app = defineApp([
   ),
   route("/api/admin/insurance", ({ request }: { request: Request }) => handleInsuranceApi(request)),
 
-  route("/api/admin/planning-events", ({ request }: { request: Request }) =>
-    handlePlanningEventsApi(request)
+  route("/api/admin/presence", ({ request }: { request: Request }) =>
+    handleAdminPresenceApi(request)
   ),
 
   route("/api/admin/analytics", ({ request }: { request: Request }) =>
@@ -257,8 +258,8 @@ const app = defineApp([
   route("/api/musician/trombinoscope", ({ request }: { request: Request }) =>
     handleMusicianTrombinoscopeApi(request)
   ),
-  route("/api/musician/availability", ({ request }: { request: Request }) =>
-    handleMusicianAvailabilityApi(request)
+  route("/api/musician/presence", ({ request }: { request: Request }) =>
+    handleMusicianPresenceApi(request)
   ),
 
   // Public API for info settings (read-only, returns only active settings)
@@ -486,10 +487,10 @@ const app = defineApp([
       return <AdminInsurancePage email={auth.email} role={auth.role} />;
     }),
 
-    route("/admin/planning", async ({ request }: { request: Request }) => {
+    route("/admin/presence", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
-      return <AdminPlanningEventsPage email={auth.email} role={auth.role} />;
+      return <AdminPresencePage email={auth.email} role={auth.role} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),
@@ -562,11 +563,7 @@ const app = defineApp([
       if (auth instanceof Response) return auth;
       return (
         <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
-          <MusicianDisponibilites
-            userId={auth.userId}
-            firstName={auth.firstName}
-            lastName={auth.lastName}
-          />
+          <MusicianDisponibilites />
         </MusicianLayout>
       );
     }),

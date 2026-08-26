@@ -7,6 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
+import { Switch } from "@/app/components/ui/switch";
 import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Select,
@@ -55,12 +56,16 @@ import {
   ChevronUp,
   ChevronDown,
   Copy,
+  Globe,
+  Lock,
+  ClipboardList,
 } from "lucide-react";
 import { Calendar } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { Pagination } from "@/app/components/ui/pagination";
 import type { Event } from "@/db/types";
 import { getCroppedImg, recompressImage } from "@/lib/image-utils";
+import { cn } from "@/lib/utils";
 
 const emptyEvent = {
   title: "",
@@ -72,7 +77,21 @@ const emptyEvent = {
   price: "",
   details_link: "",
   reservation_link: "",
+  is_public: 1,
+  presence_required: 0,
+  address: "",
+  response_deadline: "",
 };
+
+function getDefaultResponseDeadline(eventDate: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) return "";
+
+  const date = new Date(`${eventDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== eventDate) return "";
+
+  date.setUTCDate(date.getUTCDate() - 21);
+  return date.toISOString().slice(0, 10);
+}
 
 export function EventsAdminClient() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -481,6 +500,7 @@ export function EventsAdminClient() {
                       Prix <SortIcon field="price" />
                     </span>
                   </TableHead>
+                  <TableHead>Diffusion</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -494,6 +514,31 @@ export function EventsAdminClient() {
                       <TableCell>{formatDateShort(event.date)}</TableCell>
                       <TableCell>{event.location}</TableCell>
                       <TableCell>{event.price || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+                              event.is_public
+                                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {event.is_public ? (
+                              <Globe className="w-3 h-3" />
+                            ) : (
+                              <Lock className="w-3 h-3" />
+                            )}
+                            {event.is_public ? "Public" : "Interne"}
+                          </span>
+                          {event.presence_required === 1 && (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+                              <ClipboardList className="w-3 h-3" />
+                              Présence
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-xs ${
@@ -601,6 +646,87 @@ export function EventsAdminClient() {
               </div>
 
               <div className="grid gap-2">
+                <Label htmlFor="address">Adresse</Label>
+                <Input
+                  id="address"
+                  value={editingEvent.address || ""}
+                  onChange={(e) => setEditingEvent({ ...editingEvent, address: e.target.value })}
+                  placeholder="12 rue de la Musique, Sucy-en-Brie"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Affichée aux musiciens sur leur page de réponse de présence.
+                </p>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-border p-4">
+                <p className="text-xs text-muted-foreground">
+                  Ces deux réglages sont indépendants : un événement peut être public sans présence
+                  demandée, interne avec présence demandée, ou les deux à la fois.
+                </p>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Label htmlFor="is_public">Visible sur le site public</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Si désactivé, l'événement disparaît du site public mais reste géré ici.
+                    </p>
+                  </div>
+                  <Switch
+                    id="is_public"
+                    checked={!!editingEvent.is_public}
+                    onCheckedChange={(checked) =>
+                      setEditingEvent({ ...editingEvent, is_public: checked ? 1 : 0 })
+                    }
+                  />
+                </div>
+
+                <div className="border-t border-border pt-3 flex items-start justify-between gap-4">
+                  <div>
+                    <Label htmlFor="presence_required">Réponse de présence demandée</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Les musiciens sont invités à indiquer s'ils seront présents, que l'événement
+                      soit public ou non.
+                    </p>
+                  </div>
+                  <Switch
+                    id="presence_required"
+                    checked={!!editingEvent.presence_required}
+                    onCheckedChange={(checked) => {
+                      setEditingEvent((current) => {
+                        if (!current) return current;
+                        return {
+                          ...current,
+                          presence_required: checked ? 1 : 0,
+                          response_deadline: checked
+                            ? current.response_deadline ||
+                              getDefaultResponseDeadline(current.date ?? "")
+                            : "",
+                        };
+                      });
+                    }}
+                  />
+                </div>
+
+                {!!editingEvent.presence_required && (
+                  <div className="border-t border-border pt-3 grid gap-2">
+                    <Label htmlFor="response_deadline">Date limite de réponse</Label>
+                    <Input
+                      id="response_deadline"
+                      type="date"
+                      value={editingEvent.response_deadline || ""}
+                      onChange={(e) =>
+                        setEditingEvent({ ...editingEvent, response_deadline: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Par défaut trois semaines avant la prestation. Une réponse modifiée après
+                      cette date est signalée.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-2">
                 <Label>Image</Label>
                 <div className="space-y-2">
                   {editingEvent.image && (
@@ -696,7 +822,7 @@ export function EventsAdminClient() {
             <AlertDialogTitle>Supprimer l'événement ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. L'événement "{deletingEvent?.title}" sera
-              définitivement supprimé.
+              définitivement supprimé, ainsi que toutes les réponses de présence associées.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

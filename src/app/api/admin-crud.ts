@@ -11,6 +11,10 @@ export interface EventInput {
   price?: string | null;
   details_link?: string | null;
   reservation_link?: string | null;
+  is_public?: number;
+  presence_required?: number;
+  address?: string | null;
+  response_deadline?: string | null;
 }
 
 export interface PublicationInput {

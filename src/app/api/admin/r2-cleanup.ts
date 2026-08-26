@@ -25,6 +25,9 @@ export async function handleR2CleanupApi(request: Request): Promise<Response> {
       }
     }
 
+    // Volontairement non filtré sur is_public : tout événement référence une image,
+    // qu'il soit public ou interne. Ajouter « WHERE is_public = 1 » ici classerait les
+    // images des événements internes comme orphelines et les supprimerait définitivement.
     const eventImages = await env.DB.prepare(
       "SELECT image FROM events WHERE image IS NOT NULL"
     ).all<{
