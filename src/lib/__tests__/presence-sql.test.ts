@@ -38,8 +38,9 @@ describe("PRESENCE_MEMBER_QUERY", () => {
         emergency_contact_email TEXT,
         emergency_contact_phone TEXT,
         image_consent INTEGER,
-        -- Ce nom littéral est volontaire : sans migration correspondante, changer
-        -- ADHESION_SEASON_COLUMN doit faire échouer ce test avec « no such column ».
+        -- La colonne existe toujours en base, mais l'effectif de référence ne la
+        -- consulte plus : elle est conservée ici pour que le schéma de test reste
+        -- fidèle à celui de src/db/schema.sql.
         adhesion_2026_2027 INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -80,7 +81,9 @@ describe("PRESENCE_MEMBER_QUERY", () => {
       [1, "un@exemple.fr", "MUSICIAN", 1, "Une", "Instrument", 1],
       [2, "deux@exemple.fr", "MUSICIAN", 1, "Deux", "Instruments", 1],
       [3, "trois@exemple.fr", "MUSICIAN", 1, "Sans", "Pupitre", 1],
+      // Non à jour de sa cotisation : compte quand même dans l'effectif.
       [4, "quatre@exemple.fr", "MUSICIAN", 1, "Non", "Adherent", 0],
+      // Compte désactivé : ne compte pas, quelle que soit son adhésion.
       [5, "cinq@exemple.fr", "MUSICIAN", 0, "Inactif", "Adherent", 1],
       [6, "chef@exemple.fr", "ADMIN", 1, "Chef", "Orchestre", 1],
       [7, "admin@exemple.fr", "ADMIN", 1, "Admin", "Bureau", 1],
@@ -109,16 +112,21 @@ describe("PRESENCE_MEMBER_QUERY", () => {
       statusChangedAt: result.statusChangedAt as string | null,
     }));
 
-    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([1, 2, 2, 3, 6]);
+    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([1, 2, 2, 3, 4, 6]);
     expect(rows.filter((row) => row.userId === 2)).toHaveLength(2);
     expect(rows.find((row) => row.userId === 3)?.instrument).toBeNull();
-    expect(rows.some((row) => row.userId === 4)).toBe(false);
+    // Non à jour de sa cotisation : PRÉSENT dans l'effectif. L'adhésion est remise à
+    // zéro à chaque saison ; la filtrer viderait le dénominateur pendant des mois.
+    expect(rows.some((row) => row.userId === 4)).toBe(true);
+    // Compte désactivé : absent de l'effectif.
     expect(rows.some((row) => row.userId === 5)).toBe(false);
+    // Chef d'orchestre : ADMIN mais joue, donc compté.
     expect(rows.some((row) => row.userId === 6)).toBe(true);
+    // Administrateur sans instrument : hors effectif.
     expect(rows.some((row) => row.userId === 7)).toBe(false);
 
     const summary = summarisePresence(rows, "2026-09-01");
-    expect(summary.totalMembers).toBe(4);
+    expect(summary.totalMembers).toBe(5);
     expect(summary.lateChanges).toHaveLength(0);
 
     insertPresence.run(42, 3, "present", "2026-09-02 10:00:00");

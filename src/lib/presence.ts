@@ -1,10 +1,18 @@
 import { compareInstruments, INSTRUMENT_WITHOUT_SECTION_LABEL } from "@/lib/instruments";
 
-export const ADHESION_SEASON_COLUMN = "adhesion_2026_2027";
-
 // Cette requête alimente la réponse envoyée aux musiciens : ne JAMAIS y ajouter la colonne
 // `comment`. Les commentaires sont joints séparément, côté administration uniquement
 // (`src/app/api/admin/presence.ts`).
+//
+// EFFECTIF DE RÉFÉRENCE = la liste des utilisateurs musiciens actifs.
+// Volontairement SANS condition d'adhésion : l'adhésion est remise à zéro à chaque
+// saison (`migrations/0012_rollover_membership_season.sql`), ce qui viderait
+// l'effectif — et donc le dénominateur du taux de réponse — jusqu'à ce que chacun
+// ait ré-adhéré. Un musicien doit être compté et relancé qu'il soit à jour de sa
+// cotisation ou non ; l'adhésion se suit dans l'espace Utilisateurs, pas ici.
+//
+// La disjonction rôle / instruments inclut le chef d'orchestre, qui est un ADMIN
+// mais joue, et exclut les administrateurs purement back-office.
 export const PRESENCE_MEMBER_QUERY = `SELECT
   u.id                 AS userId,
   mp.first_name        AS firstName,
@@ -17,7 +25,6 @@ JOIN musician_profiles mp ON mp.user_id = u.id
 LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
 LEFT JOIN event_presences ep ON ep.user_id = u.id AND ep.event_id = ?
 WHERE u.is_active = 1
-  AND mp.${ADHESION_SEASON_COLUMN} = 1
   AND (
     u.role = 'MUSICIAN'
     OR EXISTS (SELECT 1 FROM harmonie_instruments h WHERE h.user_id = u.id)

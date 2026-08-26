@@ -104,10 +104,13 @@ VALUES
   (4, 7, 4, 'absent', NULL, '2026-08-02 10:00:00', '2026-07-28 08:00:00', '2026-08-02 10:00:00'),
   (5, 7, 5, 'present', 'Je peux aussi aider au rangement.', '2026-07-29 17:45:00', '2026-07-29 17:45:00', '2026-07-29 17:45:00'),
   -- Événement 9 (à venir, date limite dépassée le 2026-08-20).
-  -- Effectif de référence = 8 membres (users 1 à 8 : actifs, adhérents, plus le chef
-  -- d'orchestre qui est ADMIN). Non adhérente (9) et inactif (10) sont hors décompte.
-  -- 6 réponses sur 8 => taux de réponse 75 %.
-  -- Non-répondants : Thomas Robert (sax alto), Hugo Leroy (sans pupitre renseigné).
+  -- Effectif de référence = 9 membres : tous les utilisateurs musiciens ACTIFS
+  -- (users 2 à 9), plus le chef d'orchestre (user 1) qui est ADMIN mais joue.
+  -- L'adhésion n'entre PAS dans le décompte : Claire Moreau (9) n'est pas à jour de
+  -- sa cotisation et compte quand même. Seul Paul Simon (10), désactivé, est exclu.
+  -- 6 réponses sur 9 => taux de réponse 66,7 %.
+  -- Non-répondants : Thomas Robert (sax alto), Hugo Leroy (sans pupitre renseigné),
+  -- Claire Moreau (batterie).
   -- La réponse d'Antoine Petit, le 2026-08-20 à 16 h, est exactement à la limite et
   -- ne doit pas être signalée comme tardive.
   (6, 9, 1, 'present', NULL, '2026-08-05 09:00:00', '2026-08-05 09:00:00', '2026-08-05 09:00:00'),
