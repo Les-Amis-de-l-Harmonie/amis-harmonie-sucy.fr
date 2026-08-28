@@ -38,20 +38,23 @@ interface FakePresence {
   status_changed_at: string;
 }
 
+interface FakeEvent {
+  id: number;
+  title: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  response_deadline: string | null;
+}
+
 interface FakeDb {
   prepare(sql: string): FakeStatement;
   calls: FakeCall[];
-  ownPresence: FakePresence;
+  ownPresence: FakePresence | null;
   otherPresence: FakePresence;
-  event: {
-    id: number;
-    title: string;
-    date: string;
-    time: string | null;
-    location: string | null;
-    address: string | null;
-    response_deadline: string | null;
-  };
+  event: FakeEvent;
+  events: FakeEvent[];
   pastEvent: boolean;
   callerEligible: boolean;
 }
@@ -90,6 +93,7 @@ function createFakeDb(): FakeDb {
       address: "1 rue de Sucy",
       response_deadline: "2099-01-01",
     },
+    events: [],
     pastEvent: false,
     callerEligible: true,
     prepare(sql: string): FakeStatement {
@@ -111,9 +115,33 @@ function createFakeDb(): FakeDb {
         },
         async all<T>(): Promise<{ results: T[] }> {
           if (sql.includes("FROM events")) {
-            return (db.pastEvent ? { results: [] } : { results: [db.event] }) as {
+            const pastIncluded = sql.includes("-12 months");
+            return (db.pastEvent && !pastIncluded ? { results: [] } : { results: db.events }) as {
               results: T[];
             };
+          }
+          if (sql.includes("FROM event_presences") && sql.includes("json_each")) {
+            const eventIds = JSON.parse(String(call.binds[0])) as number[];
+            const results = eventIds.flatMap((eventId) => {
+              if (eventId !== 12) return [];
+              return [
+                {
+                  eventId,
+                  userId: 7,
+                  status: db.ownPresence?.status ?? "present",
+                  comment: db.ownPresence?.comment ?? null,
+                  updatedAt: db.ownPresence?.updated_at ?? "2099-01-01 00:00:00",
+                },
+                {
+                  eventId,
+                  userId: 8,
+                  status: db.otherPresence.status,
+                  comment: db.otherPresence.comment,
+                  updatedAt: db.otherPresence.updated_at,
+                },
+              ];
+            });
+            return { results } as { results: T[] };
           }
           if (sql.includes("FROM users u")) {
             const results = [
@@ -122,14 +150,16 @@ function createFakeDb(): FakeDb {
                 firstName: "Paul",
                 lastName: "Musicien",
                 instrument: null,
-                status: db.ownPresence.status,
-                statusChangedAt: db.ownPresence.status_changed_at,
+                isPrimary: null,
+                status: db.ownPresence?.status ?? null,
+                statusChangedAt: db.ownPresence?.status_changed_at ?? null,
               },
               {
                 userId: 8,
                 firstName: "Autre",
                 lastName: "Musicien",
                 instrument: null,
+                isPrimary: null,
                 status: db.otherPresence.status,
                 statusChangedAt: db.otherPresence.status_changed_at,
               },
@@ -138,6 +168,7 @@ function createFakeDb(): FakeDb {
                 firstName: "Sans",
                 lastName: "Réponse",
                 instrument: "Cor",
+                isPrimary: 0,
                 status: null,
                 statusChangedAt: null,
               },
@@ -147,7 +178,9 @@ function createFakeDb(): FakeDb {
           return { results: [] };
         },
         async run(): Promise<{ meta: { last_row_id: number } }> {
-          if (sql.includes("INSERT INTO event_presences")) {
+          if (sql.includes("DELETE FROM event_presences")) {
+            db.ownPresence = null;
+          } else if (sql.includes("INSERT INTO event_presences") && db.ownPresence !== null) {
             const status = call.binds[2];
             const comment = call.binds[3];
             if (status !== db.ownPresence.status) {
@@ -163,6 +196,7 @@ function createFakeDb(): FakeDb {
       return statement;
     },
   };
+  db.events = [db.event];
   return db;
 }
 
@@ -193,13 +227,45 @@ describe("handleMusicianPresenceApi", () => {
     );
     const wire = await response.text();
     const body = JSON.parse(wire) as {
-      events: Array<{ response: { comment: string }; roster: unknown[] }>;
+      currentUserId: number;
+      events: Array<{
+        id: number;
+        response: { status: string; comment: string | null; updated_at: string | null };
+        roster: Array<Record<string, unknown>>;
+        counts: Record<string, number>;
+      }>;
     };
 
     expect(response.status).toBe(200);
     expect(wire).not.toContain("SENTINEL_SECRET_COMMENT");
     expect(wire).toContain("MON_PROPRE_COMMENTAIRE");
     expect(body.events[0]?.roster.length).toBeGreaterThan(0);
+    expect(body.currentUserId).toBe(caller.id);
+    const event = body.events[0];
+    expect(event).toBeDefined();
+    if (!event) throw new Error("La réponse événement est absente");
+    expect(Object.keys(event)).toEqual([
+      "id",
+      "title",
+      "date",
+      "time",
+      "location",
+      "address",
+      "response_deadline",
+      "response",
+      "roster",
+      "counts",
+    ]);
+    expect(Object.keys(event.response)).toEqual(["status", "comment", "updated_at"]);
+    expect(Object.keys(event.roster[0] ?? {})).toEqual([
+      "userId",
+      "firstName",
+      "lastName",
+      "instruments",
+      "primaryInstrument",
+      "status",
+    ]);
+    expect(Object.keys(event.counts)).toEqual(["present", "absent", "noAnswer", "totalMembers"]);
     expect(
       body.events[0]?.roster.some(
         (entry) =>
@@ -209,11 +275,54 @@ describe("handleMusicianPresenceApi", () => {
     for (const entry of body.events[0]?.roster ?? []) {
       expect(Object.keys(entry as object)).not.toContain("comment");
     }
-    const own = fakeDb.calls.find((call) => call.sql.includes("FROM event_presences WHERE"));
-    expect(own?.binds).toEqual([12, caller.id]);
+    const answers = fakeDb.calls.find((call) => call.sql.includes("json_each"));
+    expect(answers?.binds).toEqual([JSON.stringify([12])]);
+    expect(answers?.sql).toContain("WHERE event_id IN (SELECT value FROM json_each(?)");
+    expect(answers?.sql).toContain("WHERE type = 'integer'");
+    expect(
+      fakeDb.calls.filter((call) => call.sql.includes("FROM event_presences WHERE"))
+    ).toHaveLength(0);
     expect(fakeDb.calls.find((call) => call.sql === PRESENCE_MEMBER_QUERY)?.sql).not.toContain(
       "comment"
     );
+  });
+
+  it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {
+    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    fakeDb.pastEvent = true;
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence?includePast=1")
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { events: Array<{ title: string }> };
+    expect(body.events[0]?.title).toBe("Concert de rentrée");
+    const eventQuery = fakeDb.calls.find((call) => call.sql.includes("FROM events"));
+    expect(eventQuery?.sql).toContain("date('now', '-12 months')");
+    expect(eventQuery?.sql).toContain("ORDER BY date ASC");
+  });
+
+  it("garde un nombre fixe de requêtes quand le nombre d'événements augmente", async () => {
+    const queryCountFor = async (eventCount: number): Promise<number> => {
+      const db = createFakeDb();
+      db.events = Array.from({ length: eventCount }, (_, index) => ({
+        ...db.event,
+        id: 100 + index,
+        title: `Répétition ${index + 1}`,
+      }));
+      Object.assign(env, { DB: db });
+      vi.mocked(verifySession).mockResolvedValueOnce(caller);
+
+      const response = await handleMusicianPresenceApi(
+        new Request("https://test.local/api/musician/presence")
+      );
+      expect(response.status).toBe(200);
+      return db.calls.length;
+    };
+
+    expect(await queryCountFor(3)).toBe(3);
+    expect(await queryCountFor(6)).toBe(3);
   });
 
   it("rejette la valeur de statut peut-être", async () => {
@@ -259,6 +368,30 @@ describe("handleMusicianPresenceApi", () => {
     expect(insert?.binds[3]).toBe("Après répétition");
   });
 
+  it("efface une réponse avec un statut nul de façon idempotente", async () => {
+    vi.mocked(verifySession).mockResolvedValue(caller);
+
+    const firstResponse = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 12, status: null, comment: "commentaire ignoré" }),
+      })
+    );
+    const secondResponse = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 12, status: null }),
+      })
+    );
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(fakeDb.ownPresence).toBeNull();
+    expect(
+      fakeDb.calls.filter((call) => call.sql.includes("DELETE FROM event_presences"))
+    ).toHaveLength(2);
+  });
+
   it("refuse une réponse pour un musicien non éligible", async () => {
     vi.mocked(verifySession).mockResolvedValueOnce(caller);
     fakeDb.callerEligible = false;
@@ -301,7 +434,7 @@ describe("handleMusicianPresenceApi", () => {
         body: JSON.stringify({ eventId: 12, status: "absent", comment: "Premier commentaire" }),
       })
     );
-    const dateAfterFlip = fakeDb.ownPresence.status_changed_at;
+    const dateAfterFlip = fakeDb.ownPresence?.status_changed_at;
 
     await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -311,7 +444,7 @@ describe("handleMusicianPresenceApi", () => {
     );
 
     expect(dateAfterFlip).toBe("2099-01-02 12:00:00");
-    expect(fakeDb.ownPresence.status_changed_at).toBe(dateAfterFlip);
+    expect(fakeDb.ownPresence?.status_changed_at).toBe(dateAfterFlip);
     const insert = fakeDb.calls.find((call) => call.sql.includes("INSERT INTO event_presences"));
     expect(insert?.sql).toContain("WHEN excluded.status <> event_presences.status");
     expect(insert?.sql).toContain("ELSE event_presences.status_changed_at");

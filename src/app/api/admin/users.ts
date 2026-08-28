@@ -4,6 +4,7 @@ import { isAdmin, isSuperAdmin } from "@/db/types";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 
 import { logger } from "@/lib/logger";
+import { resolvePrimaryFromRows, validateHarmonieInstruments } from "@/lib/instruments";
 interface UserInstrument {
   instrument_name: string;
   start_date?: string | null;
@@ -24,6 +25,7 @@ interface UserInstrumentRow {
 interface HarmonieInstrumentRow {
   user_id: number;
   instrument_name: string;
+  is_primary: number;
 }
 
 export interface UserWithProfile {
@@ -51,6 +53,7 @@ export interface UserWithProfile {
   adhesion_2026_2027?: number;
   instruments?: UserInstrument[];
   harmonieInstruments?: string[];
+  primaryHarmonieInstrument?: string | null;
 }
 
 export async function handleUsersApi(request: Request): Promise<Response> {
@@ -114,16 +117,18 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           .all<UserInstrument>();
 
         const harmonieInstruments = await env.DB.prepare(
-          "SELECT instrument_name FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
+          "SELECT user_id, instrument_name, is_primary FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
         )
           .bind(id)
-          .all<Pick<HarmonieInstrumentRow, "instrument_name">>();
+          .all<HarmonieInstrumentRow>();
+        const harmonieInstrumentRows = harmonieInstruments.results || [];
 
         return new Response(
           JSON.stringify({
             ...user,
             instruments: instruments.results || [],
-            harmonieInstruments: (harmonieInstruments.results || []).map((i) => i.instrument_name),
+            harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
+            primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
           }),
           {
             headers: { "Content-Type": "application/json" },
@@ -147,7 +152,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         "SELECT user_id, instrument_name, start_date, level FROM musician_instruments ORDER BY sort_order ASC"
       ).all<UserInstrumentRow>();
       const allHarmonieInstruments = await env.DB.prepare(
-        "SELECT user_id, instrument_name FROM harmonie_instruments ORDER BY instrument_name ASC"
+        "SELECT user_id, instrument_name, is_primary FROM harmonie_instruments ORDER BY instrument_name ASC"
       ).all<HarmonieInstrumentRow>();
 
       const instrumentsByUser = new Map<
@@ -164,18 +169,23 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         });
       }
 
-      const harmonieByUser = new Map<number, string[]>();
+      const harmonieByUser = new Map<number, HarmonieInstrumentRow[]>();
       for (const row of allHarmonieInstruments.results || []) {
         const uid = row.user_id;
         if (!harmonieByUser.has(uid)) harmonieByUser.set(uid, []);
-        harmonieByUser.get(uid)!.push(row.instrument_name);
+        harmonieByUser.get(uid)!.push(row);
       }
 
       const usersWithInstruments = (users.results || []).map((u) => {
         return {
           ...u,
           instruments: instrumentsByUser.get(u.id as number) || [],
-          harmonieInstruments: harmonieByUser.get(u.id as number) || [],
+          harmonieInstruments: (harmonieByUser.get(u.id as number) || []).map(
+            (instrument) => instrument.instrument_name
+          ),
+          primaryHarmonieInstrument: resolvePrimaryFromRows(
+            harmonieByUser.get(u.id as number) || []
+          ),
         };
       });
 
@@ -186,6 +196,16 @@ export async function handleUsersApi(request: Request): Promise<Response> {
 
     if (request.method === "POST") {
       const data = (await request.json()) as UserWithProfile;
+      const harmonieData = validateHarmonieInstruments(
+        data.harmonieInstruments,
+        data.primaryHarmonieInstrument
+      );
+      if (typeof harmonieData === "string") {
+        return new Response(JSON.stringify({ error: harmonieData }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?")
         .bind(data.email.toLowerCase().trim())
@@ -252,6 +272,20 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         }
       }
 
+      if (harmonieData !== null) {
+        for (const instrumentName of harmonieData.instruments) {
+          statements.push(
+            env.DB.prepare(
+              "INSERT INTO harmonie_instruments (user_id, instrument_name, is_primary) VALUES ((SELECT id FROM users WHERE email = ?), ?, ?)"
+            ).bind(
+              data.email.toLowerCase().trim(),
+              instrumentName,
+              instrumentName === harmonieData.primary ? 1 : 0
+            )
+          );
+        }
+      }
+
       const results = await env.DB.batch(statements);
       const userId = results[0].meta.last_row_id;
 
@@ -268,6 +302,16 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         });
       }
       const data = (await request.json()) as UserWithProfile;
+      const harmonieData = validateHarmonieInstruments(
+        data.harmonieInstruments,
+        data.primaryHarmonieInstrument
+      );
+      if (typeof harmonieData === "string") {
+        return new Response(JSON.stringify({ error: harmonieData }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
         .bind(data.email.toLowerCase().trim(), id)
@@ -377,16 +421,14 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         }
       }
 
-      await env.DB.prepare("DELETE FROM harmonie_instruments WHERE user_id = ?").bind(id).run();
-      if (data.harmonieInstruments && data.harmonieInstruments.length > 0) {
-        for (const instrumentName of data.harmonieInstruments) {
-          if (instrumentName?.trim()) {
-            await env.DB.prepare(
-              "INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (?, ?)"
-            )
-              .bind(id, instrumentName.trim())
-              .run();
-          }
+      if (harmonieData !== null) {
+        await env.DB.prepare("DELETE FROM harmonie_instruments WHERE user_id = ?").bind(id).run();
+        for (const instrumentName of harmonieData.instruments) {
+          await env.DB.prepare(
+            "INSERT INTO harmonie_instruments (user_id, instrument_name, is_primary) VALUES (?, ?, ?)"
+          )
+            .bind(id, instrumentName, instrumentName === harmonieData.primary ? 1 : 0)
+            .run();
         }
       }
 

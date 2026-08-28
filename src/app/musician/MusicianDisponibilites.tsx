@@ -7,21 +7,26 @@ import {
   Check,
   ChevronDown,
   Clock,
+  History,
   Loader2,
+  Lock,
   MapPin,
   MessageSquare,
   Minus,
   Pencil,
   RefreshCw,
+  Undo2,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
+import { Label } from "@/app/components/ui/label";
+import { Switch } from "@/app/components/ui/switch";
 import { Textarea } from "@/app/components/ui/textarea";
 import { EmptyState } from "@/app/components/ui/empty-state";
-import { formatDateFrench, formatDateLong } from "@/lib/dates";
-import { INSTRUMENT_WITHOUT_SECTION_LABEL } from "@/lib/instruments";
+import { formatDateFrench, formatDateLong, isEventPast } from "@/lib/dates";
+import { groupMembersByPupitre } from "@/lib/presence-groups";
 import { cn } from "@/lib/utils";
 
 type PresenceStatus = "present" | "absent";
@@ -31,6 +36,7 @@ interface PresenceRosterEntry {
   firstName: string | null;
   lastName: string | null;
   instruments: string[];
+  primaryInstrument: string | null;
   status: PresenceStatus | null;
 }
 
@@ -91,6 +97,10 @@ function formatDateShortLabel(dateStr: string): string {
  * correspond à l'alerte du serveur pour la carte de planning. */
 const CLOSE_DEADLINE_DAYS = 14;
 
+/** Délai de sursis (task 1) : le temps qu'une carte reste affichée après une réponse
+ * réussie, une fois le pointeur sorti (ou après la dernière interaction au tactile). */
+const LINGER_DELAY_MS = 3000;
+
 function getDeadlineTone(
   deadline: string | null,
   answered: boolean
@@ -145,35 +155,64 @@ function StatusPill({ status }: { status: PresenceStatus | null }) {
   );
 }
 
+/** `null` représente l'action "effacer" ; `null` "tout court" (pas d'action en cours)
+ * est représenté par `pendingAction === null`, d'où ce type dédié plutôt que de
+ * réutiliser `PresenceStatus | null` pour les deux sens à la fois. */
+type PendingAction = "present" | "absent" | "clear";
+
 interface PresenceCardProps {
   event: PresenceEvent;
   onUpdate: (event: PresenceEvent) => void;
-  /** Appelé après un enregistrement réussi ; sert à refermer la carte quand elle a été
-   * rouverte manuellement depuis le tableau croisé. */
-  onSaved?: () => void;
+  /** Une réponse (présent/absent) vient d'être enregistrée avec succès, ou effacée :
+   * le parent tient le set de cartes "en sursis" et décide seul de la visibilité. */
+  onStatusChanged: (eventId: number, status: PresenceStatus | null) => void;
+  /** Démarre (ou relance) le délai de 3 s avant disparition de la carte. */
+  onLingerArm: (eventId: number) => void;
+  /** Annule le délai en cours : la carte n'est pas prête à disparaître. */
+  onLingerCancel: (eventId: number) => void;
 }
 
-function PresenceCard({ event, onUpdate, onSaved }: PresenceCardProps) {
+function PresenceCard({
+  event,
+  onUpdate,
+  onStatusChanged,
+  onLingerArm,
+  onLingerCancel,
+}: PresenceCardProps) {
   const [comment, setComment] = useState(event.response.comment ?? "");
   const [commentOpen, setCommentOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<PresenceStatus | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle");
+  const [lastSavedAction, setLastSavedAction] = useState<PendingAction | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (saveState !== "saved") return;
 
-    const timeoutId = window.setTimeout(() => setSaveState("idle"), 3000);
+    // Volontairement plus court que le délai de sursis de la carte (3 s) : sans ça,
+    // la confirmation « Réponse enregistrée » et la disparition de la carte
+    // tomberaient sur le même instant, et un musicien qui s'éloigne aussitôt ne
+    // verrait jamais la confirmation.
+    const timeoutId = window.setTimeout(() => setSaveState("idle"), 2000);
     return () => window.clearTimeout(timeoutId);
   }, [saveState]);
 
   const status = event.response.status;
   const answered = status !== null;
-  const deadlineInfo = getDeadlineTone(event.response_deadline, answered);
+  // Le serveur refuse toute réponse pour une prestation passée (400) : on ne propose
+  // donc jamais les contrôles interactifs pour ces dates, plutôt que de laisser
+  // l'utilisateur essayer pour échouer.
+  const isPast = isEventPast(event.date);
+  const deadlineInfo = isPast
+    ? { label: "Prestation passée : réponses closes", tone: "muted" as const }
+    : getDeadlineTone(event.response_deadline, answered);
 
   const submit = useCallback(
-    async (newStatus: PresenceStatus) => {
-      setPendingStatus(newStatus);
+    async (newStatus: PresenceStatus | null) => {
+      const action: PendingAction =
+        newStatus === "present" ? "present" : newStatus === "absent" ? "absent" : "clear";
+      setPendingAction(action);
       setSaveState("idle");
       setErrorMessage(null);
       try {
@@ -183,33 +222,105 @@ function PresenceCard({ event, onUpdate, onSaved }: PresenceCardProps) {
           body: JSON.stringify({
             eventId: event.id,
             status: newStatus,
-            comment: comment.trim() || null,
+            comment: newStatus === null ? null : comment.trim() || null,
           }),
         });
         const data = (await response.json()) as PresenceSubmitResponse;
         if (!response.ok || !data.success || !data.event) {
           throw new Error(data.error || "La réponse n'a pas pu être enregistrée.");
         }
+        // Reconciliation à partir de la réponse serveur uniquement : effacer une
+        // réponse supprime aussi le commentaire côté base (contrainte NOT NULL sur
+        // `status`, implémentée par une suppression de ligne), donc toute valeur
+        // locale supposée ici — au lieu de relire `data.event` — laisserait le
+        // commentaire affiché dans le textarea alors qu'il n'existe plus, prêt à
+        // être ré-enregistré en silence à la prochaine réponse.
         setComment(data.event.response.comment ?? "");
+        setConfirmingClear(false);
         onUpdate(data.event);
         setSaveState("saved");
-        onSaved?.();
+        setLastSavedAction(action);
+        onStatusChanged(event.id, newStatus);
       } catch (err) {
         setSaveState("error");
         setErrorMessage(
           err instanceof Error ? err.message : "La réponse n'a pas pu être enregistrée."
         );
       } finally {
-        setPendingStatus(null);
+        setPendingAction(null);
       }
     },
-    [comment, event.id, onUpdate, onSaved]
+    [comment, event.id, onStatusChanged, onUpdate]
   );
 
   const commentDirty = comment.trim() !== (event.response.comment ?? "").trim();
 
+  // Deux gardes symétriques protègent la carte tant que l'utilisateur est encore
+  // dessus, chacune pour un mode d'interaction : la souris (survol) et le clavier
+  // au tactile (focus, typiquement le textarea de commentaire). Les deux se
+  // contentent d'une ref — rien ici ne doit provoquer de re-rendu.
+  //
+  // `mouseInsideRef` : "une souris est actuellement dessus". pointerenter/leave se
+  // déclenchent aussi pour le tactile dans la plupart des navigateurs, d'où le
+  // filtre sur `pointerType === "mouse"` : au tactile elle reste toujours à false.
+  const mouseInsideRef = useRef(false);
+  // `focusInsideRef` : "un élément de la carte a le focus". Sans elle, chaque
+  // frappe dans le textarea (onChange) réarmait le délai de 3 s comme n'importe
+  // quelle interaction, et une pause de réflexion de plus de 3 s pendant la saisie
+  // faisait disparaître la carte avec le brouillon de commentaire en cours — le
+  // pendant tactile exact du bug déjà corrigé pour la souris.
+  const focusInsideRef = useRef(false);
+
+  // Une prestation passée n'entre jamais dans ce mécanisme : aucun de ces
+  // gestionnaires n'est même attaché à la carte, elle n'a rien à faire disparaître.
+  const handlePointerEnter = isPast
+    ? undefined
+    : (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.pointerType === "mouse") mouseInsideRef.current = true;
+        onLingerCancel(event.id);
+      };
+  const handlePointerLeave = isPast
+    ? undefined
+    : (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.pointerType === "mouse") mouseInsideRef.current = false;
+        onLingerArm(event.id);
+      };
+  const handleFocus = isPast
+    ? undefined
+    : () => {
+        focusInsideRef.current = true;
+        onLingerCancel(event.id);
+      };
+  // Le focus qui quitte réellement la carte doit continuer à armer le délai — sinon
+  // un utilisateur au tactile ne pourrait plus jamais faire disparaître la carte
+  // après avoir touché le textarea. C'est ce qui garde la carte "dismissable".
+  const handleBlur = isPast
+    ? undefined
+    : () => {
+        focusInsideRef.current = false;
+        onLingerArm(event.id);
+      };
+  // pointerdown / click / change : n'arme que si la souris survole encore la carte
+  // OU qu'un de ses éléments a le focus — sinon un simple clic sur "Présent" (sous
+  // un curseur qui n'a pas bougé) ou une frappe dans le commentaire (pendant qu'on
+  // y a encore le focus) démarreraient un compte à rebours dans le dos de
+  // l'utilisateur encore présent.
+  const handleInteraction = isPast
+    ? undefined
+    : () => {
+        if (mouseInsideRef.current || focusInsideRef.current) return;
+        onLingerArm(event.id);
+      };
+
   return (
     <Card
+      onPointerEnter={handlePointerEnter}
+      onFocus={handleFocus}
+      onPointerLeave={handlePointerLeave}
+      onBlur={handleBlur}
+      onPointerDown={handleInteraction}
+      onClick={handleInteraction}
+      onChange={handleInteraction}
       className={cn(
         "flex flex-col overflow-hidden border-l-4 transition-colors",
         !answered && deadlineInfo.tone === "danger"
@@ -264,16 +375,16 @@ function PresenceCard({ event, onUpdate, onSaved }: PresenceCardProps) {
           <button
             type="button"
             onClick={() => submit("present")}
-            disabled={pendingStatus !== null}
+            disabled={isPast || pendingAction !== null}
             aria-pressed={status === "present"}
             className={cn(
               "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
               status === "present"
                 ? "border-green-500 bg-green-500 text-white shadow-sm"
-                : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-green-900/20"
+                : "border-gray-200 bg-white text-gray-700 hover:border-green-400 hover:bg-green-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-green-900/20 disabled:hover:border-gray-200 disabled:hover:bg-white dark:disabled:hover:bg-gray-900"
             )}
           >
-            {pendingStatus === "present" ? (
+            {pendingAction === "present" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Check className="h-4 w-4" />
@@ -283,16 +394,16 @@ function PresenceCard({ event, onUpdate, onSaved }: PresenceCardProps) {
           <button
             type="button"
             onClick={() => submit("absent")}
-            disabled={pendingStatus !== null}
+            disabled={isPast || pendingAction !== null}
             aria-pressed={status === "absent"}
             className={cn(
               "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
               status === "absent"
                 ? "border-red-500 bg-red-500 text-white shadow-sm"
-                : "border-gray-200 bg-white text-gray-700 hover:border-red-400 hover:bg-red-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-red-900/20"
+                : "border-gray-200 bg-white text-gray-700 hover:border-red-400 hover:bg-red-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-red-900/20 disabled:hover:border-gray-200 disabled:hover:bg-white dark:disabled:hover:bg-gray-900"
             )}
           >
-            {pendingStatus === "absent" ? (
+            {pendingAction === "absent" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <X className="h-4 w-4" />
@@ -301,67 +412,128 @@ function PresenceCard({ event, onUpdate, onSaved }: PresenceCardProps) {
           </button>
         </div>
 
-        <div className="mt-2 min-h-[18px]">
-          {saveState === "saved" && (
-            <p className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
-              <Check className="h-3.5 w-3.5" />
-              Réponse enregistrée
-            </p>
-          )}
-          {saveState === "error" && (
-            <p className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {errorMessage}
-            </p>
-          )}
-        </div>
-
-        {/* Comment disclosure */}
-        <div className="mt-1">
-          <button
-            type="button"
-            onClick={() => setCommentOpen((open) => !open)}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            {event.response.comment ? "Modifier mon commentaire" : "Ajouter un commentaire"}
-            <ChevronDown
-              className={cn("h-3 w-3 transition-transform", commentOpen && "rotate-180")}
-            />
-          </button>
-
-          {commentOpen && (
-            <div className="mt-2 space-y-2">
-              <Textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value.slice(0, 1000))}
-                maxLength={1000}
-                placeholder="Un mot pour l'équipe (facultatif)"
-                className="min-h-[80px] text-sm"
-              />
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                  {comment.length}/1000
-                </span>
-                {answered ? (
-                  <Button
+        {/* Action rare et corrective : délibérément discrète (texte muted, pas de
+            bordure ni de couleur pleine) pour ne jamais rivaliser visuellement avec
+            Présent/Absent. N'existe que s'il y a effectivement une réponse à effacer. */}
+        {answered && !isPast && (
+          <div className="mt-2">
+            {confirmingClear ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>Votre commentaire sera aussi supprimé.</span>
+                <div className="ml-auto flex items-center gap-3">
+                  <button
                     type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => submit(status)}
-                    disabled={pendingStatus !== null || !commentDirty}
+                    onClick={() => setConfirmingClear(false)}
+                    className="font-medium underline-offset-2 hover:underline"
                   >
-                    Enregistrer le commentaire
-                  </Button>
-                ) : (
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                    Envoyé avec votre réponse
-                  </span>
-                )}
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submit(null)}
+                    disabled={pendingAction !== null}
+                    className="font-semibold text-red-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-70 dark:text-red-400"
+                  >
+                    {pendingAction === "clear" ? "Suppression…" : "Confirmer"}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => (event.response.comment ? setConfirmingClear(true) : submit(null))}
+                disabled={pendingAction !== null}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-500 dark:hover:text-gray-300"
+              >
+                <Undo2 className="h-3 w-3" aria-hidden="true" />
+                Effacer ma réponse
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="mt-2 min-h-[18px]">
+          {isPast ? (
+            <p className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+              <Lock className="h-3.5 w-3.5" />
+              Prestation passée : les réponses ne sont plus modifiables.
+            </p>
+          ) : (
+            <>
+              {saveState === "saved" && (
+                <p className="flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
+                  <Check className="h-3.5 w-3.5" />
+                  {lastSavedAction === "clear" ? "Réponse effacée" : "Réponse enregistrée"}
+                </p>
+              )}
+              {saveState === "error" && (
+                <p className="flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {errorMessage}
+                </p>
+              )}
+            </>
           )}
         </div>
+
+        {/* Une prestation passée n'accepte plus aucune écriture (commentaire compris) : on
+            n'affiche donc jamais le formulaire d'édition, seulement le commentaire déjà
+            enregistré s'il y en a un. */}
+        {isPast ? (
+          event.response.comment && (
+            <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{event.response.comment}</span>
+            </p>
+          )
+        ) : (
+          <div className="mt-1">
+            <button
+              type="button"
+              onClick={() => setCommentOpen((open) => !open)}
+              className="inline-flex items-center gap-1.5 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              {event.response.comment ? "Modifier mon commentaire" : "Ajouter un commentaire"}
+              <ChevronDown
+                className={cn("h-3 w-3 transition-transform", commentOpen && "rotate-180")}
+              />
+            </button>
+
+            {commentOpen && (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value.slice(0, 1000))}
+                  maxLength={1000}
+                  placeholder="Un mot pour l'équipe (facultatif)"
+                  className="min-h-[80px] text-sm"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                    {comment.length}/1000
+                  </span>
+                  {answered ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => submit(status)}
+                      disabled={pendingAction !== null || !commentDirty}
+                    >
+                      Enregistrer le commentaire
+                    </Button>
+                  ) : (
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                      Envoyé avec votre réponse
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -372,18 +544,25 @@ interface MusicianRow {
   firstName: string | null;
   lastName: string | null;
   instruments: string[];
+  primaryInstrument: string | null;
   isCurrentUser: boolean;
   statuses: Map<number, PresenceStatus | null>;
 }
 
 /** Construit une ligne par musicien à partir des rosters de tous les événements, en
- * conservant l'ordre d'apparition fourni par l'API (déjà groupé par pupitre) et en
- * plaçant le musicien connecté en tête. */
+ * conservant l'ordre d'apparition fourni par l'API (déjà groupé par pupitre). Le
+ * regroupement par pupitre visible dans le tableau est fait séparément par
+ * `groupMembersByPupitre`, à partir de ces lignes. */
 function buildMusicianRows(events: PresenceEvent[], currentUserId: number | null): MusicianRow[] {
   const order: number[] = [];
   const info = new Map<
     number,
-    { firstName: string | null; lastName: string | null; instruments: string[] }
+    {
+      firstName: string | null;
+      lastName: string | null;
+      instruments: string[];
+      primaryInstrument: string | null;
+    }
   >();
   const statuses = new Map<number, Map<number, PresenceStatus | null>>();
 
@@ -394,6 +573,7 @@ function buildMusicianRows(events: PresenceEvent[], currentUserId: number | null
           firstName: member.firstName,
           lastName: member.lastName,
           instruments: member.instruments,
+          primaryInstrument: member.primaryInstrument,
         });
         order.push(member.userId);
       }
@@ -406,26 +586,18 @@ function buildMusicianRows(events: PresenceEvent[], currentUserId: number | null
     }
   }
 
-  const rows: MusicianRow[] = order.map((userId) => {
+  return order.map((userId) => {
     const details = info.get(userId);
     return {
       userId,
       firstName: details?.firstName ?? null,
       lastName: details?.lastName ?? null,
       instruments: details?.instruments ?? [],
+      primaryInstrument: details?.primaryInstrument ?? null,
       isCurrentUser: userId === currentUserId,
       statuses: statuses.get(userId) ?? new Map<number, PresenceStatus | null>(),
     };
   });
-
-  // Array.prototype.sort est stable (garanti depuis ES2019) : seul le musicien
-  // connecté est déplacé en tête, l'ordre relatif des autres est préservé.
-  rows.sort((a, b) => {
-    if (a.isCurrentUser === b.isCurrentUser) return 0;
-    return a.isCurrentUser ? -1 : 1;
-  });
-
-  return rows;
 }
 
 interface CellVisual {
@@ -487,6 +659,7 @@ interface PresenceMatrixProps {
 
 function PresenceMatrix({ events, currentUserId, onEditResponse }: PresenceMatrixProps) {
   const rows = useMemo(() => buildMusicianRows(events, currentUserId), [events, currentUserId]);
+  const groups = useMemo(() => groupMembersByPupitre(rows), [rows]);
 
   const stickyCell =
     "sticky left-0 z-10 min-w-[128px] max-w-[180px] px-3 py-2 text-left align-top shadow-[3px_0_6px_-3px_rgba(0,0,0,0.15)]";
@@ -501,7 +674,7 @@ function PresenceMatrix({ events, currentUserId, onEditResponse }: PresenceMatri
           Qui vient à quelle date
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Votre ligne est en haut du tableau
+          Votre ligne porte le badge « Vous »
           {currentUserId !== null && ", modifiable grâce à l'icône crayon"}.
         </p>
       </div>
@@ -555,81 +728,121 @@ function PresenceMatrix({ events, currentUserId, onEditResponse }: PresenceMatri
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row, index) => {
-              const rowTint = row.isCurrentUser
-                ? "bg-primary/10 dark:bg-primary/15"
-                : index % 2 === 1
-                  ? "bg-gray-50/70 dark:bg-gray-800/20"
-                  : "bg-white dark:bg-gray-900";
-              return (
-                <tr
-                  key={row.userId}
-                  className={cn(
-                    "border-b border-gray-100 last:border-0 dark:border-gray-800",
-                    rowTint
-                  )}
+          {groups.map((group) => (
+            <tbody key={group.key}>
+              <tr>
+                {/* `scope="rowgroup"` : cette cellule décrit les lignes qui suivent, jusqu'au
+                    prochain en-tête de groupe — c'est la sémantique exacte d'un titre de
+                    pupitre. Même pattern que `src/app/admin/PresenceAdmin.tsx`.
+                    Le <th> lui-même n'est PAS sticky : en `colSpan`, il occupe déjà toute la
+                    largeur du tableau, donc son bloc conteneur n'a nulle part où le décaler —
+                    l'offset se clampe à 0 et l'étiquette défilerait avec le reste (vérifié :
+                    elle finissait à −79px). C'est le <span> interne, plus étroit que son
+                    conteneur, qui est sticky : lui a de la place pour glisser vers la gauche
+                    pendant le défilement. Les deux portent le même fond pour que le libellé se
+                    fonde dans la bande de couleur, qui elle reste dans le flux normal. */}
+                <th
+                  scope="rowgroup"
+                  colSpan={events.length + 1}
+                  className="border-b border-t border-gray-200 bg-gray-100/80 p-0 text-left dark:border-gray-700 dark:bg-gray-800/60"
                 >
-                  <th scope="row" className={cn(stickyCell, rowTint)}>
-                    <span className="flex flex-wrap items-center gap-1.5 font-semibold text-gray-900 dark:text-gray-100">
-                      {getFullName(row.firstName, row.lastName)}
-                      {row.isCurrentUser && (
-                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                          Vous
+                  <span className="sticky left-0 z-10 inline-block max-w-[80vw] truncate whitespace-nowrap bg-gray-100/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-800/60 dark:text-gray-300">
+                    {group.label}
+                    <span className="ml-1.5 font-normal normal-case text-gray-400 dark:text-gray-500">
+                      ({group.members.length})
+                    </span>
+                  </span>
+                </th>
+              </tr>
+              {group.members.map((row, index) => {
+                const rowTint = row.isCurrentUser
+                  ? "bg-primary/10 dark:bg-primary/15"
+                  : index % 2 === 1
+                    ? "bg-gray-50/70 dark:bg-gray-800/20"
+                    : "bg-white dark:bg-gray-900";
+                return (
+                  <tr
+                    key={row.userId}
+                    className={cn(
+                      "border-b border-gray-100 last:border-0 dark:border-gray-800",
+                      rowTint
+                    )}
+                  >
+                    <th scope="row" className={cn(stickyCell, rowTint)}>
+                      <span className="flex flex-wrap items-center gap-1.5 font-semibold text-gray-900 dark:text-gray-100">
+                        {getFullName(row.firstName, row.lastName)}
+                        {row.isCurrentUser && (
+                          <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                            Vous
+                          </span>
+                        )}
+                      </span>
+                      {row.instruments.length > 0 && (
+                        <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                          {row.instruments.join(", ")}
                         </span>
                       )}
-                    </span>
-                    <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
-                      {row.instruments.length > 0
-                        ? row.instruments.join(", ")
-                        : INSTRUMENT_WITHOUT_SECTION_LABEL}
-                    </span>
-                  </th>
-                  {events.map((event) => {
-                    const status = row.statuses.get(event.id) ?? null;
-                    const visual = getCellVisual(status);
+                    </th>
+                    {events.map((event) => {
+                      const status = row.statuses.get(event.id) ?? null;
+                      const visual = getCellVisual(status);
 
-                    if (row.isCurrentUser) {
-                      const label = `Modifier votre réponse pour ${event.title} du ${formatDateShortLabel(event.date)}, actuellement : ${visual.label.toLowerCase()}`;
+                      if (row.isCurrentUser) {
+                        // Une prestation passée reste consultable, mais plus modifiable : le
+                        // libellé et l'icône de coin ne doivent jamais promettre une édition
+                        // qui échouerait (le serveur refuse le POST). Le clic ouvre malgré
+                        // tout la carte, qui explique pourquoi c'est fermé.
+                        const cellIsPast = isEventPast(event.date);
+                        const label = cellIsPast
+                          ? `Voir votre réponse pour ${event.title} du ${formatDateShortLabel(event.date)} (prestation passée), actuellement : ${visual.label.toLowerCase()}`
+                          : `Modifier votre réponse pour ${event.title} du ${formatDateShortLabel(event.date)}, actuellement : ${visual.label.toLowerCase()}`;
+                        return (
+                          <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
+                            <button
+                              type="button"
+                              onClick={() => onEditResponse(event.id)}
+                              title={label}
+                              aria-label={label}
+                              className={cn(
+                                "relative mx-auto flex min-h-11 min-w-11 items-center justify-center transition-transform active:scale-95",
+                                visual.shapeClass
+                              )}
+                            >
+                              <visual.Icon className="h-4 w-4" aria-hidden="true" />
+                              <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-gray-300 dark:bg-gray-900 dark:ring-gray-600">
+                                {cellIsPast ? (
+                                  <Lock className="h-2.5 w-2.5 text-gray-500" aria-hidden="true" />
+                                ) : (
+                                  <Pencil
+                                    className="h-2.5 w-2.5 text-gray-500"
+                                    aria-hidden="true"
+                                  />
+                                )}
+                              </span>
+                            </button>
+                          </td>
+                        );
+                      }
+
                       return (
                         <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
-                          <button
-                            type="button"
-                            onClick={() => onEditResponse(event.id)}
-                            title={label}
-                            aria-label={label}
+                          <span
                             className={cn(
-                              "relative mx-auto flex min-h-11 min-w-11 items-center justify-center transition-transform active:scale-95",
+                              "mx-auto flex h-8 w-8 items-center justify-center",
                               visual.shapeClass
                             )}
                           >
                             <visual.Icon className="h-4 w-4" aria-hidden="true" />
-                            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-gray-300 dark:bg-gray-900 dark:ring-gray-600">
-                              <Pencil className="h-2.5 w-2.5 text-gray-500" aria-hidden="true" />
-                            </span>
-                          </button>
+                            <span className="sr-only">{visual.label}</span>
+                          </span>
                         </td>
                       );
-                    }
-
-                    return (
-                      <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
-                        <span
-                          className={cn(
-                            "mx-auto flex h-8 w-8 items-center justify-center",
-                            visual.shapeClass
-                          )}
-                        >
-                          <visual.Icon className="h-4 w-4" aria-hidden="true" />
-                          <span className="sr-only">{visual.label}</span>
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          ))}
         </table>
       </div>
     </section>
@@ -642,14 +855,23 @@ export function MusicianDisponibilites() {
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [openEventId, setOpenEventId] = useState<number | null>(null);
+  // La fenêtre "passé/à venir" est décidée par le serveur (rolling 12 mois) : on ne
+  // fait ici que lui transmettre l'intention, jamais de calcul de date côté client.
+  const [showPast, setShowPast] = useState(false);
+  // Cartes "en sursis" : une réponse vient d'être enregistrée mais la carte reste
+  // affichée encore un instant (voir `armLinger`/`cancelLinger` ci-dessous), pour ne
+  // pas la faire disparaître sous le doigt/curseur du musicien qui vient de répondre.
+  const [lingeringIds, setLingeringIds] = useState<Set<number>>(new Set());
   const focusedCardRef = useRef<HTMLDivElement | null>(null);
-  const closeTimeoutRef = useRef<number | undefined>(undefined);
+  // Un minuteur par carte, jamais un seul minuteur partagé : sinon l'interaction
+  // avec une carte annulerait ou relancerait le sursis d'une autre.
+  const lingerTimersRef = useRef<Map<number, number>>(new Map());
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (includePast: boolean) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/musician/presence");
+      const response = await fetch(`/api/musician/presence${includePast ? "?includePast=1" : ""}`);
       if (!response.ok) {
         throw new Error("Erreur lors du chargement des prestations.");
       }
@@ -668,8 +890,8 @@ export function MusicianDisponibilites() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(showPast);
+  }, [showPast, fetchData]);
 
   useEffect(() => {
     if (openEventId === null) return;
@@ -677,7 +899,11 @@ export function MusicianDisponibilites() {
   }, [openEventId]);
 
   useEffect(() => {
-    return () => window.clearTimeout(closeTimeoutRef.current);
+    const timers = lingerTimersRef.current;
+    return () => {
+      timers.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timers.clear();
+    };
   }, []);
 
   const handleUpdate = useCallback((updatedEvent: PresenceEvent) => {
@@ -690,12 +916,60 @@ export function MusicianDisponibilites() {
     setOpenEventId(eventId);
   }, []);
 
-  const closeFocusedCard = useCallback(() => {
-    window.clearTimeout(closeTimeoutRef.current);
-    closeTimeoutRef.current = window.setTimeout(() => setOpenEventId(null), 900);
+  /** Démarre (ou relance) le délai de 3 s avant que la carte ne quitte la liste. */
+  const armLinger = useCallback((eventId: number) => {
+    const timers = lingerTimersRef.current;
+    const existing = timers.get(eventId);
+    if (existing !== undefined) window.clearTimeout(existing);
+    const timeoutId = window.setTimeout(() => {
+      timers.delete(eventId);
+      setLingeringIds((prev) => {
+        if (!prev.has(eventId)) return prev;
+        const next = new Set(prev);
+        next.delete(eventId);
+        return next;
+      });
+    }, LINGER_DELAY_MS);
+    timers.set(eventId, timeoutId);
   }, []);
 
-  if (loading) {
+  /** Annule le délai en cours pour cette carte, sans toucher aux autres. */
+  const cancelLinger = useCallback((eventId: number) => {
+    const timers = lingerTimersRef.current;
+    const existing = timers.get(eventId);
+    if (existing !== undefined) {
+      window.clearTimeout(existing);
+      timers.delete(eventId);
+    }
+  }, []);
+
+  const handleStatusChanged = useCallback(
+    (eventId: number, status: PresenceStatus | null) => {
+      if (status === null) {
+        // Réponse effacée : plus rien à laisser en sursis pour cette carte, elle
+        // reste visible de toute façon puisqu'elle redevient "sans réponse".
+        cancelLinger(eventId);
+        setLingeringIds((prev) => {
+          if (!prev.has(eventId)) return prev;
+          const next = new Set(prev);
+          next.delete(eventId);
+          return next;
+        });
+        return;
+      }
+      setLingeringIds((prev) => (prev.has(eventId) ? prev : new Set(prev).add(eventId)));
+    },
+    [cancelLinger]
+  );
+
+  // Premier chargement : aucune donnée à montrer, la page entière est un état de
+  // chargement. Bascule ultérieure du filtre passé/à venir : on garde l'affichage
+  // existant et on se contente d'un indicateur discret (cf. `isRefreshing` plus bas),
+  // pour ne pas faire clignoter toute la vue en squelette.
+  const isInitialLoad = loading && events === null;
+  const isRefreshing = loading && events !== null;
+
+  if (isInitialLoad) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -703,7 +977,7 @@ export function MusicianDisponibilites() {
     );
   }
 
-  if (error) {
+  if (error && events === null) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4 py-16 text-center">
         <div className="rounded-full bg-red-50 p-4 dark:bg-red-900/20">
@@ -711,7 +985,7 @@ export function MusicianDisponibilites() {
         </div>
         <p className="text-lg font-medium text-red-600 dark:text-red-400">{error}</p>
         <button
-          onClick={fetchData}
+          onClick={() => fetchData(showPast)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <RefreshCw className="h-4 w-4" />
@@ -721,59 +995,162 @@ export function MusicianDisponibilites() {
     );
   }
 
-  const unansweredCount = (events ?? []).filter((e) => e.response.status === null).length;
+  // Les prestations passées répondent "non" au serveur pour tout POST : leurs
+  // cartes sont donc en lecture seule (voir `isPast` dans PresenceCard) et ne
+  // comptent pas comme "en attente de réponse", puisque l'utilisateur ne peut plus
+  // agir dessus.
+  const unansweredCount = (events ?? []).filter(
+    (e) => e.response.status === null && !isEventPast(e.date)
+  ).length;
   const visibleEvents = (events ?? []).filter(
-    (e) => e.response.status === null || e.id === openEventId
+    (e) => e.response.status === null || e.id === openEventId || lingeringIds.has(e.id)
   );
+  // Le même critère que `unansweredCount` sépare la liste en deux : la file "à
+  // répondre" (jamais de prestation passée, par construction) et une zone de
+  // consultation à part pour ce que le bouton "Prestations passées" a révélé. Sans
+  // cette séparation, une prestation passée sans réponse se mêlait aux cartes en
+  // attente alors même que le compteur ne la comptait pas — le compteur et la
+  // liste se contredisaient visuellement.
+  const pendingEvents = visibleEvents.filter((e) => !isEventPast(e.date));
+  const revealedPastEvents = visibleEvents.filter((e) => isEventPast(e.date));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mes prestations</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">
-          {events && events.length > 0
-            ? unansweredCount > 0
-              ? `${unansweredCount} prestation${unansweredCount > 1 ? "s" : ""} en attente de votre réponse`
-              : "Vous avez répondu pour toutes les prestations à venir"
-            : "Indiquez votre présence pour chaque prestation"}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mes prestations</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
+            {events && events.length > 0
+              ? unansweredCount > 0
+                ? `${unansweredCount} prestation${unansweredCount > 1 ? "s" : ""} en attente de votre réponse`
+                : "Vous avez répondu pour toutes les prestations à venir"
+              : "Indiquez votre présence pour chaque prestation"}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isRefreshing && (
+            <Loader2
+              className="h-3.5 w-3.5 animate-spin text-gray-400 dark:text-gray-500"
+              aria-hidden="true"
+            />
+          )}
+          <Switch
+            id="show-past-events"
+            checked={showPast}
+            onCheckedChange={setShowPast}
+            disabled={isRefreshing}
+          />
+          <Label
+            htmlFor="show-past-events"
+            className="flex cursor-pointer items-center gap-1.5 text-sm font-normal text-gray-500 dark:text-gray-400"
+          >
+            <History className="h-3.5 w-3.5" />
+            Prestations passées
+          </Label>
+        </div>
       </div>
 
-      {!events || events.length === 0 ? (
-        <EmptyState
-          icon={<Calendar className="h-10 w-10" />}
-          title="Aucune prestation ne nécessite votre réponse pour le moment."
-          description="Revenez ici dès qu'une nouvelle date sera annoncée."
-        />
-      ) : (
-        <>
-          {visibleEvents.length > 0 ? (
-            <div className="space-y-4">
-              {visibleEvents.map((event) => (
-                <div key={event.id} ref={event.id === openEventId ? focusedCardRef : undefined}>
-                  <PresenceCard
-                    event={event}
-                    onUpdate={handleUpdate}
-                    onSaved={event.id === openEventId ? closeFocusedCard : undefined}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5 text-sm font-medium text-green-800 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-300">
-              <Check className="h-5 w-5 shrink-0" />
-              Vous avez répondu à toutes les prestations à venir. Le tableau ci-dessous récapitule
-              qui vient.
-            </div>
-          )}
-
-          <PresenceMatrix
-            events={events}
-            currentUserId={currentUserId}
-            onEditResponse={handleEditResponse}
-          />
-        </>
+      {error && events !== null && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => fetchData(showPast)}
+            className="inline-flex items-center gap-1.5 font-medium underline-offset-2 hover:underline"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Réessayer
+          </button>
+        </div>
       )}
+
+      <div
+        className={cn(isRefreshing && "pointer-events-none opacity-60 transition-opacity")}
+        aria-busy={isRefreshing}
+      >
+        {!events || events.length === 0 ? (
+          <EmptyState
+            icon={<Calendar className="h-10 w-10" />}
+            title={
+              showPast
+                ? "Aucune prestation sur les 12 derniers mois."
+                : "Aucune prestation ne nécessite votre réponse pour le moment."
+            }
+            description="Revenez ici dès qu'une nouvelle date sera annoncée."
+          />
+        ) : (
+          <div className="space-y-6">
+            {pendingEvents.length > 0 ? (
+              <div className="space-y-4">
+                {pendingEvents.map((event) => (
+                  <div key={event.id} ref={event.id === openEventId ? focusedCardRef : undefined}>
+                    <PresenceCard
+                      event={event}
+                      onUpdate={handleUpdate}
+                      onStatusChanged={handleStatusChanged}
+                      onLingerArm={armLinger}
+                      onLingerCancel={cancelLinger}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5 text-sm font-medium text-green-800 dark:border-green-900/40 dark:bg-green-950/20 dark:text-green-300">
+                <Check className="h-5 w-5 shrink-0" />
+                Vous avez répondu à toutes les prestations à venir. Le tableau ci-dessous récapitule
+                qui vient.
+              </div>
+            )}
+
+            {/* Zone à part, jamais mêlée à la file "à répondre" ci-dessus : ce sont des
+                prestations révélées par le bouton "Prestations passées", pas des cartes en
+                attente — le compteur d'en-tête ne les compte déjà plus, la mise en page doit
+                le confirmer plutôt que le contredire. */}
+            {revealedPastEvents.length > 0 && (
+              <section
+                aria-labelledby="past-events-heading"
+                className="space-y-3 border-t border-dashed border-gray-200 pt-4 dark:border-gray-700"
+              >
+                <div>
+                  <h2
+                    id="past-events-heading"
+                    className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 dark:text-gray-300"
+                  >
+                    <History className="h-4 w-4" aria-hidden="true" />
+                    Prestations passées
+                  </h2>
+                  <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                    Terminées : elles ne sont plus comptées ni modifiables.
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  {revealedPastEvents.map((event) => (
+                    <div key={event.id} ref={event.id === openEventId ? focusedCardRef : undefined}>
+                      <PresenceCard
+                        event={event}
+                        onUpdate={handleUpdate}
+                        onStatusChanged={handleStatusChanged}
+                        onLingerArm={armLinger}
+                        onLingerCancel={cancelLinger}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <PresenceMatrix
+              events={events}
+              currentUserId={currentUserId}
+              onEditResponse={handleEditResponse}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

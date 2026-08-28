@@ -232,6 +232,7 @@ export interface HarmonieInstrumentRecord {
   id: number;
   user_id: number;
   instrument_name: string;
+  is_primary: number;
   created_at: string;
 }
 

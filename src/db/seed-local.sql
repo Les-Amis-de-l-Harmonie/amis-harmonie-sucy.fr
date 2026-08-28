@@ -82,18 +82,19 @@ VALUES
   (9, 9, 'Claire', 'Moreau', 'Sucy-en-Brie', 0, 1, '2026-08-01 10:08:00', '2026-08-01 10:08:00'),
   (10, 10, 'Paul', 'Simon', 'Sucy-en-Brie', 1, 1, '2026-08-01 10:09:00', '2026-08-01 10:09:00');
 
-INSERT OR IGNORE INTO harmonie_instruments (id, user_id, instrument_name, created_at)
+INSERT OR IGNORE INTO harmonie_instruments (id, user_id, instrument_name, is_primary, created_at)
 VALUES
-  (1, 1, 'Chef d''orchestre', '2026-08-01 11:00:00'),
-  (2, 2, 'Clarinette', '2026-08-01 11:01:00'),
-  (3, 3, 'Flûte traversière', '2026-08-01 11:02:00'),
-  (4, 4, 'Saxophone alto', '2026-08-01 11:03:00'),
-  (5, 5, 'Trompette', '2026-08-01 11:04:00'),
-  (6, 6, 'Trombone', '2026-08-01 11:05:00'),
-  (7, 7, 'Cor', '2026-08-01 11:06:00'),
-  (8, 7, 'Euphonium', '2026-08-01 11:07:00'),
-  (9, 9, 'Batterie', '2026-08-01 11:08:00'),
-  (10, 10, 'Tuba', '2026-08-01 11:09:00');
+  (1, 1, 'Chef d''orchestre', 1, '2026-08-01 11:00:00'),
+  (2, 2, 'Clarinette', 1, '2026-08-01 11:01:00'),
+  (3, 3, 'Flûte traversière', 1, '2026-08-01 11:02:00'),
+  (4, 4, 'Saxophone alto', 1, '2026-08-01 11:03:00'),
+  (5, 5, 'Trompette', 1, '2026-08-01 11:04:00'),
+  (6, 6, 'Trombone', 0, '2026-08-01 11:05:00'),
+  (7, 7, 'Cor', 0, '2026-08-01 11:06:00'),
+  (8, 7, 'Euphonium', 1, '2026-08-01 11:07:00'),
+  (9, 9, 'Batterie', 1, '2026-08-01 11:08:00'),
+  (10, 10, 'Tuba', 1, '2026-08-01 11:09:00'),
+  (11, 6, 'Chef adjoint', 1, '2026-08-01 11:10:00');
 
 INSERT OR IGNORE INTO event_presences
   (id, event_id, user_id, status, comment, status_changed_at, created_at, updated_at)

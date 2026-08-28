@@ -1,4 +1,4 @@
-import { compareInstruments, INSTRUMENT_WITHOUT_SECTION_LABEL } from "@/lib/instruments";
+import { compareInstruments } from "@/lib/instruments";
 
 // Cette requête alimente la réponse envoyée aux musiciens : ne JAMAIS y ajouter la colonne
 // `comment`. Les commentaires sont joints séparément, côté administration uniquement
@@ -18,6 +18,7 @@ export const PRESENCE_MEMBER_QUERY = `SELECT
   mp.first_name        AS firstName,
   mp.last_name         AS lastName,
   hi.instrument_name   AS instrument,
+  hi.is_primary        AS isPrimary,
   ep.status            AS status,
   ep.status_changed_at AS statusChangedAt
 FROM users u
@@ -82,6 +83,7 @@ export interface PresenceRow {
   firstName: string | null;
   lastName: string | null;
   instrument: string | null;
+  isPrimary: number | null;
   status: "present" | "absent" | null;
   statusChangedAt: string | null;
 }
@@ -91,16 +93,8 @@ export interface PresenceMember {
   firstName: string | null;
   lastName: string | null;
   instruments: string[];
+  primaryInstrument: string | null;
   status: "present" | "absent" | null;
-  changedAfterDeadline: boolean;
-}
-
-export interface InstrumentBreakdown {
-  instrument: string;
-  present: number;
-  absent: number;
-  noAnswer: number;
-  members: PresenceMember[];
 }
 
 export interface PresenceSummary {
@@ -108,11 +102,7 @@ export interface PresenceSummary {
   present: number;
   absent: number;
   noAnswer: number;
-  responseRate: number;
   members: PresenceMember[];
-  byInstrument: InstrumentBreakdown[];
-  nonResponders: PresenceMember[];
-  lateChanges: PresenceMember[];
 }
 
 interface PresenceMemberAccumulator {
@@ -120,11 +110,14 @@ interface PresenceMemberAccumulator {
   firstName: string | null;
   lastName: string | null;
   instruments: Set<string>;
+  primaryInstruments: Set<string>;
   status: "present" | "absent" | null;
-  changedAfterDeadline: boolean;
 }
 
-function compareMembersByName(a: PresenceMember, b: PresenceMember): number {
+export function compareMembersByName(
+  a: { userId: number; firstName: string | null; lastName: string | null },
+  b: { userId: number; firstName: string | null; lastName: string | null }
+): number {
   const lastNameComparison = (a.lastName ?? "")
     .toLocaleLowerCase("fr")
     .localeCompare((b.lastName ?? "").toLocaleLowerCase("fr"), "fr");
@@ -137,7 +130,10 @@ function compareMembersByName(a: PresenceMember, b: PresenceMember): number {
   return a.userId - b.userId;
 }
 
-function hasChangedAfterDeadline(statusChangedAt: string | null, responseDeadline: string | null) {
+export function hasChangedAfterDeadline(
+  statusChangedAt: string | null,
+  responseDeadline: string | null
+) {
   return (
     responseDeadline !== null &&
     statusChangedAt !== null &&
@@ -145,10 +141,7 @@ function hasChangedAfterDeadline(statusChangedAt: string | null, responseDeadlin
   );
 }
 
-export function summarisePresence(
-  rows: PresenceRow[],
-  responseDeadline: string | null
-): PresenceSummary {
+export function summarisePresence(rows: PresenceRow[]): PresenceSummary {
   const memberAccumulators = new Map<number, PresenceMemberAccumulator>();
 
   for (const row of rows) {
@@ -159,19 +152,18 @@ export function summarisePresence(
         firstName: row.firstName,
         lastName: row.lastName,
         instruments: new Set<string>(),
+        primaryInstruments: new Set<string>(),
         status: row.status,
-        changedAfterDeadline: hasChangedAfterDeadline(row.statusChangedAt, responseDeadline),
       };
       memberAccumulators.set(row.userId, accumulator);
     } else {
       accumulator.status ??= row.status;
-      accumulator.changedAfterDeadline ||= hasChangedAfterDeadline(
-        row.statusChangedAt,
-        responseDeadline
-      );
     }
 
     if (row.instrument !== null) accumulator.instruments.add(row.instrument);
+    if (row.instrument !== null && row.isPrimary === 1) {
+      accumulator.primaryInstruments.add(row.instrument);
+    }
   }
 
   const members = Array.from(memberAccumulators.values())
@@ -180,40 +172,15 @@ export function summarisePresence(
       firstName: accumulator.firstName,
       lastName: accumulator.lastName,
       instruments: Array.from(accumulator.instruments).sort(compareInstruments),
+      primaryInstrument:
+        // Garde-fou défensif : la sélection côté groupes gère les données obsolètes.
+        Array.from(accumulator.primaryInstruments)
+          .filter((instrument) => accumulator.instruments.has(instrument))
+          .sort(compareInstruments)[0] ??
+        Array.from(accumulator.instruments).sort(compareInstruments)[0] ??
+        null,
       status: accumulator.status,
-      changedAfterDeadline: accumulator.changedAfterDeadline,
     }))
-    .sort(compareMembersByName);
-
-  const byInstrumentMap = new Map<string, InstrumentBreakdown>();
-  for (const member of members) {
-    const instruments =
-      member.instruments.length > 0 ? member.instruments : [INSTRUMENT_WITHOUT_SECTION_LABEL];
-
-    for (const instrument of instruments) {
-      let breakdown = byInstrumentMap.get(instrument);
-      if (!breakdown) {
-        breakdown = { instrument, present: 0, absent: 0, noAnswer: 0, members: [] };
-        byInstrumentMap.set(instrument, breakdown);
-      }
-
-      if (member.status === "present") breakdown.present++;
-      else if (member.status === "absent") breakdown.absent++;
-      else breakdown.noAnswer++;
-      breakdown.members.push(member);
-    }
-  }
-
-  const byInstrument = Array.from(byInstrumentMap.values()).sort((a, b) => {
-    if (a.instrument === INSTRUMENT_WITHOUT_SECTION_LABEL) return 1;
-    if (b.instrument === INSTRUMENT_WITHOUT_SECTION_LABEL) return -1;
-    return compareInstruments(a.instrument, b.instrument);
-  });
-  const nonResponders = members
-    .filter((member) => member.status === null)
-    .sort(compareMembersByName);
-  const lateChanges = members
-    .filter((member) => member.changedAfterDeadline)
     .sort(compareMembersByName);
   const present = members.filter((member) => member.status === "present").length;
   const absent = members.filter((member) => member.status === "absent").length;
@@ -224,10 +191,6 @@ export function summarisePresence(
     present,
     absent,
     noAnswer,
-    responseRate: members.length === 0 ? 0 : (present + absent) / members.length,
     members,
-    byInstrument,
-    nonResponders,
-    lateChanges,
   };
 }

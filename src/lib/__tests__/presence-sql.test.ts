@@ -1,11 +1,7 @@
 // @vitest-environment node
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
-import {
-  PRESENCE_MEMBER_QUERY,
-  summarisePresence,
-  type PresenceRow,
-} from "../presence";
+import { PRESENCE_MEMBER_QUERY, summarisePresence, type PresenceRow } from "../presence";
 
 describe("PRESENCE_MEMBER_QUERY", () => {
   it("selects only eligible members and preserves one row per harmonie instrument", () => {
@@ -49,6 +45,7 @@ describe("PRESENCE_MEMBER_QUERY", () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         instrument_name TEXT NOT NULL,
+        is_primary INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
       CREATE TABLE event_presences (
@@ -99,21 +96,41 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     insertInstrument.run(4, "Clarinette");
     insertInstrument.run(5, "Saxophone alto");
     insertInstrument.run(6, "Chef d'orchestre");
+    insertInstrument.run(6, "Chef adjoint");
+    database
+      .prepare(
+        "UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id = 2 AND instrument_name = ?"
+      )
+      .run("Trompette");
+    database.prepare("UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id = 6").run();
     insertPresence.run(42, 1, "present", "2026-09-01 10:00:00");
     insertPresence.run(42, 2, "absent", "2026-09-01 11:00:00");
     insertPresence.run(42, 6, "present", "2026-09-01 12:00:00");
 
-    const rows: PresenceRow[] = database.prepare(PRESENCE_MEMBER_QUERY).all(42).map((result) => ({
-      userId: result.userId as number,
-      firstName: result.firstName as string | null,
-      lastName: result.lastName as string | null,
-      instrument: result.instrument as string | null,
-      status: result.status as PresenceRow["status"],
-      statusChangedAt: result.statusChangedAt as string | null,
-    }));
+    const rows: PresenceRow[] = database
+      .prepare(PRESENCE_MEMBER_QUERY)
+      .all(42)
+      .map((result) => ({
+        userId: result.userId as number,
+        firstName: result.firstName as string | null,
+        lastName: result.lastName as string | null,
+        instrument: result.instrument as string | null,
+        isPrimary: result.isPrimary as number | null,
+        status: result.status as PresenceRow["status"],
+        statusChangedAt: result.statusChangedAt as string | null,
+      }));
 
-    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([1, 2, 2, 3, 4, 6]);
+    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([1, 2, 2, 3, 4, 6, 6]);
     expect(rows.filter((row) => row.userId === 2)).toHaveLength(2);
+    expect(
+      summarisePresence(rows).members.find((member) => member.userId === 2)?.primaryInstrument
+    ).toBe("Trompette");
+    expect(
+      summarisePresence(rows).members.find((member) => member.userId === 1)?.primaryInstrument
+    ).toBe("Flûte traversière");
+    expect(
+      summarisePresence(rows).members.find((member) => member.userId === 6)?.primaryInstrument
+    ).toBe("Chef d'orchestre");
     expect(rows.find((row) => row.userId === 3)?.instrument).toBeNull();
     // Non à jour de sa cotisation : PRÉSENT dans l'effectif. L'adhésion est remise à
     // zéro à chaque saison ; la filtrer viderait le dénominateur pendant des mois.
@@ -125,26 +142,120 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     // Administrateur sans instrument : hors effectif.
     expect(rows.some((row) => row.userId === 7)).toBe(false);
 
-    const summary = summarisePresence(rows, "2026-09-01");
-    expect(summary.totalMembers).toBe(5);
-    expect(summary.lateChanges).toHaveLength(0);
+    expect(summarisePresence(rows).totalMembers).toBe(5);
 
-    insertPresence.run(42, 3, "present", "2026-09-02 10:00:00");
-    const lateRows: PresenceRow[] = database
-      .prepare(PRESENCE_MEMBER_QUERY)
-      .all(42)
-      .map((result) => ({
-        userId: result.userId as number,
-        firstName: result.firstName as string | null,
-        lastName: result.lastName as string | null,
-        instrument: result.instrument as string | null,
-        status: result.status as PresenceRow["status"],
-        statusChangedAt: result.statusChangedAt as string | null,
-      }));
-    const summaryWithLateChange = summarisePresence(lateRows, "2026-09-01");
-    expect(summaryWithLateChange.lateChanges).toHaveLength(1);
-    expect(summaryWithLateChange.lateChanges[0]?.userId).toBe(3);
+    database.close();
+  });
 
+  it("choisit le principal marqué avec le même résultat quel que soit l'ordre", () => {
+    const rows: PresenceRow[] = [
+      {
+        userId: 1,
+        firstName: "A",
+        lastName: "Un",
+        instrument: "Trompette",
+        isPrimary: 1,
+        status: null,
+        statusChangedAt: null,
+      },
+      {
+        userId: 1,
+        firstName: "A",
+        lastName: "Un",
+        instrument: "Clarinette",
+        isPrimary: 0,
+        status: null,
+        statusChangedAt: null,
+      },
+      {
+        userId: 2,
+        firstName: "B",
+        lastName: "Deux",
+        instrument: "Trompette",
+        isPrimary: 0,
+        status: null,
+        statusChangedAt: null,
+      },
+      {
+        userId: 2,
+        firstName: "B",
+        lastName: "Deux",
+        instrument: "Clarinette",
+        isPrimary: 0,
+        status: null,
+        statusChangedAt: null,
+      },
+      {
+        userId: 3,
+        firstName: "C",
+        lastName: "Trois",
+        instrument: "Trompette",
+        isPrimary: 1,
+        status: null,
+        statusChangedAt: null,
+      },
+      {
+        userId: 3,
+        firstName: "C",
+        lastName: "Trois",
+        instrument: "Clarinette",
+        isPrimary: 1,
+        status: null,
+        statusChangedAt: null,
+      },
+    ];
+    const summary = summarisePresence(rows);
+
+    expect(summary.members.map((member) => member.primaryInstrument)).toEqual([
+      "Clarinette",
+      "Clarinette",
+      "Trompette",
+    ]);
+  });
+
+  it("applique le rattrapage du principal sur l'id le plus bas", () => {
+    const database = new DatabaseSync(":memory:");
+    database.exec(`
+      CREATE TABLE harmonie_instruments (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        instrument_name TEXT NOT NULL,
+        is_primary INTEGER NOT NULL DEFAULT 0
+      );
+      INSERT INTO harmonie_instruments (id, user_id, instrument_name) VALUES
+        (20, 2, 'Trompette'),
+        (10, 1, 'Clarinette'),
+        (15, 1, 'Trombone'),
+        (30, 2, 'Cor');
+    `);
+    database.exec(`
+      UPDATE harmonie_instruments
+      SET is_primary = 1
+      WHERE id IN (SELECT MIN(id) FROM harmonie_instruments GROUP BY user_id);
+    `);
+
+    const rows = database
+      .prepare("SELECT user_id, id, is_primary FROM harmonie_instruments ORDER BY id")
+      .all() as Array<{ user_id: number; id: number; is_primary: number }>;
+    expect(rows.filter((row) => row.is_primary === 1).map((row) => row.id)).toEqual([10, 20]);
+    database.close();
+  });
+});
+
+describe("filtrage JSON des événements de présence", () => {
+  it("accepte les identifiants JSON numériques et rejette les chaînes", () => {
+    const database = new DatabaseSync(":memory:");
+    database.exec("CREATE TABLE event_presences (event_id INTEGER NOT NULL)");
+    database.exec("INSERT INTO event_presences (event_id) VALUES (42), (43), (99)");
+
+    const query =
+      "SELECT event_id FROM event_presences WHERE event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer') ORDER BY event_id";
+
+    expect(database.prepare(query).all(JSON.stringify([42, 43]))).toEqual([
+      { event_id: 42 },
+      { event_id: 43 },
+    ]);
+    expect(database.prepare(query).all(JSON.stringify(["42", "43"]))).toEqual([]);
     database.close();
   });
 });

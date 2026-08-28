@@ -41,6 +41,7 @@ import {
   Download,
   Users,
   Check,
+  Star,
 } from "lucide-react";
 import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
 import { InstrumentEditor } from "@/app/components/shared/InstrumentEditor";
@@ -48,6 +49,9 @@ import { EmptyState } from "@/app/components/ui/empty-state";
 import type { UserRole } from "@/db/types";
 import { isSuperAdmin, HARMONIE_INSTRUMENTS } from "@/db/types";
 import { Pagination } from "@/app/components/ui/pagination";
+import { compareInstruments, resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
+import { cn } from "@/lib/utils";
+
 function lastSundayOfMonthUTC(year: number, monthIndex0: number) {
   const d = new Date(Date.UTC(year, monthIndex0 + 1, 0));
   const dow = d.getUTCDay();
@@ -141,6 +145,7 @@ interface UserWithProfile {
   adhesion_2026_2027?: number | null;
   instruments?: { instrument_name: string; start_date?: string | null; level?: string | null }[];
   harmonieInstruments?: string[];
+  primaryHarmonieInstrument?: string | null;
 }
 
 interface UsersAdminClientProps {
@@ -201,12 +206,19 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     setError(null);
     try {
       const isNew = !editing.id;
+      const payload = {
+        ...editing,
+        primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
+          editing.harmonieInstruments || [],
+          editing.primaryHarmonieInstrument
+        ),
+      };
       const response = await fetch(
         isNew ? "/api/admin/users" : `/api/admin/users?id=${editing.id}`,
         {
           method: isNew ? "POST" : "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editing),
+          body: JSON.stringify(payload),
         }
       );
       const data = (await response.json()) as { error?: string };
@@ -389,6 +401,10 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     if (!userToEdit.instruments || userToEdit.instruments.length === 0) {
       userToEdit.instruments = [{ instrument_name: "", start_date: "", level: "" }];
     }
+    userToEdit.primaryHarmonieInstrument = resolveDeclaredPrimaryInstrument(
+      userToEdit.harmonieInstruments || [],
+      userToEdit.primaryHarmonieInstrument ?? null
+    );
     setEditing(userToEdit);
     setError(null);
     setDialogOpen(true);
@@ -1038,29 +1054,32 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                         </div>
                       </div>
                       <div className="grid gap-2 col-span-2">
-                        <Label>
-                          Instrument(s) joué(s) à l'Harmonie
-                        </Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                        <Label>Instrument(s) joué(s) à l'Harmonie</Label>
+                        <div
+                          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+                          role="group"
+                          aria-label="Instruments joués à l'Harmonie"
+                        >
                           {HARMONIE_INSTRUMENTS.map((instrument) => {
-                            const isSelected = editing.harmonieInstruments?.includes(instrument);
+                            const currentInstruments = editing.harmonieInstruments || [];
+                            const isSelected = currentInstruments.includes(instrument);
                             return (
                               <button
                                 key={instrument}
                                 type="button"
+                                aria-pressed={isSelected}
                                 onClick={() => {
-                                  const current = editing.harmonieInstruments || [];
-                                  if (isSelected) {
-                                    setEditing({
-                                      ...editing,
-                                      harmonieInstruments: current.filter((i) => i !== instrument),
-                                    });
-                                  } else {
-                                    setEditing({
-                                      ...editing,
-                                      harmonieInstruments: [...current, instrument],
-                                    });
-                                  }
+                                  const nextInstruments = isSelected
+                                    ? currentInstruments.filter((i) => i !== instrument)
+                                    : [...currentInstruments, instrument];
+                                  setEditing({
+                                    ...editing,
+                                    harmonieInstruments: nextInstruments,
+                                    primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
+                                      nextInstruments,
+                                      editing.primaryHarmonieInstrument
+                                    ),
+                                  });
                                 }}
                                 className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 cursor-pointer ${
                                   isSelected
@@ -1074,6 +1093,95 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                             );
                           })}
                         </div>
+
+                        {(() => {
+                          const instruments = editing.harmonieInstruments || [];
+                          if (instruments.length === 1) {
+                            return (
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                                <Star className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
+                                <span>
+                                  <span className="font-medium text-foreground">
+                                    {instruments[0]}
+                                  </span>{" "}
+                                  est automatiquement l'instrument principal.
+                                </span>
+                              </p>
+                            );
+                          }
+                          if (instruments.length >= 2) {
+                            const primary = resolveDeclaredPrimaryInstrument(
+                              instruments,
+                              editing.primaryHarmonieInstrument
+                            );
+                            return (
+                              <div
+                                className={cn(
+                                  "rounded-lg border p-3 space-y-2 transition-colors",
+                                  primary
+                                    ? "border-border bg-muted/30"
+                                    : "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-900/10"
+                                )}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <Star
+                                    className={cn(
+                                      "w-4 h-4 mt-0.5 flex-shrink-0",
+                                      primary
+                                        ? "text-primary fill-primary"
+                                        : "text-amber-600 dark:text-amber-500"
+                                    )}
+                                  />
+                                  <div className="space-y-0.5">
+                                    <p className="text-sm font-medium text-foreground">
+                                      Instrument principal (pupitre){" "}
+                                      <span className="text-red-500">*</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Plusieurs instruments sont sélectionnés : indiquez
+                                      l'instrument principal de ce musicien.
+                                    </p>
+                                  </div>
+                                </div>
+                                <div
+                                  className="flex flex-wrap gap-2"
+                                  role="radiogroup"
+                                  aria-label="Instrument principal"
+                                >
+                                  {instruments
+                                    .slice()
+                                    .sort(compareInstruments)
+                                    .map((instrument) => {
+                                      const checked = primary === instrument;
+                                      return (
+                                        <button
+                                          key={instrument}
+                                          type="button"
+                                          role="radio"
+                                          aria-checked={checked}
+                                          onClick={() =>
+                                            setEditing({
+                                              ...editing,
+                                              primaryHarmonieInstrument: instrument,
+                                            })
+                                          }
+                                          className={cn(
+                                            "px-3 py-1.5 text-sm rounded-full border transition-colors cursor-pointer",
+                                            checked
+                                              ? "bg-primary text-primary-foreground border-primary"
+                                              : "bg-card border-border hover:bg-muted"
+                                          )}
+                                        >
+                                          {instrument}
+                                        </button>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       <div className="grid gap-3 col-span-2">
                         <Label>Droit à l'image</Label>
@@ -1279,7 +1387,24 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleSave} disabled={saving || !editing?.email}>
+            <Button
+              onClick={handleSave}
+              disabled={
+                saving ||
+                !editing?.email ||
+                // La règle suit les instruments déclarés, jamais le rôle : le chef
+                // d'orchestre est un ADMIN qui joue, et il fait partie de l'effectif de
+                // référence (voir src/lib/presence.ts). Le conditionner à MUSICIAN
+                // laisserait passer un chef sans pupitre, refusé ensuite par l'API.
+                !!(
+                  (editing?.harmonieInstruments || []).length >= 2 &&
+                  !resolveDeclaredPrimaryInstrument(
+                    editing?.harmonieInstruments || [],
+                    editing?.primaryHarmonieInstrument
+                  )
+                )
+              }
+            >
               {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
@@ -1412,11 +1537,31 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       <Label className="text-muted-foreground">
                         Instrument(s) joué(s) à l'Harmonie
                       </Label>
-                      <p className="text-sm font-medium">
-                        {viewing.harmonieInstruments && viewing.harmonieInstruments.length > 0
-                          ? viewing.harmonieInstruments.join(", ")
-                          : "-"}
-                      </p>
+                      {viewing.harmonieInstruments && viewing.harmonieInstruments.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {viewing.harmonieInstruments.map((instrument) => {
+                            const isPrimary = instrument === viewing.primaryHarmonieInstrument;
+                            return (
+                              <span
+                                key={instrument}
+                                className={cn(
+                                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                                  isPrimary
+                                    ? "bg-primary/10 text-primary border-primary/30"
+                                    : "bg-muted text-muted-foreground border-transparent"
+                                )}
+                              >
+                                {isPrimary && (
+                                  <Star className="w-3 h-3 fill-primary flex-shrink-0" />
+                                )}
+                                {instrument}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium">-</p>
+                      )}
                     </div>
                     <div className="grid gap-2 mt-4">
                       <Label className="text-muted-foreground">Droit à l'image</Label>

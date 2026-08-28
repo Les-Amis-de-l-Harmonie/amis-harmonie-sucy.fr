@@ -19,6 +19,7 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
+
 describe("handleUsersApi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -55,6 +56,7 @@ describe("handleUsersApi", () => {
         role: "MUSICIAN",
         instruments: [{ instrument_name: "Clarinette", start_date: null, level: null }],
         harmonieInstruments: ["Flute"],
+        primaryHarmonieInstrument: "Flute",
       },
     ]);
   });
@@ -77,6 +79,7 @@ describe("handleUsersApi", () => {
       email: "u@test.fr",
       instruments: [{ instrument_name: "Trompette", start_date: "2024-01-01", level: "2" }],
       harmonieInstruments: ["Cor"],
+      primaryHarmonieInstrument: "Cor",
     });
   });
 
@@ -151,6 +154,45 @@ describe("handleUsersApi", () => {
     expect(mockDb.batch).toHaveBeenCalledTimes(1);
   });
 
+  it("résout l'utilisateur par email pour les instruments d'harmonie créés en batch", async () => {
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
+    vi.mocked(verifySession).mockResolvedValueOnce({
+      id: 99,
+      email: "super@test.fr",
+      role: "SUPER_ADMIN",
+      is_active: 1,
+      created_at: "2026-01-01",
+      last_login: null,
+      sessionId: "s-batch-primary",
+    });
+    mockDb.queueFirst(null);
+    mockDb.batch.mockResolvedValueOnce([{ meta: { last_row_id: 12 } }]);
+
+    const response = await handleUsersApi(
+      new Request("https://test.local/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "  NEW@TEST.FR ",
+          role: "MUSICIAN",
+          harmonieInstruments: ["Cor", "Trompette"],
+          primaryHarmonieInstrument: "Trompette",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const harmonieInsert = mockDb.calls.find((call) =>
+      call.sql.includes("INSERT INTO harmonie_instruments")
+    );
+    expect(harmonieInsert?.sql).toBe(
+      "INSERT INTO harmonie_instruments (user_id, instrument_name, is_primary) VALUES ((SELECT id FROM users WHERE email = ?), ?, ?)"
+    );
+    expect(harmonieInsert?.sql).not.toContain("last_insert_rowid()");
+    expect(harmonieInsert?.binds).toEqual(["new@test.fr", "Cor", 0]);
+  });
+
   it("returns 403 for PUT on another user when not super admin", async () => {
     vi.mocked(verifySession).mockResolvedValueOnce({
       id: 1,
@@ -211,6 +253,40 @@ describe("handleUsersApi", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
+    expect(mockDb.calls.some((call) => call.sql.includes("DELETE FROM harmonie_instruments"))).toBe(
+      false
+    );
+  });
+
+  it("exige un instrument principal pour plusieurs instruments d'harmonie", async () => {
+    applyMockEnv(createMockDb());
+    vi.mocked(verifySession).mockResolvedValueOnce({
+      id: 2,
+      email: "admin@test.fr",
+      role: "ADMIN",
+      is_active: 1,
+      created_at: "2026-01-01",
+      last_login: null,
+      sessionId: "s-validation",
+    });
+
+    const response = await handleUsersApi(
+      new Request("https://test.local/api/admin/users?id=2", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "update@test.fr",
+          role: "ADMIN",
+          is_active: 1,
+          harmonieInstruments: ["Cor", "Trompette"],
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      error: expect.stringContaining("instrument principal"),
+    });
   });
 
   it("returns 405 on unsupported method", async () => {

@@ -9,10 +9,12 @@ import type {
 } from "@/db/types";
 
 import { logger } from "@/lib/logger";
+import { resolvePrimaryFromRows, validateHarmonieInstruments } from "@/lib/instruments";
 
 interface ProfileWithInstruments extends MusicianProfile {
   instruments: MusicianInstrument[];
   harmonieInstruments: string[];
+  primaryHarmonieInstrument?: string | null;
   email: string;
   insuranceInstruments: InsuranceInstrument[];
   insurance_complete: boolean;
@@ -23,6 +25,11 @@ interface IdeaInput {
   description: string;
   category: IdeaCategory;
   is_public: boolean;
+}
+
+interface HarmonieInstrumentRow {
+  instrument_name: string;
+  is_primary: number;
 }
 
 export async function handleMusicianProfileApi(request: Request): Promise<Response> {
@@ -59,10 +66,11 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         .all<MusicianInstrument>();
 
       const harmonieInstruments = await env.DB.prepare(
-        "SELECT instrument_name FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
+        "SELECT instrument_name, is_primary FROM harmonie_instruments WHERE user_id = ? ORDER BY instrument_name ASC"
       )
         .bind(user.id)
-        .all<{ instrument_name: string }>();
+        .all<HarmonieInstrumentRow>();
+      const harmonieInstrumentRows = harmonieInstruments.results || [];
 
       const insuranceInstruments = await env.DB.prepare(
         "SELECT * FROM insurance_instruments WHERE user_id = ? ORDER BY id ASC"
@@ -87,7 +95,8 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
           image_consent: isFreshProfile ? null : profile.image_consent,
           email: userData?.email || "",
           instruments: instruments.results || [],
-          harmonieInstruments: (harmonieInstruments.results || []).map((i) => i.instrument_name),
+          harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
+          primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
           insuranceInstruments: insuranceInstrumentsList,
           insurance_complete,
         }),
@@ -99,6 +108,16 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
 
     if (request.method === "PUT") {
       const data = (await request.json()) as Partial<ProfileWithInstruments>;
+      const harmonieData = validateHarmonieInstruments(
+        data.harmonieInstruments,
+        data.primaryHarmonieInstrument
+      );
+      if (typeof harmonieData === "string") {
+        return new Response(JSON.stringify({ error: harmonieData }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
       await env.DB.prepare(
         `
@@ -134,22 +153,20 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         .run();
 
       // Save harmonie instruments
-      if (data.harmonieInstruments !== undefined) {
+      if (harmonieData !== null) {
         await env.DB.prepare("DELETE FROM harmonie_instruments WHERE user_id = ?")
           .bind(user.id)
           .run();
 
-        for (const instrumentName of data.harmonieInstruments) {
-          if (instrumentName?.trim()) {
-            await env.DB.prepare(
-              `
-              INSERT INTO harmonie_instruments (user_id, instrument_name)
-              VALUES (?, ?)
+        for (const instrumentName of harmonieData.instruments) {
+          await env.DB.prepare(
             `
-            )
-              .bind(user.id, instrumentName.trim())
-              .run();
-          }
+            INSERT INTO harmonie_instruments (user_id, instrument_name, is_primary)
+            VALUES (?, ?, ?)
+          `
+          )
+            .bind(user.id, instrumentName, instrumentName === harmonieData.primary ? 1 : 0)
+            .run();
         }
       }
 

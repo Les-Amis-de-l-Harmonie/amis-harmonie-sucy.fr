@@ -11,15 +11,18 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
-import { Save, Loader2, Check } from "lucide-react";
+import { Save, Loader2, Check, Star } from "lucide-react";
 import type { MusicianProfile } from "@/db/types";
 import { HARMONIE_INSTRUMENTS } from "@/db/types";
 import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
 import { InstrumentEditor, type Instrument } from "@/app/components/shared/InstrumentEditor";
+import { compareInstruments, resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
+import { cn } from "@/lib/utils";
 
 interface ProfileWithInstruments extends Partial<MusicianProfile> {
   instruments?: Instrument[];
   harmonieInstruments?: string[];
+  primaryHarmonieInstrument?: string | null;
   email?: string;
 }
 
@@ -122,6 +125,10 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         if (!data.harmonieInstruments) {
           data.harmonieInstruments = [];
         }
+        data.primaryHarmonieInstrument = resolveDeclaredPrimaryInstrument(
+          data.harmonieInstruments,
+          data.primaryHarmonieInstrument ?? null
+        );
         setProfile(data);
       }
     } catch (err) {
@@ -148,6 +155,14 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     if (!profile.harmonie_start_date?.trim()) errors.push("Date d'entrée à l'Harmonie");
     if (!profile.harmonieInstruments || profile.harmonieInstruments.length === 0) {
       errors.push("Instrument(s) joué(s) à l'Harmonie");
+    } else if (
+      profile.harmonieInstruments.length >= 2 &&
+      !resolveDeclaredPrimaryInstrument(
+        profile.harmonieInstruments,
+        profile.primaryHarmonieInstrument
+      )
+    ) {
+      errors.push("Instrument principal (pupitre)");
     }
     if (profile.is_conservatory_student === undefined || profile.is_conservatory_student === null) {
       errors.push("Élève au Conservatoire de Sucy-en-Brie");
@@ -185,10 +200,17 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     }
 
     try {
+      const payload = {
+        ...profile,
+        primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
+          profile.harmonieInstruments || [],
+          profile.primaryHarmonieInstrument
+        ),
+      };
       const response = await fetch("/api/musician/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(payload),
       });
 
       const data = (await response.json()) as { success?: boolean; error?: string };
@@ -427,26 +449,31 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
             <Label>
               Instrument(s) joué(s) à l'Harmonie <span className="text-red-500">*</span>
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+              role="group"
+              aria-label="Instruments joués à l'Harmonie"
+            >
               {HARMONIE_INSTRUMENTS.map((instrument) => {
-                const isSelected = profile.harmonieInstruments?.includes(instrument);
+                const currentInstruments = profile.harmonieInstruments || [];
+                const isSelected = currentInstruments.includes(instrument);
                 return (
                   <button
                     key={instrument}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => {
-                      const current = profile.harmonieInstruments || [];
-                      if (isSelected) {
-                        setProfile({
-                          ...profile,
-                          harmonieInstruments: current.filter((i) => i !== instrument),
-                        });
-                      } else {
-                        setProfile({
-                          ...profile,
-                          harmonieInstruments: [...current, instrument],
-                        });
-                      }
+                      const nextInstruments = isSelected
+                        ? currentInstruments.filter((i) => i !== instrument)
+                        : [...currentInstruments, instrument];
+                      setProfile({
+                        ...profile,
+                        harmonieInstruments: nextInstruments,
+                        primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
+                          nextInstruments,
+                          profile.primaryHarmonieInstrument
+                        ),
+                      });
                     }}
                     className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 cursor-pointer ${
                       isSelected
@@ -460,6 +487,91 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
                 );
               })}
             </div>
+
+            {(() => {
+              const instruments = profile.harmonieInstruments || [];
+              if (instruments.length === 1) {
+                return (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                    <Star className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
+                    <span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                        {instruments[0]}
+                      </span>{" "}
+                      est votre instrument principal.
+                    </span>
+                  </p>
+                );
+              }
+              if (instruments.length >= 2) {
+                const primary = resolveDeclaredPrimaryInstrument(
+                  instruments,
+                  profile.primaryHarmonieInstrument
+                );
+                return (
+                  <div
+                    className={cn(
+                      "rounded-lg border p-3 space-y-2 transition-colors",
+                      primary
+                        ? "border-border bg-muted/30"
+                        : "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-900/10"
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      <Star
+                        className={cn(
+                          "w-4 h-4 mt-0.5 flex-shrink-0",
+                          primary
+                            ? "text-primary fill-primary"
+                            : "text-amber-600 dark:text-amber-500"
+                        )}
+                      />
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          Quel est votre instrument principal (pupitre){" "}
+                          <span className="text-red-500">*</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Vous jouez plusieurs instruments : indiquez votre instrument principal.
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="flex flex-wrap gap-2"
+                      role="radiogroup"
+                      aria-label="Instrument principal"
+                    >
+                      {instruments
+                        .slice()
+                        .sort(compareInstruments)
+                        .map((instrument) => {
+                          const checked = primary === instrument;
+                          return (
+                            <button
+                              key={instrument}
+                              type="button"
+                              role="radio"
+                              aria-checked={checked}
+                              onClick={() =>
+                                setProfile({ ...profile, primaryHarmonieInstrument: instrument })
+                              }
+                              className={cn(
+                                "px-3 py-1.5 text-sm rounded-full border transition-colors cursor-pointer",
+                                checked
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-card border-border hover:bg-muted"
+                              )}
+                            >
+                              {instrument}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         </CardContent>
       </Card>

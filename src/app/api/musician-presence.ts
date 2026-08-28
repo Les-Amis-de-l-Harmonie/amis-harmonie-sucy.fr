@@ -24,11 +24,20 @@ interface OwnPresenceRow {
   updated_at: string;
 }
 
+interface PresenceAnswerRow {
+  eventId: number;
+  userId: number;
+  status: "present" | "absent";
+  comment: string | null;
+  updatedAt: string;
+}
+
 interface PresenceRosterEntry {
   userId: number;
   firstName: string | null;
   lastName: string | null;
   instruments: string[];
+  primaryInstrument: string | null;
   status: "present" | "absent" | null;
 }
 
@@ -58,7 +67,7 @@ interface MusicianPresenceEvent {
 
 interface PresenceRequestBody {
   eventId: number;
-  status: "present" | "absent";
+  status: "present" | "absent" | null;
   comment?: string | null;
 }
 
@@ -73,8 +82,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isPresenceStatus(value: unknown): value is "present" | "absent" {
-  return value === "present" || value === "absent";
+function isPresenceStatus(value: unknown): value is "present" | "absent" | null {
+  return value === null || value === "present" || value === "absent";
 }
 
 function isPresenceRequestBody(value: unknown): value is PresenceRequestBody {
@@ -95,12 +104,13 @@ async function readPresenceEvent(
     .first<OwnPresenceRow>();
 
   const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
-  const summary = summarisePresence(memberRows.results || [], event.response_deadline);
+  const summary = summarisePresence(memberRows.results || []);
   const roster: PresenceRosterEntry[] = summary.members.map((member) => ({
     userId: member.userId,
     firstName: member.firstName,
     lastName: member.lastName,
     instruments: member.instruments,
+    primaryInstrument: member.primaryInstrument,
     status: member.status,
   }));
 
@@ -121,21 +131,98 @@ async function readPresenceEvent(
   };
 }
 
+function indexPresenceAnswers(
+  rows: PresenceAnswerRow[]
+): Map<number, Map<number, PresenceAnswerRow>> {
+  const answers = new Map<number, Map<number, PresenceAnswerRow>>();
+  for (const answer of rows) {
+    let eventAnswers = answers.get(answer.eventId);
+    if (!eventAnswers) {
+      eventAnswers = new Map<number, PresenceAnswerRow>();
+      answers.set(answer.eventId, eventAnswers);
+    }
+    eventAnswers.set(answer.userId, answer);
+  }
+  return answers;
+}
+
+async function readPresenceEvents(
+  events: PresenceEventRow[],
+  userId: number
+): Promise<MusicianPresenceEvent[]> {
+  // Le statut de la colonne jointe n'est pas utilisé ici : les réponses sont chargées en une
+  // seule requête groupée ci-dessous. L'identifiant lié est donc arbitraire et sans effet sur
+  // l'effectif, qui dépend uniquement des utilisateurs actifs et de leurs instruments.
+  const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY)
+    .bind(events[0]?.id ?? 0)
+    .all<PresenceRow>();
+  const summary = summarisePresence(
+    (memberRows.results || []).map((row) => ({ ...row, status: null, statusChangedAt: null }))
+  );
+
+  const eventIds = events.map((event) => event.id);
+  let answerRows: PresenceAnswerRow[] = [];
+  if (eventIds.length > 0) {
+    const answers = await env.DB.prepare(
+      `SELECT event_id AS eventId, user_id AS userId, status, comment,
+              updated_at AS updatedAt
+       FROM event_presences
+       WHERE event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+    )
+      .bind(JSON.stringify(eventIds))
+      .all<PresenceAnswerRow>();
+    answerRows = answers.results || [];
+  }
+  const answersByEvent = indexPresenceAnswers(answerRows);
+
+  return events.map((event) => {
+    const eventAnswers = answersByEvent.get(event.id);
+    const roster: PresenceRosterEntry[] = summary.members.map((member) => {
+      const answer = eventAnswers?.get(member.userId);
+      return {
+        userId: member.userId,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        instruments: member.instruments,
+        primaryInstrument: member.primaryInstrument,
+        status: answer?.status ?? null,
+      };
+    });
+    const ownPresence = eventAnswers?.get(userId);
+
+    return {
+      ...event,
+      response: {
+        status: ownPresence?.status ?? null,
+        comment: ownPresence?.comment ?? null,
+        updated_at: ownPresence?.updatedAt ?? null,
+      },
+      roster,
+      counts: {
+        present: roster.filter((member) => member.status === "present").length,
+        absent: roster.filter((member) => member.status === "absent").length,
+        noAnswer: roster.filter((member) => member.status === null).length,
+        totalMembers: roster.length,
+      },
+    };
+  });
+}
+
 async function handleGet(request: Request, userId: number): Promise<Response> {
   if (request.method !== "GET") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   }
 
+  const includePast = new URL(request.url).searchParams.get("includePast") === "1";
+  const dateCondition = includePast ? "date >= date('now', '-12 months')" : "date >= date('now')";
   const events = await env.DB.prepare(
     `SELECT id, title, date, time, location, address, response_deadline
      FROM events
-     WHERE presence_required = 1 AND date >= date('now')
+     WHERE presence_required = 1 AND ${dateCondition}
      ORDER BY date ASC`
   ).all<PresenceEventRow>();
 
-  const eventStates = await Promise.all(
-    (events.results || []).map((event) => readPresenceEvent(event, userId))
-  );
+  const eventStates = await readPresenceEvents(events.results || [], userId);
 
   // `currentUserId` évite à l'interface un second appel à /api/musician/profile
   // uniquement pour savoir qui est connecté : sans lui, un échec de cet appel ferait
@@ -160,7 +247,7 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
     return jsonResponse({ error: "Les données de présence sont invalides." }, 400);
   }
 
-  const comment = body.comment?.trim() || null;
+  const comment = body.status === null ? null : body.comment?.trim() || null;
   if (comment !== null && comment.length > 1000) {
     return jsonResponse({ error: "Le commentaire ne peut pas dépasser 1000 caractères." }, 400);
   }
@@ -187,7 +274,13 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
     );
   }
 
-  await env.DB.prepare(PRESENCE_UPSERT_SQL).bind(event.id, userId, body.status, comment).run();
+  if (body.status === null) {
+    await env.DB.prepare("DELETE FROM event_presences WHERE event_id = ? AND user_id = ?")
+      .bind(event.id, userId)
+      .run();
+  } else {
+    await env.DB.prepare(PRESENCE_UPSERT_SQL).bind(event.id, userId, body.status, comment).run();
+  }
 
   const updatedEvent = await readPresenceEvent(event, userId);
   return jsonResponse({ success: true, event: updatedEvent });

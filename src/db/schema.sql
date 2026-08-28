@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS harmonie_instruments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   instrument_name TEXT NOT NULL,
+  is_primary INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
