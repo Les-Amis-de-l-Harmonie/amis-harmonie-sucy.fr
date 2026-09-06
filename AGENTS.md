@@ -56,10 +56,15 @@ npx vitest run     # must be green — NOT `npm test`, see §2
 git push
 ```
 
-> ⚠️ `main` is currently **57 commits ahead of `origin/main`** and has never been
-> pushed. The first push publishes all of them at once, not just yours. Mention this
-> in your final message the first time it happens; once the divergence is resolved,
-> delete this warning.
+The remote is HTTPS and no credential helper is configured, so a bare `git push` fails
+with `could not read Username for 'https://github.com'`. `gh` is authenticated, so
+push through its credential helper without changing stored git config:
+
+```shell
+git -c credential.https://github.com.helper='!gh auth git-credential' push
+```
+
+If the push still fails, **say so and carry on** — see step 4.
 
 ### Step 4 — Deploy
 
@@ -80,7 +85,9 @@ Two properties make this dangerous, and both drive the preconditions below:
 **All preconditions must hold before you deploy:**
 
 - [ ] `git status --short` is **empty**
-- [ ] The change is committed and pushed, and the three gates in step 1 passed
+- [ ] The change is committed and the three gates in step 1 passed. A **failed push
+      does not block the deploy** — push only syncs the remote, whereas what protects
+      production is the clean tree. Report the failure and deploy anyway.
 - [ ] `npx wrangler d1 migrations list amis-harmonie-db --remote` shows **nothing
       pending** — apply migrations to production _before_ deploying code that needs them.
       This ordering assumes an **additive** migration; for a destructive one (drop or
@@ -88,8 +95,8 @@ Two properties make this dangerous, and both drive the preconditions below:
 - [ ] You are on `main`
 
 **If any precondition fails: stop, do not deploy, and report what is blocking.**
-A blocked deploy is a correct outcome, not a rule violation — commit and push your
-work, then report the blocker.
+A blocked deploy is a correct outcome, not a rule violation — commit your work, then
+report the blocker.
 
 After deploying, confirm the site answers:
 
