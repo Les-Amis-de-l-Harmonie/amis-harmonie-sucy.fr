@@ -38,7 +38,7 @@ const structuredData = {
 
 const structuredDataJson = JSON.stringify(structuredData);
 
-export const Document: React.FC<DocumentProps> = ({ children, path = "/" }) => {
+export const Document: React.FC<DocumentProps> = ({ children, path = "/", rw }) => {
   const { title, description } = getPageSeo(path);
   const canonical = `${SITE_URL}${path.replace(/\/+$/, "") || "/"}`;
   const noindex = isNoIndexPath(path);
@@ -97,7 +97,14 @@ export const Document: React.FC<DocumentProps> = ({ children, path = "/" }) => {
         />
       </head>
       <body className="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-[Plus Jakarta Sans,sans-serif] transition-colors duration-300">
+        {/* Le nonce est OBLIGATOIRE : buildContentSecurityPolicy() émet une source
+            'nonce-…' dans script-src, ce qui fait ignorer 'unsafe-inline' en CSP
+            niveau 2/3. Sans cet attribut le script était bloqué en production, la
+            classe .dark n'était donc jamais posée avant le premier paint, et les
+            visiteurs en mode sombre voyaient un flash clair suivi du fondu de 300 ms
+            de la transition de <body>. Voir headers.ts et rw.nonce. */}
         <script
+          nonce={rw.nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark'||(t===null&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}})();`,
           }}
