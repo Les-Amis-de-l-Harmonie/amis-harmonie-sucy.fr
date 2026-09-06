@@ -1,12 +1,4 @@
-import {
-  CalendarDays,
-  Home,
-  Lightbulb,
-  Shield,
-  User,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarDays, Home, Lightbulb, Shield, User, Users, type LucideIcon } from "lucide-react";
 
 export interface MusicianNavItem {
   href: string;

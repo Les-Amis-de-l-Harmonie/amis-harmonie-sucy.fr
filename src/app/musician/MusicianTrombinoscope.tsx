@@ -15,7 +15,8 @@ interface TrombinoscopeEntry {
 }
 
 function getAnciennete(startDate: string | null) {
-  if (!startDate) return <span className="text-sm text-gray-500 dark:text-gray-400">Non renseignée</span>;
+  if (!startDate)
+    return <span className="text-sm text-gray-500 dark:text-gray-400">Non renseignée</span>;
   const start = new Date(startDate);
   const now = new Date();
 
@@ -80,9 +81,7 @@ export function MusicianTrombinoscopeClient() {
       const data = (await response.json()) as { musicians: TrombinoscopeEntry[] };
       setMusicians(data.musicians || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Une erreur inattendue est survenue"
-      );
+      setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue");
     } finally {
       setLoading(false);
     }
@@ -305,9 +304,7 @@ export function MusicianTrombinoscopeClient() {
           <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800">
             <Users className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            Aucun musicien trouvé
-          </p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Aucun musicien trouvé</p>
         </div>
       )}
 

@@ -44,7 +44,10 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
         <MusicianUserSummary firstName={firstName} lastName={lastName} avatar={avatar} />
       </div>
 
-      <nav aria-label="Sections de l'espace musicien" className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
+      <nav
+        aria-label="Sections de l'espace musicien"
+        className="flex-1 space-y-1 overflow-y-auto px-4 py-4"
+      >
         {MUSICIAN_NAV_ITEMS.map((item) => (
           <MusicianSidebarNavItem
             key={item.href}

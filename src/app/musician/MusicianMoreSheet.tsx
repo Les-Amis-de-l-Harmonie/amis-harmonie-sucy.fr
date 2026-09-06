@@ -36,7 +36,9 @@ export function MusicianMoreSheet({
   avatar,
 }: MusicianMoreSheetProps) {
   const [open, setOpen] = useState(false);
-  const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) => isMusicianPathActive(pathname, item.href));
+  const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) =>
+    isMusicianPathActive(pathname, item.href)
+  );
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

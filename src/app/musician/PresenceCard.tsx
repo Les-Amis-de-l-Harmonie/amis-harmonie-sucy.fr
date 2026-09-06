@@ -14,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -56,8 +55,6 @@ export interface PresenceEvent {
 
 export interface PresenceCardProps {
   event: PresenceEvent;
-  /** "full" = page Disponibilités (actuel) ; "compact" = zone essentiels du dashboard. */
-  variant?: "full" | "compact";
   onUpdate: (event: PresenceEvent) => void;
   /** Une réponse (présent/absent) vient d'être enregistrée avec succès, ou effacée :
    * le parent tient le set de cartes "en sursis" et décide seul de la visibilité. */
@@ -75,7 +72,6 @@ type PendingAction = "present" | "absent" | "clear";
 
 export function PresenceCard({
   event,
-  variant = "full",
   onUpdate,
   onStatusChanged,
   onLingerArm,
@@ -288,35 +284,6 @@ export function PresenceCard({
     onChange: handleInteraction,
   };
 
-  if (variant === "compact") {
-    return (
-      <Card {...commonCardProps} className="overflow-hidden border-l-4 border-l-border">
-        <CardContent className="space-y-3 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="font-heading text-base font-bold leading-tight text-foreground">
-                {event.title}
-              </h2>
-              <p className="mt-1 text-sm capitalize text-muted-foreground">
-                {formatDateFrench(event.date)}
-                {event.time && <> · {event.time}</>}
-              </p>
-            </div>
-            <StatusPill status={status} />
-          </div>
-          {statusActions}
-          {saveMessage}
-          <a
-            href="/musician/disponibilites"
-            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Voir le détail des prestations
-          </a>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card
       {...commonCardProps}
@@ -449,21 +416,20 @@ export function PresenceCard({
                   className="min-h-[80px] text-sm"
                 />
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-muted-foreground">
-                    {comment.length}/1000
-                  </span>
+                  <span className="text-[11px] text-muted-foreground">{comment.length}/1000</span>
                   {answered ? (
-                    <Button
+                    <button
                       type="button"
-                      size="sm"
-                      variant="outline"
                       onClick={() => submit(status)}
                       disabled={pendingAction !== null || !commentDirty}
+                      className="inline-flex h-8 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors transition-transform duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
                     >
                       Enregistrer le commentaire
-                    </Button>
+                    </button>
                   ) : (
-                    <span className="text-[11px] text-muted-foreground">Envoyé avec votre réponse</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Envoyé avec votre réponse
+                    </span>
                   )}
                 </div>
               </div>

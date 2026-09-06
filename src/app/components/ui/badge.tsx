@@ -36,8 +36,7 @@ const badgeDotVariants = cva("inline-block h-2 w-2 shrink-0 rounded-full", {
 });
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLElement>,
-    VariantProps<typeof badgeVariants> {
+  extends React.HTMLAttributes<HTMLElement>, VariantProps<typeof badgeVariants> {
   /**
    * Rend un simple point plein (indicateur de notification, ex. onglet
    * « Idées » de la barre basse mobile) plutôt qu'un badge texte. Le contenu

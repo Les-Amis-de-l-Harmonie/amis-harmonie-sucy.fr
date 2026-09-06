@@ -177,7 +177,10 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                               <visual.Icon className="h-4 w-4" aria-hidden="true" />
                               <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-card ring-1 ring-border dark:bg-card dark:ring-border">
                                 {cellIsPast ? (
-                                  <Lock className="h-2.5 w-2.5 text-muted-foreground" aria-hidden="true" />
+                                  <Lock
+                                    className="h-2.5 w-2.5 text-muted-foreground"
+                                    aria-hidden="true"
+                                  />
                                 ) : (
                                   <Pencil
                                     className="h-2.5 w-2.5 text-muted-foreground"

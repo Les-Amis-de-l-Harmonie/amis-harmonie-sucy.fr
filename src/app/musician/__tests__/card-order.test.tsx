@@ -9,7 +9,7 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
-function createProfile() {
+function createProfile(overrides: { harmonieInstruments?: string[] } = {}) {
   return {
     id: 2,
     user_id: 2,
@@ -39,6 +39,7 @@ function createProfile() {
     primaryHarmonieInstrument: "Trompette",
     insuranceInstruments: [],
     insurance_complete: false,
+    ...overrides,
   };
 }
 
@@ -58,12 +59,16 @@ function createOutingSettings(isActive: number) {
   };
 }
 
-function mockHomeFetch(cardOrder: string[], outingIsActive = 1) {
+function mockHomeFetch(
+  cardOrder: string[],
+  outingIsActive = 1,
+  profileOverrides: { harmonieInstruments?: string[] } = {}
+) {
   const fetchMock = vi.mocked(fetch);
   fetchMock.mockImplementation(async (input) => {
     const url = String(input);
 
-    if (url === "/api/musician/profile") return jsonResponse(createProfile());
+    if (url === "/api/musician/profile") return jsonResponse(createProfile(profileOverrides));
     if (url === "/api/outing-settings") {
       return jsonResponse(createOutingSettings(outingIsActive));
     }
@@ -186,7 +191,44 @@ describe("contrat card_order du portail musicien", () => {
     mockHomeFetch(["outing", "profile"], 0);
     renderHome();
 
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Mon Profil" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Mon Profil" })).toBeInTheDocument()
+    );
     expect(screen.queryByRole("heading", { name: "Sortie annuelle" })).not.toBeInTheDocument();
+  });
+
+  it("conserve les dix titres dans le DOM quand le profil est incomplet", async () => {
+    mockHomeFetch(
+      [
+        "profile",
+        "adhesion",
+        "assurance",
+        "planning",
+        "partitions",
+        "boite-a-idee",
+        "outing",
+        "birthdays",
+        "social",
+        "trombinoscope",
+      ],
+      1,
+      { harmonieInstruments: [] }
+    );
+    renderHome();
+
+    await waitFor(() =>
+      expect(getCardTitles()).toEqual([
+        "Mon Profil",
+        "Adhésion",
+        "Assurance",
+        "Mes prestations",
+        "Partitions",
+        "Boîte à idée",
+        "Sortie annuelle",
+        "Anniversaires",
+        "Suivez-nous",
+        "Trombinoscope",
+      ])
+    );
   });
 });

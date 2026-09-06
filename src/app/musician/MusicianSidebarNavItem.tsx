@@ -35,10 +35,7 @@ export function MusicianSidebarNavItem({
       )}
     >
       {active && (
-        <span
-          aria-hidden="true"
-          className="absolute left-0 h-6 w-1 rounded-full bg-primary"
-        />
+        <span aria-hidden="true" className="absolute left-0 h-6 w-1 rounded-full bg-primary" />
       )}
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
       <span className="flex-1 truncate">{label}</span>

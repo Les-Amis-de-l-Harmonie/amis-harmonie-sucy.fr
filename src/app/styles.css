@@ -29,12 +29,16 @@
   --ui-border: oklch(0.92 0 0);
   --ui-input: oklch(0.89 0 0);
   --ui-ring: oklch(0.76 0.06 270);
-  /* Statuts sémantiques — remplacent les green-*/amber-*/yellow-* en dur du
-     portail musicien (présence, adhésion, assurance, complétude de profil).
+  /* Statuts sémantiques — remplacent les couleurs Tailwind littérales (vert,
+     ambre, jaune) codées en dur dans le portail musicien : présence, adhésion,
+     assurance, complétude de profil.
      Luminosité choisie pour satisfaire AA (4.5:1) à la fois sur --ui-card et
      sur un badge à fond teinté (bg-success/15, bg-warning/20) : 5.61:1 et
      6.12:1 sur carte, 4.51:1 et 4.55:1 en badge. Ne pas remonter L sans
-     revérifier les deux contextes — voir gate @oracle Phase 1 (B1). */
+     revérifier les deux contextes — voir gate @oracle Phase 1 (B1).
+     NE PAS écrire de motif se terminant par une étoile suivie d'une barre
+     oblique dans ce commentaire : cela le fermerait par inadvertance et
+     avalerait la déclaration --ui-success qui suit (bug attrapé au gate 2). */
   --ui-success: oklch(0.5 0.14 150);
   --ui-success-foreground: oklch(0.98 0.02 150);
   --ui-warning: oklch(0.5 0.15 75);

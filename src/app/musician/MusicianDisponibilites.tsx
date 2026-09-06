@@ -109,7 +109,8 @@ export function MusicianDisponibilites() {
     (event) => event.response.status === null && !isEventPast(event.date)
   ).length;
   const visibleEvents = (events ?? []).filter(
-    (event) => event.response.status === null || event.id === openEventId || lingeringIds.has(event.id)
+    (event) =>
+      event.response.status === null || event.id === openEventId || lingeringIds.has(event.id)
   );
   // Le même critère que `unansweredCount` sépare la liste en deux : la file "à répondre"
   // (jamais de prestation passée, par construction) et une zone de consultation à part
@@ -133,7 +134,10 @@ export function MusicianDisponibilites() {
 
         <div className="flex items-center gap-2">
           {isRefreshing && (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-hidden="true" />
+            <Loader2
+              className="h-3.5 w-3.5 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
           )}
           <Switch
             id="show-past-events"

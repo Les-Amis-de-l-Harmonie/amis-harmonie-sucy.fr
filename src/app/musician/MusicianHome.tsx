@@ -1,80 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
-import {
-  User,
-  ChevronRight,
-  Heart,
-  Download,
-  CalendarDays,
-  FolderOpen,
-  Lightbulb,
-  Shield,
-  Users,
-  Ticket,
-  MapPin,
-  Cake,
-} from "lucide-react";
-import type {
-  MusicianProfile,
-  OutingSettings,
-  MusicianCardType,
-  InsuranceInstrument,
-  Video,
-} from "@/db/types";
 import { Info } from "lucide-react";
-import { formatDateShort } from "@/lib/dates";
-import { SocialIcons } from "@/app/components/SocialIcons";
-
-function MembersOnlyBadge() {
-  return (
-    <span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 mb-3">
-      Réservé aux adhérents
-    </span>
-  );
-}
-
-interface ProfileWithExtras extends Partial<MusicianProfile> {
-  harmonieInstruments?: string[];
-  email?: string;
-  adhesion_2026_2027?: number;
-  insurance_complete?: boolean;
-  insuranceInstruments?: InsuranceInstrument[];
-}
-
-interface UpcomingEvent {
-  id?: number;
-  title: string;
-  date: string;
-}
-
-interface Birthday {
-  first_name: string | null;
-  last_name: string | null;
-  date_of_birth: string;
-  avatar: string | null;
-}
-
-interface InfoSettings {
-  id: number;
-  title: string;
-  subtitle: string;
-  content: string;
-  bg_color: string;
-  text_color: string;
-  border_color: string;
-  icon: string;
-  is_active: number;
-}
+import type { Video } from "@/db/types";
+import { useMusicianDashboardData } from "./useMusicianDashboardData";
+import { EssentialsZone } from "./EssentialsZone";
+import { SecondaryCardGrid } from "./SecondaryCardGrid";
+import { VideoModal } from "./VideoModal";
 
 interface MusicianHomeClientProps {
   userId: number;
@@ -82,899 +15,82 @@ interface MusicianHomeClientProps {
   lastName: string;
 }
 
+// Seules animations d'entrée conservées (voir direction design §G1) : la
+// salutation et la carte info admin restent des fondus/glissés ponctuels au
+// premier rendu. Le stagger de la grille secondaire vit dans
+// `SecondaryCardGrid`. Aucune animation de survol par `motion.div` : voir
+// `.hover-lift` (CSS pur) posé dans `SecondaryCardGrid`.
+const headerVariants = {
+  hidden: { opacity: 0, y: -20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] },
+  },
+};
+
+const infoCardVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 10 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] },
+  },
+};
+
+/**
+ * Dashboard hiérarchisé à deux zones (voir direction design §C) :
+ *  - `EssentialsZone` — ordre fixe par urgence, jamais piloté par l'admin ;
+ *  - `SecondaryCardGrid` — les 10 cartes dans l'ordre de `cardOrder`.
+ * Ce composant ne fait plus que l'assemblage : tout le calcul de données vit
+ * dans `useMusicianDashboardData`, toute la logique d'affichage vit dans les
+ * composants qu'il compose.
+ */
 export function MusicianHomeClient({
   userId: _userId,
   firstName,
   lastName: _lastName,
 }: MusicianHomeClientProps) {
-  const [profile, setProfile] = useState<ProfileWithExtras | null>(null);
-  const [nextEvent, setNextEvent] = useState<UpcomingEvent | null>(null);
-  const [outingSettings, setOutingSettings] = useState<OutingSettings | null>(null);
-  const [birthdays, setBirthdays] = useState<Birthday[]>([]);
-  const [infoSettings, setInfoSettings] = useState<InfoSettings | null>(null);
-  const [planningUrgent, setPlanningUrgent] = useState(false);
-  const [urgentEvent, setUrgentEvent] = useState<UpcomingEvent | null>(null);
-  const [firstVideo, setFirstVideo] = useState<Video | null>(null);
+  const data = useMusicianDashboardData();
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
-  const DEFAULT_CARDS: MusicianCardType[] = [
-    "profile",
-    "adhesion",
-    "assurance",
-    "planning",
-    "partitions",
-    "boite-a-idee",
-    "outing",
-    "birthdays",
-    "social",
-    "trombinoscope",
-  ];
-  const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
-  const [loading, setLoading] = useState(true);
-  const [unreadIdeasCount, setUnreadIdeasCount] = useState(0);
-
-  const fetchProfile = useCallback(async () => {
-    try {
-      const [
-        profileRes,
-        outingRes,
-        cardOrderRes,
-        infoRes,
-        birthdaysRes,
-        ideasRes,
-        planningRes,
-        videosRes,
-      ] = await Promise.all([
-        fetch("/api/musician/profile"),
-        fetch("/api/outing-settings"),
-        fetch("/api/card-order"),
-        fetch("/api/info-settings"),
-        fetch("/api/musician/birthdays"),
-        fetch("/api/musician/ideas?count=unread"),
-        fetch("/api/musician/planning-check"),
-        fetch("/api/videos"),
-      ]);
-
-      if (profileRes.ok) {
-        const data = (await profileRes.json()) as ProfileWithExtras;
-        setProfile(data);
-      }
-
-      if (outingRes.ok) {
-        const outingData = (await outingRes.json()) as OutingSettings;
-        setOutingSettings(outingData);
-      }
-
-      if (cardOrderRes.ok) {
-        const cardData = (await cardOrderRes.json()) as { card_order: string };
-        if (cardData.card_order) {
-          try {
-            const parsed = JSON.parse(cardData.card_order) as MusicianCardType[];
-            // Validate that all cards are present
-            const validCards = parsed.filter((card): card is MusicianCardType =>
-              DEFAULT_CARDS.includes(card)
-            );
-            // Add any missing cards
-            const missingCards = DEFAULT_CARDS.filter((card) => !validCards.includes(card));
-            setCardOrder([...validCards, ...missingCards]);
-          } catch {
-            // Keep default order
-          }
-        }
-      }
-
-      if (infoRes.ok) {
-        const infoData = (await infoRes.json()) as InfoSettings;
-        // Only set if the info card is active
-        if (infoData.is_active === 1) {
-          setInfoSettings(infoData);
-        } else {
-          setInfoSettings(null);
-        }
-      }
-
-      if (birthdaysRes.ok) {
-        const birthdaysData = (await birthdaysRes.json()) as Birthday[];
-        setBirthdays(birthdaysData);
-      }
-
-      if (ideasRes.ok) {
-        const ideasData = (await ideasRes.json()) as { count: number };
-        setUnreadIdeasCount(ideasData.count);
-      }
-
-      if (planningRes.ok) {
-        const planningData = (await planningRes.json()) as {
-          urgent: boolean;
-          nextEvent: UpcomingEvent | null;
-          urgentEvent?: UpcomingEvent | null;
-        };
-        setPlanningUrgent(planningData.urgent);
-        if (planningData.nextEvent) {
-          setNextEvent(planningData.nextEvent);
-        }
-        setUrgentEvent(planningData.urgentEvent ?? null);
-      }
-
-      if (videosRes.ok) {
-        const videosData = (await videosRes.json()) as Video[];
-        if (videosData.length > 0) {
-          setFirstVideo(videosData[0]);
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const displayName = firstName ? firstName : "Musicien";
-
-  const isProfileComplete = (profile: ProfileWithExtras | null): boolean => {
-    if (!profile) return false;
-
-    const requiredFields = [
-      profile.first_name,
-      profile.last_name,
-      profile.date_of_birth,
-      profile.phone,
-      profile.address_line1,
-      profile.postal_code,
-      profile.city,
-      profile.harmonie_start_date,
-      profile.emergency_contact_first_name,
-      profile.emergency_contact_last_name,
-      profile.emergency_contact_phone,
-    ];
-
-    const allTextFieldsFilled = requiredFields.every((field) => field && field.trim() !== "");
-    const hasHarmonieInstruments =
-      profile.harmonieInstruments !== undefined &&
-      profile.harmonieInstruments !== null &&
-      profile.harmonieInstruments.length > 0;
-    const hasConservatoryChoice =
-      profile.is_conservatory_student === 0 || profile.is_conservatory_student === 1;
-    const hasImageConsentChoice = profile.image_consent === 0 || profile.image_consent === 1;
-
-    return (
-      allTextFieldsFilled &&
-      hasHarmonieInstruments &&
-      hasConservatoryChoice &&
-      hasImageConsentChoice
-    );
-  };
-
-  const profileComplete = !loading && profile ? isProfileComplete(profile) : false;
-
-  const renderCard = (cardType: MusicianCardType) => {
-    const isDisabled = !profileComplete;
-
-    switch (cardType) {
-      case "profile":
-        return (
-          <Card
-            key={cardType}
-            className="hover:shadow-md transition-shadow h-[320px] flex flex-col"
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="w-5 h-5 text-primary" />
-                Mon Profil
-              </CardTitle>
-              <CardDescription>Gérez vos informations personnelles</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="flex items-center gap-4 mb-3">
-                {loading ? (
-                  <div className="w-24 h-24 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                ) : profile?.avatar ? (
-                  <img
-                    src={profile.avatar}
-                    alt=""
-                    className="w-24 h-24 rounded-full object-cover border-2 border-primary flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <User className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  {loading ? (
-                    <p className="text-sm text-muted-foreground">Chargement...</p>
-                  ) : (
-                    <>
-                      {(profile?.first_name || profile?.last_name) && (
-                        <p className="font-semibold text-foreground truncate">
-                          {profile.first_name} {profile.last_name}
-                        </p>
-                      )}
-                      {profileComplete ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          Profil complété
-                        </span>
-                      ) : (
-                        <div className="space-y-1">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                            Profil incomplet
-                          </span>
-                          <p className="text-xs text-red-600 dark:text-red-400">
-                            👉 Complétez votre profil pour accéder à toutes les fonctionnalités.
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-              {!loading &&
-                profile?.harmonie_start_date &&
-                (() => {
-                  const start = new Date(profile.harmonie_start_date);
-                  const now = new Date();
-                  const totalDays = Math.floor(
-                    (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-                  );
-                  const years = Math.floor(totalDays / 365);
-                  const remainingDays = totalDays - years * 365;
-                  return (
-                    <p className="text-xs text-muted-foreground mb-3">
-                      🎼 Dans l&apos;Harmonie depuis{" "}
-                      {years > 0 && (
-                        <>
-                          {years} an{years > 1 ? "s" : ""}
-                          {remainingDays > 0 ? " et " : ""}
-                        </>
-                      )}
-                      {remainingDays > 0 && (
-                        <>
-                          {remainingDays} jour{remainingDays > 1 ? "s" : ""}
-                        </>
-                      )}
-                      {years === 0 && remainingDays === 0 && <>aujourd&apos;hui</>}
-                    </p>
-                  );
-                })()}
-              <a href="/musician/profile" className="mt-auto">
-                <Button variant="outline" className="w-full">
-                  Accéder à mon profil
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        );
-
-      case "adhesion":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Heart className="w-5 h-5 text-primary" />
-                Adhésion
-              </CardTitle>
-              <CardDescription>
-                Adhésion à l&apos;association &quot;Les Amis de l&apos;Harmonie de
-                Sucy-en-Brie&quot; 15€/an.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="mb-4 flex-1">
-                {loading ? (
-                  <p className="text-sm text-muted-foreground">Chargement...</p>
-                ) : profileComplete ? (
-                  profile?.adhesion_2026_2027 === 1 ? (
-                    <div className="space-y-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Adhérent 2026-2027
-                      </span>
-                      <p className="text-sm text-muted-foreground italic">
-                        Merci pour votre soutien !
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Non adhérent en 2026-2027
-                      </span>
-                    </div>
-                  )
-                ) : null}
-              </div>
-              <div className="mt-auto space-y-3">
-                {!loading && profile?.adhesion_2026_2027 !== 1 && (
-                  <a href="/adhesion" className="block">
-                    <Button className="w-full">
-                      Adhérer maintenant
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </a>
-                )}
-                <a
-                  href="/plaquette-association.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Button variant="outline" className="w-full">
-                    <Download className="w-4 h-4 mr-2" />
-                    Télécharger la plaquette
-                  </Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case "assurance":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${
-              !profileComplete || profile?.adhesion_2026_2027 !== 1
-                ? "opacity-50 pointer-events-none grayscale"
-                : "hover:shadow-md transition-shadow"
-            }`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Shield className="w-5 h-5 text-primary" />
-                Assurance
-              </CardTitle>
-              <CardDescription>
-                Les adhérents à l&apos;association bénéficient d&apos;une assurance instrument
-                comprise dans le prix de l&apos;adhésion annuelle.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="mb-4 flex-1">
-                {loading ? (
-                  <p className="text-sm text-muted-foreground">Chargement...</p>
-                ) : profileComplete ? (
-                  profile?.adhesion_2026_2027 !== 1 ? (
-                    <MembersOnlyBadge />
-                  ) : profile?.insurance_complete ? (
-                    <div className="space-y-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Assurance active
-                      </span>
-                      {profile.insuranceInstruments && profile.insuranceInstruments.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          <p className="text-xs text-muted-foreground font-medium">
-                            {profile.insuranceInstruments.length === 1
-                              ? "Instrument assuré"
-                              : "Instruments assurés"}{" "}
-                            :
-                          </p>
-                          <ul className="text-xs text-foreground space-y-0.5">
-                            {profile.insuranceInstruments.map((inst) => (
-                              <li key={inst.id} className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                {inst.instrument_name} {inst.brand && `(${inst.brand})`}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                      Pas d&apos;assurance, en attente informations
-                    </span>
-                  )
-                ) : null}
-              </div>
-              {profile?.adhesion_2026_2027 === 1 ? (
-                <a href="/musician/assurance" className="mt-auto">
-                  <Button variant="outline" className="w-full">
-                    {profile?.insurance_complete
-                      ? "Gérer mes instruments"
-                      : "Compléter le formulaire"}
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </a>
-              ) : (
-                <Button variant="outline" className="w-full mt-auto" disabled>
-                  Gérer mes instruments
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        );
-
-      case "planning":
-        return (
-          <Card
-            key={cardType}
-            className="h-[320px] flex flex-col hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CalendarDays className="w-5 h-5 text-primary" />
-                Mes prestations
-              </CardTitle>
-              <CardDescription>
-                Indiquez si vous serez présent aux prochaines prestations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="mb-4">
-                {loading ? (
-                  <p className="text-sm text-muted-foreground">Chargement...</p>
-                ) : nextEvent ? (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground">Prochain évènement :</p>
-                    <p className="text-sm text-primary font-semibold">{nextEvent.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDateShort(nextEvent.date)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Aucune prestation à venir</p>
-                )}
-                {planningUrgent && (
-                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                    <p className="text-sm font-semibold text-red-700 dark:text-red-400">
-                      À répondre : {urgentEvent ? urgentEvent.title : "une prestation à venir"}
-                    </p>
-                    {urgentEvent && (
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                        {formatDateShort(urgentEvent.date)}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1" />
-              <a href="/musician/disponibilites" className="mt-auto">
-                <Button variant="outline" className="w-full">
-                  Indiquer mes présences
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        );
-
-      case "partitions":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FolderOpen className="w-5 h-5 text-primary" />
-                Partitions
-              </CardTitle>
-              <CardDescription>
-                Retrouvez l&apos;ensemble des partitions scannées, s&apos;il vous manque une
-                partition vous pouvez la demander aux collègues sur le groupe whatsapp ou à David.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="flex-1" />
-              <a
-                href="https://drive.google.com/drive/folders/1pUqqJonhyugZCuT3SrWrpNTQ_NFI0BAz?usp=drive_link"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-auto"
-              >
-                <Button variant="outline" className="w-full">
-                  Accéder aux partitions
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        );
-
-      case "boite-a-idee":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Lightbulb className="w-5 h-5 text-primary" />
-                Boîte à idée
-                {unreadIdeasCount > 0 && (
-                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 px-1">
-                    {unreadIdeasCount}
-                  </span>
-                )}
-              </CardTitle>
-              <CardDescription>
-                Vous avez une idée pour faire évoluer l&apos;association ou enrichir la vie de
-                l&apos;orchestre ?
-                <br />
-                Partagez-la avec nous !
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="flex-1" />
-              <a href="/musician/idee" className="mt-auto">
-                <Button variant="outline" className="w-full">
-                  Accéder à la boîte à idées
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        );
-
-      case "outing":
-        if (outingSettings?.is_active !== 1) return null;
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${
-              !profileComplete || profile?.adhesion_2026_2027 !== 1
-                ? "opacity-50 pointer-events-none grayscale"
-                : "hover:shadow-md transition-shadow"
-            }`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Ticket className="w-5 h-5 text-primary" />
-                {outingSettings.title}
-              </CardTitle>
-              {outingSettings.subtitle && (
-                <CardDescription className="text-sm text-primary font-medium">
-                  {outingSettings.subtitle}
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              {(!profileComplete || profile?.adhesion_2026_2027 !== 1) && <MembersOnlyBadge />}
-              {outingSettings.description && (
-                <p className="text-xs text-muted-foreground mb-2">{outingSettings.description}</p>
-              )}
-              {outingSettings.location && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span>{outingSettings.location}</span>
-                </div>
-              )}
-              {outingSettings.price && (
-                <p className="text-xs text-muted-foreground mb-4">💰 {outingSettings.price}</p>
-              )}
-              <div className="flex-1" />
-              {profile?.adhesion_2026_2027 === 1 && outingSettings.button_link && (
-                <a
-                  href={outingSettings.button_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-auto"
-                >
-                  <Button variant="outline" className="w-full">
-                    {outingSettings.button_text}
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </a>
-              )}
-            </CardContent>
-          </Card>
-        );
-
-      case "social":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5 text-primary" />
-                Suivez-nous
-              </CardTitle>
-              <CardDescription>Soutenez votre orchestre préféré !</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between">
-              <div className="flex-1 flex flex-col">
-                <SocialIcons iconSize={28} />
-                {firstVideo && (
-                  <div
-                    className="mt-3 relative aspect-video rounded-lg overflow-hidden cursor-pointer group max-h-[120px]"
-                    onClick={() => setActiveVideo(firstVideo)}
-                  >
-                    <img
-                      src={`https://i.ytimg.com/vi/${firstVideo.youtube_id}/mqdefault.jpg`}
-                      alt={firstVideo.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          `https://i.ytimg.com/vi/${firstVideo.youtube_id}/default.jpg`;
-                      }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <svg
-                          className="w-4 h-4 text-white ml-0.5"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case "birthdays": {
-        const monthNames = [
-          "janvier",
-          "février",
-          "mars",
-          "avril",
-          "mai",
-          "juin",
-          "juillet",
-          "août",
-          "septembre",
-          "octobre",
-          "novembre",
-          "décembre",
-        ];
-        const currentMonth = monthNames[new Date().getMonth()];
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Cake className="w-5 h-5 text-primary" />
-                {birthdays.length === 1 ? "Anniversaire" : "Anniversaires"}
-              </CardTitle>
-              <CardDescription>
-                {birthdays.length === 0
-                  ? `Pas d'anniversaire en ${currentMonth}`
-                  : birthdays.length === 1
-                    ? `Anniversaire du mois de ${currentMonth}`
-                    : `Anniversaires du mois de ${currentMonth}`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col overflow-hidden">
-              {loading ? (
-                <p className="text-sm text-muted-foreground">Chargement...</p>
-              ) : isDisabled ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground text-center px-4">
-                    Complète ton profil pour accéder à cette fonctionnalité
-                  </p>
-                </div>
-              ) : birthdays.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Aucun anniversaire ce mois-ci</p>
-              ) : (
-                <div className="space-y-2 overflow-y-auto flex-1 pr-1">
-                  {birthdays.map((b, i) => {
-                    const day = new Date(b.date_of_birth).getDate();
-                    const name =
-                      [b.first_name, b.last_name].filter(Boolean).join(" ") || "Musicien";
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2"
-                      >
-                        {b.avatar ? (
-                          <img
-                            src={b.avatar}
-                            alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-primary/30"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="w-4 h-4 text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {day} {currentMonth}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      }
-      case "trombinoscope":
-        return (
-          <Card
-            key={cardType}
-            className={`h-[320px] flex flex-col ${isDisabled ? "opacity-50 pointer-events-none grayscale" : "hover:shadow-md transition-shadow"}`}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5 text-primary" />
-                Trombinoscope
-              </CardTitle>
-              <CardDescription>
-                Découvrez les musiciens de l&apos;orchestre : photos, instruments et ancienneté.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="flex-1" />
-              <a href="/musician/trombinoscope" className="mt-auto">
-                <Button variant="outline" className="w-full">
-                  Voir le trombinoscope
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </a>
-            </CardContent>
-          </Card>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  function VideoModal({ video, onClose }: { video: Video; onClose: () => void }) {
-    const isShort = video.is_short === 1;
-
-    useEffect(() => {
-      const handleKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
-      };
-      document.addEventListener("keydown", handleKey);
-      return () => document.removeEventListener("keydown", handleKey);
-    }, [onClose]);
-
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-        onClick={onClose}
-      >
-        <div
-          className={`relative w-full ${isShort ? "max-w-md" : "max-w-6xl"}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={onClose}
-            aria-label="Fermer"
-            className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-
-          <div className={isShort ? "aspect-[9/16]" : "aspect-video"}>
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${video.youtube_id}`}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-              className="w-full h-full rounded-lg border-0"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-      },
-    },
-  };
-
-  const cardHoverVariants = {
-    rest: {
-      scale: 1,
-      y: 0,
-      boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-    },
-    hover: {
-      scale: 1.02,
-      y: -4,
-      boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
-      transition: {
-        duration: 0.3,
-        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-      },
-    },
-  };
-
-  const headerVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-      },
-    },
-  };
-
-  const infoCardVariants = {
-    hidden: { opacity: 0, scale: 0.95, y: 10 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-      },
-    },
-  };
+  const displayName = firstName || "Musicien";
 
   return (
-    <div className="space-y-6 relative">
+    <div className="relative space-y-6">
       {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
+
       <motion.div initial="hidden" animate="visible" variants={headerVariants}>
         <h1 className="text-2xl font-bold text-foreground">Bonjour, {displayName} !</h1>
         <p className="text-muted-foreground">Bienvenue dans votre espace personnel</p>
       </motion.div>
 
-      {/* Info Card - Displayed at the top if active */}
-      {infoSettings?.is_active === 1 && (
+      {/* Cartouche éditoriale du bureau : garde sa place au-dessus de la zone
+          essentiels, comportement inchangé. */}
+      {data.infoSettings?.is_active === 1 && (
         <motion.div
           initial="hidden"
           animate="visible"
           variants={infoCardVariants}
-          className={`p-4 rounded-lg border ${infoSettings.bg_color} ${infoSettings.border_color}`}
+          className={`rounded-lg border p-4 ${data.infoSettings.bg_color} ${data.infoSettings.border_color}`}
         >
           <div className="flex items-start gap-3">
-            <Info className={`w-5 h-5 mt-0.5 ${infoSettings.text_color}`} />
+            <Info className={`mt-0.5 h-5 w-5 ${data.infoSettings.text_color}`} aria-hidden="true" />
             <div className="flex-1">
-              <h3 className={`font-semibold text-lg ${infoSettings.text_color}`}>
-                {infoSettings.title || "Information"}
+              <h3 className={`text-lg font-semibold ${data.infoSettings.text_color}`}>
+                {data.infoSettings.title || "Information"}
               </h3>
-              {infoSettings.subtitle && (
-                <p className={`text-sm font-medium mt-1 ${infoSettings.text_color} opacity-80`}>
-                  {infoSettings.subtitle}
+              {data.infoSettings.subtitle && (
+                <p
+                  className={`mt-1 text-sm font-medium opacity-80 ${data.infoSettings.text_color}`}
+                >
+                  {data.infoSettings.subtitle}
                 </p>
               )}
-              {infoSettings.content && (
+              {data.infoSettings.content && (
                 <div
-                  className={`mt-2 ${infoSettings.text_color} rich-text-content`}
-                  dangerouslySetInnerHTML={{
-                    __html: infoSettings.content,
-                  }}
+                  className={`mt-2 rich-text-content ${data.infoSettings.text_color}`}
+                  dangerouslySetInnerHTML={{ __html: data.infoSettings.content }}
                 />
               )}
             </div>
@@ -982,39 +98,33 @@ export function MusicianHomeClient({
         </motion.div>
       )}
 
-      {/* Point d'ancrage stable pour le test de verrouillage du contrat
-          `card_order` (src/app/musician/__tests__/card-order.test.tsx). La
-          Phase 2b ajoutera d'autres titres à cette page (zone « essentiels »,
-          titre de section) : sans ce conteneur nommé, le test collecterait des
-          titres qui ne sont pas des cartes et échouerait sans que le contrat
-          soit cassé. À conserver lors de la refonte du dashboard. */}
-      <motion.div
-        data-testid="secondary-cards"
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch"
-      >
-        {cardOrder
-          .filter((cardType) => {
-            if (cardType === "outing" && outingSettings?.is_active !== 1) {
-              return false;
-            }
-            return true;
-          })
-          .map((cardType) => (
-            <motion.div
-              key={cardType}
-              variants={itemVariants}
-              initial="rest"
-              whileHover="hover"
-              animate="rest"
-              style={{ cursor: "pointer" }}
-            >
-              <motion.div variants={cardHoverVariants}>{renderCard(cardType)}</motion.div>
-            </motion.div>
-          ))}
-      </motion.div>
+      <EssentialsZone
+        loading={data.loading}
+        firstName={displayName}
+        profile={data.profile}
+        profileComplete={data.profileComplete}
+        planningUrgent={data.planningUrgent}
+        urgentEvent={data.urgentEvent}
+        nextEvent={data.nextEvent}
+      />
+
+      <div>
+        <h2 className="mb-4 font-heading text-lg font-bold text-foreground">Vos accès rapides</h2>
+        <SecondaryCardGrid
+          cardOrder={data.cardOrder}
+          profile={data.profile}
+          loading={data.loading}
+          profileComplete={data.profileComplete}
+          nextEvent={data.nextEvent}
+          planningUrgent={data.planningUrgent}
+          urgentEvent={data.urgentEvent}
+          outingSettings={data.outingSettings}
+          birthdays={data.birthdays}
+          unreadIdeasCount={data.unreadIdeasCount}
+          firstVideo={data.firstVideo}
+          onVideoClick={setActiveVideo}
+        />
+      </div>
     </div>
   );
 }
