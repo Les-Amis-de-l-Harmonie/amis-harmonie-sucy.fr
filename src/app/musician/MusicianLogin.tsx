@@ -62,16 +62,16 @@ export function MusicianLoginClient() {
   const errorParam = urlParams?.get("error");
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 flex items-center justify-center p-4 transition-colors">
-      <div className="absolute top-4 right-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 transition-colors">
+      <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <Music className="w-8 h-8 text-primary" />
+            <div className="rounded-full bg-primary/10 p-3">
+              <Music className="h-8 w-8 text-primary" />
             </div>
           </div>
           <CardTitle className="text-2xl">Espace Musicien</CardTitle>
@@ -81,7 +81,7 @@ export function MusicianLoginClient() {
         </CardHeader>
         <CardContent>
           {errorParam && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-md text-sm">
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
               {errorParam === "invalid_token" &&
                 "Le lien de connexion est invalide ou a déjà été utilisé."}
               {errorParam === "expired_token" &&
@@ -117,10 +117,10 @@ export function MusicianLoginClient() {
 
           {message && (
             <div
-              className={`mt-4 p-3 rounded-md text-sm ${
+              className={`mt-4 rounded-md border p-3 text-sm ${
                 message.type === "success"
-                  ? "bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400"
-                  : "bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-destructive/30 bg-destructive/10 text-destructive"
               }`}
             >
               {message.text}
@@ -128,15 +128,12 @@ export function MusicianLoginClient() {
           )}
 
           {debugLink && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
-              <p className="text-sm text-blue-700 dark:text-blue-400 mb-2">
+            <div className="mt-4 rounded-md border border-warning/30 bg-warning/10 p-3">
+              <p className="mb-2 text-sm text-warning">
                 <strong>Mode développement:</strong> Cliquez sur le lien ci-dessous pour vous
                 connecter
               </p>
-              <a
-                href={debugLink}
-                className="text-blue-600 dark:text-blue-400 underline text-sm break-all"
-              >
+              <a href={debugLink} className="break-all text-sm text-warning underline">
                 {debugLink}
               </a>
             </div>

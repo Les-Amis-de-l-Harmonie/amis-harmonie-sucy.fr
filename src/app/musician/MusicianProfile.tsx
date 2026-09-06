@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { AlertTriangle, CheckCircle2, Loader2, Save } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,111 +9,57 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
-import { Label } from "@/app/components/ui/label";
-import { Save, Loader2, Check, Star } from "lucide-react";
-import type { MusicianProfile } from "@/db/types";
-import { HARMONIE_INSTRUMENTS } from "@/db/types";
+import { Progress } from "@/app/components/ui/progress";
 import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
-import { InstrumentEditor, type Instrument } from "@/app/components/shared/InstrumentEditor";
-import { compareInstruments, resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
-import { cn } from "@/lib/utils";
-
-interface ProfileWithInstruments extends Partial<MusicianProfile> {
-  instruments?: Instrument[];
-  harmonieInstruments?: string[];
-  primaryHarmonieInstrument?: string | null;
-  email?: string;
-}
+import { resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
+import {
+  PROFILE_SECTIONS,
+  validateField,
+  validateProfile,
+  getSectionCompletion,
+  type ProfileWithInstruments,
+  type ProfileFieldError,
+} from "./profile-validation";
+import { ProfileSectionNav } from "./ProfileSectionNav";
+import { PersonalInfoSection } from "./PersonalInfoSection";
+import { AddressSection } from "./AddressSection";
+import { HarmonieSection } from "./HarmonieSection";
+import { InstrumentPracticeSection } from "./InstrumentPracticeSection";
+import { EmergencyContactSection } from "./EmergencyContactSection";
+import { ImageConsentSection } from "./ImageConsentSection";
 
 interface MusicianProfileClientProps {
   userId: number;
 }
 
+function calculateAge(dateOfBirth: string | null | undefined): number | null {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * Formulaire du profil musicien, décomposé en 6 sections + le bloc photo
+ * (§D4). Ce composant ne fait plus que l'assemblage et la logique de
+ * sauvegarde : la validation vit dans `profile-validation.ts`, chaque
+ * section dans son propre fichier.
+ */
 export function MusicianProfileClient({ userId: _userId }: MusicianProfileClientProps) {
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  // Regex patterns for validation
-  const REGEX_PATTERNS = {
-    name: /^[a-zA-ZÀ-ÿ\s'-]+$/, // Letters, spaces, hyphens, apostrophes
-    phone: /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, // French phone numbers
-    postalCode: /^\d{5}$/, // Exactly 5 digits
-    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Basic email validation
-  };
-
-  const validateField = (field: string, value: string): string | null => {
-    if (!value || value.trim() === "") return null; // Empty is handled by required validation
-
-    switch (field) {
-      case "first_name":
-      case "last_name":
-      case "emergency_contact_first_name":
-      case "emergency_contact_last_name":
-        if (!REGEX_PATTERNS.name.test(value)) {
-          return "Caractères autorisés : lettres, espaces, tirets et apostrophes";
-        }
-        break;
-      case "phone":
-      case "emergency_contact_phone":
-        if (!REGEX_PATTERNS.phone.test(value)) {
-          return "Format invalide. Ex: 06 12 34 56 78 ou +33 6 12 34 56 78";
-        }
-        break;
-      case "postal_code":
-        if (!REGEX_PATTERNS.postalCode.test(value)) {
-          return "Le code postal doit contenir 5 chiffres";
-        }
-        break;
-      case "emergency_contact_email":
-        if (value && !REGEX_PATTERNS.email.test(value)) {
-          return "Format d'email invalide";
-        }
-        break;
-      case "city":
-        if (!REGEX_PATTERNS.name.test(value)) {
-          return "Caractères autorisés : lettres, espaces, tirets et apostrophes";
-        }
-        break;
-    }
-    return null;
-  };
-
-  // Helper function to calculate age from date of birth
-  const calculateAge = (dateOfBirth: string | null | undefined): number | null => {
-    if (!dateOfBirth) return null;
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  // Determine emergency contact label based on age
-  const getEmergencyContactTitle = (): string => {
-    const age = calculateAge(profile.date_of_birth);
-    if (age === null) return "Contact d'urgence / Représentant légal";
-    return age < 18 ? "Représentant légal" : "Contact d'urgence";
-  };
-
-  const handleFieldChange = (field: string, value: string) => {
-    setProfile({ ...profile, [field]: value });
-
-    // Real-time validation
-    const error = validateField(field, value);
-    setFieldErrors((prev) => ({
-      ...prev,
-      [field]: error || "",
-    }));
-  };
+  // N'affiche la liste d'erreurs qu'après une tentative d'enregistrement — pas
+  // avant, pour ne pas accueillir un profil vide avec un mur de messages.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -142,63 +89,50 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     fetchProfile();
   }, [fetchProfile]);
 
-  const validateProfile = (): string | null => {
-    const errors: string[] = [];
+  const handleFieldChange = useCallback((field: string, value: string) => {
+    setProfile((prev) => ({ ...prev, [field]: value }));
+    const error = validateField(field, value);
+    setFieldErrors((prev) => ({ ...prev, [field]: error || "" }));
+  }, []);
 
-    if (!profile.first_name?.trim()) errors.push("Prénom");
-    if (!profile.last_name?.trim()) errors.push("Nom");
-    if (!profile.date_of_birth?.trim()) errors.push("Date de naissance");
-    if (!profile.phone?.trim()) errors.push("Téléphone");
-    if (!profile.address_line1?.trim()) errors.push("Adresse");
-    if (!profile.postal_code?.trim()) errors.push("Code postal");
-    if (!profile.city?.trim()) errors.push("Ville");
-    if (!profile.harmonie_start_date?.trim()) errors.push("Date d'entrée à l'Harmonie");
-    if (!profile.harmonieInstruments || profile.harmonieInstruments.length === 0) {
-      errors.push("Instrument(s) joué(s) à l'Harmonie");
-    } else if (
-      profile.harmonieInstruments.length >= 2 &&
-      !resolveDeclaredPrimaryInstrument(
-        profile.harmonieInstruments,
-        profile.primaryHarmonieInstrument
-      )
-    ) {
-      errors.push("Instrument principal (pupitre)");
-    }
-    if (profile.is_conservatory_student === undefined || profile.is_conservatory_student === null) {
-      errors.push("Élève au Conservatoire de Sucy-en-Brie");
-    }
-    if (profile.image_consent === undefined || profile.image_consent === null) {
-      errors.push("Droit à l'image");
-    }
-    if (!profile.emergency_contact_first_name?.trim()) errors.push("Prénom du contact d'urgence");
-    if (!profile.emergency_contact_last_name?.trim()) errors.push("Nom du contact d'urgence");
-    if (!profile.emergency_contact_phone?.trim()) errors.push("Téléphone du contact d'urgence");
+  const handleProfileChange = useCallback((patch: Partial<ProfileWithInstruments>) => {
+    setProfile((prev) => ({ ...prev, ...patch }));
+  }, []);
 
-    // Check for regex validation errors
-    const regexErrors = Object.entries(fieldErrors).filter(([_, error]) => error);
-    if (regexErrors.length > 0) {
-      return "Veuillez corriger les erreurs dans les champs avant d'enregistrer.";
-    }
+  const errors = useMemo(() => validateProfile(profile, fieldErrors), [profile, fieldErrors]);
+  const sectionCompletion = useMemo(() => getSectionCompletion(profile, errors), [profile, errors]);
+  const completedCount = useMemo(
+    () => Object.values(sectionCompletion).filter(Boolean).length,
+    [sectionCompletion]
+  );
 
-    if (errors.length > 0) {
-      return "Veuillez renseigner les champs obligatoires : " + errors.join(", ");
-    }
+  const emergencyContactTitle = useMemo(() => {
+    const age = calculateAge(profile.date_of_birth);
+    if (age === null) return "Contact d'urgence / Représentant légal";
+    return age < 18 ? "Représentant légal" : "Contact d'urgence";
+  }, [profile.date_of_birth]);
 
-    return null;
-  };
+  function scrollToError(error: ProfileFieldError) {
+    const fieldEl = document.getElementById(error.field);
+    const target = fieldEl ?? document.getElementById(error.sectionId);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // La cible n'est pas toujours un champ précis (ex. le choix d'instrument
+    // principal n'a pas d'élément unique focusable) : on ne tente le focus
+    // que quand un vrai champ existe, jamais sur le simple ancrage de section.
+    if (fieldEl instanceof HTMLElement) {
+      window.setTimeout(() => fieldEl.focus(), 400);
+    }
+  }
 
   const handleSave = async () => {
-    setSaving(true);
+    setSubmitAttempted(true);
     setMessage(null);
-    setValidationError(null);
 
-    const validationResult = validateProfile();
-    if (validationResult) {
-      setValidationError(validationResult);
-      setSaving(false);
+    if (errors.length > 0) {
       return;
     }
 
+    setSaving(true);
     try {
       const payload = {
         ...profile,
@@ -216,14 +150,19 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
       const data = (await response.json()) as { success?: boolean; error?: string };
 
       if (response.ok && data.success) {
-        setMessage({ type: "success", text: "Profil enregistré avec succès" });
-        window.location.href = "/musician/";
+        setMessage({ type: "success", text: "Profil enregistré avec succès." });
+        setSubmitAttempted(false);
+        // Décision D8 : plus de redirection vers /musician/ — l'ancien code
+        // posait ce message puis naviguait dans le même tick, ce qui le
+        // rendait invisible. On reste en place et on relit le profil pour
+        // refléter ce que le serveur a réellement enregistré.
+        await fetchProfile();
       } else {
-        setMessage({ type: "error", text: data.error || "Erreur lors de l'enregistrement" });
+        setMessage({ type: "error", text: data.error || "Erreur lors de l'enregistrement." });
       }
     } catch (err) {
       console.error("Error saving profile:", err);
-      setMessage({ type: "error", text: "Erreur lors de l'enregistrement" });
+      setMessage({ type: "error", text: "Erreur lors de l'enregistrement." });
     } finally {
       setSaving(false);
     }
@@ -232,599 +171,166 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
+  const showErrors = submitAttempted && errors.length > 0;
+
+  const saveButton = (
+    <Button onClick={handleSave} disabled={saving} size="lg">
+      {saving ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Enregistrement...
+        </>
+      ) : (
+        <>
+          <Save className="mr-2 h-4 w-4" />
+          Enregistrer
+        </>
+      )}
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mon Profil</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Gérez vos informations personnelles</p>
+      {/* Barre d'action sticky (§3) : titre, progression compacte sur mobile,
+          bouton Enregistrer toujours accessible sans redescendre en bas du
+          formulaire après avoir corrigé une erreur signalée en haut.
+          `top-14` sous 640px pour se poser juste sous le bandeau de titre
+          mobile de la coquille (`MusicianMobileHeader`, également sticky,
+          hauteur 56px) ; `top-0` au-delà, puisque ce bandeau disparaît. */}
+      <div className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:top-0 sm:mx-0 sm:rounded-xl sm:border sm:px-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">Mon Profil</h1>
+            <p className="hidden text-sm text-muted-foreground sm:block">
+              Gérez vos informations personnelles
+            </p>
+          </div>
+          {saveButton}
+        </div>
+
+        {/* Sous md (768px) : la colonne d'ancres de `ProfileSectionNav` n'a pas
+            la place de s'afficher, cette barre compacte prend le relais. */}
+        <div className="mt-3 md:hidden">
+          <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Progression du profil</span>
+            <span>
+              {completedCount} section{completedCount > 1 ? "s" : ""} sur {PROFILE_SECTIONS.length}{" "}
+              complètes
+            </span>
+          </div>
+          <Progress
+            value={completedCount}
+            max={PROFILE_SECTIONS.length}
+            aria-label={`Progression du profil, ${completedCount} sections sur ${PROFILE_SECTIONS.length} complètes`}
+          />
+        </div>
       </div>
 
       {message?.type === "success" && (
-        <div className="p-4 rounded-md text-sm bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400">
+        <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
+          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {message.text}
+        </div>
+      )}
+      {message?.type === "error" && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           {message.text}
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Photo de profil</CardTitle>
-          <CardDescription>
-            Cliquez sur l'image pour changer votre photo.
-            <br />
-            <span className="text-xs text-muted-foreground">
-              Votre photo pourra être affichée sur le site internet pour le trombinoscope des
-              musiciens.
-            </span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AvatarUploader
-            avatar={profile.avatar}
-            onUpload={(url) => {
-              setProfile({ ...profile, avatar: url });
-              setMessage({ type: "success", text: "Photo de profil mise à jour" });
-            }}
-            uploadEndpoint="/api/musician/avatar"
-            size={96}
-            showInstructions={false}
-            onError={(errorMsg) => setMessage({ type: "error", text: errorMsg })}
+      {showErrors && (
+        <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-destructive">
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {errors.length} information{errors.length > 1 ? "s" : ""} à corriger avant
+            d&apos;enregistrer :
+          </p>
+          <ul className="space-y-1">
+            {errors.map((error) => (
+              <li key={`${error.sectionId}-${error.field}`}>
+                <button
+                  type="button"
+                  onClick={() => scrollToError(error)}
+                  className="text-sm text-destructive underline-offset-2 hover:underline"
+                >
+                  {error.message}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="md:flex md:items-start md:gap-8">
+        <ProfileSectionNav sections={PROFILE_SECTIONS} completion={sectionCompletion} />
+
+        <div className="min-w-0 flex-1 space-y-6">
+          <Card id="photo">
+            <CardHeader>
+              <CardTitle>Photo de profil</CardTitle>
+              <CardDescription>
+                Cliquez sur l&apos;image pour changer votre photo.
+                <br />
+                <span className="text-xs text-muted-foreground">
+                  Votre photo pourra être affichée sur le site internet pour le trombinoscope des
+                  musiciens.
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AvatarUploader
+                avatar={profile.avatar}
+                onUpload={(url) => {
+                  handleProfileChange({ avatar: url });
+                  setMessage({ type: "success", text: "Photo de profil mise à jour." });
+                }}
+                uploadEndpoint="/api/musician/avatar"
+                size={96}
+                showInstructions={false}
+                onError={(errorMsg) => setMessage({ type: "error", text: errorMsg })}
+              />
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>Format : JPG, PNG ou WebP</p>
+                <p>Taille max : 5 Mo</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <PersonalInfoSection
+            profile={profile}
+            fieldErrors={fieldErrors}
+            onFieldChange={handleFieldChange}
+            onProfileChange={handleProfileChange}
           />
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-            <p>Format : JPG, PNG ou WebP</p>
-            <p>Taille max : 5 Mo</p>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Informations personnelles</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">
-                Prénom <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="first_name"
-                value={profile.first_name || ""}
-                onChange={(e) => handleFieldChange("first_name", e.target.value)}
-                placeholder="Jean"
-                className={
-                  fieldErrors.first_name ? "border-red-500 focus-visible:ring-red-500" : ""
-                }
-              />
-              {fieldErrors.first_name && (
-                <p className="text-xs text-red-500">{fieldErrors.first_name}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">
-                Nom <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="last_name"
-                value={profile.last_name || ""}
-                onChange={(e) => handleFieldChange("last_name", e.target.value)}
-                placeholder="Dupont"
-                className={fieldErrors.last_name ? "border-red-500 focus-visible:ring-red-500" : ""}
-              />
-              {fieldErrors.last_name && (
-                <p className="text-xs text-red-500">{fieldErrors.last_name}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date_of_birth">
-                Date de naissance <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="date_of_birth"
-                type="date"
-                value={profile.date_of_birth || ""}
-                onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">
-                Téléphone <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={profile.phone || ""}
-                onChange={(e) => handleFieldChange("phone", e.target.value)}
-                placeholder="06 12 34 56 78"
-                className={fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
-              />
-              {fieldErrors.phone && <p className="text-xs text-red-500">{fieldErrors.phone}</p>}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={profile.email || ""}
-              disabled
-              className="bg-muted cursor-not-allowed"
-            />
-            <p className="text-xs text-muted-foreground">
-              L'email ne peut pas être modifié. Contactez un administrateur en cas de changement.
-            </p>
-          </div>
-
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-              Adresse postale
-            </h4>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="address_line1">
-                  Adresse <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="address_line1"
-                  value={profile.address_line1 || ""}
-                  onChange={(e) => setProfile({ ...profile, address_line1: e.target.value })}
-                  placeholder="123 rue de la Musique"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address_line2">Complément d'adresse</Label>
-                <Input
-                  id="address_line2"
-                  value={profile.address_line2 || ""}
-                  onChange={(e) => setProfile({ ...profile, address_line2: e.target.value })}
-                  placeholder="Appartement 4B, Bâtiment C"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="postal_code">
-                    Code postal <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="postal_code"
-                    value={profile.postal_code || ""}
-                    onChange={(e) => handleFieldChange("postal_code", e.target.value)}
-                    placeholder="94370"
-                    maxLength={5}
-                    className={
-                      fieldErrors.postal_code ? "border-red-500 focus-visible:ring-red-500" : ""
-                    }
-                  />
-                  {fieldErrors.postal_code && (
-                    <p className="text-xs text-red-500">{fieldErrors.postal_code}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">
-                    Ville <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="city"
-                    value={profile.city || ""}
-                    onChange={(e) => handleFieldChange("city", e.target.value)}
-                    placeholder="Sucy-en-Brie"
-                    className={fieldErrors.city ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                  {fieldErrors.city && <p className="text-xs text-red-500">{fieldErrors.city}</p>}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Harmonie</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="harmonie_start_date">
-                Date d'entrée à l'Harmonie <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="harmonie_start_date"
-                type="date"
-                value={profile.harmonie_start_date || ""}
-                onChange={(e) => setProfile({ ...profile, harmonie_start_date: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>
-              Instrument(s) joué(s) à l'Harmonie <span className="text-red-500">*</span>
-            </Label>
-            <div
-              className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-              role="group"
-              aria-label="Instruments joués à l'Harmonie"
-            >
-              {HARMONIE_INSTRUMENTS.map((instrument) => {
-                const currentInstruments = profile.harmonieInstruments || [];
-                const isSelected = currentInstruments.includes(instrument);
-                return (
-                  <button
-                    key={instrument}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => {
-                      const nextInstruments = isSelected
-                        ? currentInstruments.filter((i) => i !== instrument)
-                        : [...currentInstruments, instrument];
-                      setProfile({
-                        ...profile,
-                        harmonieInstruments: nextInstruments,
-                        primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
-                          nextInstruments,
-                          profile.primaryHarmonieInstrument
-                        ),
-                      });
-                    }}
-                    className={`p-2 text-sm rounded border transition-colors text-left flex items-center gap-2 cursor-pointer ${
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card border-border hover:bg-muted"
-                    }`}
-                  >
-                    {isSelected && <Check className="w-3 h-3" />}
-                    {instrument}
-                  </button>
-                );
-              })}
-            </div>
-
-            {(() => {
-              const instruments = profile.harmonieInstruments || [];
-              if (instruments.length === 1) {
-                return (
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
-                    <Star className="w-3.5 h-3.5 text-primary fill-primary flex-shrink-0" />
-                    <span>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        {instruments[0]}
-                      </span>{" "}
-                      est votre instrument principal.
-                    </span>
-                  </p>
-                );
-              }
-              if (instruments.length >= 2) {
-                const primary = resolveDeclaredPrimaryInstrument(
-                  instruments,
-                  profile.primaryHarmonieInstrument
-                );
-                return (
-                  <div
-                    className={cn(
-                      "rounded-lg border p-3 space-y-2 transition-colors",
-                      primary
-                        ? "border-border bg-muted/30"
-                        : "border-amber-400 bg-amber-50 dark:border-amber-500/60 dark:bg-amber-900/10"
-                    )}
-                  >
-                    <div className="flex items-start gap-2">
-                      <Star
-                        className={cn(
-                          "w-4 h-4 mt-0.5 flex-shrink-0",
-                          primary
-                            ? "text-primary fill-primary"
-                            : "text-amber-600 dark:text-amber-500"
-                        )}
-                      />
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          Quel est votre instrument principal (pupitre){" "}
-                          <span className="text-red-500">*</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Vous jouez plusieurs instruments : indiquez votre instrument principal.
-                        </p>
-                      </div>
-                    </div>
-                    <div
-                      className="flex flex-wrap gap-2"
-                      role="radiogroup"
-                      aria-label="Instrument principal"
-                    >
-                      {instruments
-                        .slice()
-                        .sort(compareInstruments)
-                        .map((instrument) => {
-                          const checked = primary === instrument;
-                          return (
-                            <button
-                              key={instrument}
-                              type="button"
-                              role="radio"
-                              aria-checked={checked}
-                              onClick={() =>
-                                setProfile({ ...profile, primaryHarmonieInstrument: instrument })
-                              }
-                              className={cn(
-                                "px-3 py-1.5 text-sm rounded-full border transition-colors cursor-pointer",
-                                checked
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-card border-border hover:bg-muted"
-                              )}
-                            >
-                              {instrument}
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Pratique instrumentale et formation musicale</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>
-              Élève au Conservatoire de Sucy-en-Brie <span className="text-red-500">*</span>
-            </Label>
-            <div className="flex items-center gap-4 h-10">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="conservatory"
-                  checked={profile.is_conservatory_student === 1}
-                  onChange={() => setProfile({ ...profile, is_conservatory_student: 1 })}
-                  className="w-4 h-4 text-primary"
-                />
-                <span className="text-sm">Oui</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="conservatory"
-                  checked={profile.is_conservatory_student === 0}
-                  onChange={() => setProfile({ ...profile, is_conservatory_student: 0 })}
-                  className="w-4 h-4 text-primary"
-                />
-                <span className="text-sm">Non</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="music_theory_level">
-              Formation Musicale (solfège) - Niveau conservatoire
-            </Label>
-            <Input
-              id="music_theory_level"
-              value={profile.music_theory_level || ""}
-              onChange={(e) => setProfile({ ...profile, music_theory_level: e.target.value })}
-              placeholder="Ex: Cycle 2, 3ème année"
-            />
-          </div>
-
-          <InstrumentEditor
-            instruments={(profile.instruments || []) as Instrument[]}
-            onChange={(instruments) => setProfile({ ...profile, instruments })}
+          <AddressSection
+            profile={profile}
+            fieldErrors={fieldErrors}
+            onFieldChange={handleFieldChange}
+            onProfileChange={handleProfileChange}
           />
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {getEmergencyContactTitle()} <span className="text-red-500">*</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="emergency_contact_first_name">
-                Prénom <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="emergency_contact_first_name"
-                value={profile.emergency_contact_first_name || ""}
-                onChange={(e) => handleFieldChange("emergency_contact_first_name", e.target.value)}
-                placeholder="Marie"
-                className={
-                  fieldErrors.emergency_contact_first_name
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : ""
-                }
-              />
-              {fieldErrors.emergency_contact_first_name && (
-                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_first_name}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="emergency_contact_last_name">
-                Nom <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="emergency_contact_last_name"
-                value={profile.emergency_contact_last_name || ""}
-                onChange={(e) => handleFieldChange("emergency_contact_last_name", e.target.value)}
-                placeholder="Dupont"
-                className={
-                  fieldErrors.emergency_contact_last_name
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : ""
-                }
-              />
-              {fieldErrors.emergency_contact_last_name && (
-                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_last_name}</p>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="emergency_contact_email">Email</Label>
-              <Input
-                id="emergency_contact_email"
-                type="email"
-                value={profile.emergency_contact_email || ""}
-                onChange={(e) => handleFieldChange("emergency_contact_email", e.target.value)}
-                placeholder="marie.dupont@email.com"
-                className={
-                  fieldErrors.emergency_contact_email
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : ""
-                }
-              />
-              {fieldErrors.emergency_contact_email && (
-                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_email}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="emergency_contact_phone">
-                Téléphone <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="emergency_contact_phone"
-                type="tel"
-                value={profile.emergency_contact_phone || ""}
-                onChange={(e) => handleFieldChange("emergency_contact_phone", e.target.value)}
-                placeholder="06 12 34 56 78"
-                className={
-                  fieldErrors.emergency_contact_phone
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : ""
-                }
-              />
-              {fieldErrors.emergency_contact_phone && (
-                <p className="text-xs text-red-500">{fieldErrors.emergency_contact_phone}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <HarmonieSection profile={profile} onProfileChange={handleProfileChange} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Droit à l'image <span className="text-red-500">*</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-sm text-muted-foreground bg-muted/50 p-4 rounded-lg space-y-3">
-            <p>
-              Dans le cadre des activités de l'association « Les Amis de l'Harmonie » et de
-              l'Harmonie Municipale de Sucy-en-Brie, des photographies, vidéos ou captations
-              numériques peuvent être réalisées.
-            </p>
-            <p>Ces images peuvent représenter :</p>
-            <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>moi-même</li>
-              <li>et/ou mon enfant (si représentant légal)</li>
-            </ul>
-            <p>
-              Si vous acceptez, vous autorisez l'association « Les Amis de l'Harmonie » et
-              l'Harmonie Municipale de Sucy-en-Brie à :
-            </p>
-            <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>
-                fixer, reproduire et communiquer au public les photographies, vidéos ou captations
-                numériques réalisées dans ce cadre ;
-              </li>
-              <li>
-                exploiter et utiliser ces images, directement ou par l'intermédiaire de tiers, sous
-                toute forme et sur tous supports (presse, livre, supports numériques, exposition,
-                publicité, projection publique, concours, site internet, réseaux sociaux, etc.) ;
-              </li>
-              <li>
-                utiliser ces images pour un territoire illimité et sans limitation de durée,
-                intégralement ou par extraits.
-              </li>
-            </ul>
-            <p>
-              Cette autorisation est consentie à titre gratuit et ne donnera lieu à aucune
-              rémunération.
-            </p>
-            <p>
-              Les bénéficiaires de l'autorisation s'engagent à ne pas utiliser les images dans un
-              cadre susceptible de porter atteinte à la vie privée, à la dignité ou à la réputation
-              des personnes concernées.
-            </p>
-            <p>
-              Vous garantissez ne pas être lié(e), ni la personne que vous représentez le cas
-              échéant, par un contrat exclusif relatif à l'utilisation de votre image ou de votre
-              nom.
-            </p>
-            <p>
-              Conformément à la réglementation en vigueur, vous pouvez retirer votre consentement à
-              tout moment par demande écrite adressée à l'association (sans effet rétroactif sur les
-              utilisations déjà réalisées).
-            </p>
-          </div>
+          <InstrumentPracticeSection profile={profile} onProfileChange={handleProfileChange} />
 
-          <div className="flex flex-col gap-2 pt-2">
-            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-              <input
-                type="radio"
-                name="image_consent"
-                checked={profile.image_consent === 1}
-                onChange={() => setProfile({ ...profile, image_consent: 1 })}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm">J'autorise l'utilisation de mon image</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-              <input
-                type="radio"
-                name="image_consent"
-                checked={profile.image_consent === 0}
-                onChange={() => setProfile({ ...profile, image_consent: 0 })}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm">Je n'autorise pas l'utilisation de mon image</span>
-            </label>
-            {profile.image_consent === 0 && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1 px-2">
-                Rappel : la reproduction de l'image d'un groupe dans un lieu public ou sur scène
-                peut être permise sans solliciter le consentement individuel de chaque personne
-                photographiée.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          <EmergencyContactSection
+            profile={profile}
+            fieldErrors={fieldErrors}
+            onFieldChange={handleFieldChange}
+            title={emergencyContactTitle}
+          />
 
-      <div className="flex items-center justify-end gap-4">
-        {validationError && (
-          <span className="text-sm text-red-600 dark:text-red-400">{validationError}</span>
-        )}
-        <Button onClick={handleSave} disabled={saving} size="lg">
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enregistrement...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Enregistrer
-            </>
-          )}
-        </Button>
+          <ImageConsentSection profile={profile} onProfileChange={handleProfileChange} />
+
+          <div className="flex items-center justify-end">{saveButton}</div>
+        </div>
       </div>
     </div>
   );

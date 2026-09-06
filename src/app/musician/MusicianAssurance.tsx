@@ -11,8 +11,10 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
-import { Shield, Plus, Trash2, Loader2, CheckCircle } from "lucide-react";
+import { EmptyState } from "@/app/components/ui/empty-state";
+import { Shield, Plus, Trash2, Loader2, CheckCircle, RefreshCw } from "lucide-react";
 import type { InsuranceInstrument } from "@/db/types";
+import { logger } from "@/lib/logger";
 
 interface InstrumentForm {
   id?: number;
@@ -22,6 +24,108 @@ interface InstrumentForm {
   serial_number: string;
 }
 
+type InstrumentField = Exclude<keyof InstrumentForm, "id">;
+
+interface InsuranceInstrumentFormProps {
+  instrument: InstrumentForm;
+  index: number;
+  errors: Record<string, string>;
+  canRemove: boolean;
+  onRemove: (index: number) => void;
+  onChange: (index: number, field: InstrumentField, value: string) => void;
+}
+
+function InsuranceInstrumentForm({
+  instrument,
+  index,
+  errors,
+  canRemove,
+  onRemove,
+  onChange,
+}: InsuranceInstrumentFormProps) {
+  return (
+    <div className="space-y-4 rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Instrument {index + 1}</h3>
+        {canRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(index)}
+            className="text-destructive"
+            aria-label={`Supprimer l'instrument ${index + 1}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`instrument_${index}_name`}>
+          Instrument <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id={`instrument_${index}_name`}
+          value={instrument.instrument_name}
+          onChange={(event) => onChange(index, "instrument_name", event.target.value)}
+          placeholder="Ex : Violon"
+        />
+        {errors[`instrument_${index}_name`] && (
+          <p className="text-sm text-destructive">{errors[`instrument_${index}_name`]}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor={`instrument_${index}_brand`}>
+            Marque <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`instrument_${index}_brand`}
+            value={instrument.brand}
+            onChange={(event) => onChange(index, "brand", event.target.value)}
+            placeholder="Ex : Stradivarius"
+          />
+          {errors[`instrument_${index}_brand`] && (
+            <p className="text-sm text-destructive">{errors[`instrument_${index}_brand`]}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={`instrument_${index}_model`}>
+            Modèle <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`instrument_${index}_model`}
+            value={instrument.model}
+            onChange={(event) => onChange(index, "model", event.target.value)}
+            placeholder="Ex : Messiah"
+          />
+          {errors[`instrument_${index}_model`] && (
+            <p className="text-sm text-destructive">{errors[`instrument_${index}_model`]}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={`instrument_${index}_serial`}>
+            Numéro de série <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id={`instrument_${index}_serial`}
+            value={instrument.serial_number}
+            onChange={(event) => onChange(index, "serial_number", event.target.value)}
+            placeholder="Ex : SN12345678"
+          />
+          {errors[`instrument_${index}_serial`] && (
+            <p className="text-sm text-destructive">{errors[`instrument_${index}_serial`]}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MusicianAssuranceClient() {
   const [instruments, setInstruments] = useState<InstrumentForm[]>([
     { instrument_name: "", brand: "", model: "", serial_number: "" },
@@ -29,29 +133,36 @@ export function MusicianAssuranceClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const fetchInstruments = useCallback(async () => {
+  const fetchInstruments = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setError(null);
+
     try {
       const response = await fetch("/api/musician/insurance");
-      if (response.ok) {
-        const data = (await response.json()) as InsuranceInstrument[];
-        if (data.length > 0) {
-          setInstruments(
-            data.map((i) => ({
-              id: i.id,
-              instrument_name: i.instrument_name,
-              brand: i.brand,
-              model: i.model,
-              serial_number: i.serial_number,
-            }))
-          );
-        }
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement des instruments assurés.");
+      }
+
+      const data = (await response.json()) as InsuranceInstrument[];
+      if (data.length > 0) {
+        setInstruments(
+          data.map((instrument) => ({
+            id: instrument.id,
+            instrument_name: instrument.instrument_name,
+            brand: instrument.brand,
+            model: instrument.model,
+            serial_number: instrument.serial_number,
+          }))
+        );
       }
     } catch (err) {
-      console.error("Error fetching insurance instruments:", err);
+      logger.error("Erreur lors du chargement des instruments assurés :", err);
+      setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
@@ -62,17 +173,17 @@ export function MusicianAssuranceClient() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    instruments.forEach((instr, index) => {
-      if (!instr.instrument_name.trim()) {
+    instruments.forEach((instrument, index) => {
+      if (!instrument.instrument_name.trim()) {
         newErrors[`instrument_${index}_name`] = "Le nom de l'instrument est obligatoire";
       }
-      if (!instr.brand.trim()) {
+      if (!instrument.brand.trim()) {
         newErrors[`instrument_${index}_brand`] = "La marque est obligatoire";
       }
-      if (!instr.model.trim()) {
+      if (!instrument.model.trim()) {
         newErrors[`instrument_${index}_model`] = "Le modèle est obligatoire";
       }
-      if (!instr.serial_number.trim()) {
+      if (!instrument.serial_number.trim()) {
         newErrors[`instrument_${index}_serial`] = "Le numéro de série est obligatoire";
       }
     });
@@ -94,16 +205,15 @@ export function MusicianAssuranceClient() {
       });
 
       if (response.ok) {
+        setErrors({});
         setSaved(true);
-        setTimeout(() => {
-          window.location.href = "/musician/";
-        }, 1500);
+        await fetchInstruments(false);
       } else {
         const data = (await response.json()) as { error?: string };
         setErrors({ submit: data.error || "Une erreur est survenue" });
       }
     } catch (err) {
-      console.error("Error saving insurance instruments:", err);
+      logger.error("Erreur lors de l'enregistrement des instruments assurés :", err);
       setErrors({ submit: "Erreur lors de l'enregistrement" });
     } finally {
       setSaving(false);
@@ -121,11 +231,11 @@ export function MusicianAssuranceClient() {
 
   const removeInstrument = (index: number) => {
     if (instruments.length > 1) {
-      setInstruments(instruments.filter((_, i) => i !== index));
+      setInstruments(instruments.filter((_, instrumentIndex) => instrumentIndex !== index));
     }
   };
 
-  const updateInstrument = (index: number, field: keyof InstrumentForm, value: string) => {
+  const updateInstrument = (index: number, field: InstrumentField, value: string) => {
     const updated = [...instruments];
     updated[index] = { ...updated[index], [field]: value };
     setInstruments(updated);
@@ -134,7 +244,7 @@ export function MusicianAssuranceClient() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -142,29 +252,38 @@ export function MusicianAssuranceClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Assurance instrument
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-3xl font-bold text-foreground">Assurance instrument</h1>
+        <p className="mt-1 text-muted-foreground">
           Enregistrez vos instruments pour bénéficier de l'assurance de l'association
         </p>
       </div>
 
-      {saved ? (
-        <Card className="border-green-200 dark:border-green-800">
+      {error ? (
+        <EmptyState
+          icon={<Shield className="h-8 w-8" />}
+          title={error}
+          action={
+            <Button type="button" onClick={() => fetchInstruments()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Réessayer
+            </Button>
+          }
+        />
+      ) : saved ? (
+        <Card className="border-success/30 bg-success/10">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <CheckCircle className="mb-4 h-16 w-16 text-success" />
+            <h2 className="mb-2 text-xl font-semibold text-foreground">
               Instruments enregistrés avec succès !
             </h2>
-            <p className="text-gray-500 dark:text-gray-400">Redirection en cours...</p>
+            <p className="text-muted-foreground">Vos instruments sont maintenant à jour.</p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary" />
+              <Shield className="h-5 w-5 text-primary" />
               Mes instruments assurés
             </CardTitle>
             <CardDescription>
@@ -173,108 +292,40 @@ export function MusicianAssuranceClient() {
           </CardHeader>
           <CardContent className="space-y-6">
             {errors.submit && (
-              <div className="p-4 rounded-md bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
                 {errors.submit}
               </div>
             )}
 
             {instruments.map((instrument, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    Instrument {index + 1}
-                  </h3>
-                  {instruments.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeInstrument(index)}
-                      className="text-red-600 dark:text-red-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`instrument_${index}_name`}>
-                    Instrument <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id={`instrument_${index}_name`}
-                    value={instrument.instrument_name}
-                    onChange={(e) => updateInstrument(index, "instrument_name", e.target.value)}
-                    placeholder="Ex : Violon"
-                  />
-                  {errors[`instrument_${index}_name`] && (
-                    <p className="text-sm text-red-500">{errors[`instrument_${index}_name`]}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor={`instrument_${index}_brand`}>
-                      Marque <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`instrument_${index}_brand`}
-                      value={instrument.brand}
-                      onChange={(e) => updateInstrument(index, "brand", e.target.value)}
-                      placeholder="Ex : Stradivarius"
-                    />
-                    {errors[`instrument_${index}_brand`] && (
-                      <p className="text-sm text-red-500">{errors[`instrument_${index}_brand`]}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`instrument_${index}_model`}>
-                      Modèle <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`instrument_${index}_model`}
-                      value={instrument.model}
-                      onChange={(e) => updateInstrument(index, "model", e.target.value)}
-                      placeholder="Ex : Messiah"
-                    />
-                    {errors[`instrument_${index}_model`] && (
-                      <p className="text-sm text-red-500">{errors[`instrument_${index}_model`]}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`instrument_${index}_serial`}>
-                      Numéro de série <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id={`instrument_${index}_serial`}
-                      value={instrument.serial_number}
-                      onChange={(e) => updateInstrument(index, "serial_number", e.target.value)}
-                      placeholder="Ex : SN12345678"
-                    />
-                    {errors[`instrument_${index}_serial`] && (
-                      <p className="text-sm text-red-500">{errors[`instrument_${index}_serial`]}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <InsuranceInstrumentForm
+                key={instrument.id ?? index}
+                instrument={instrument}
+                index={index}
+                errors={errors}
+                canRemove={instruments.length > 1}
+                onRemove={removeInstrument}
+                onChange={updateInstrument}
+              />
             ))}
 
             {instruments.length < 2 && (
-              <Button variant="outline" onClick={addInstrument} className="w-full gap-2">
-                <Plus className="w-4 h-4" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addInstrument}
+                className="w-full gap-2"
+              >
+                <Plus className="h-4 w-4" />
                 Ajouter un instrument
               </Button>
             )}
 
             <div className="flex justify-end">
-              <Button onClick={handleSave} disabled={saving} size="lg">
+              <Button type="button" onClick={handleSave} disabled={saving} size="lg">
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enregistrement...
                   </>
                 ) : (
