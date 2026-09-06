@@ -982,7 +982,14 @@ export function MusicianHomeClient({
         </motion.div>
       )}
 
+      {/* Point d'ancrage stable pour le test de verrouillage du contrat
+          `card_order` (src/app/musician/__tests__/card-order.test.tsx). La
+          Phase 2b ajoutera d'autres titres à cette page (zone « essentiels »,
+          titre de section) : sans ce conteneur nommé, le test collecterait des
+          titres qui ne sont pas des cartes et échouerait sans que le contrat
+          soit cassé. À conserver lors de la refonte du dashboard. */}
       <motion.div
+        data-testid="secondary-cards"
         initial="hidden"
         animate="visible"
         variants={containerVariants}

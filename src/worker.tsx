@@ -507,8 +507,14 @@ const app = defineApp([
     route("/musician/", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianHomeClient
             userId={auth.userId}
             firstName={auth.firstName}
@@ -521,8 +527,14 @@ const app = defineApp([
     route("/musician/profile", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianProfileClient userId={auth.userId} />
         </MusicianLayout>
       );
@@ -531,8 +543,14 @@ const app = defineApp([
     route("/musician/idee", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianIdeeClient />
         </MusicianLayout>
       );
@@ -541,8 +559,14 @@ const app = defineApp([
     route("/musician/assurance", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianAssuranceClient />
         </MusicianLayout>
       );
@@ -551,8 +575,14 @@ const app = defineApp([
     route("/musician/trombinoscope", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianTrombinoscopeClient />
         </MusicianLayout>
       );
@@ -561,8 +591,14 @@ const app = defineApp([
     route("/musician/disponibilites", async ({ request }: { request: Request }) => {
       const auth = await musicianAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
+      const pathname = new URL(request.url).pathname;
       return (
-        <MusicianLayout firstName={auth.firstName} lastName={auth.lastName} avatar={auth.avatar}>
+        <MusicianLayout
+          pathname={pathname}
+          firstName={auth.firstName}
+          lastName={auth.lastName}
+          avatar={auth.avatar}
+        >
           <MusicianDisponibilites />
         </MusicianLayout>
       );

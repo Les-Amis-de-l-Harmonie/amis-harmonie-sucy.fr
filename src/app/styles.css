@@ -4,6 +4,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Empêche le navigateur de peindre un canvas clair par défaut avant que le
+     script de thème (dans <body>, voir Document.tsx) n'ajoute la classe .dark —
+     limite la sévérité du flash sombre décrit en Phase 1 (livrable 1a). */
+  color-scheme: light;
   --ui-background: oklch(0.985 0 0);
   --ui-foreground: oklch(0.17 0 0);
   --ui-card: oklch(1 0 0);
@@ -25,9 +29,24 @@
   --ui-border: oklch(0.92 0 0);
   --ui-input: oklch(0.89 0 0);
   --ui-ring: oklch(0.76 0.06 270);
+  /* Statuts sémantiques — remplacent les green-*/amber-*/yellow-* en dur du
+     portail musicien (présence, adhésion, assurance, complétude de profil).
+     Luminosité choisie pour satisfaire AA (4.5:1) à la fois sur --ui-card et
+     sur un badge à fond teinté (bg-success/15, bg-warning/20) : 5.61:1 et
+     6.12:1 sur carte, 4.51:1 et 4.55:1 en badge. Ne pas remonter L sans
+     revérifier les deux contextes — voir gate @oracle Phase 1 (B1). */
+  --ui-success: oklch(0.5 0.14 150);
+  --ui-success-foreground: oklch(0.98 0.02 150);
+  --ui-warning: oklch(0.5 0.15 75);
+  --ui-warning-foreground: oklch(0.98 0.02 75);
+  /* Fond légèrement distinct de --ui-card, pour la sidebar et la zone
+     "essentiels" du dashboard — hiérarchie de plan sans bordure partout. */
+  --ui-surface-raised: oklch(0.995 0 0);
+  --ui-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .dark {
+  color-scheme: dark;
   --ui-background: oklch(0.17 0.02 270);
   --ui-foreground: oklch(0.95 0.01 270);
   --ui-card: oklch(0.23 0.02 270);
@@ -49,6 +68,12 @@
   --ui-border: oklch(0.32 0.03 270);
   --ui-input: oklch(0.38 0.03 270);
   --ui-ring: oklch(0.72 0.1 270);
+  --ui-success: oklch(0.68 0.15 150);
+  --ui-success-foreground: oklch(0.15 0.03 150);
+  --ui-warning: oklch(0.72 0.15 75);
+  --ui-warning-foreground: oklch(0.15 0.03 75);
+  --ui-surface-raised: oklch(0.26 0.02 270);
+  --ui-elevation-1: 0 1px 2px 0 rgb(0 0 0 / 0.2);
 }
 
 @theme inline {
@@ -73,6 +98,12 @@
   --color-border: var(--ui-border);
   --color-input: var(--ui-input);
   --color-ring: var(--ui-ring);
+  --color-success: var(--ui-success);
+  --color-success-foreground: var(--ui-success-foreground);
+  --color-warning: var(--ui-warning);
+  --color-warning-foreground: var(--ui-warning-foreground);
+  --color-surface-raised: var(--ui-surface-raised);
+  --shadow-elevation-1: var(--ui-elevation-1);
   --radius-lg: 0.75rem;
   --radius-md: calc(var(--radius-lg) - 2px);
   --radius-sm: calc(var(--radius-lg) - 4px);
@@ -86,6 +117,10 @@ img {
 
 html {
   scroll-behavior: smooth;
+  /* Peint le canvas dans la bonne teinte avant même que le fond de <body>
+     (défini en dur dans Document.tsx) ne s'applique — réduit le canvas blanc
+     visible au tout premier paint en mode sombre. Voir livrable 1a. */
+  background-color: var(--color-background);
 }
 
 body {
@@ -119,6 +154,13 @@ h4 {
 /* Override text-align:justify from pasted/legacy content */
 .rich-text-content [style*="justify"] {
   text-align: left !important;
+}
+
+/* Zone de sécurité tactile (encoche / barre gestuelle iOS) pour la barre
+   d'onglets basse du portail musicien. Tailwind 4 n'a pas d'utilitaire natif
+   pour env(safe-area-inset-*), d'où cette déclaration via @utility. */
+@utility pb-safe {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Micro-interaction utilities */
