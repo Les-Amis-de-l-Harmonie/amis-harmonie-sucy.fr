@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import type { User, AuthToken, Session, UserRole } from "@/db/types";
 import { isAdmin } from "@/db/types";
 import { invalidateCache } from "@/lib/cache";
+import { AUTH_CONFIG } from "@/lib/constants";
 
 import { logger } from "@/lib/logger";
 function generateToken(): string {
@@ -38,6 +39,10 @@ function getVerifyPath(context: LoginContext): string {
 
 function getCookieName(context: LoginContext): string {
   return context === "admin" ? "admin_session" : "musician_session";
+}
+
+function getSessionDurationSeconds(context: LoginContext): number {
+  return AUTH_CONFIG.SESSION_DURATION_SECONDS[context];
 }
 
 export async function handleMagicLinkRequest(
@@ -340,7 +345,8 @@ export async function handleMagicLinkVerify(
     await env.DB.prepare("UPDATE auth_tokens SET used = 1 WHERE token = ?").bind(token).run();
 
     const sessionId = generateSessionId();
-    const sessionExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const sessionDurationSeconds = getSessionDurationSeconds(context);
+    const sessionExpiresAt = new Date(Date.now() + sessionDurationSeconds * 1000).toISOString();
 
     await env.DB.prepare("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
       .bind(sessionId, user.id, sessionExpiresAt)
@@ -357,7 +363,7 @@ export async function handleMagicLinkVerify(
     const headers = new Headers(response.headers);
     headers.set(
       "Set-Cookie",
-      `${cookieName}=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`
+      `${cookieName}=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${sessionDurationSeconds}`
     );
 
     return new Response(response.body, {

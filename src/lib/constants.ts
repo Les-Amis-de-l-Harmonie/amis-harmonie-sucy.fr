@@ -31,7 +31,10 @@ export const UPLOAD_CONFIG = {
 } as const;
 
 export const AUTH_CONFIG = {
-  SESSION_DURATION_SECONDS: 7 * 24 * 60 * 60,
+  SESSION_DURATION_SECONDS: {
+    admin: 30 * 24 * 60 * 60,
+    musician: 365 * 24 * 60 * 60,
+  },
   COOKIE_NAME: "session",
   COOKIE_OPTIONS: {
     httpOnly: true,
