@@ -1,204 +1,377 @@
-# AGENTS.md — Amis de l'Harmonie de Sucy Website
+# AGENTS.md — Amis de l'Harmonie de Sucy
 
-## Project Overview
+Agent-facing operating rules for this repository. Read this file top to bottom before
+your first edit.
 
-French community music association website. Built with **RedwoodSDK** (RWSDK) on **Cloudflare Workers**, React 19 with Server Components, Tailwind CSS 4, and D1 (SQLite) database. All user-facing content is in **French**.
+- **What this file is**: rules, real paths, and known traps.
+- **What it is not**: architecture explanation (see `ARCHITECTURE.md`) or onboarding
+  (see `README.md`). This file cross-references them instead of repeating them.
 
-**Production URL**: https://amis-harmonie-sucy.fr
+French community music association website. **All user-facing content, UI copy, and
+commit messages are in French.** Production: <https://amis-harmonie-sucy.fr>.
 
-## Tech Stack
+Stack: RedwoodSDK (`rwsdk`) on Cloudflare Workers, React 19 with Server Components,
+Tailwind CSS 4, Radix UI, D1 (SQLite), R2, KV, TypeScript strict, Vite 7, Vitest.
+Exact versions live in `package.json` — read it there, never trust a version copied
+into documentation.
 
-- **Framework**: RedwoodSDK (`rwsdk`) — React full-stack framework for Cloudflare Workers
-- **Runtime**: Cloudflare Workers (Wrangler)
-- **UI**: React 19 with RSC, Tailwind CSS 4, Radix UI primitives, Lucide icons
-- **Database**: Cloudflare D1 (SQLite) — migrations in `migrations/`, schema reference in `src/db/schema.sql`
-- **Storage**: Cloudflare R2 (images), KV (cache)
-- **Language**: TypeScript 5.9, strict mode
-- **Build**: Vite 7
-- **Testing**: Vitest with happy-dom, Testing Library
-- **Linting**: ESLint (flat config) + Prettier, enforced via Husky pre-commit hook
+---
 
-## Commands
+## 1. Commit, push & deploy (non-negotiable)
 
-| Command                                                              | Purpose                                 |
-| -------------------------------------------------------------------- | --------------------------------------- |
-| `npm run dev`                                                        | Start dev server (Vite)                 |
-| `npm run build`                                                      | Production build                        |
-| `npm run types`                                                      | TypeScript type-check only              |
-| `npm run check`                                                      | Generate Cloudflare types + type-check  |
-| `npm run release`                                                    | Build + deploy to Cloudflare Workers    |
-| `npm run lint`                                                       | Run ESLint                              |
-| `npm run lint:fix`                                                   | Auto-fix lint errors                    |
-| `npm run format`                                                     | Prettier format all src files           |
-| `npm test`                                                           | Run all tests (Vitest)                  |
-| `npx vitest run src/lib/__tests__/dates.test.ts`                     | Run a single test file                  |
-| `npx vitest run -t "formats date"`                                   | Run tests matching a name pattern       |
-| `npm run test:coverage`                                              | Tests with V8 coverage report           |
-| `npx wrangler d1 migrations create amis-harmonie-db "<description>"` | Create a new migration file             |
-| `npx wrangler d1 migrations apply amis-harmonie-db --local`          | Apply pending migrations locally        |
-| `npx wrangler d1 migrations apply amis-harmonie-db --remote`         | Apply pending migrations to production  |
-| `npx wrangler d1 migrations list amis-harmonie-db --remote`          | List unapplied migrations on production |
+**Every completed change is committed, pushed, and deployed.** A "completed change"
+is a coherent, verified unit of work — not each individual file write. Do not batch
+several unrelated changes into one release, and do not release after every keystroke:
+`npm run release` runs `clean && build`, which purges the Vite cache and takes minutes.
 
-**Pre-commit hook** (Husky): runs `npm run types` then `lint-staged` (ESLint --fix + Prettier on staged `.ts/.tsx` files).
+### Before you touch anything
 
-## Project Structure
+Run `git status --short`. **Any file already modified is not yours.** Never stage it,
+never revert it, never deploy on top of it. If it is still dirty when you finish, say
+so explicitly in your final message and leave it alone.
+
+### Step 1 — Validate
+
+All three must pass before committing. The pre-commit hook only runs `tsc` plus
+lint-staged on _staged_ files, and **the deploy path runs no tests at all**, so these
+are your real gates:
+
+```shell
+npm run types      # tsc, must exit 0
+npm run lint       # eslint, must be clean
+npx vitest run     # must be green — NOT `npm test`, see §2
+```
+
+### Step 2 — Commit
+
+- Stage explicit paths: `git add src/foo.ts`.
+  **Never `git add -A`, `git add .`, or `git commit -a`** — they sweep up other
+  people's work in progress.
+- Commit message in **French**, Conventional Commits, matching existing history:
+  `feat(presence): …`, `fix(auth): …`, `refactor: …`. Check `git log --oneline` first.
+
+### Step 3 — Push
+
+```shell
+git push
+```
+
+> ⚠️ `main` is currently **57 commits ahead of `origin/main`** and has never been
+> pushed. The first push publishes all of them at once, not just yours. Mention this
+> in your final message the first time it happens; once the divergence is resolved,
+> delete this warning.
+
+### Step 4 — Deploy
+
+```shell
+npm run release   # rw-scripts ensure-deploy-env && clean && build && wrangler deploy
+```
+
+This goes **straight to production** — there is no staging environment.
+
+Two properties make this dangerous, and both drive the preconditions below:
+
+1. **`wrangler deploy` builds the working tree, not `HEAD`.** A dirty tree ships
+   whatever is on disk, including someone else's unfinished work. "My commit is done"
+   is _not_ a sufficient guard; "the tree is clean" is.
+2. **Code and database migrations deploy separately.** Shipping code that reads a new
+   table or column before that migration is applied to production takes the site down.
+
+**All preconditions must hold before you deploy:**
+
+- [ ] `git status --short` is **empty**
+- [ ] The change is committed and pushed, and the three gates in step 1 passed
+- [ ] `npx wrangler d1 migrations list amis-harmonie-db --remote` shows **nothing
+      pending** — apply migrations to production _before_ deploying code that needs them.
+      This ordering assumes an **additive** migration; for a destructive one (drop or
+      rename), first ship code that tolerates both shapes, then migrate.
+- [ ] You are on `main`
+
+**If any precondition fails: stop, do not deploy, and report what is blocking.**
+A blocked deploy is a correct outcome, not a rule violation — commit and push your
+work, then report the blocker.
+
+After deploying, confirm the site answers:
+
+```shell
+curl -sS -o /dev/null -w '%{http_code}\n' https://amis-harmonie-sucy.fr/
+```
+
+### Scope
+
+There is **no docs-only exemption**: documentation changes are committed, pushed, and
+deployed like everything else. (`*.md` is not part of the Worker bundle, so its
+deployment is a no-op — but the rule is deliberately unconditional so it cannot erode
+through self-classification.)
+
+Note that `public/**` **is** served in production via the `ASSETS` binding, and
+`migrations/**` and `wrangler.jsonc` are runtime configuration. None of these are
+"just files".
+
+---
+
+## 2. Commands
+
+| Command                                                              | Purpose                                       |
+| -------------------------------------------------------------------- | --------------------------------------------- |
+| `npm run dev`                                                        | Dev server (Vite) → <http://localhost:5173>   |
+| `npm run build`                                                      | Production build                              |
+| `npm run types`                                                      | TypeScript type-check (`tsc`)                 |
+| `npm run check`                                                      | Regenerate Cloudflare types, then type-check  |
+| `npm run generate`                                                   | `ensure-env`, then `wrangler types`           |
+| `npm run lint` / `npm run lint:fix`                                  | ESLint — must be clean                        |
+| `npm run format`                                                     | Prettier over `src/**/*.{ts,tsx,css,md}`      |
+| `npx vitest run`                                                     | **Run tests once** — use this in any workflow |
+| `npx vitest run src/lib/__tests__/dates.test.ts`                     | Single test file                              |
+| `npx vitest run -t "formate la date"`                                | Tests matching a name                         |
+| `npm run release`                                                    | Build + deploy to production                  |
+| `npx wrangler d1 migrations create amis-harmonie-db "<description>"` | New migration file                            |
+| `npx wrangler d1 migrations apply amis-harmonie-db --local`          | Apply migrations locally                      |
+| `npx wrangler d1 migrations apply amis-harmonie-db --remote`         | Apply migrations to **production**            |
+| `npx wrangler d1 migrations list amis-harmonie-db --remote`          | List migrations pending in production         |
+
+> **Trap — `npm test`, `npm run test:ui` and `npm run test:coverage` all start Vitest
+> in watch mode and never exit.** They are for interactive use only. Any script, gate,
+> or agent workflow must use `npx vitest run`.
+
+**Pre-commit hook** (Husky): `npm run types`, then `npx lint-staged`
+(`*.{ts,tsx}` → `eslint --fix` + `prettier --write`; `*.{css,md,json}` → `prettier --write`).
+
+---
+
+## 3. Repository map
 
 ```
 src/
-  worker.tsx              # Entry point: routing, middleware, cache layer
-  client.tsx              # Client-side hydration entry
+  worker.tsx            # Entry point — ALL routes, middleware, cache wrapper (~590 lines)
+  client.tsx            # Client hydration entry
   app/
-    Document.tsx           # HTML shell (head, fonts, meta)
-    Layout.tsx             # Shared layout (Header + Footer wrapper)
-    headers.ts             # HTTP header middleware
-    styles.css             # Tailwind imports + theme tokens + global styles
-    pages/                 # Page components (server components by default)
-    admin/                 # Admin dashboard (client components + pages wrapper)
-    musician/              # Musician portal (client components)
-    api/                   # API handlers (auth, CRUD, upload, images)
-    components/            # Shared components
-      ui/                  # Radix-based primitives (button, card, dialog, etc.)
-    shared/                # Shared utilities used across pages
+    Document.tsx        # HTML shell: <html lang="fr">, SEO/OG/JSON-LD, fonts, theme script
+    Layout.tsx          # Header + <main> + Footer
+    headers.ts          # setCommonHeaders() + buildContentSecurityPolicy()
+    seo.ts              # getPageSeo(), isNoIndexPath(), SITE_URL, DEFAULT_OG_IMAGE
+    styles.css          # Tailwind 4 imports, @theme inline tokens, global styles
+    pages/              # 17 files — public pages (server by default)
+    admin/              # 19 files — admin dashboard; pages.tsx holds the wrappers
+    musician/           # 8 files — musician portal (all "use client")
+    api/
+      admin/            # 14 per-resource admin handlers
+      *.ts              # auth, public endpoints, upload, images, sitemap, robots
+    components/         # 12 shared + shared/ (2) + ui/ (13 primitives)
+    shared/             # links.ts, gallery.ts
   db/
-    schema.sql             # D1 database schema (reference — NOT used for migrations)
-    types.ts               # TypeScript interfaces for all DB entities
-    seed-data.sql          # Sample data
-  lib/
-    cache.ts               # KV-based page caching with versioned invalidation
-    utils.ts               # cn() helper (clsx + tailwind-merge)
-types/                     # Global type declarations (rw.d.ts, vite.d.ts, css.d.ts)
-public/images/             # Static assets (logo, SVGs, event photos)
-wrangler.jsonc             # Cloudflare bindings: D1 (DB), R2, KV (CACHE)
-migrations/                # D1 database migrations (source of truth for schema changes)
+    schema.sql          # Reference ONLY — not executed, and drifted (see §6)
+    types.ts            # All DB entity interfaces and unions
+    seed-local.sql      # Local-only seed data — never run against --remote
+  lib/                  # 15 modules (see below)
+migrations/             # 14 files — SOURCE OF TRUTH for the schema
+public/                 # Served in production via the ASSETS binding
+types/                  # rw.d.ts, vite.d.ts, css.d.ts
 ```
 
-## Architecture Patterns
+`src/lib/` — `cache.ts`, `utils.ts` (`cn()`), `constants.ts`, `dates.ts`, `logger.ts`,
+`rate-limit.ts`, `validation.ts`, `env-config.ts`, `sitemap.ts`, `image-utils.ts`,
+`public-events.ts`, `presence.ts`, `presence-groups.ts`, `instruments.ts`,
+`crud-factory.ts`.
 
-### Routing (`src/worker.tsx`)
+**Routing**: every route — public pages, admin, musician, and all APIs — is declared in
+`src/worker.tsx`. Read that file rather than trusting any route list in documentation.
+Helpers in use are `route`, `render`, `layout` and `defineApp`; `prefix()` is not used.
 
-- **API routes**: `route("/api/...", handler)` — method-based (`{ post: fn, get: fn }`)
-- **Page routes**: Wrapped in `render(Document, [ layout(Layout, [ route("/", Page) ]) ])`
-- **Auth routes**: Inline async handlers with auth middleware check
-- **Cache layer**: `fetch()` export wraps `app.fetch()` with KV-based page caching
+**Cloudflare bindings** (`wrangler.jsonc`), accessed via `import { env } from "cloudflare:workers"`:
 
-### Server vs Client Components
+| Binding      | Type   | Name                   | Usage                         |
+| ------------ | ------ | ---------------------- | ----------------------------- |
+| `env.DB`     | D1     | `amis-harmonie-db`     | Database                      |
+| `env.R2`     | R2     | `amis-harmonie-images` | Image uploads                 |
+| `env.CACHE`  | KV     | `amis-harmonie-cache`  | Page cache + version tracking |
+| `env.ASSETS` | Assets | `public/`              | Static files served in prod   |
 
-- **Default is server component** — no directive needed
-- **`"use client"`** at file top for interactive components (state, effects, event handlers)
-- Client components use `ComponentNameClient` suffix (e.g., `ContactAdminClient`)
-- Admin pages: wrapper in `src/app/admin/pages.tsx` re-exports server page → client component
+Secret: **`RESEND_API_KEY`** (required — magic-link emails). Tunable vars in
+`wrangler.jsonc`: `LOG_LEVEL`, `CACHE_TTL_SECONDS`,
+`CACHE_STALE_WHILE_REVALIDATE_SECONDS`, and `RATE_LIMIT_{AUTH,CONTACT,GUESTBOOK,UPLOAD}_MAX`.
 
-### API Handlers
+For how routing, caching, auth, CSP, and logging actually work, read `ARCHITECTURE.md`.
 
-Pattern: `async function handleXxxApi(request: Request): Promise<Response>`. Auth check first → method dispatch in `if` chain → try/catch wrapper. Always return JSON `{ success: true }` or `{ error: "message" }`. Call `invalidateCache()` after mutations. See `src/app/api/admin-crud.ts` for the canonical pattern.
+---
 
-### Database Access
+## 4. Writing code here
 
-Direct D1 prepared statements via `import { env } from "cloudflare:workers"`:
+### Server vs client components
 
-```typescript
-const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first<User>();
-const results = await env.DB.prepare("SELECT * FROM events ORDER BY date DESC").all();
-```
+Server components are the default — no directive. Add `"use client"` as the **first
+line** for state, effects, event handlers, or browser APIs.
 
-### Database Migrations (MANDATORY)
+Admin pages use a wrapper pattern: `src/app/admin/pages.tsx` exports 14 `Admin*Page`
+server wrappers that render `<AdminLayout><XxxAdminClient /></AdminLayout>`.
+**Follow the pattern of the directory you are editing** — the `Client` suffix is on 15
+of the 16 client components in `admin/` (`Dashboard.tsx` → `AdminDashboard` is the
+exception), but the `Admin` infix is not universal (`CardOrderClient`,
+`InfoSettingsClient`). `musician/` is entirely client-side and uses no suffix at all.
+Do not "normalise" one directory to match the other.
 
-**All schema changes MUST go through the D1 migration system.** Never use `wrangler d1 execute` for schema-altering SQL.
+### API handlers
 
-1. Create: `npx wrangler d1 migrations create amis-harmonie-db "description"`
-2. Edit the generated `.sql` file in `migrations/`
-3. Test locally: `npx wrangler d1 migrations apply amis-harmonie-db --local`
-4. Apply to prod: `npx wrangler d1 migrations apply amis-harmonie-db --remote`
-5. Update `src/db/schema.sql` (reference only) and `src/db/types.ts` if structure changed
+Handlers live in `src/app/api/`, one module per resource under `api/admin/`.
 
-Migrations are **append-only** — never edit an already-applied file. Use `IF NOT EXISTS` / `IF EXISTS` guards.
+Rules: auth first → dispatch on method → validate → query → `invalidateCache()` after
+any mutation → `try`/`catch` with `logger.error`. Always return JSON
+(`{ success: true }` or `{ error }`), and `405` for an unhandled method.
+→ full pattern: `ARCHITECTURE.md` § API Handler Pattern.
+
+**To write a new handler, copy `src/app/api/admin/events.ts`.** All 14 modules in
+`api/admin/` import `checkAdminAuth` from `src/app/api/admin-crud.ts`, which holds
+only that helper plus two input interfaces — it is _not_ a CRUD template despite its
+name. `src/lib/crud-factory.ts` (`createCrudApi`) exists but has **no call sites**;
+it is not the house pattern, so do not adopt it for new code.
+
+Rate limiting is wired **in the route** in `src/worker.tsx`, before the handler runs —
+currently `/api/contact`, `/api/guestbook`, `/api/auth/magic-link`,
+`/api/auth/musician-magic-link`, and `/api/admin/upload` (admin-authed, not public).
 
 ### Authentication
 
-Magic-link email auth. Two roles: `ADMIN` and `MUSICIAN`. Middleware returns auth object or `Response` redirect:
+Magic-link over email (Resend). **Three roles: `ADMIN`, `SUPER_ADMIN`, `MUSICIAN`** —
+use the `isAdmin` helper in `src/db/types.ts` rather than comparing role strings.
+Sessions are cookie-based (`admin_session` / `musician_session`); there is no JWT.
 
 ```typescript
 const auth = await adminAuthMiddleware({ request });
-if (auth instanceof Response) return auth;
-// auth.email is available
+if (auth instanceof Response) return auth; // redirect when unauthenticated
+// auth.email and auth.role are available
 ```
 
-## Code Style
+Both middlewares are **private to `src/worker.tsx`** — they are not exported, so route
+guards belong there, not in page files. `role` is returned by the admin middleware
+only; `musicianAuthMiddleware` returns `email`, `userId`, `firstName`, `lastName` and
+`avatar`. Inside API handlers use `checkAdminAuth` from `src/app/api/admin-crud.ts`,
+which returns either a `401` JSON `Response` or `null`.
 
-### Formatting (Prettier — `.prettierrc`)
+Auth failures: redirect for pages, `401` JSON for APIs.
 
-Double quotes, semicolons, trailing commas (ES5), 100-char print width, 2-space indent, LF line endings.
+### Logging
 
-### Imports (order)
+Use the structured logger, **not `console`**:
 
-1. `"use client"` directive (if needed) — always first line
-2. External packages (`react`, `lucide-react`, `@radix-ui/*`)
-3. Cloudflare imports (`cloudflare:workers`)
-4. Internal imports via `@/` alias (maps to `src/`)
-5. Use `import type` for type-only imports
+```typescript
+import { logger, getRequestLogContext } from "@/lib/logger";
+logger.error("Database error:", error, getRequestLogContext(request));
+```
+
+ESLint permits `console.warn` / `console.error` as a fallback only; `console.log` is
+flagged.
+
+### Style
+
+- **Prettier**: double quotes, semicolons, ES5 trailing commas, 100-char width,
+  2-space indent, LF.
+- **Imports**: `"use client"` → external packages → `cloudflare:workers` → `@/` (alias
+  for `src/`) → `import type` for type-only imports.
+- **TypeScript strict**: never `as any`, `@ts-ignore`, or `@ts-expect-error`.
+  (ESLint only _warns_ on `no-explicit-any` — the ban is a project rule, so the linter
+  passing does not mean you are allowed to use `any`.)
+  Use `interface` for entity shapes, `type` for unions. Type D1 results:
+  `.first<User>()`, `.all<Event>()`. Nullable columns are `string | null`, not `?`.
+  Prefix intentionally unused identifiers with `_`.
+- **Styling**: Tailwind 4 only — no per-component CSS files. Theme tokens live in
+  `src/app/styles.css` under `@theme inline` (21 `--color-*`, 3 `--radius-*`,
+  `--font-sans` = Plus Jakarta Sans, `--font-heading` = Clash Display). Dark mode is
+  class-based (`.dark` on `<html>`). The 13 UI primitives all use lowercase filenames;
+  only `button.tsx` and `label.tsx` use CVA, so do not assume a variant API exists on
+  the others. Merge classes with `cn()` from `src/lib/utils.ts`.
+- **Security headers**: `src/app/headers.ts` sets HSTS, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Permissions-Policy`, and a nonce-based CSP. Inline `<script>`
+  needs the `rw.nonce` value. `frame-src` is widened only on `/adhesion` and
+  `/partenaires` for the HelloAsso iframe — do not widen it elsewhere.
 
 ### Naming
 
-| Entity                | Convention                             | Example                                 |
-| --------------------- | -------------------------------------- | --------------------------------------- |
-| Components            | PascalCase                             | `EventCard`, `AdminLayout`              |
-| Client components     | PascalCase + `Client` suffix           | `ContactAdminClient`                    |
-| Helper functions      | camelCase                              | `formatDateFrench`, `isEventPast`       |
-| API handlers          | `handleXxxApi` / `handleXxxSubmission` | `handleEventsApi`                       |
-| Files (components)    | PascalCase `.tsx`                      | `EventCard.tsx`                         |
-| Files (ui primitives) | lowercase `.tsx`                       | `button.tsx`, `card.tsx`                |
-| Files (api/utils)     | lowercase/kebab-case `.ts`             | `admin-crud.ts`, `cache.ts`             |
-| DB types              | `interface` PascalCase                 | `interface Event { ... }`               |
-| Union types           | `type` keyword                         | `type UserRole = "ADMIN" \| "MUSICIAN"` |
+| Entity                | Convention                             | Example                                       |
+| --------------------- | -------------------------------------- | --------------------------------------------- |
+| Components            | PascalCase                             | `EventCard`, `AdminLayout`                    |
+| Client components     | PascalCase + `Client` (admin/pages)    | `ContactAdminClient`                          |
+| Helper functions      | camelCase                              | `formatDateFrench`, `isEventPast`             |
+| API handlers          | `handleXxxApi` / `handleXxxSubmission` | `handleEventsApi`                             |
+| Files (components)    | PascalCase `.tsx`                      | `EventCard.tsx`                               |
+| Files (ui primitives) | lowercase `.tsx`                       | `button.tsx`, `card.tsx`                      |
+| Files (api/lib)       | lowercase/kebab-case `.ts`             | `admin-crud.ts`, `presence-groups.ts`         |
+| DB entities           | `interface` PascalCase                 | `interface Event { … }`                       |
+| Unions                | `type`                                 | `type PresenceStatus = "present" \| "absent"` |
 
-### TypeScript
+---
 
-- **Strict mode** — never suppress with `as any`, `@ts-ignore`, or `@ts-expect-error`
-- `interface` for object shapes (DB entities), `type` for unions/aliases
-- Generic type params for D1: `.first<User>()`, `.all<Event>()`
-- Nullable DB fields: `string | null` (not optional `?`)
-- Unused function params: prefix with `_` (ESLint rule `argsIgnorePattern: "^_"`)
-- `no-console` is a warning — only `console.warn` and `console.error` allowed
+## 5. Database & migrations
 
-### Styling
+Direct D1 prepared statements, no ORM:
 
-- **Tailwind CSS 4** only — no separate CSS files per component
-- Theme tokens in `src/app/styles.css` via `@theme inline` directive with CSS custom properties
-- Dark mode: `dark:` variant (class-based, toggled via `.dark` on `<html>`)
-- UI primitives use **CVA** (class-variance-authority) for variant patterns
-- Class merging: `cn()` from `src/lib/utils.ts` (clsx + tailwind-merge)
-- Fonts: `Plus Jakarta Sans` (body via `--font-sans`), `Clash Display` (headings via `--font-heading`)
+```typescript
+import { env } from "cloudflare:workers";
 
-### Error Handling
+const user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first<User>();
+```
 
-- Validate HTTP method first, return 405
-- Validate required fields, return 400 with message
-- Wrap main logic in try/catch, log with `console.error("Context:", error)`, return 500
-- Auth failures: redirect to login page (pages) or 401 JSON (API)
+Use `env.DB.batch([...])` when several statements must succeed together (see
+`src/app/api/admin/users.ts`).
 
-## Cloudflare Bindings (wrangler.jsonc)
+**All schema changes go through the migration system. Never run `wrangler d1 execute`
+for schema-altering SQL.**
 
-| Binding     | Type | Name                   | Usage                         |
-| ----------- | ---- | ---------------------- | ----------------------------- |
-| `env.DB`    | D1   | `amis-harmonie-db`     | SQLite database               |
-| `env.R2`    | R2   | `amis-harmonie-images` | Image uploads                 |
-| `env.CACHE` | KV   | `amis-harmonie-cache`  | Page cache + version tracking |
+1. `npx wrangler d1 migrations create amis-harmonie-db "description"`
+2. Edit the generated file in `migrations/`
+3. Apply locally: `… migrations apply amis-harmonie-db --local`
+4. Apply to production: `… migrations apply amis-harmonie-db --remote`
+5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
-Access via: `import { env } from "cloudflare:workers";`
+Migrations are **append-only** — never edit one that has already been applied. Guard
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 14 migrations, latest
+`0014_add_primary_flag_to_harmonie_instruments.sql`.
 
-## Testing
+> **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
+> use it to confirm that a table or column exists.** See §6.
 
-- **Framework**: Vitest with `happy-dom` environment, `@testing-library/react` + `@testing-library/user-event`
-- **Config**: `vitest.config.ts` — aliases `@/` → `./src`, mocks `cloudflare:workers`
-- **Pattern**: `__tests__/` directories colocated with source (e.g., `src/lib/__tests__/dates.test.ts`)
-- **Run single file**: `npx vitest run src/lib/__tests__/dates.test.ts`
-- **Run by name**: `npx vitest run -t "formats date"`
-- Note: `src/lib/__tests__/cache.test.ts` is excluded in vitest config (Cloudflare binding deps)
+---
 
-## Key Files to Understand First
+## 6. Known traps
 
-1. `src/worker.tsx` — All routing and the app entry point
-2. `src/db/types.ts` — All TypeScript interfaces for DB entities
-3. `src/db/schema.sql` — Database schema reference (NOT executed — see migrations/)
-4. `src/app/styles.css` — Theme tokens and global styles
-5. `src/app/api/admin-crud.ts` — CRUD pattern template for new endpoints
+1. **`npm test` / `test:ui` / `test:coverage` are watch mode.** Use `npx vitest run`.
+2. **`src/db/schema.sql` has drifted from `migrations/`.** It is missing the tables
+   `outing_settings`, `card_order_settings`, `info_settings`, `idea_reads`, and the
+   column `users.last_login` — all of which exist in `migrations/` and in production.
+   Verify schema questions against `migrations/`, never against `schema.sql`.
+3. **`wrangler deploy` builds the working tree, not `HEAD`.** Deploying with a dirty
+   tree ships uncommitted work.
+4. **Neither `admin-crud.ts` nor `crud-factory.ts` is the CRUD template.** The first
+   only holds `checkAdminAuth`; the second has no call sites at all. Copy
+   `src/app/api/admin/events.ts` instead.
+5. **Three roles, not two** — `SUPER_ADMIN` exists and is easy to miss.
+   `README.md:137` still claims two; it is wrong.
+6. **The seed file is `src/db/seed-local.sql`**, and it is local-only. Both
+   `README.md:112` and `ARCHITECTURE.md:36` call it `seed-data.sql`; that filename
+   does not exist.
+7. **`no-explicit-any` is an ESLint warning, not an error.** A clean lint run does not
+   prove the codebase is free of `any`.
+
+---
+
+## 7. Testing
+
+Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
+`cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
+Tests live in `__tests__/` directories colocated with the code.
+
+Current baseline: **23 test files on disk, 22 executed, 174 tests passing** —
+`src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
+real Cloudflare bindings. Test names are written in French, matching the codebase.
+
+Run once with `npx vitest run`. Keep this baseline green; it is a gate in §1.
+
+---
+
+## 8. Where to look first
+
+1. `src/worker.tsx` — every route and the app entry point
+2. `ARCHITECTURE.md` — how caching, auth, logging, and the API layer are designed
+3. `src/db/types.ts` — all DB entity interfaces and unions
+4. `migrations/` — the real schema
+5. `src/app/styles.css` — theme tokens and global styles
+6. `src/app/api/admin/events.ts` — a representative admin CRUD handler
