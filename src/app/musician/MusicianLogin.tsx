@@ -81,7 +81,10 @@ export function MusicianLoginClient() {
         </CardHeader>
         <CardContent>
           {errorParam && (
-            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <div
+              role="alert"
+              className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+            >
               {errorParam === "invalid_token" &&
                 "Le lien de connexion est invalide ou a déjà été utilisé."}
               {errorParam === "expired_token" &&
@@ -117,6 +120,7 @@ export function MusicianLoginClient() {
 
           {message && (
             <div
+              role={message.type === "success" ? "status" : "alert"}
               className={`mt-4 rounded-md border p-3 text-sm ${
                 message.type === "success"
                   ? "border-success/30 bg-success/10 text-success"

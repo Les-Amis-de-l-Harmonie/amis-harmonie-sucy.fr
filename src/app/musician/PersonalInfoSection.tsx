@@ -30,6 +30,8 @@ export function PersonalInfoSection({
             </Label>
             <Input
               id="first_name"
+              aria-invalid={!!fieldErrors.first_name || undefined}
+              aria-describedby={fieldErrors.first_name ? "first_name-error" : undefined}
               value={profile.first_name || ""}
               onChange={(e) => onFieldChange("first_name", e.target.value)}
               placeholder="Jean"
@@ -38,7 +40,9 @@ export function PersonalInfoSection({
               )}
             />
             {fieldErrors.first_name && (
-              <p className="text-xs text-destructive">{fieldErrors.first_name}</p>
+              <p id="first_name-error" className="text-xs text-destructive">
+                {fieldErrors.first_name}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -47,6 +51,8 @@ export function PersonalInfoSection({
             </Label>
             <Input
               id="last_name"
+              aria-invalid={!!fieldErrors.last_name || undefined}
+              aria-describedby={fieldErrors.last_name ? "last_name-error" : undefined}
               value={profile.last_name || ""}
               onChange={(e) => onFieldChange("last_name", e.target.value)}
               placeholder="Dupont"
@@ -55,7 +61,9 @@ export function PersonalInfoSection({
               )}
             />
             {fieldErrors.last_name && (
-              <p className="text-xs text-destructive">{fieldErrors.last_name}</p>
+              <p id="last_name-error" className="text-xs text-destructive">
+                {fieldErrors.last_name}
+              </p>
             )}
           </div>
         </div>
@@ -78,6 +86,8 @@ export function PersonalInfoSection({
             </Label>
             <Input
               id="phone"
+              aria-invalid={!!fieldErrors.phone || undefined}
+              aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
               type="tel"
               value={profile.phone || ""}
               onChange={(e) => onFieldChange("phone", e.target.value)}
@@ -86,7 +96,11 @@ export function PersonalInfoSection({
                 fieldErrors.phone && "border-destructive focus-visible:ring-destructive"
               )}
             />
-            {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone}</p>}
+            {fieldErrors.phone && (
+              <p id="phone-error" className="text-xs text-destructive">
+                {fieldErrors.phone}
+              </p>
+            )}
           </div>
         </div>
 

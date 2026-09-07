@@ -12,7 +12,7 @@ import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { EmptyState } from "@/app/components/ui/empty-state";
-import { Shield, Plus, Trash2, Loader2, CheckCircle, RefreshCw } from "lucide-react";
+import { Shield, Plus, Trash2, Loader2, RefreshCw } from "lucide-react";
 import type { InsuranceInstrument } from "@/db/types";
 // Pas d'import de `@/lib/logger` ici : ce module commence par
 // `import { env } from "cloudflare:workers"`, spécificateur qui n'existe que dans
@@ -76,11 +76,17 @@ function InsuranceInstrumentForm({
         <Input
           id={`instrument_${index}_name`}
           value={instrument.instrument_name}
+          aria-invalid={errors[`instrument_${index}_name`] ? true : undefined}
+          aria-describedby={
+            errors[`instrument_${index}_name`] ? `instrument_${index}_name-error` : undefined
+          }
           onChange={(event) => onChange(index, "instrument_name", event.target.value)}
           placeholder="Ex : Violon"
         />
         {errors[`instrument_${index}_name`] && (
-          <p className="text-sm text-destructive">{errors[`instrument_${index}_name`]}</p>
+          <p id={`instrument_${index}_name-error`} className="text-sm text-destructive">
+            {errors[`instrument_${index}_name`]}
+          </p>
         )}
       </div>
 
@@ -92,11 +98,17 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_brand`}
             value={instrument.brand}
+            aria-invalid={errors[`instrument_${index}_brand`] ? true : undefined}
+            aria-describedby={
+              errors[`instrument_${index}_brand`] ? `instrument_${index}_brand-error` : undefined
+            }
             onChange={(event) => onChange(index, "brand", event.target.value)}
             placeholder="Ex : Stradivarius"
           />
           {errors[`instrument_${index}_brand`] && (
-            <p className="text-sm text-destructive">{errors[`instrument_${index}_brand`]}</p>
+            <p id={`instrument_${index}_brand-error`} className="text-sm text-destructive">
+              {errors[`instrument_${index}_brand`]}
+            </p>
           )}
         </div>
 
@@ -107,11 +119,17 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_model`}
             value={instrument.model}
+            aria-invalid={errors[`instrument_${index}_model`] ? true : undefined}
+            aria-describedby={
+              errors[`instrument_${index}_model`] ? `instrument_${index}_model-error` : undefined
+            }
             onChange={(event) => onChange(index, "model", event.target.value)}
             placeholder="Ex : Messiah"
           />
           {errors[`instrument_${index}_model`] && (
-            <p className="text-sm text-destructive">{errors[`instrument_${index}_model`]}</p>
+            <p id={`instrument_${index}_model-error`} className="text-sm text-destructive">
+              {errors[`instrument_${index}_model`]}
+            </p>
           )}
         </div>
 
@@ -122,11 +140,17 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_serial`}
             value={instrument.serial_number}
+            aria-invalid={errors[`instrument_${index}_serial`] ? true : undefined}
+            aria-describedby={
+              errors[`instrument_${index}_serial`] ? `instrument_${index}_serial-error` : undefined
+            }
             onChange={(event) => onChange(index, "serial_number", event.target.value)}
             placeholder="Ex : SN12345678"
           />
           {errors[`instrument_${index}_serial`] && (
-            <p className="text-sm text-destructive">{errors[`instrument_${index}_serial`]}</p>
+            <p id={`instrument_${index}_serial-error`} className="text-sm text-destructive">
+              {errors[`instrument_${index}_serial`]}
+            </p>
           )}
         </div>
       </div>
@@ -168,7 +192,9 @@ export function MusicianAssuranceClient() {
       }
     } catch (err) {
       console.error("Erreur lors du chargement des instruments assurés :", err);
-      setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
+      if (showLoading) {
+        setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
+      }
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -267,82 +293,88 @@ export function MusicianAssuranceClient() {
       </div>
 
       {error ? (
-        <EmptyState
-          icon={<Shield className="h-8 w-8" />}
-          title={error}
-          action={
-            <Button type="button" onClick={() => fetchInstruments()}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Réessayer
-            </Button>
-          }
-        />
-      ) : saved ? (
-        <Card className="border-success/30 bg-success/10">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <CheckCircle className="mb-4 h-16 w-16 text-success" />
-            <h2 className="mb-2 text-xl font-semibold text-foreground">
-              Instruments enregistrés avec succès !
-            </h2>
-            <p className="text-muted-foreground">Vos instruments sont maintenant à jour.</p>
-          </CardContent>
-        </Card>
+        <div role="alert">
+          <EmptyState
+            icon={<Shield className="h-8 w-8" />}
+            title={error}
+            action={
+              <Button type="button" onClick={() => fetchInstruments()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Réessayer
+              </Button>
+            }
+          />
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Mes instruments assurés
-            </CardTitle>
-            <CardDescription>
-              Vous pouvez enregistrer jusqu'à 2 instruments. Tous les champs sont obligatoires.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {errors.submit && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-                {errors.submit}
-              </div>
-            )}
-
-            {instruments.map((instrument, index) => (
-              <InsuranceInstrumentForm
-                key={instrument.id ?? index}
-                instrument={instrument}
-                index={index}
-                errors={errors}
-                canRemove={instruments.length > 1}
-                onRemove={removeInstrument}
-                onChange={updateInstrument}
-              />
-            ))}
-
-            {instruments.length < 2 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addInstrument}
-                className="w-full gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Ajouter un instrument
-              </Button>
-            )}
-
-            <div className="flex justify-end">
-              <Button type="button" onClick={handleSave} disabled={saving} size="lg">
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  "Enregistrer mes instruments"
-                )}
-              </Button>
+        <>
+          {saved && (
+            <div
+              role="status"
+              className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
+            >
+              Vos instruments assurés ont été enregistrés.
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Mes instruments assurés
+              </CardTitle>
+              <CardDescription>
+                Vous pouvez enregistrer jusqu'à 2 instruments. Tous les champs sont obligatoires.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {errors.submit && (
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+                >
+                  {errors.submit}
+                </div>
+              )}
+
+              {instruments.map((instrument, index) => (
+                <InsuranceInstrumentForm
+                  key={instrument.id ?? index}
+                  instrument={instrument}
+                  index={index}
+                  errors={errors}
+                  canRemove={instruments.length > 1}
+                  onRemove={removeInstrument}
+                  onChange={updateInstrument}
+                />
+              ))}
+
+              {instruments.length < 2 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addInstrument}
+                  className="w-full gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un instrument
+                </Button>
+              )}
+
+              <div className="flex justify-end">
+                <Button type="button" onClick={handleSave} disabled={saving} size="lg">
+                  {saving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    "Enregistrer mes instruments"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

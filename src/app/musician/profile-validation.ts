@@ -10,7 +10,7 @@ export interface ProfileWithInstruments extends Partial<MusicianProfile> {
 }
 
 /** Regex de validation en temps réel (un caractère par champ, jamais un format global). */
-export const REGEX_PATTERNS = {
+const REGEX_PATTERNS = {
   name: /^[a-zA-ZÀ-ÿ\s'-]+$/, // Lettres, espaces, tirets, apostrophes
   phone: /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, // Numéros français
   postalCode: /^\d{5}$/, // Exactement 5 chiffres

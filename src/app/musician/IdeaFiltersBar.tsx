@@ -84,8 +84,11 @@ export function IdeaFiltersBar({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Catégorie</Label>
+            <Label htmlFor="idea-category-filter" className="text-xs">
+              Catégorie
+            </Label>
             <select
+              id="idea-category-filter"
               value={categoryFilter}
               onChange={(event) => onCategoryChange(event.target.value as IdeaFilterCategory)}
               className="w-full cursor-pointer rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
@@ -100,8 +103,11 @@ export function IdeaFiltersBar({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Trier par</Label>
+            <Label htmlFor="idea-sort" className="text-xs">
+              Trier par
+            </Label>
             <select
+              id="idea-sort"
               value={sortBy}
               onChange={(event) => onSortChange(event.target.value as IdeaSortOption)}
               className="w-full cursor-pointer rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"

@@ -33,6 +33,12 @@ export function EmergencyContactSection({
             </Label>
             <Input
               id="emergency_contact_first_name"
+              aria-invalid={!!fieldErrors.emergency_contact_first_name || undefined}
+              aria-describedby={
+                fieldErrors.emergency_contact_first_name
+                  ? "emergency_contact_first_name-error"
+                  : undefined
+              }
               value={profile.emergency_contact_first_name || ""}
               onChange={(e) => onFieldChange("emergency_contact_first_name", e.target.value)}
               placeholder="Marie"
@@ -42,7 +48,9 @@ export function EmergencyContactSection({
               )}
             />
             {fieldErrors.emergency_contact_first_name && (
-              <p className="text-xs text-destructive">{fieldErrors.emergency_contact_first_name}</p>
+              <p id="emergency_contact_first_name-error" className="text-xs text-destructive">
+                {fieldErrors.emergency_contact_first_name}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -51,6 +59,12 @@ export function EmergencyContactSection({
             </Label>
             <Input
               id="emergency_contact_last_name"
+              aria-invalid={!!fieldErrors.emergency_contact_last_name || undefined}
+              aria-describedby={
+                fieldErrors.emergency_contact_last_name
+                  ? "emergency_contact_last_name-error"
+                  : undefined
+              }
               value={profile.emergency_contact_last_name || ""}
               onChange={(e) => onFieldChange("emergency_contact_last_name", e.target.value)}
               placeholder="Dupont"
@@ -60,7 +74,9 @@ export function EmergencyContactSection({
               )}
             />
             {fieldErrors.emergency_contact_last_name && (
-              <p className="text-xs text-destructive">{fieldErrors.emergency_contact_last_name}</p>
+              <p id="emergency_contact_last_name-error" className="text-xs text-destructive">
+                {fieldErrors.emergency_contact_last_name}
+              </p>
             )}
           </div>
         </div>
@@ -69,6 +85,10 @@ export function EmergencyContactSection({
             <Label htmlFor="emergency_contact_email">Email</Label>
             <Input
               id="emergency_contact_email"
+              aria-invalid={!!fieldErrors.emergency_contact_email || undefined}
+              aria-describedby={
+                fieldErrors.emergency_contact_email ? "emergency_contact_email-error" : undefined
+              }
               type="email"
               value={profile.emergency_contact_email || ""}
               onChange={(e) => onFieldChange("emergency_contact_email", e.target.value)}
@@ -79,7 +99,9 @@ export function EmergencyContactSection({
               )}
             />
             {fieldErrors.emergency_contact_email && (
-              <p className="text-xs text-destructive">{fieldErrors.emergency_contact_email}</p>
+              <p id="emergency_contact_email-error" className="text-xs text-destructive">
+                {fieldErrors.emergency_contact_email}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -88,6 +110,10 @@ export function EmergencyContactSection({
             </Label>
             <Input
               id="emergency_contact_phone"
+              aria-invalid={!!fieldErrors.emergency_contact_phone || undefined}
+              aria-describedby={
+                fieldErrors.emergency_contact_phone ? "emergency_contact_phone-error" : undefined
+              }
               type="tel"
               value={profile.emergency_contact_phone || ""}
               onChange={(e) => onFieldChange("emergency_contact_phone", e.target.value)}
@@ -98,7 +124,9 @@ export function EmergencyContactSection({
               )}
             />
             {fieldErrors.emergency_contact_phone && (
-              <p className="text-xs text-destructive">{fieldErrors.emergency_contact_phone}</p>
+              <p id="emergency_contact_phone-error" className="text-xs text-destructive">
+                {fieldErrors.emergency_contact_phone}
+              </p>
             )}
           </div>
         </div>

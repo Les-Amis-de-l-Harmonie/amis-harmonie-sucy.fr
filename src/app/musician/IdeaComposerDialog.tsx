@@ -104,14 +104,17 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
         </DialogHeader>
 
         {submitted ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div role="status" className="flex flex-col items-center justify-center py-8 text-center">
             <Send className="mb-4 h-16 w-16 text-success" />
             <p className="text-sm text-muted-foreground">La fenêtre se fermera automatiquement.</p>
           </div>
         ) : (
           <div className="space-y-6">
             {errors.submit && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+              >
                 {errors.submit}
               </div>
             )}
@@ -123,6 +126,8 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
               <select
                 id="idea-category"
                 value={formData.category}
+                aria-invalid={errors.category ? true : undefined}
+                aria-describedby={errors.category ? "idea-category-error" : undefined}
                 onChange={(event) =>
                   setFormData({ ...formData, category: event.target.value as IdeaCategory })
                 }
@@ -135,7 +140,11 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
                   </option>
                 ))}
               </select>
-              {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
+              {errors.category && (
+                <p id="idea-category-error" className="text-sm text-destructive">
+                  {errors.category}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -145,10 +154,16 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
               <Input
                 id="idea-title"
                 value={formData.title}
+                aria-invalid={errors.title ? true : undefined}
+                aria-describedby={errors.title ? "idea-title-error" : undefined}
                 onChange={(event) => setFormData({ ...formData, title: event.target.value })}
                 placeholder="Ex : Organiser un concert de musique de film"
               />
-              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+              {errors.title && (
+                <p id="idea-title-error" className="text-sm text-destructive">
+                  {errors.title}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -158,26 +173,33 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
               <Textarea
                 id="idea-description"
                 value={formData.description}
+                aria-invalid={errors.description ? true : undefined}
+                aria-describedby={errors.description ? "idea-description-error" : undefined}
                 onChange={(event) => setFormData({ ...formData, description: event.target.value })}
                 placeholder="Décrivez votre idée en détail : objectifs, organisation, bénéfices pour l'association..."
                 rows={6}
               />
               {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
+                <p id="idea-description-error" className="text-sm text-destructive">
+                  {errors.description}
+                </p>
               )}
             </div>
 
             <div className="space-y-3 rounded-lg bg-muted/50 p-4">
-              <Label className="text-sm font-medium">Visibilité de l'idée</Label>
+              <Label htmlFor="idea-visibility" className="text-sm font-medium">
+                Visibilité de l'idée
+              </Label>
               <div className="flex flex-col gap-3">
                 <label
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-3 transition-colors ${
                     formData.is_public
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-muted-foreground"
-                  }`}
+                  } focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2`}
                 >
                   <input
+                    id="idea-visibility"
                     type="radio"
                     name="idea-visibility"
                     checked={formData.is_public}
@@ -198,9 +220,10 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
                     !formData.is_public
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-muted-foreground"
-                  }`}
+                  } focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2`}
                 >
                   <input
+                    id="idea-visibility-private"
                     type="radio"
                     name="idea-visibility"
                     checked={!formData.is_public}

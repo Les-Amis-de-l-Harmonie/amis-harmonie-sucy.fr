@@ -55,6 +55,8 @@ export function AddressSection({
             </Label>
             <Input
               id="postal_code"
+              aria-invalid={!!fieldErrors.postal_code || undefined}
+              aria-describedby={fieldErrors.postal_code ? "postal_code-error" : undefined}
               value={profile.postal_code || ""}
               onChange={(e) => onFieldChange("postal_code", e.target.value)}
               placeholder="94370"
@@ -64,7 +66,9 @@ export function AddressSection({
               )}
             />
             {fieldErrors.postal_code && (
-              <p className="text-xs text-destructive">{fieldErrors.postal_code}</p>
+              <p id="postal_code-error" className="text-xs text-destructive">
+                {fieldErrors.postal_code}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -73,6 +77,8 @@ export function AddressSection({
             </Label>
             <Input
               id="city"
+              aria-invalid={!!fieldErrors.city || undefined}
+              aria-describedby={fieldErrors.city ? "city-error" : undefined}
               value={profile.city || ""}
               onChange={(e) => onFieldChange("city", e.target.value)}
               placeholder="Sucy-en-Brie"
@@ -80,7 +86,11 @@ export function AddressSection({
                 fieldErrors.city && "border-destructive focus-visible:ring-destructive"
               )}
             />
-            {fieldErrors.city && <p className="text-xs text-destructive">{fieldErrors.city}</p>}
+            {fieldErrors.city && (
+              <p id="city-error" className="text-xs text-destructive">
+                {fieldErrors.city}
+              </p>
+            )}
           </div>
         </div>
       </CardContent>

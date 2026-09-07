@@ -20,10 +20,19 @@ export function InstrumentPracticeSection({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label>
+          {/* `Label` sans `htmlFor` : il surplombe un groupe de deux boutons radio,
+              pas un champ unique. L'association passe donc par `aria-labelledby`
+              sur un `role="radiogroup"` — même motif que le groupe d'instruments de
+              HarmonieSection. Sans cela le libellé est orphelin pour un lecteur
+              d'écran, qui annonce « Oui / Non » sans dire de quoi il s'agit. */}
+          <Label id="conservatory-label">
             Élève au Conservatoire de Sucy-en-Brie <span className="text-destructive">*</span>
           </Label>
-          <div className="flex h-10 items-center gap-4">
+          <div
+            role="radiogroup"
+            aria-labelledby="conservatory-label"
+            className="flex h-10 items-center gap-4"
+          >
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="radio"

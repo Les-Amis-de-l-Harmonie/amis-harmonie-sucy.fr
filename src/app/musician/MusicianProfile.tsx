@@ -55,6 +55,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   // N'affiche la liste d'erreurs qu'après une tentative d'enregistrement — pas
@@ -62,24 +63,28 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
     try {
       const response = await fetch("/api/musician/profile");
-      if (response.ok) {
-        const data = (await response.json()) as ProfileWithInstruments;
-        if (!data.instruments || data.instruments.length === 0) {
-          data.instruments = [{ instrument_name: "", start_date: "", level: "" }];
-        }
-        if (!data.harmonieInstruments) {
-          data.harmonieInstruments = [];
-        }
-        data.primaryHarmonieInstrument = resolveDeclaredPrimaryInstrument(
-          data.harmonieInstruments,
-          data.primaryHarmonieInstrument ?? null
-        );
-        setProfile(data);
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement du profil.");
       }
+      const data = (await response.json()) as ProfileWithInstruments;
+      if (!data.instruments || data.instruments.length === 0) {
+        data.instruments = [{ instrument_name: "", start_date: "", level: "" }];
+      }
+      if (!data.harmonieInstruments) {
+        data.harmonieInstruments = [];
+      }
+      data.primaryHarmonieInstrument = resolveDeclaredPrimaryInstrument(
+        data.harmonieInstruments,
+        data.primaryHarmonieInstrument ?? null
+      );
+      setProfile(data);
     } catch (err) {
       console.error("Error fetching profile:", err);
+      setFetchError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
     } finally {
       setLoading(false);
     }
@@ -232,15 +237,36 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
       </div>
 
       {message?.type === "success" && (
-        <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success"
+        >
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
           {message.text}
         </div>
       )}
       {message?.type === "error" && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+        >
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           {message.text}
+        </div>
+      )}
+      {fetchError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          <span>{fetchError}</span>
+          <button
+            type="button"
+            onClick={() => void fetchProfile()}
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            Réessayer
+          </button>
         </div>
       )}
 
