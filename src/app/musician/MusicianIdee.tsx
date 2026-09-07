@@ -19,7 +19,7 @@ type IdeaTab = "my-ideas" | "public-wall";
 export function MusicianIdeeClient() {
   const [myIdeas, setMyIdeas] = useState<IdeaWithLikes[]>([]);
   const [publicIdeas, setPublicIdeas] = useState<IdeaWithLikes[]>([]);
-  const [activeTab, setActiveTab] = useState<IdeaTab>("my-ideas");
+  const [activeTab, setActiveTab] = useState<IdeaTab>("public-wall");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -185,20 +185,6 @@ export function MusicianIdeeClient() {
 
       <div className="flex gap-2 border-b border-border">
         <button
-          ref={myIdeasTabRef}
-          type="button"
-          aria-pressed={activeTab === "my-ideas"}
-          onClick={() => setActiveTab("my-ideas")}
-          onKeyDown={(event) => handleTabKeyDown(event, "my-ideas")}
-          className={`cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            activeTab === "my-ideas"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Mes idées
-        </button>
-        <button
           ref={publicWallTabRef}
           type="button"
           aria-pressed={activeTab === "public-wall"}
@@ -217,6 +203,20 @@ export function MusicianIdeeClient() {
               {publicIdeas.length}
             </Badge>
           )}
+        </button>
+        <button
+          ref={myIdeasTabRef}
+          type="button"
+          aria-pressed={activeTab === "my-ideas"}
+          onClick={() => setActiveTab("my-ideas")}
+          onKeyDown={(event) => handleTabKeyDown(event, "my-ideas")}
+          className={`cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            activeTab === "my-ideas"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Mes idées
         </button>
       </div>
 
