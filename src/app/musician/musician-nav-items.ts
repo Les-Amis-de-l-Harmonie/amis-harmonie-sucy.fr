@@ -36,6 +36,18 @@ export interface MusicianNavItem {
  * L'ordre choisi groupe volontairement les 4 sections à plus forte fréquence
  * en tête (identique à l'ordre des onglets mobiles), pour que la sidebar
  * desktop et la barre basse mobile racontent la même histoire de priorité.
+ *
+ * Les deux derniers items (`external: true`) forment un second groupe visuel
+ * dans la sidebar et le sheet « Plus » (séparateur + libellé « Hors du
+ * portail », voir MusicianSidebar.tsx et MusicianMoreSheet.tsx) : ils quittent
+ * la coquille, ce n'est pas la même nature d'action que les six pages
+ * internes. Adhésion précède Partitions dans ce sous-groupe : en base de
+ * production, 32 musiciens sur 38 ne sont pas adhérents pour 2026-2027,
+ * contre une poignée qui consulte les partitions au quotidien — à priorité
+ * égale (toutes deux hors sheet direct), Adhésion reste la plus utile au
+ * plus grand nombre. Elle n'est pas remontée dans les onglets mobiles pour
+ * autant : la page d'accueil porte son propre parcours de complétion,
+ * la navigation n'a pas à dupliquer ce rôle.
  */
 export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
   { href: "/musician/", label: "Accueil", icon: Home, inTabBar: true },
@@ -62,6 +74,7 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
   },
   { href: "/musician/assurance", label: "Assurance", icon: Shield, inTabBar: false },
   { href: "/musician/trombinoscope", label: "Trombinoscope", icon: Users, inTabBar: false },
+  { href: "/adhesion", label: "Adhésion", icon: CreditCard, inTabBar: false, external: true },
   {
     href: "https://drive.google.com/drive/folders/1pUqqJonhyugZCuT3SrWrpNTQ_NFI0BAz?usp=drive_link",
     label: "Partitions",
@@ -69,7 +82,6 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
     inTabBar: false,
     external: true,
   },
-  { href: "/adhesion", label: "Adhésion", icon: CreditCard, inTabBar: false, external: true },
 ];
 
 export const MUSICIAN_TAB_ITEMS = MUSICIAN_NAV_ITEMS.filter((item) => item.inTabBar);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, LogOut, MoreHorizontal } from "lucide-react";
+import { ExternalLink, Globe, LogOut, MoreHorizontal } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -29,6 +29,10 @@ interface MusicianMoreSheetProps {
  * bas listant les sections de consultation ponctuelle définies dans
  * `MUSICIAN_OVERFLOW_ITEMS`, plus le site public, le thème et la déconnexion. C'est
  * l'équivalent mobile du bas de sidebar desktop, sous une présentation différente.
+ *
+ * Même distinction interne/externe qu'en sidebar desktop (libellé « Hors du
+ * portail ») : Assurance et Trombinoscope restent dans le portail, Adhésion
+ * et Partitions en sortent.
  */
 export function MusicianMoreSheet({
   pathname,
@@ -37,9 +41,9 @@ export function MusicianMoreSheet({
   avatar,
 }: MusicianMoreSheetProps) {
   const [open, setOpen] = useState(false);
-  const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) =>
-    isNavItemActive(item, pathname)
-  );
+  const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) => isNavItemActive(item, pathname));
+  const internalOverflowItems = MUSICIAN_OVERFLOW_ITEMS.filter((item) => !item.external);
+  const externalOverflowItems = MUSICIAN_OVERFLOW_ITEMS.filter((item) => item.external);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -74,18 +78,13 @@ export function MusicianMoreSheet({
         </SheetHeader>
 
         <nav aria-label="Sections supplémentaires" className="space-y-1">
-          {MUSICIAN_OVERFLOW_ITEMS.map((item) => {
+          {internalOverflowItems.map((item) => {
             const active = isNavItemActive(item, pathname);
             return (
               <a
                 key={item.href}
                 href={item.href}
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noopener noreferrer" : undefined}
                 aria-current={active ? "page" : undefined}
-                aria-label={
-                  item.external ? `${item.label} (s'ouvre dans un nouvel onglet)` : undefined
-                }
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
@@ -97,6 +96,31 @@ export function MusicianMoreSheet({
               </a>
             );
           })}
+
+          {externalOverflowItems.length > 0 && (
+            <p className="mt-3 border-t border-border px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+              Hors du portail
+            </p>
+          )}
+
+          {externalOverflowItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+            >
+              <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="flex-1 truncate">
+                {item.label}
+                <span className="sr-only"> (s'ouvre dans un nouvel onglet)</span>
+              </span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+            </a>
+          ))}
+
           <a
             href="/"
             className="flex h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"

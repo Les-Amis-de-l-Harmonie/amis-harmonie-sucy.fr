@@ -334,33 +334,8 @@ export interface InfoSettings {
   updated_at: string;
 }
 
-export type MusicianCardType =
-  | "profile"
-  | "adhesion"
-  | "assurance"
-  | "planning"
-  | "partitions"
-  | "boite-a-idee"
-  | "outing"
-  | "social"
-  | "birthdays"
-  | "trombinoscope";
-
 // Les types PlanningEvent / PlanningAvailability / PlanningStatus / PlanningInput
 // ont été supprimés : la table `events` est désormais la source unique, et les
 // présences sont modélisées par `EventPresence` (statut à deux valeurs, sans
 // « peut-être »). Les tables planning_events / planning_availability subsistent
 // en base ; leur suppression fera l'objet d'une migration ultérieure séparée.
-
-export const MUSICIAN_CARD_LABELS: Record<MusicianCardType, string> = {
-  profile: "Mon Profil",
-  adhesion: "Adhésion",
-  assurance: "Assurance",
-  planning: "Mes prestations",
-  partitions: "Partitions",
-  "boite-a-idee": "Boîte à idée",
-  outing: "Inscription Sortie",
-  social: "Suivez-nous (Réseaux sociaux)",
-  birthdays: "Anniversaires",
-  trombinoscope: "Trombinoscope",
-};

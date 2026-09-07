@@ -9,7 +9,6 @@ import { UsersAdminClient } from "./UsersAdmin";
 import { GalleryAdminClient } from "./GalleryAdmin";
 import { IdeasAdminClient } from "./IdeasAdmin";
 import { OutingSettingsClient } from "./OutingSettingsAdmin";
-import { CardOrderClient } from "./CardOrderAdmin";
 import { InfoSettingsClient } from "./InfoSettingsAdmin";
 import { InsuranceAdminClient } from "./InsuranceAdmin";
 import { PresenceAdminClient } from "./PresenceAdmin";
@@ -97,14 +96,6 @@ export function AdminOutingSettingsPage({ email, role }: AdminPageProps) {
   return (
     <AdminLayout email={email} role={role}>
       <OutingSettingsClient />
-    </AdminLayout>
-  );
-}
-
-export function AdminCardOrderPage({ email, role }: AdminPageProps) {
-  return (
-    <AdminLayout email={email} role={role}>
-      <CardOrderClient />
     </AdminLayout>
   );
 }

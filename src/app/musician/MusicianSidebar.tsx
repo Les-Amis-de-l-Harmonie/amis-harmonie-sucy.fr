@@ -20,8 +20,17 @@ interface MusicianSidebarProps {
  *
  * Largeur fixe 288px (`w-72`), non collapsible : ce public d'âges variés
  * gagne davantage à une lisibilité constante qu'à un mode icônes-seules.
+ *
+ * Les entrées internes et externes (`item.external`) sont rendues en deux
+ * groupes séparés par un simple libellé « Hors du portail » : à 8 entrées,
+ * un vrai modèle de groupes génériques serait disproportionné, mais la
+ * différence de nature (rester dans le portail / le quitter) mérite mieux
+ * qu'un alignement indifférencié.
  */
 export function MusicianSidebar({ pathname, firstName, lastName, avatar }: MusicianSidebarProps) {
+  const internalItems = MUSICIAN_NAV_ITEMS.filter((item) => !item.external);
+  const externalItems = MUSICIAN_NAV_ITEMS.filter((item) => item.external);
+
   return (
     <aside
       aria-label="Navigation du portail musicien"
@@ -47,7 +56,24 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
         aria-label="Sections de l'espace musicien"
         className="flex-1 space-y-1 overflow-y-auto px-4 py-4"
       >
-        {MUSICIAN_NAV_ITEMS.map((item) => (
+        {internalItems.map((item) => (
+          <MusicianSidebarNavItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            external={item.external}
+            active={isNavItemActive(item, pathname)}
+          />
+        ))}
+
+        {externalItems.length > 0 && (
+          <p className="mt-3 border-t border-border px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+            Hors du portail
+          </p>
+        )}
+
+        {externalItems.map((item) => (
           <MusicianSidebarNavItem
             key={item.href}
             href={item.href}

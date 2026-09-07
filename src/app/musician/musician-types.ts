@@ -4,6 +4,10 @@ export type { IdeaPreview } from "@/db/types";
 
 export interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
+  /** Renvoyé par `/api/musician/profile` (voir `src/app/api/musician.ts`) — nécessaire
+   * pour réutiliser `validateProfile`/`getSectionCompletion` de `profile-validation.ts`
+   * dans le parcours de complétion de l'accueil (`profile-journey.ts`). */
+  primaryHarmonieInstrument?: string | null;
   email?: string;
   adhesion_2026_2027?: number;
   insurance_complete?: boolean;

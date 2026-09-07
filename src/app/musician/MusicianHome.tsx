@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Info } from "lucide-react";
 import type { Video } from "@/db/types";
 import { useMusicianDashboardData } from "./useMusicianDashboardData";
-import { EssentialsZone } from "./EssentialsZone";
-import { SecondaryCardGrid } from "./SecondaryCardGrid";
+import { JourneyModule } from "./JourneyModule";
+import { PrestationsModule } from "./PrestationsModule";
+import { RecentIdeasModule } from "./RecentIdeasModule";
+import { BirthdaysModule } from "./BirthdaysModule";
+import { VideoModule } from "./VideoModule";
+import { OutingModule } from "./OutingModule";
 import { VideoModal } from "./VideoModal";
 
 interface MusicianHomeClientProps {
@@ -15,11 +19,6 @@ interface MusicianHomeClientProps {
   lastName: string;
 }
 
-// Seules animations d'entrée conservées (voir direction design §G1) : la
-// salutation et la carte info admin restent des fondus/glissés ponctuels au
-// premier rendu. Le stagger de la grille secondaire vit dans
-// `SecondaryCardGrid`. Aucune animation de survol par `motion.div` : voir
-// `.hover-lift` (CSS pur) posé dans `SecondaryCardGrid`.
 const headerVariants = {
   hidden: { opacity: 0, y: -20 },
   visible: {
@@ -40,12 +39,25 @@ const infoCardVariants = {
 };
 
 /**
- * Dashboard hiérarchisé à deux zones (voir direction design §C) :
- *  - `EssentialsZone` — ordre fixe par urgence, jamais piloté par l'admin ;
- *  - `SecondaryCardGrid` — les 10 cartes dans l'ordre de `cardOrder`.
- * Ce composant ne fait plus que l'assemblage : tout le calcul de données vit
- * dans `useMusicianDashboardData`, toute la logique d'affichage vit dans les
- * composants qu'il compose.
+ * Architecture retenue en Phase 2b (voir le rapport) : la grille de 10
+ * cartes de navigation disparaît, remplacée par deux zones dans l'ordre
+ * exigé par la spécification —
+ *
+ *  1. `JourneyModule` — parcours de complétion chiffré, profil → adhésion →
+ *     assurance → réponses de présence. Remplace `EssentialsZone` et les
+ *     bandeaux d'alerte associés (`ProfileAlertBanner`, `MembershipAlerts`,
+ *     `AllClearBanner`) : un seul endroit qui dit "où j'en suis" et "quelle
+ *     est la prochaine action", jamais un simple booléen.
+ *  2. Contenu réel — `PrestationsModule`, `RecentIdeasModule`,
+ *     `BirthdaysModule`, `VideoModule`, `OutingModule` (si actif). Chacun
+ *     remplace une carte de navigation devenue redondante avec la nouvelle
+ *     sidebar, en montrant ce qu'il y a réellement à voir plutôt qu'un
+ *     simple lien.
+ *
+ * `PartitionsCard`, `TrombinoscopeCard` et `ProfileCard` (carte de
+ * navigation pure) n'ont pas de remplaçant : la sidebar fait déjà ce travail
+ * (voir `musician-nav-items.ts`), et le profil est représenté par sa
+ * première étape dans `JourneyModule`.
  */
 export function MusicianHomeClient({
   userId: _userId,
@@ -55,6 +67,28 @@ export function MusicianHomeClient({
   const data = useMusicianDashboardData();
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const displayName = firstName || "Musicien";
+  const shouldReduceMotion = useReducedMotion();
+  const outingActive = data.outingSettings?.is_active === 1;
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: shouldReduceMotion ? 0 : 0.08 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: shouldReduceMotion ? 0 : 0.45,
+        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+      },
+    },
+  };
 
   return (
     <div className="relative space-y-6">
@@ -65,8 +99,8 @@ export function MusicianHomeClient({
         <p className="text-muted-foreground">Bienvenue dans votre espace personnel</p>
       </motion.div>
 
-      {/* Cartouche éditoriale du bureau : garde sa place au-dessus de la zone
-          essentiels, comportement inchangé. */}
+      {/* Cartouche éditoriale du bureau : garde sa place au-dessus du parcours
+          de complétion, comportement inchangé depuis l'ancien MusicianHome. */}
       {data.infoSettings?.is_active === 1 && (
         <motion.div
           initial="hidden"
@@ -98,33 +132,50 @@ export function MusicianHomeClient({
         </motion.div>
       )}
 
-      <EssentialsZone
-        loading={data.loading}
-        firstName={displayName}
-        profile={data.profile}
-        profileComplete={data.profileComplete}
-        planningUrgent={data.planningUrgent}
-        urgentEvent={data.urgentEvent}
-        nextEvent={data.nextEvent}
-      />
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="space-y-6"
+      >
+        <motion.div variants={itemVariants}>
+          <JourneyModule
+            loading={data.loading}
+            profile={data.profile}
+            planningUrgent={data.planningUrgent}
+            urgentEvent={data.urgentEvent}
+            pendingCount={data.pendingCount}
+          />
+        </motion.div>
 
-      <div>
-        <h2 className="mb-4 font-heading text-lg font-bold text-foreground">Vos accès rapides</h2>
-        <SecondaryCardGrid
-          cardOrder={data.cardOrder}
-          profile={data.profile}
-          loading={data.loading}
-          profileComplete={data.profileComplete}
-          nextEvent={data.nextEvent}
-          planningUrgent={data.planningUrgent}
-          urgentEvent={data.urgentEvent}
-          outingSettings={data.outingSettings}
-          birthdays={data.birthdays}
-          unreadIdeasCount={data.unreadIdeasCount}
-          firstVideo={data.firstVideo}
-          onVideoClick={setActiveVideo}
-        />
-      </div>
+        <motion.div variants={itemVariants}>
+          <h2 className="mb-4 font-heading text-lg font-bold text-foreground">Quoi de neuf</h2>
+
+          <div className="space-y-6">
+            <PrestationsModule
+              loading={data.loading}
+              nextEvent={data.nextEvent}
+              planningUrgent={data.planningUrgent}
+              urgentEvent={data.urgentEvent}
+            />
+
+            <RecentIdeasModule loading={data.loading} ideas={data.recentIdeas} />
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <BirthdaysModule loading={data.loading} birthdays={data.birthdays} />
+              <VideoModule
+                loading={data.loading}
+                video={data.firstVideo}
+                onVideoClick={setActiveVideo}
+              />
+            </div>
+
+            {!data.loading && outingActive && data.outingSettings && (
+              <OutingModule outingSettings={data.outingSettings} />
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

@@ -770,38 +770,50 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   }
 
   try {
-    const nextEvent = await env.DB.prepare(
-      `SELECT title, date
-       FROM events
-       WHERE presence_required = 1 AND date >= date('now')
-       ORDER BY date ASC
-       LIMIT 1`
-    ).first<{ title: string; date: string }>();
-
-    const urgentEvent = await env.DB.prepare(
-      `SELECT e.title, e.date
-       FROM events e
-       LEFT JOIN event_presences ep ON ep.event_id = e.id AND ep.user_id = ?
-       -- L'urgence suit la date limite de réponse, pas la date de l'événement.
-       WHERE e.presence_required = 1
-         AND e.date >= date('now')
-         AND ep.id IS NULL
-         AND (
-           (e.response_deadline IS NOT NULL AND e.response_deadline <= date('now', '+14 days'))
-           OR (e.response_deadline IS NULL AND e.date <= date('now', '+30 days'))
-         )
-       ORDER BY CASE WHEN e.response_deadline IS NULL THEN e.date ELSE e.response_deadline END ASC,
-                e.date ASC
-       LIMIT 1`
-    )
-      .bind(user.id)
-      .first<{ title: string; date: string }>();
+    const [nextEvent, urgentEvent, pendingResult] = await Promise.all([
+      env.DB.prepare(
+        `SELECT title, date
+         FROM events
+         WHERE presence_required = 1 AND date >= date('now')
+         ORDER BY date ASC
+         LIMIT 1`
+      ).first<{ title: string; date: string }>(),
+      env.DB.prepare(
+        `SELECT e.title, e.date
+         FROM events e
+         LEFT JOIN event_presences ep ON ep.event_id = e.id AND ep.user_id = ?
+         -- L'urgence suit la date limite de réponse, pas la date de l'événement.
+         WHERE e.presence_required = 1
+           AND e.date >= date('now')
+           AND ep.id IS NULL
+           AND (
+             (e.response_deadline IS NOT NULL AND e.response_deadline <= date('now', '+14 days'))
+             OR (e.response_deadline IS NULL AND e.date <= date('now', '+30 days'))
+           )
+         ORDER BY CASE WHEN e.response_deadline IS NULL THEN e.date ELSE e.response_deadline END ASC,
+                  e.date ASC
+         LIMIT 1`
+      )
+        .bind(user.id)
+        .first<{ title: string; date: string }>(),
+      env.DB.prepare(
+        `SELECT COUNT(*) as count
+         FROM events e
+         LEFT JOIN event_presences ep ON ep.event_id = e.id AND ep.user_id = ?
+         WHERE e.presence_required = 1
+           AND e.date >= date('now')
+           AND ep.id IS NULL`
+      )
+        .bind(user.id)
+        .first<{ count: number }>(),
+    ]);
 
     return new Response(
       JSON.stringify({
         urgent: !!urgentEvent,
         nextEvent: nextEvent ? { title: nextEvent.title, date: nextEvent.date } : null,
         urgentEvent: urgentEvent ? { title: urgentEvent.title, date: urgentEvent.date } : null,
+        pendingCount: pendingResult?.count ?? 0,
       }),
       {
         headers: { "Content-Type": "application/json" },
@@ -809,9 +821,12 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
     );
   } catch (error) {
     logger.error("Planning check API error:", error);
-    return new Response(JSON.stringify({ urgent: false, nextEvent: null, urgentEvent: null }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ urgent: false, nextEvent: null, urgentEvent: null, pendingCount: 0 }),
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
 

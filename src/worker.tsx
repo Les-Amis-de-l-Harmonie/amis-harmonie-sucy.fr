@@ -40,7 +40,6 @@ import { handleEventsApi } from "@/app/api/admin/events";
 import { handleVideosApi } from "@/app/api/admin/videos";
 import { handleR2CleanupApi } from "@/app/api/admin/r2-cleanup";
 import { handleOutingSettingsApi } from "@/app/api/admin/outing-settings";
-import { handleCardOrderSettingsApi } from "@/app/api/admin/card-order";
 import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
 import { handleInsuranceApi } from "@/app/api/admin/insurance";
 import { handleAdminPresenceApi } from "@/app/api/admin/presence";
@@ -72,7 +71,6 @@ import {
   AdminGalleryPage,
   AdminIdeasPage,
   AdminOutingSettingsPage,
-  AdminCardOrderPage,
   AdminInfoSettingsPage,
   AdminInsurancePage,
   AdminPresencePage,
@@ -221,9 +219,6 @@ const app = defineApp([
   route("/api/admin/outing-settings", ({ request }: { request: Request }) =>
     handleOutingSettingsApi(request)
   ),
-  route("/api/admin/card-order", ({ request }: { request: Request }) =>
-    handleCardOrderSettingsApi(request)
-  ),
   route("/api/admin/info-settings", ({ request }: { request: Request }) =>
     handleInfoSettingsApi(request)
   ),
@@ -342,34 +337,6 @@ const app = defineApp([
     }
   }),
 
-  route("/api/card-order", async ({ request }: { request: Request }) => {
-    if (request.method !== "GET") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    try {
-      const settings = await env.DB.prepare(
-        "SELECT card_order FROM card_order_settings WHERE id = 1"
-      ).first<{ card_order: string }>();
-      if (!settings) {
-        return new Response(JSON.stringify({ card_order: null }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify(settings), {
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (error) {
-      logger.error("Error fetching card order:", error);
-      return new Response(JSON.stringify({ error: "Internal server error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-  }),
-
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
 
   route("/sitemap.xml", () => sitemapHandler()),
@@ -467,12 +434,6 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminOutingSettingsPage email={auth.email} role={auth.role} />;
-    }),
-
-    route("/admin/card-order", async ({ request }: { request: Request }) => {
-      const auth = await adminAuthMiddleware({ request });
-      if (auth instanceof Response) return auth;
-      return <AdminCardOrderPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/info-settings", async ({ request }: { request: Request }) => {

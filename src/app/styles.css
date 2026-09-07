@@ -207,3 +207,23 @@ h4 {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
+
+/* `prefers-reduced-motion` n'était géré nulle part dans le portail avant la
+   Phase 2A (ni dans les utilitaires ci-dessus, ni dans `scroll-behavior:
+   smooth` posé plus haut sur `html`) : une règle globale plutôt qu'un
+   traitement au cas par cas, pour que tout composant présent ou futur
+   s'appuyant sur les transitions CSS Tailwind en hérite automatiquement.
+   Les animations pilotées en JS par Framer Motion (cartes du tableau de
+   bord) ne passent pas par des transitions CSS et ne sont donc pas
+   couvertes ici : à gérer au cas par cas côté composant (ex. `useReducedMotion`
+   de framer-motion), voir AGENTS.md. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

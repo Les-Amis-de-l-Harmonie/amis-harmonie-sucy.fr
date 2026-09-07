@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { OutingSettings, MusicianCardType, Video } from "@/db/types";
+import type { OutingSettings, Video } from "@/db/types";
 import type {
   Birthday,
   DashboardInfoSettings,
@@ -10,86 +10,27 @@ import type {
   UpcomingEvent,
 } from "./musician-types";
 
-/**
- * Les 10 clés gelées (décision D7, Phase 1) : aucun ajout, retrait ni
- * renommage. `CardOrderAdmin.tsx` et `src/db/types.ts:327-337` déclarent la
- * même liste séparément (triplication connue, verrouillée par
- * `src/app/musician/__tests__/card-order.test.tsx` plutôt que déduplifiée,
- * `src/db/**` étant hors périmètre).
- */
-const DEFAULT_CARDS: MusicianCardType[] = [
-  "profile",
-  "adhesion",
-  "assurance",
-  "planning",
-  "partitions",
-  "boite-a-idee",
-  "outing",
-  "birthdays",
-  "social",
-  "trombinoscope",
-];
-
-/**
- * Un profil est complet quand tous les champs obligatoires du formulaire
- * (`MusicianProfile.tsx`, Phase 3 à venir) sont renseignés. Logique reprise
- * à l'identique de l'ancien `MusicianHome.tsx` — aucun changement de règle,
- * seulement un déplacement de fichier.
- */
-export function isProfileComplete(profile: ProfileWithExtras | null): boolean {
-  if (!profile) return false;
-
-  const requiredFields = [
-    profile.first_name,
-    profile.last_name,
-    profile.date_of_birth,
-    profile.phone,
-    profile.address_line1,
-    profile.postal_code,
-    profile.city,
-    profile.harmonie_start_date,
-    profile.emergency_contact_first_name,
-    profile.emergency_contact_last_name,
-    profile.emergency_contact_phone,
-  ];
-
-  const allTextFieldsFilled = requiredFields.every((field) => field && field.trim() !== "");
-  const hasHarmonieInstruments =
-    profile.harmonieInstruments !== undefined &&
-    profile.harmonieInstruments !== null &&
-    profile.harmonieInstruments.length > 0;
-  const hasConservatoryChoice =
-    profile.is_conservatory_student === 0 || profile.is_conservatory_student === 1;
-  const hasImageConsentChoice = profile.image_consent === 0 || profile.image_consent === 1;
-
-  return (
-    allTextFieldsFilled && hasHarmonieInstruments && hasConservatoryChoice && hasImageConsentChoice
-  );
-}
-
 export interface MusicianDashboardData {
   profile: ProfileWithExtras | null;
   loading: boolean;
-  /** `false` tant que `loading` est vrai — un profil non chargé n'est jamais "complet". */
-  profileComplete: boolean;
   nextEvent: UpcomingEvent | null;
   planningUrgent: boolean;
   urgentEvent: UpcomingEvent | null;
+  pendingCount: number;
   outingSettings: OutingSettings | null;
   birthdays: Birthday[];
   infoSettings: DashboardInfoSettings | null;
   unreadIdeasCount: number;
   recentIdeas: IdeaPreview[];
   firstVideo: Video | null;
-  cardOrder: MusicianCardType[];
 }
 
 /**
- * Extrait de l'ancien `MusicianHome.tsx` (`fetchProfile`, `isProfileComplete`,
- * la fusion `cardOrder`) : la même **unique** vague de 8 requêtes, sans en
- * ajouter ni en retirer. Toute la zone « essentiels » de la Phase 2b se
- * calcule à partir de ces données déjà là — c'est tout l'intérêt de
- * l'extraction, plutôt que de multiplier les appels réseau par module.
+ * Extrait de l'ancien `MusicianHome.tsx` (`fetchProfile`) :
+ * la même vague de requêtes parallèles, moins `/api/card-order` — la grille de
+ * 10 cartes qui en dépendait a disparu en Phase 2b (voir `MusicianHome.tsx` et
+ * le rapport de Phase 2b), le tri administrable des cartes n'a donc plus de
+ * consommateur. 7 requêtes au lieu de 8.
  */
 export function useMusicianDashboardData(): MusicianDashboardData {
   const [profile, setProfile] = useState<ProfileWithExtras | null>(null);
@@ -99,33 +40,24 @@ export function useMusicianDashboardData(): MusicianDashboardData {
   const [infoSettings, setInfoSettings] = useState<DashboardInfoSettings | null>(null);
   const [planningUrgent, setPlanningUrgent] = useState(false);
   const [urgentEvent, setUrgentEvent] = useState<UpcomingEvent | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const [firstVideo, setFirstVideo] = useState<Video | null>(null);
-  const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
   const [loading, setLoading] = useState(true);
   const [unreadIdeasCount, setUnreadIdeasCount] = useState(0);
   const [recentIdeas, setRecentIdeas] = useState<IdeaPreview[]>([]);
 
   const fetchProfile = useCallback(async () => {
     try {
-      const [
-        profileRes,
-        outingRes,
-        cardOrderRes,
-        infoRes,
-        birthdaysRes,
-        ideasRes,
-        planningRes,
-        videosRes,
-      ] = await Promise.all([
-        fetch("/api/musician/profile"),
-        fetch("/api/outing-settings"),
-        fetch("/api/card-order"),
-        fetch("/api/info-settings"),
-        fetch("/api/musician/birthdays"),
-        fetch("/api/musician/ideas?count=unread"),
-        fetch("/api/musician/planning-check"),
-        fetch("/api/videos"),
-      ]);
+      const [profileRes, outingRes, infoRes, birthdaysRes, ideasRes, planningRes, videosRes] =
+        await Promise.all([
+          fetch("/api/musician/profile"),
+          fetch("/api/outing-settings"),
+          fetch("/api/info-settings"),
+          fetch("/api/musician/birthdays"),
+          fetch("/api/musician/ideas?count=unread"),
+          fetch("/api/musician/planning-check"),
+          fetch("/api/videos"),
+        ]);
 
       if (profileRes.ok) {
         const data = (await profileRes.json()) as ProfileWithExtras;
@@ -135,23 +67,6 @@ export function useMusicianDashboardData(): MusicianDashboardData {
       if (outingRes.ok) {
         const outingData = (await outingRes.json()) as OutingSettings;
         setOutingSettings(outingData);
-      }
-
-      if (cardOrderRes.ok) {
-        const cardData = (await cardOrderRes.json()) as { card_order: string };
-        if (cardData.card_order) {
-          try {
-            const parsed = JSON.parse(cardData.card_order) as MusicianCardType[];
-            // Rejette les clés inconnues, ajoute les clés gelées manquantes en fin.
-            const validCards = parsed.filter((card): card is MusicianCardType =>
-              DEFAULT_CARDS.includes(card)
-            );
-            const missingCards = DEFAULT_CARDS.filter((card) => !validCards.includes(card));
-            setCardOrder([...validCards, ...missingCards]);
-          } catch {
-            // Garde l'ordre par défaut.
-          }
-        }
       }
 
       if (infoRes.ok) {
@@ -178,12 +93,14 @@ export function useMusicianDashboardData(): MusicianDashboardData {
           urgent: boolean;
           nextEvent: UpcomingEvent | null;
           urgentEvent?: UpcomingEvent | null;
+          pendingCount: number;
         };
         setPlanningUrgent(planningData.urgent);
         if (planningData.nextEvent) {
           setNextEvent(planningData.nextEvent);
         }
         setUrgentEvent(planningData.urgentEvent ?? null);
+        setPendingCount(planningData.pendingCount);
       }
 
       if (videosRes.ok) {
@@ -203,21 +120,18 @@ export function useMusicianDashboardData(): MusicianDashboardData {
     fetchProfile();
   }, [fetchProfile]);
 
-  const profileComplete = !loading && profile ? isProfileComplete(profile) : false;
-
   return {
     profile,
     loading,
-    profileComplete,
     nextEvent,
     planningUrgent,
     urgentEvent,
+    pendingCount,
     outingSettings,
     birthdays,
     infoSettings,
     unreadIdeasCount,
     recentIdeas,
     firstVideo,
-    cardOrder,
   };
 }

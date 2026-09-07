@@ -15,7 +15,6 @@ import {
   LogOut,
   Menu,
   X,
-  LayoutGrid,
   Info,
   Shield,
   Globe,
@@ -43,7 +42,6 @@ const navItems = [
   { href: "/admin/presence", label: "Présences", icon: ClipboardList },
   { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
-  { href: "/admin/card-order", label: "Ordre cartouches", icon: LayoutGrid },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
 ];
 
