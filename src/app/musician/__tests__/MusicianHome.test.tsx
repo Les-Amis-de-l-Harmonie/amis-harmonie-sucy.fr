@@ -278,7 +278,7 @@ describe("parcours de l'accueil musicien", () => {
 
     expect(
       await screen.findByText(
-        "Tout est en ordre : profil, adhésion, assurance et présences à jour."
+        "Tout est en ordre : profil, adhésion, assurance et prestations à jour."
       )
     ).toBeInTheDocument();
     expect(screen.getByText("Adhérent 2026-2027")).toBeInTheDocument();

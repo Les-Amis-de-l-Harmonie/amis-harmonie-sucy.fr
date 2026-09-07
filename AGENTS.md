@@ -159,10 +159,10 @@ src/
     seo.ts              # getPageSeo(), isNoIndexPath(), SITE_URL, DEFAULT_OG_IMAGE
     styles.css          # Tailwind 4 imports, @theme inline tokens, global styles
     pages/              # 17 files — public pages (server by default)
-    admin/              # 19 files — admin dashboard; pages.tsx holds the wrappers
-    musician/           # 8 files — musician portal (all "use client")
+    admin/              # 18 files — admin dashboard; pages.tsx holds the wrappers
+    musician/           # 52 files — musician portal (all "use client")
     api/
-      admin/            # 14 per-resource admin handlers
+      admin/            # 13 per-resource admin handlers
       *.ts              # auth, public endpoints, upload, images, sitemap, robots
     components/         # 12 shared + shared/ (2) + ui/ (13 primitives)
     shared/             # links.ts, gallery.ts
@@ -209,12 +209,12 @@ For how routing, caching, auth, CSP, and logging actually work, read `ARCHITECTU
 Server components are the default — no directive. Add `"use client"` as the **first
 line** for state, effects, event handlers, or browser APIs.
 
-Admin pages use a wrapper pattern: `src/app/admin/pages.tsx` exports 14 `Admin*Page`
+Admin pages use a wrapper pattern: `src/app/admin/pages.tsx` exports 13 `Admin*Page`
 server wrappers that render `<AdminLayout><XxxAdminClient /></AdminLayout>`.
-**Follow the pattern of the directory you are editing** — the `Client` suffix is on 15
-of the 16 client components in `admin/` (`Dashboard.tsx` → `AdminDashboard` is the
-exception), but the `Admin` infix is not universal (`CardOrderClient`,
-`InfoSettingsClient`). `musician/` is entirely client-side and uses no suffix at all.
+**Follow the pattern of the directory you are editing** — the `Client` suffix is on 14
+of the 15 client components in `admin/` (`Dashboard.tsx` → `AdminDashboard` is the
+exception), but the `Admin` infix is not universal (`InfoSettingsClient`,
+`OutingSettingsClient`). `musician/` is entirely client-side and uses no suffix at all.
 Do not "normalise" one directory to match the other.
 
 ### API handlers

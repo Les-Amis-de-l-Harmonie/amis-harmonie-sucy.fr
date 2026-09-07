@@ -313,13 +313,6 @@ export interface OutingSettings {
   updated_at: string;
 }
 
-export interface CardOrderSettings {
-  id: number;
-  card_order: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface InfoSettings {
   id: number;
   title: string;

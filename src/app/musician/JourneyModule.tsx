@@ -58,7 +58,7 @@ export function JourneyModule({
           </h2>
           <p className="text-sm text-muted-foreground">
             {allDone
-              ? "Tout est en ordre : profil, adhésion, assurance et présences à jour."
+              ? "Tout est en ordre : profil, adhésion, assurance et prestations à jour."
               : `${doneCount} étape${doneCount > 1 ? "s" : ""} sur ${steps.length} en ordre.`}
           </p>
         </div>

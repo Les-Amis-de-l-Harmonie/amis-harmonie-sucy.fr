@@ -48,7 +48,13 @@ export function summarizeProfileCompletion(
     completedSections,
     totalSections: requiredSections.length,
     isComplete: errors.length === 0,
-    firstIncompleteSectionId: errors[0]?.sectionId ?? null,
+    // Première section incomplète dans l'ordre d'**affichage** du formulaire, et
+    // non dans l'ordre où `validateProfile` empile ses erreurs : celui-ci place
+    // `image-consent` avant `emergency-contact`, alors que le formulaire les
+    // montre dans l'ordre inverse. Sans cela, l'ancre pouvait sauter une section
+    // manquante située plus haut dans la page.
+    firstIncompleteSectionId:
+      requiredSections.find((section) => sectionsWithErrors.has(section.id))?.id ?? null,
   };
 }
 

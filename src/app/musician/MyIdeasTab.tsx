@@ -19,7 +19,7 @@ export function MyIdeasTab({ ideas, onOpenComposer, onDelete, onViewResponse }: 
       <EmptyState
         icon={<Lightbulb className="h-12 w-12" />}
         title="Vous n'avez pas encore soumis d'idée"
-        description="Partagez vos idées pour faire évoluer l'association ou enrichir la vie de l'orchestre."
+        description="Partagez vos idées pour faire évoluer l'association ou enrichir la vie de l'harmonie."
         action={
           <Button type="button" onClick={onOpenComposer} className="gap-2">
             <Send className="h-4 w-4" />

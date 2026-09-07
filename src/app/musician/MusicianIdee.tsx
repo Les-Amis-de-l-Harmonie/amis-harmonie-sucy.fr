@@ -157,7 +157,7 @@ export function MusicianIdeeClient() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Boîte à idée</h1>
           <p className="mt-1 text-muted-foreground">
-            Vous avez une idée pour faire évoluer l'association ou enrichir la vie de l'orchestre ?
+            Vous avez une idée pour faire évoluer l'association ou enrichir la vie de l'harmonie ?
             Partagez-la avec nous !
           </p>
         </div>

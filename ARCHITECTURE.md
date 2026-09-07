@@ -55,7 +55,6 @@ src/app/api/
 │   ├── contact.ts             # Contact form management
 │   ├── info-settings.ts       # Site info configuration
 │   ├── outing-settings.ts     # Outing/billetterie settings
-│   ├── card-order.ts          # Card display ordering
 │   ├── insurance.ts           # Insurance management
 │   └── r2-cleanup.ts          # R2 storage cleanup utilities
 ├── admin-crud.ts              # Shared admin auth utilities
