@@ -16,7 +16,7 @@ interface MusicianBottomTabBarProps {
  * Seule navigation visible en dessous de 1024px (mobile ET tablette —
  * aucun troisième comportement intermédiaire, voir direction design §B2 :
  * c'est exactement la plage où coexistaient les deux anciens hamburgers).
- * 4 sections à onglet direct + le sheet « Plus » pour les 2 restantes.
+ * 4 sections à onglet direct + le sheet « Plus » pour les 4 restantes.
  *
  * L'indicateur actif est une couleur + un point sous le label — jamais une
  * translation ni un changement de taille, pour que la barre reste un

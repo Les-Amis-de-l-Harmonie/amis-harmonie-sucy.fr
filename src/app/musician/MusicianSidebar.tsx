@@ -4,8 +4,7 @@ import { Globe, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { MusicianUserSummary } from "@/app/musician/MusicianUserSummary";
 import { MusicianSidebarNavItem } from "@/app/musician/MusicianSidebarNavItem";
-import { MUSICIAN_NAV_ITEMS } from "@/app/musician/musician-nav-items";
-import { isMusicianPathActive } from "@/app/musician/isMusicianPathActive";
+import { isNavItemActive, MUSICIAN_NAV_ITEMS } from "@/app/musician/musician-nav-items";
 
 interface MusicianSidebarProps {
   pathname: string;
@@ -54,7 +53,8 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
             href={item.href}
             label={item.label}
             icon={item.icon}
-            active={isMusicianPathActive(pathname, item.href)}
+            external={item.external}
+            active={isNavItemActive(item, pathname)}
           />
         ))}
       </nav>

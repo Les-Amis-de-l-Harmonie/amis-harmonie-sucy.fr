@@ -5,6 +5,7 @@ import type {
   MusicianInstrument,
   IdeaCategory,
   InsuranceInstrument,
+  IdeaPreview,
   IdeaWithLikes,
 } from "@/db/types";
 
@@ -299,25 +300,49 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
       const url = new URL(request.url);
       const count = url.searchParams.get("count");
       if (count === "unread") {
-        // Count public ideas from other users that haven't been read
-        const result = await env.DB.prepare(
-          `
-          SELECT COUNT(*) as count
-          FROM ideas i
-          WHERE i.is_public = 1
-          AND i.user_id != ?
-          AND NOT EXISTS (
-            SELECT 1 FROM idea_reads r
-            WHERE r.idea_id = i.id AND r.user_id = ?
+        // Le compteur répond à « combien de nouveautés des autres ai-je à lire ? ».
+        // L'aperçu est celui du mur public : il inclut donc aussi mes idées publiques,
+        // comme la vue `public`, afin que l'accueil et la page cible restent cohérents.
+        const [countResult, recentResult] = await Promise.all([
+          env.DB.prepare(
+            `
+            SELECT COUNT(*) as count
+            FROM ideas i
+            WHERE i.is_public = 1
+            AND i.user_id != ?
+            AND NOT EXISTS (
+              SELECT 1 FROM idea_reads r
+              WHERE r.idea_id = i.id AND r.user_id = ?
+            )
+            `
           )
-          `
-        )
-          .bind(user.id, user.id)
-          .first<{ count: number }>();
+            .bind(user.id, user.id)
+            .first<{ count: number }>(),
+          env.DB.prepare(
+            `
+            SELECT
+              i.id,
+              i.title,
+              i.description,
+              i.category,
+              i.created_at,
+              p.first_name as author_first_name,
+              (SELECT COUNT(*) FROM idea_likes WHERE idea_id = i.id) as likes_count
+            FROM ideas i
+            LEFT JOIN musician_profiles p ON i.user_id = p.user_id
+            WHERE i.is_public = 1
+            ORDER BY i.created_at DESC, i.id DESC
+            LIMIT 5
+            `
+          ).all<IdeaPreview>(),
+        ]);
 
-        return new Response(JSON.stringify({ count: result?.count || 0 }), {
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ count: countResult?.count || 0, recent: recentResult.results || [] }),
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
 
       const view = url.searchParams.get("view");

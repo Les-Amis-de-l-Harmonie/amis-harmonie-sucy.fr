@@ -1,5 +1,7 @@
 import type { InsuranceInstrument, MusicianProfile, PresenceStatus } from "@/db/types";
 
+export type { IdeaPreview } from "@/db/types";
+
 export interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
   email?: string;

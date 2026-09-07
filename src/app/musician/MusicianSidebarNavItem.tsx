@@ -6,6 +6,7 @@ interface MusicianSidebarNavItemProps {
   label: string;
   icon: LucideIcon;
   active: boolean;
+  external?: boolean;
 }
 
 /**
@@ -22,11 +23,15 @@ export function MusicianSidebarNavItem({
   label,
   icon: Icon,
   active,
+  external = false,
 }: MusicianSidebarNavItemProps) {
   return (
     <a
       href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       aria-current={active ? "page" : undefined}
+      aria-label={external ? `${label} (s'ouvre dans un nouvel onglet)` : undefined}
       className={cn(
         "relative flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium transition-colors",
         active

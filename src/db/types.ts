@@ -278,6 +278,16 @@ export interface IdeaWithLikes extends Idea {
   likers?: Array<{ first_name: string | null; last_name: string | null }>;
 }
 
+export interface IdeaPreview {
+  id: number;
+  title: string;
+  description: string;
+  category: IdeaCategory;
+  created_at: string;
+  author_first_name: string | null;
+  likes_count: number;
+}
+
 export interface InsuranceInstrument {
   id: number;
   user_id: number;

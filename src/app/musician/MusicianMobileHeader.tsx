@@ -1,5 +1,4 @@
-import { MUSICIAN_NAV_ITEMS } from "@/app/musician/musician-nav-items";
-import { isMusicianPathActive } from "@/app/musician/isMusicianPathActive";
+import { findActiveNavItem } from "@/app/musician/musician-nav-items";
 
 interface MusicianMobileHeaderProps {
   pathname: string;
@@ -19,7 +18,7 @@ const FALLBACK_TITLE = "Espace musicien";
  * de document — un <h1> ici en dupliquerait un par page sous 640px.
  */
 export function MusicianMobileHeader({ pathname }: MusicianMobileHeaderProps) {
-  const current = MUSICIAN_NAV_ITEMS.find((item) => isMusicianPathActive(pathname, item.href));
+  const current = findActiveNavItem(pathname);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:hidden">

@@ -5,6 +5,7 @@ import type { OutingSettings, MusicianCardType, Video } from "@/db/types";
 import type {
   Birthday,
   DashboardInfoSettings,
+  IdeaPreview,
   ProfileWithExtras,
   UpcomingEvent,
 } from "./musician-types";
@@ -78,6 +79,7 @@ export interface MusicianDashboardData {
   birthdays: Birthday[];
   infoSettings: DashboardInfoSettings | null;
   unreadIdeasCount: number;
+  recentIdeas: IdeaPreview[];
   firstVideo: Video | null;
   cardOrder: MusicianCardType[];
 }
@@ -101,6 +103,7 @@ export function useMusicianDashboardData(): MusicianDashboardData {
   const [cardOrder, setCardOrder] = useState<MusicianCardType[]>(DEFAULT_CARDS);
   const [loading, setLoading] = useState(true);
   const [unreadIdeasCount, setUnreadIdeasCount] = useState(0);
+  const [recentIdeas, setRecentIdeas] = useState<IdeaPreview[]>([]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -162,8 +165,12 @@ export function useMusicianDashboardData(): MusicianDashboardData {
       }
 
       if (ideasRes.ok) {
-        const ideasData = (await ideasRes.json()) as { count: number };
+        const ideasData = (await ideasRes.json()) as {
+          count: number;
+          recent?: IdeaPreview[];
+        };
         setUnreadIdeasCount(ideasData.count);
+        setRecentIdeas(ideasData.recent ?? []);
       }
 
       if (planningRes.ok) {
@@ -209,6 +216,7 @@ export function useMusicianDashboardData(): MusicianDashboardData {
     birthdays,
     infoSettings,
     unreadIdeasCount,
+    recentIdeas,
     firstVideo,
     cardOrder,
   };

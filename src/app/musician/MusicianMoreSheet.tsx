@@ -11,8 +11,10 @@ import {
 } from "@/app/components/ui/sheet";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { MusicianUserSummary } from "@/app/musician/MusicianUserSummary";
-import { MUSICIAN_OVERFLOW_ITEMS } from "@/app/musician/musician-nav-items";
-import { isMusicianPathActive } from "@/app/musician/isMusicianPathActive";
+import {
+  isNavItemActive,
+  MUSICIAN_OVERFLOW_ITEMS,
+} from "@/app/musician/musician-nav-items";
 import { cn } from "@/lib/utils";
 
 interface MusicianMoreSheetProps {
@@ -24,10 +26,9 @@ interface MusicianMoreSheetProps {
 
 /**
  * 5e "onglet" de la barre basse mobile : ouvre un panneau glissant depuis le
- * bas listant les sections de consultation ponctuelle (Assurance,
- * Trombinoscope — pas d'aller-retour quotidien, voir §B3), plus le site
- * public, le thème et la déconnexion. C'est l'équivalent mobile du bas de
- * sidebar desktop, sous une présentation différente.
+ * bas listant les sections de consultation ponctuelle définies dans
+ * `MUSICIAN_OVERFLOW_ITEMS`, plus le site public, le thème et la déconnexion. C'est
+ * l'équivalent mobile du bas de sidebar desktop, sous une présentation différente.
  */
 export function MusicianMoreSheet({
   pathname,
@@ -37,7 +38,7 @@ export function MusicianMoreSheet({
 }: MusicianMoreSheetProps) {
   const [open, setOpen] = useState(false);
   const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) =>
-    isMusicianPathActive(pathname, item.href)
+    isNavItemActive(item, pathname)
   );
 
   return (
@@ -74,12 +75,17 @@ export function MusicianMoreSheet({
 
         <nav aria-label="Sections supplémentaires" className="space-y-1">
           {MUSICIAN_OVERFLOW_ITEMS.map((item) => {
-            const active = isMusicianPathActive(pathname, item.href);
+            const active = isNavItemActive(item, pathname);
             return (
               <a
                 key={item.href}
                 href={item.href}
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noopener noreferrer" : undefined}
                 aria-current={active ? "page" : undefined}
+                aria-label={
+                  item.external ? `${item.label} (s'ouvre dans un nouvel onglet)` : undefined
+                }
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
