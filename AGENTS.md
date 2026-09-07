@@ -366,7 +366,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **23 test files on disk, 22 executed, 174 tests passing** —
+Current baseline: **29 test files on disk, 28 executed, 196 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 
