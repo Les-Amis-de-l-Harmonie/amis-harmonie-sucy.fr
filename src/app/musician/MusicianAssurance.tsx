@@ -14,7 +14,15 @@ import { Label } from "@/app/components/ui/label";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { Shield, Plus, Trash2, Loader2, CheckCircle, RefreshCw } from "lucide-react";
 import type { InsuranceInstrument } from "@/db/types";
-import { logger } from "@/lib/logger";
+// Pas d'import de `@/lib/logger` ici : ce module commence par
+// `import { env } from "cloudflare:workers"`, spécificateur qui n'existe que dans
+// le graphe worker. Dans un composant `"use client"` il casse les deux
+// environnements : `npm run build` échoue (« Rollup failed to resolve import »),
+// et en dev le chargement dynamique du module échoue, donc la page ne rend rien.
+// Ni tsc ni ESLint ni Vitest ne peuvent le voir — tsc résout le spécificateur via
+// les types Wrangler et vitest.config.ts l'aliase vers un mock. Seul `npm run
+// build` distingue le graphe client du graphe worker.
+// `console.error` est le repli correct côté client, et ESLint l'autorise.
 
 interface InstrumentForm {
   id?: number;
@@ -159,7 +167,7 @@ export function MusicianAssuranceClient() {
         );
       }
     } catch (err) {
-      logger.error("Erreur lors du chargement des instruments assurés :", err);
+      console.error("Erreur lors du chargement des instruments assurés :", err);
       setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
     } finally {
       if (showLoading) setLoading(false);
@@ -213,7 +221,7 @@ export function MusicianAssuranceClient() {
         setErrors({ submit: data.error || "Une erreur est survenue" });
       }
     } catch (err) {
-      logger.error("Erreur lors de l'enregistrement des instruments assurés :", err);
+      console.error("Erreur lors de l'enregistrement des instruments assurés :", err);
       setErrors({ submit: "Erreur lors de l'enregistrement" });
     } finally {
       setSaving(false);
