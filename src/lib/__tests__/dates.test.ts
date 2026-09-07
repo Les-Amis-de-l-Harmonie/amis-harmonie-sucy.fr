@@ -13,8 +13,17 @@ describe("isEventPast", () => {
   });
 
   it("returns false for today", () => {
+    // La date de référence doit être construite à partir des composantes
+    // *locales*, pas via toISOString() : `isEventPast` compare à minuit local,
+    // et toISOString() renvoie la date UTC. Aux fuseaux en avance sur UTC, les
+    // deux divergent entre minuit et le décalage horaire (00h00-02h00 en CEST),
+    // ce qui faisait échouer ce test chaque nuit.
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
     expect(isEventPast(todayStr)).toBe(false);
   });
 });
