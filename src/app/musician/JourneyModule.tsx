@@ -65,7 +65,9 @@ export function JourneyModule({
         <Progress
           value={doneCount}
           max={steps.length}
-          aria-label={`Progression du parcours, ${doneCount} étapes sur ${steps.length}`}
+          aria-label={`Progression du parcours, ${doneCount} étape${
+            doneCount > 1 ? "s" : ""
+          } sur ${steps.length}`}
           className="w-full max-w-[12rem] sm:w-40"
         />
       </div>

@@ -62,9 +62,11 @@ export function PrestationsModule({
           Prochaines prestations
         </CardTitle>
         <CardDescription>
+          {/* Ni « sortie » (le mot désigne déjà la sortie annuelle, module voisin)
+              ni « orchestre » : l'ensemble est une harmonie. */}
           {isUrgent
             ? "Une réponse est attendue de votre part."
-            : "Votre prochaine sortie avec l'orchestre."}
+            : "Votre prochaine date avec l'harmonie."}
         </CardDescription>
       </CardHeader>
       <CardContent>

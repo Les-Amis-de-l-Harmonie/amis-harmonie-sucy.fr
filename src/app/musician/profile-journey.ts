@@ -98,16 +98,19 @@ export function buildProfileJourney(
       title: "Assurance",
       status: isMember && insuranceComplete ? "done" : "todo",
       detail: !isMember
-        ? "Disponible après adhésion"
+        ? "À déclarer après votre adhésion"
         : insuranceComplete
           ? `${insuredCount} instrument${insuredCount > 1 ? "s" : ""} assuré${insuredCount > 1 ? "s" : ""}`
           : "Aucun instrument déclaré",
       href: "/musician/assurance",
-      cta: insuranceComplete ? "Gérer mes instruments" : "Compléter le formulaire",
+      cta: insuranceComplete ? "Gérer mes instruments" : "Déclarer un instrument",
     },
     {
       key: "presence",
-      title: "Réponses de présence",
+      // « Prestations » et non « Réponses de présence » : la navigation, la page
+      // /musician/disponibilites et ce module doivent employer le même mot pour
+      // désigner la même chose.
+      title: "Prestations",
       status: hasPendingPresence ? "todo" : "done",
       detail:
         planningUrgent && urgentEvent

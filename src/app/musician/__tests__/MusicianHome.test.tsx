@@ -211,7 +211,7 @@ describe("parcours de l'accueil musicien", () => {
     renderHome();
 
     expect(await screen.findByText("Non adhérent en 2026-2027")).toBeInTheDocument();
-    expect(screen.getByText("Disponible après adhésion")).toBeInTheDocument();
+    expect(screen.getByText("À déclarer après votre adhésion")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Adhésion.*Adhérer maintenant/i })).toBeInTheDocument();
     expect(screen.getByText("2 étapes sur 4 en ordre.")).toBeInTheDocument();
   });

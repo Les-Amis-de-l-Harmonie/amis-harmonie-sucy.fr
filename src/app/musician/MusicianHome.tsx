@@ -96,7 +96,9 @@ export function MusicianHomeClient({
 
       <motion.div initial="hidden" animate="visible" variants={headerVariants}>
         <h1 className="text-2xl font-bold text-foreground">Bonjour, {displayName} !</h1>
-        <p className="text-muted-foreground">Bienvenue dans votre espace personnel</p>
+        <p className="text-muted-foreground">
+          Voici où vous en êtes, et ce qui se passe à l&apos;harmonie.
+        </p>
       </motion.div>
 
       {/* Cartouche éditoriale du bureau : garde sa place au-dessus du parcours
