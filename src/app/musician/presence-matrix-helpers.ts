@@ -1,5 +1,6 @@
 import { Check, Minus, X, type LucideIcon } from "lucide-react";
-import type { PresenceEvent, PresenceStatus } from "./PresenceCard";
+import type { PresenceStatus } from "@/db/types";
+import type { PresenceEvent } from "./musician-types";
 
 export interface MusicianRow {
   userId: number;

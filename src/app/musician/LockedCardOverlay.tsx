@@ -2,9 +2,15 @@ import { Lock } from "lucide-react";
 
 export type LockedCardReason = "profile" | "membership";
 
+// Libellés volontairement courts. Sept des dix cartes se verrouillent sur le même
+// motif « profil incomplet » : une phrase complète y serait répétée sept fois, en
+// plus du bandeau d'alerte de la zone essentiels et de l'indice de ProfileCard —
+// jusqu'à neuf fois la même idée sur un seul écran. Le bandeau du haut porte déjà
+// l'explication et l'appel à l'action ; ici, l'icône cadenas et un libellé bref
+// suffisent à dire pourquoi cette carte-ci est verrouillée.
 const REASON_MESSAGE: Record<LockedCardReason, string> = {
-  profile: "Complétez votre profil pour débloquer cette fonctionnalité.",
-  membership: "Réservé aux adhérents 2026-2027.",
+  profile: "Profil incomplet",
+  membership: "Réservé aux adhérents 2026-2027",
 };
 
 interface LockedCardOverlayProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Check, X } from "lucide-react";
-import type { PresenceStatus } from "./PresenceCard";
+import type { PresenceStatus } from "@/db/types";
 
 export function StatusPill({ status }: { status: PresenceStatus | null }) {
   if (status === "present") {

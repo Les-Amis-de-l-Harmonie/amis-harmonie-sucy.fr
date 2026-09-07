@@ -13,31 +13,26 @@ import { Heart, Globe, Loader2, Lock, MessageCircle, Trash2 } from "lucide-react
 import type { IdeaWithLikes } from "@/db/types";
 import { CATEGORY_LABELS, formatIdeaDate } from "./idea-filters";
 
-export type IdeaCardMode = "mine" | "public";
+type IdeaCardProps =
+  | {
+      mode: "mine";
+      idea: IdeaWithLikes;
+      onDelete: (idea: IdeaWithLikes) => void;
+      onViewResponse: (idea: IdeaWithLikes) => void;
+    }
+  | {
+      mode: "public";
+      idea: IdeaWithLikes;
+      expanded: boolean;
+      liking: boolean;
+      onLike: (idea: IdeaWithLikes) => void;
+      onToggleExpanded: (ideaId: number) => void;
+      onViewResponse: (idea: IdeaWithLikes) => void;
+      onViewLikers: (idea: IdeaWithLikes) => void;
+    };
 
-interface IdeaCardProps {
-  idea: IdeaWithLikes;
-  mode: IdeaCardMode;
-  expanded: boolean;
-  liking: boolean;
-  onDelete?: (idea: IdeaWithLikes) => void;
-  onLike?: (idea: IdeaWithLikes) => void;
-  onToggleExpanded?: (ideaId: number) => void;
-  onViewResponse: (idea: IdeaWithLikes) => void;
-  onViewLikers?: (idea: IdeaWithLikes) => void;
-}
-
-export function IdeaCard({
-  idea,
-  mode,
-  expanded,
-  liking,
-  onDelete,
-  onLike,
-  onToggleExpanded,
-  onViewResponse,
-  onViewLikers,
-}: IdeaCardProps) {
+export function IdeaCard(props: IdeaCardProps) {
+  const { idea, mode } = props;
   if (mode === "mine") {
     return (
       <Card>
@@ -67,7 +62,7 @@ export function IdeaCard({
               variant="ghost"
               size="icon"
               className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => onDelete?.(idea)}
+              onClick={() => props.onDelete(idea)}
               aria-label="Supprimer l'idée"
             >
               <Trash2 className="h-4 w-4" />
@@ -90,7 +85,7 @@ export function IdeaCard({
             <div className="mt-4">
               <button
                 type="button"
-                onClick={() => onViewResponse(idea)}
+                onClick={() => props.onViewResponse(idea)}
                 className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
               >
                 <MessageCircle className="h-4 w-4" />
@@ -121,24 +116,24 @@ export function IdeaCard({
       <CardContent className="flex flex-1 flex-col">
         <div className="flex-1">
           <p
-            className={`whitespace-pre-wrap text-sm text-foreground ${expanded ? "" : "line-clamp-4"}`}
+            className={`whitespace-pre-wrap text-sm text-foreground ${props.expanded ? "" : "line-clamp-4"}`}
           >
             {idea.description}
           </p>
           {idea.description.length > 150 && (
             <button
               type="button"
-              onClick={() => onToggleExpanded?.(idea.id)}
+              onClick={() => props.onToggleExpanded(idea.id)}
               className="mt-2 cursor-pointer text-xs font-medium text-primary hover:text-primary/80"
             >
-              {expanded ? "Voir moins" : "Lire la suite"}
+              {props.expanded ? "Voir moins" : "Lire la suite"}
             </button>
           )}
           {idea.admin_notes && (
             <div className="mt-3">
               <button
                 type="button"
-                onClick={() => onViewResponse(idea)}
+                onClick={() => props.onViewResponse(idea)}
                 className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-primary hover:text-primary/80"
               >
                 <MessageCircle className="h-3 w-3" />
@@ -150,10 +145,10 @@ export function IdeaCard({
         <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
           <span className="text-xs text-muted-foreground">{formatIdeaDate(idea.created_at)}</span>
           <div className="flex items-center gap-2">
-            {(idea.likes_count || 0) > 0 && onViewLikers && (
+            {(idea.likes_count || 0) > 0 && (
               <button
                 type="button"
-                onClick={() => onViewLikers(idea)}
+                onClick={() => props.onViewLikers(idea)}
                 className="cursor-pointer text-xs text-muted-foreground underline hover:text-primary"
               >
                 Qui a liké ?
@@ -163,11 +158,11 @@ export function IdeaCard({
               type="button"
               variant={idea.user_has_liked ? "destructive" : "outline"}
               size="sm"
-              onClick={() => onLike?.(idea)}
-              disabled={liking}
+              onClick={() => props.onLike(idea)}
+              disabled={props.liking}
               className="h-8 px-2"
             >
-              {liking ? (
+              {props.liking ? (
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
               ) : (
                 <Heart

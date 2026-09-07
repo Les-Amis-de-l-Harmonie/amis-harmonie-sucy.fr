@@ -38,8 +38,6 @@ export function MyIdeasTab({ ideas, onOpenComposer, onDelete, onViewResponse }: 
           key={idea.id}
           idea={idea}
           mode="mine"
-          expanded={false}
-          liking={false}
           onDelete={onDelete}
           onViewResponse={onViewResponse}
         />

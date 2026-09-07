@@ -1,4 +1,4 @@
-import type { InsuranceInstrument, MusicianProfile } from "@/db/types";
+import type { InsuranceInstrument, MusicianProfile, PresenceStatus } from "@/db/types";
 
 export interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
@@ -31,4 +31,35 @@ export interface DashboardInfoSettings {
   border_color: string;
   icon: string;
   is_active: number;
+}
+
+export interface PresenceRosterEntry {
+  userId: number;
+  firstName: string | null;
+  lastName: string | null;
+  instruments: string[];
+  primaryInstrument: string | null;
+  status: PresenceStatus | null;
+}
+
+export interface PresenceEvent {
+  id: number;
+  title: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+  address: string | null;
+  response_deadline: string | null;
+  response: {
+    status: PresenceStatus | null;
+    comment: string | null;
+    updated_at: string | null;
+  };
+  roster: PresenceRosterEntry[];
+  counts: {
+    present: number;
+    absent: number;
+    noAnswer: number;
+    totalMembers: number;
+  };
 }

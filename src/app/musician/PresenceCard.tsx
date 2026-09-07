@@ -15,43 +15,14 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import { Textarea } from "@/app/components/ui/textarea";
+import type { PresenceStatus } from "@/db/types";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { getDeadlineTone } from "./presence-deadline";
+import type { PresenceEvent } from "./musician-types";
 import { StatusPill } from "./StatusPill";
 
-export type PresenceStatus = "present" | "absent";
-
-export interface PresenceRosterEntry {
-  userId: number;
-  firstName: string | null;
-  lastName: string | null;
-  instruments: string[];
-  primaryInstrument: string | null;
-  status: PresenceStatus | null;
-}
-
-export interface PresenceEvent {
-  id: number;
-  title: string;
-  date: string;
-  time: string | null;
-  location: string | null;
-  address: string | null;
-  response_deadline: string | null;
-  response: {
-    status: PresenceStatus | null;
-    comment: string | null;
-    updated_at: string | null;
-  };
-  roster: PresenceRosterEntry[];
-  counts: {
-    present: number;
-    absent: number;
-    noAnswer: number;
-    totalMembers: number;
-  };
-}
+export type { PresenceEvent, PresenceRosterEntry } from "./musician-types";
 
 export interface PresenceCardProps {
   event: PresenceEvent;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PresenceStatus } from "./PresenceCard";
+import type { PresenceStatus } from "@/db/types";
 
 const LINGER_DELAY_MS = 3000;
 

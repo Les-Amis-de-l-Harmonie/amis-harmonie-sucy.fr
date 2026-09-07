@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Check, Minus, Pencil, Lock, X } from "lucide-react";
+import type { PresenceStatus } from "@/db/types";
 import { groupMembersByPupitre } from "@/lib/presence-groups";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ import {
   getFullName,
   type MusicianRow,
 } from "./presence-matrix-helpers";
-import type { PresenceEvent, PresenceStatus } from "./PresenceCard";
+import type { PresenceEvent } from "./musician-types";
 
 function formatDateShortLabel(dateStr: string): string {
   const date = new Date(dateStr);

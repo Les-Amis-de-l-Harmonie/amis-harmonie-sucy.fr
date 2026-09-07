@@ -7,7 +7,8 @@ import { Switch } from "@/app/components/ui/switch";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { PresenceCard, type PresenceEvent } from "./PresenceCard";
+import { PresenceCard } from "./PresenceCard";
+import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
 import { useLingeringCards } from "./useLingeringCards";
 

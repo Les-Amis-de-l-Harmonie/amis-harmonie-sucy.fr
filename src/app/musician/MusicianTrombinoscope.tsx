@@ -309,17 +309,22 @@ export function MusicianTrombinoscopeClient() {
 
       {loading && <TrombinoscopeSkeleton />}
 
+      {/* `role="alert"` porté par un conteneur : EmptyState ne diffuse pas les props
+          arbitraires. Même motif que MusicianAssurance — sans lui, l'erreur réseau
+          était annoncée sur une page et silencieuse sur l'autre. */}
       {error && !loading && (
-        <EmptyState
-          icon={<User className="h-8 w-8" />}
-          title={error}
-          action={
-            <Button type="button" onClick={fetchMusicians}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Réessayer
-            </Button>
-          }
-        />
+        <div role="alert">
+          <EmptyState
+            icon={<User className="h-8 w-8" />}
+            title={error}
+            action={
+              <Button type="button" onClick={fetchMusicians}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Réessayer
+              </Button>
+            }
+          />
+        </div>
       )}
 
       {!loading && !error && musicians.length === 0 && (
