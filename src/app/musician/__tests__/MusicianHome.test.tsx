@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Video } from "@/db/types";
 import type { Birthday, ProfileWithExtras } from "../musician-types";
@@ -276,11 +276,11 @@ describe("parcours de l'accueil musicien", () => {
     });
     renderHome();
 
-    expect(
-      await screen.findByText(
-        "Tout est en ordre : profil, adhésion, assurance et prestations à jour."
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Tout est en ordre")).toBeInTheDocument();
+
+    // Parcours complet : le détail des étapes est replié, on l'ouvre pour l'inspecter.
+    expect(screen.queryByText("Adhérent 2026-2027")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Voir le détail/ }));
     expect(screen.getByText("Adhérent 2026-2027")).toBeInTheDocument();
     expect(screen.getByText("1 instrument assuré")).toBeInTheDocument();
     expect(screen.getByText("Toutes vos réponses sont à jour")).toBeInTheDocument();
