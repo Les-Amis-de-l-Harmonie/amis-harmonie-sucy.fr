@@ -21,7 +21,6 @@ import {
   type ProfileWithInstruments,
   type ProfileFieldError,
 } from "./profile-validation";
-import { ProfileSectionNav } from "./ProfileSectionNav";
 import { PersonalInfoSection } from "./PersonalInfoSection";
 import { AddressSection } from "./AddressSection";
 import { HarmonieSection } from "./HarmonieSection";
@@ -218,9 +217,7 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           {saveButton}
         </div>
 
-        {/* Sous md (768px) : la colonne d'ancres de `ProfileSectionNav` n'a pas
-            la place de s'afficher, cette barre compacte prend le relais. */}
-        <div className="mt-3 md:hidden">
+        <div className="mt-3">
           <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
             <span>Progression du profil</span>
             <span>
@@ -293,70 +290,66 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
         </div>
       )}
 
-      <div className="md:flex md:items-start md:gap-8">
-        <ProfileSectionNav sections={PROFILE_SECTIONS} completion={sectionCompletion} />
+      <div className="min-w-0 space-y-6">
+        <Card id="photo">
+          <CardHeader>
+            <CardTitle>Photo de profil</CardTitle>
+            <CardDescription>
+              Cliquez sur l&apos;image pour changer votre photo.
+              <br />
+              <span className="text-xs text-muted-foreground">
+                Votre photo pourra être affichée sur le site internet pour le trombinoscope des
+                musiciens.
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AvatarUploader
+              avatar={profile.avatar}
+              onUpload={(url) => {
+                handleProfileChange({ avatar: url });
+                setMessage({ type: "success", text: "Photo de profil mise à jour." });
+              }}
+              uploadEndpoint="/api/musician/avatar"
+              size={96}
+              showInstructions={false}
+              onError={(errorMsg) => setMessage({ type: "error", text: errorMsg })}
+            />
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>Format : JPG, PNG ou WebP</p>
+              <p>Taille max : 5 Mo</p>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="min-w-0 flex-1 space-y-6">
-          <Card id="photo">
-            <CardHeader>
-              <CardTitle>Photo de profil</CardTitle>
-              <CardDescription>
-                Cliquez sur l&apos;image pour changer votre photo.
-                <br />
-                <span className="text-xs text-muted-foreground">
-                  Votre photo pourra être affichée sur le site internet pour le trombinoscope des
-                  musiciens.
-                </span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AvatarUploader
-                avatar={profile.avatar}
-                onUpload={(url) => {
-                  handleProfileChange({ avatar: url });
-                  setMessage({ type: "success", text: "Photo de profil mise à jour." });
-                }}
-                uploadEndpoint="/api/musician/avatar"
-                size={96}
-                showInstructions={false}
-                onError={(errorMsg) => setMessage({ type: "error", text: errorMsg })}
-              />
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>Format : JPG, PNG ou WebP</p>
-                <p>Taille max : 5 Mo</p>
-              </div>
-            </CardContent>
-          </Card>
+        <PersonalInfoSection
+          profile={profile}
+          fieldErrors={fieldErrors}
+          onFieldChange={handleFieldChange}
+          onProfileChange={handleProfileChange}
+        />
 
-          <PersonalInfoSection
-            profile={profile}
-            fieldErrors={fieldErrors}
-            onFieldChange={handleFieldChange}
-            onProfileChange={handleProfileChange}
-          />
+        <AddressSection
+          profile={profile}
+          fieldErrors={fieldErrors}
+          onFieldChange={handleFieldChange}
+          onProfileChange={handleProfileChange}
+        />
 
-          <AddressSection
-            profile={profile}
-            fieldErrors={fieldErrors}
-            onFieldChange={handleFieldChange}
-            onProfileChange={handleProfileChange}
-          />
+        <HarmonieSection profile={profile} onProfileChange={handleProfileChange} />
 
-          <HarmonieSection profile={profile} onProfileChange={handleProfileChange} />
+        <InstrumentPracticeSection profile={profile} onProfileChange={handleProfileChange} />
 
-          <InstrumentPracticeSection profile={profile} onProfileChange={handleProfileChange} />
+        <EmergencyContactSection
+          profile={profile}
+          fieldErrors={fieldErrors}
+          onFieldChange={handleFieldChange}
+          title={emergencyContactTitle}
+        />
 
-          <EmergencyContactSection
-            profile={profile}
-            fieldErrors={fieldErrors}
-            onFieldChange={handleFieldChange}
-            title={emergencyContactTitle}
-          />
+        <ImageConsentSection profile={profile} onProfileChange={handleProfileChange} />
 
-          <ImageConsentSection profile={profile} onProfileChange={handleProfileChange} />
-
-          <div className="flex items-center justify-end">{saveButton}</div>
-        </div>
+        <div className="flex items-center justify-end">{saveButton}</div>
       </div>
     </div>
   );
