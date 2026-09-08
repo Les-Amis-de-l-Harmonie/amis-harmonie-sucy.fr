@@ -14,27 +14,26 @@ import type { UpcomingEvent } from "./musician-types";
 
 interface PrestationsModuleProps {
   loading: boolean;
-  nextEvent: UpcomingEvent | null;
+  nextEvents: UpcomingEvent[];
   planningUrgent: boolean;
   urgentEvent: UpcomingEvent | null;
 }
 
 /**
  * Remplace `PlanningCard` + `UrgentPresenceCard` + `NextEventSummary` par un
- * seul module de contenu réel (Phase 2b) : la prestation la plus pertinente
- * (urgente si elle existe, sinon la prochaine), avec son état de réponse
- * quand on le connaît.
+ * seul module de contenu réel (Phase 2b) : les trois prochaines prestations,
+ * avec la prestation urgente en tête lorsqu'il y en a une.
  *
  * `/api/musician/planning-check` ne renvoie que `{ title, date }` pour
- * `nextEvent` — jamais si le musicien y a déjà répondu (voir
+ * `nextEvents` — jamais si le musicien y a déjà répondu (voir
  * `src/app/api/musician.ts:773-798`, `presence_required` sans jointure sur
- * `event_presences` pour `nextEvent`). Un `StatusPill` n'est donc affiché
+ * `event_presences` pour `nextEvents`). Un `StatusPill` n'est donc affiché
  * que pour l'événement **urgent** (`ep.id IS NULL`, donc réponse manquante
- * garantie) — jamais pour `nextEvent` seul, ce qui inventerait un statut.
+ * garantie) — jamais pour une prestation ordinaire, ce qui inventerait un statut.
  */
 export function PrestationsModule({
   loading,
-  nextEvent,
+  nextEvents,
   planningUrgent,
   urgentEvent,
 }: PrestationsModuleProps) {
@@ -44,15 +43,22 @@ export function PrestationsModule({
         <CardHeader className="pb-3">
           <Skeleton className="h-5 w-48" />
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-16 w-full rounded-lg" />
+        <CardContent className="space-y-3">
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
         </CardContent>
       </Card>
     );
   }
 
   const isUrgent = planningUrgent && urgentEvent !== null;
-  const highlighted = isUrgent ? urgentEvent : nextEvent;
+  const upcomingEvents = [
+    ...(isUrgent && urgentEvent ? [urgentEvent] : []),
+    ...nextEvents.filter(
+      (event) => !isUrgent || event.title !== urgentEvent?.title || event.date !== urgentEvent.date
+    ),
+  ].slice(0, 3);
 
   return (
     <Card className={isUrgent ? "border-l-4 border-l-warning" : undefined}>
@@ -66,26 +72,55 @@ export function PrestationsModule({
               ni « orchestre » : l'ensemble est une harmonie. */}
           {isUrgent
             ? "Une réponse est attendue de votre part."
-            : "Votre prochaine date avec l'harmonie."}
+            : "Vos prochaines dates avec l'harmonie."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {highlighted ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-foreground">{highlighted.title}</p>
-              <p className="text-sm text-muted-foreground">{formatDateFrench(highlighted.date)}</p>
+        {upcomingEvents.length > 0 ? (
+          <>
+            <div>
+              {upcomingEvents.map((event, index) => {
+                const isUrgentEvent =
+                  isUrgent && event.title === urgentEvent.title && event.date === urgentEvent.date;
+                return (
+                  <div
+                    key={`${event.title}-${event.date}`}
+                    className={index > 0 ? "mt-3 border-t border-border pt-3" : undefined}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-foreground">{event.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDateFrench(event.date)}
+                        </p>
+                      </div>
+                      {isUrgentEvent && (
+                        <div className="flex shrink-0 items-center gap-3">
+                          <StatusPill status={null} />
+                          <a href="/musician/disponibilites">
+                            <Button variant="default" size="sm">
+                              Répondre maintenant
+                              <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              {isUrgent && <StatusPill status={null} />}
-              <a href="/musician/disponibilites">
-                <Button variant={isUrgent ? "default" : "outline"} size="sm">
-                  {isUrgent ? "Répondre maintenant" : "Indiquer mes présences"}
-                  <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
-                </Button>
-              </a>
-            </div>
-          </div>
+            {!isUrgent && (
+              <div className="mt-3 flex justify-end">
+                <a href="/musician/disponibilites">
+                  <Button variant="outline" size="sm">
+                    Indiquer mes présences
+                    <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </a>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">

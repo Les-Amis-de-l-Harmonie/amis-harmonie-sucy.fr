@@ -711,7 +711,19 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
 
   try {
     const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const currentYear = now.getUTCFullYear();
+    const isLeapYear = (year: number) => year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const birthdayOccurrence = (dateOfBirth: string, year: number) => {
+      const month = Number(dateOfBirth.slice(5, 7));
+      const day = Number(dateOfBirth.slice(8, 10));
+      const isFebruary29 = month === 2 && day === 29;
+      return Date.UTC(
+        year,
+        isFebruary29 && !isLeapYear(year) ? 2 : month - 1,
+        isFebruary29 && !isLeapYear(year) ? 1 : day
+      );
+    };
 
     const results = await env.DB.prepare(
       `
@@ -721,25 +733,33 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       WHERE u.is_active = 1
         AND u.role = 'MUSICIAN'
         AND p.date_of_birth IS NOT NULL
-        AND substr(p.date_of_birth, 6, 2) = ?
-      ORDER BY CAST(substr(p.date_of_birth, 9, 2) AS INTEGER) ASC
+      ORDER BY substr(p.date_of_birth, 6, 2), substr(p.date_of_birth, 9, 2)
       `
-    )
-      .bind(month)
-      .all<{
-        first_name: string | null;
-        last_name: string | null;
-        date_of_birth: string;
-        avatar: string | null;
-      }>();
+    ).all<{
+      first_name: string | null;
+      last_name: string | null;
+      date_of_birth: string;
+      avatar: string | null;
+    }>();
 
     const seen = new Set<string>();
-    const uniqueBirthdays = (results.results || []).filter((b) => {
-      const key = `${b.first_name || ""}|${b.last_name || ""}|${b.date_of_birth}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    const uniqueBirthdays = (results.results || [])
+      .filter((b) => {
+        const key = `${b.first_name || ""}|${b.last_name || ""}|${b.date_of_birth}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((birthday) => {
+        let occurrence = birthdayOccurrence(birthday.date_of_birth, currentYear);
+        if (occurrence < today) {
+          occurrence = birthdayOccurrence(birthday.date_of_birth, currentYear + 1);
+        }
+        const daysUntil = Math.round((occurrence - today) / (24 * 60 * 60 * 1000));
+        return { ...birthday, days_until: daysUntil };
+      })
+      .filter((birthday) => birthday.days_until >= 0 && birthday.days_until <= 29)
+      .sort((a, b) => a.days_until - b.days_until);
 
     return new Response(JSON.stringify(uniqueBirthdays), {
       headers: { "Content-Type": "application/json" },
@@ -770,14 +790,14 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   }
 
   try {
-    const [nextEvent, urgentEvent, pendingResult] = await Promise.all([
+    const [nextEvents, urgentEvent, pendingResult] = await Promise.all([
       env.DB.prepare(
         `SELECT title, date
          FROM events
          WHERE presence_required = 1 AND date >= date('now')
          ORDER BY date ASC
-         LIMIT 1`
-      ).first<{ title: string; date: string }>(),
+         LIMIT 3`
+      ).all<{ title: string; date: string }>(),
       env.DB.prepare(
         `SELECT e.title, e.date
          FROM events e
@@ -811,7 +831,7 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
     return new Response(
       JSON.stringify({
         urgent: !!urgentEvent,
-        nextEvent: nextEvent ? { title: nextEvent.title, date: nextEvent.date } : null,
+        nextEvents: nextEvents.results.map((event) => ({ title: event.title, date: event.date })),
         urgentEvent: urgentEvent ? { title: urgentEvent.title, date: urgentEvent.date } : null,
         pendingCount: pendingResult?.count ?? 0,
       }),
@@ -822,7 +842,7 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
   } catch (error) {
     logger.error("Planning check API error:", error);
     return new Response(
-      JSON.stringify({ urgent: false, nextEvent: null, urgentEvent: null, pendingCount: 0 }),
+      JSON.stringify({ urgent: false, nextEvents: [], urgentEvent: null, pendingCount: 0 }),
       {
         headers: { "Content-Type": "application/json" },
       }

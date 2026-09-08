@@ -25,6 +25,7 @@ export interface Birthday {
   last_name: string | null;
   date_of_birth: string;
   avatar: string | null;
+  days_until: number;
 }
 
 export interface DashboardInfoSettings {

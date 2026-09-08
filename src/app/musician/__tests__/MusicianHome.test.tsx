@@ -63,6 +63,7 @@ function createBirthday(): Birthday {
     last_name: "Martin",
     date_of_birth: "1991-01-15",
     avatar: null,
+    days_until: 0,
   };
 }
 
@@ -91,7 +92,11 @@ function mockHomeFetch({
   outingIsActive = 1,
   planningUrgent = false,
   pendingCount = 0,
-  nextEvent = { title: "Concert de rentrée", date: "2026-09-20" },
+  nextEvents = [
+    { title: "Concert de rentrée", date: "2026-09-20" },
+    { title: "Concert d'automne", date: "2026-10-04" },
+    { title: "Cérémonie du 11 novembre", date: "2026-11-11" },
+  ],
   urgentEvent = null,
   birthdays = [createBirthday()],
   ideas = [
@@ -111,7 +116,7 @@ function mockHomeFetch({
   outingIsActive?: number;
   planningUrgent?: boolean;
   pendingCount?: number;
-  nextEvent?: { title: string; date: string } | null;
+  nextEvents?: Array<{ title: string; date: string }>;
   urgentEvent?: { title: string; date: string } | null;
   birthdays?: Birthday[];
   ideas?: Array<{
@@ -151,7 +156,7 @@ function mockHomeFetch({
       return jsonResponse({ count: 42, recent: ideas });
     }
     if (url === "/api/musician/planning-check") {
-      return jsonResponse({ urgent: planningUrgent, pendingCount, nextEvent, urgentEvent });
+      return jsonResponse({ urgent: planningUrgent, pendingCount, nextEvents, urgentEvent });
     }
     if (url === "/api/videos") return jsonResponse(video ? [video] : []);
 
@@ -191,7 +196,7 @@ describe("parcours de l'accueil musicien", () => {
       ideas: [],
       video: null,
       outingIsActive: 0,
-      nextEvent: null,
+      nextEvents: [],
     });
     renderHome();
 
@@ -206,7 +211,7 @@ describe("parcours de l'accueil musicien", () => {
       ideas: [],
       video: null,
       outingIsActive: 0,
-      nextEvent: null,
+      nextEvents: [],
     });
     renderHome();
 
@@ -223,7 +228,7 @@ describe("parcours de l'accueil musicien", () => {
       ideas: [],
       video: null,
       outingIsActive: 0,
-      nextEvent: null,
+      nextEvents: [],
     });
     renderHome();
 
@@ -286,6 +291,9 @@ describe("parcours de l'accueil musicien", () => {
     expect(screen.getByText("Toutes vos réponses sont à jour")).toBeInTheDocument();
 
     expect(screen.getByText("Prochaines prestations")).toBeInTheDocument();
+    expect(screen.getByText("Concert de rentrée")).toBeInTheDocument();
+    expect(screen.getByText("Concert d'automne")).toBeInTheDocument();
+    expect(screen.getByText("Cérémonie du 11 novembre")).toBeInTheDocument();
     expect(screen.getByText("Une idée publique")).toBeInTheDocument();
     expect(await screen.findByText("Alice Martin")).toBeInTheDocument();
     expect(

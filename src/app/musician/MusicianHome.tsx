@@ -156,7 +156,7 @@ export function MusicianHomeClient({
           <div className="space-y-6">
             <PrestationsModule
               loading={data.loading}
-              nextEvent={data.nextEvent}
+              nextEvents={data.nextEvents}
               planningUrgent={data.planningUrgent}
               urgentEvent={data.urgentEvent}
             />

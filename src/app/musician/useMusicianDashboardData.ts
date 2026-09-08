@@ -13,7 +13,7 @@ import type {
 export interface MusicianDashboardData {
   profile: ProfileWithExtras | null;
   loading: boolean;
-  nextEvent: UpcomingEvent | null;
+  nextEvents: UpcomingEvent[];
   planningUrgent: boolean;
   urgentEvent: UpcomingEvent | null;
   pendingCount: number;
@@ -34,7 +34,7 @@ export interface MusicianDashboardData {
  */
 export function useMusicianDashboardData(): MusicianDashboardData {
   const [profile, setProfile] = useState<ProfileWithExtras | null>(null);
-  const [nextEvent, setNextEvent] = useState<UpcomingEvent | null>(null);
+  const [nextEvents, setNextEvents] = useState<UpcomingEvent[]>([]);
   const [outingSettings, setOutingSettings] = useState<OutingSettings | null>(null);
   const [birthdays, setBirthdays] = useState<Birthday[]>([]);
   const [infoSettings, setInfoSettings] = useState<DashboardInfoSettings | null>(null);
@@ -91,14 +91,12 @@ export function useMusicianDashboardData(): MusicianDashboardData {
       if (planningRes.ok) {
         const planningData = (await planningRes.json()) as {
           urgent: boolean;
-          nextEvent: UpcomingEvent | null;
+          nextEvents: UpcomingEvent[];
           urgentEvent?: UpcomingEvent | null;
           pendingCount: number;
         };
         setPlanningUrgent(planningData.urgent);
-        if (planningData.nextEvent) {
-          setNextEvent(planningData.nextEvent);
-        }
+        setNextEvents(planningData.nextEvents);
         setUrgentEvent(planningData.urgentEvent ?? null);
         setPendingCount(planningData.pendingCount);
       }
@@ -123,7 +121,7 @@ export function useMusicianDashboardData(): MusicianDashboardData {
   return {
     profile,
     loading,
-    nextEvent,
+    nextEvents,
     planningUrgent,
     urgentEvent,
     pendingCount,
