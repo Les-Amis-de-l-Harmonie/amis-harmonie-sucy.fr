@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -27,13 +27,8 @@ export type { PresenceEvent, PresenceRosterEntry } from "./musician-types";
 export interface PresenceCardProps {
   event: PresenceEvent;
   onUpdate: (event: PresenceEvent) => void;
-  /** Une réponse (présent/absent) vient d'être enregistrée avec succès, ou effacée :
-   * le parent tient le set de cartes "en sursis" et décide seul de la visibilité. */
+  /** Une réponse (présent/absent) vient d'être enregistrée avec succès, ou effacée. */
   onStatusChanged: (eventId: number, status: PresenceStatus | null) => void;
-  /** Démarre (ou relance) le délai de 3 s avant disparition de la carte. */
-  onLingerArm: (eventId: number) => void;
-  /** Annule le délai en cours : la carte n'est pas prête à disparaître. */
-  onLingerCancel: (eventId: number) => void;
 }
 
 /** `null` représente l'action "effacer" ; `null` "tout court" (pas d'action en cours)
@@ -45,8 +40,6 @@ export function PresenceCard({
   event,
   onUpdate,
   onStatusChanged,
-  onLingerArm,
-  onLingerCancel,
 }: PresenceCardProps) {
   const [comment, setComment] = useState(event.response.comment ?? "");
   const [commentOpen, setCommentOpen] = useState(false);
@@ -56,13 +49,13 @@ export function PresenceCard({
   const [lastSavedAction, setLastSavedAction] = useState<PendingAction | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Une réponse présent/absent fait disparaître la carte sur-le-champ, ce badge
+  // n'a donc pas le temps de s'y afficher. Il ne subsiste que pour les
+  // enregistrements qui laissent la carte en place — commentaire seul, ou
+  // effacement de la réponse — où il doit finir par s'effacer plutôt que de
+  // rester figé indéfiniment.
   useEffect(() => {
     if (saveState !== "saved") return;
-
-    // Volontairement plus court que le délai de sursis de la carte (3 s) : sans ça,
-    // la confirmation « Réponse enregistrée » et la disparition de la carte
-    // tomberaient sur le même instant, et un musicien qui s'éloigne aussitôt ne
-    // verrait jamais la confirmation.
     const timeoutId = window.setTimeout(() => setSaveState("idle"), 2000);
     return () => window.clearTimeout(timeoutId);
   }, [saveState]);
@@ -113,7 +106,7 @@ export function PresenceCard({
         onUpdate(data.event);
         setSaveState("saved");
         setLastSavedAction(action);
-        onStatusChanged(event.id, newStatus);
+        if (status !== newStatus) onStatusChanged(event.id, newStatus);
       } catch (err) {
         setSaveState("error");
         setErrorMessage(
@@ -128,54 +121,6 @@ export function PresenceCard({
 
   const commentDirty = comment.trim() !== (event.response.comment ?? "").trim();
 
-  // Deux gardes symétriques protègent la carte tant que l'utilisateur est encore
-  // dessus, chacune pour un mode d'interaction : la souris (survol) et le
-  // clavier au tactile (focus, typiquement le textarea de commentaire). Les deux
-  // se contentent d'une ref — rien ici ne doit provoquer de re-rendu.
-  const mouseInsideRef = useRef(false);
-  const focusInsideRef = useRef(false);
-
-  // Une prestation passée n'entre jamais dans ce mécanisme : aucun de ces
-  // gestionnaires n'est même attaché à la carte, elle n'a rien à faire disparaître.
-  const handlePointerEnter = isPast
-    ? undefined
-    : (e: PointerEvent<HTMLDivElement>) => {
-        if (e.pointerType === "mouse") mouseInsideRef.current = true;
-        onLingerCancel(event.id);
-      };
-  const handlePointerLeave = isPast
-    ? undefined
-    : (e: PointerEvent<HTMLDivElement>) => {
-        if (e.pointerType === "mouse") mouseInsideRef.current = false;
-        onLingerArm(event.id);
-      };
-  const handleFocus = isPast
-    ? undefined
-    : () => {
-        focusInsideRef.current = true;
-        onLingerCancel(event.id);
-      };
-  // Le focus qui quitte réellement la carte doit continuer à armer le délai — sinon
-  // un utilisateur au tactile ne pourrait plus jamais faire disparaître la carte
-  // après avoir touché le textarea. C'est ce qui garde la carte "dismissable".
-  const handleBlur = isPast
-    ? undefined
-    : () => {
-        focusInsideRef.current = false;
-        onLingerArm(event.id);
-      };
-  // pointerdown / click / change : n'arme que si la souris survole encore la carte
-  // OU qu'un de ses éléments a le focus — sinon un simple clic sur "Présent" (sous
-  // un curseur qui n'a pas bougé) ou une frappe dans le commentaire (pendant qu'on
-  // y a encore le focus) démarreraient un compte à rebours dans le dos de
-  // l'utilisateur encore présent.
-  const handleInteraction = isPast
-    ? undefined
-    : () => {
-        if (mouseInsideRef.current || focusInsideRef.current) return;
-        onLingerArm(event.id);
-      };
-
   const statusActions = (
     <div className="grid grid-cols-2 gap-3">
       <button
@@ -184,7 +129,7 @@ export function PresenceCard({
         disabled={isPast || pendingAction !== null}
         aria-pressed={status === "present"}
         className={cn(
-          "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
+          "flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
           status === "present"
             ? "border-success bg-success text-success-foreground shadow-sm"
             : "border-border bg-card text-foreground hover:border-success hover:bg-success/10 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-success/20 disabled:hover:border-border disabled:hover:bg-card dark:disabled:hover:border-border dark:disabled:hover:bg-card"
@@ -203,7 +148,7 @@ export function PresenceCard({
         disabled={isPast || pendingAction !== null}
         aria-pressed={status === "absent"}
         className={cn(
-          "flex min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
+          "flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70",
           status === "absent"
             ? "border-destructive bg-destructive text-destructive-foreground shadow-sm"
             : "border-border bg-card text-foreground hover:border-destructive hover:bg-destructive/10 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-destructive/20 disabled:hover:border-border disabled:hover:bg-card dark:disabled:hover:border-border dark:disabled:hover:bg-card"
@@ -245,19 +190,8 @@ export function PresenceCard({
     </div>
   );
 
-  const commonCardProps = {
-    onPointerEnter: handlePointerEnter,
-    onFocus: handleFocus,
-    onPointerLeave: handlePointerLeave,
-    onBlur: handleBlur,
-    onPointerDown: handleInteraction,
-    onClick: handleInteraction,
-    onChange: handleInteraction,
-  };
-
   return (
     <Card
-      {...commonCardProps}
       className={cn(
         "flex flex-col overflow-hidden border-l-4 transition-colors",
         !answered && deadlineInfo.tone === "danger"
@@ -323,7 +257,7 @@ export function PresenceCard({
                   <button
                     type="button"
                     onClick={() => setConfirmingClear(false)}
-                    className="font-medium underline-offset-2 hover:underline"
+                    className="cursor-pointer font-medium underline-offset-2 hover:underline"
                   >
                     Annuler
                   </button>
@@ -331,7 +265,7 @@ export function PresenceCard({
                     type="button"
                     onClick={() => submit(null)}
                     disabled={pendingAction !== null}
-                    className="font-semibold text-destructive underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-70"
+                    className="cursor-pointer font-semibold text-destructive underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {pendingAction === "clear" ? "Suppression…" : "Confirmer"}
                   </button>
@@ -342,7 +276,7 @@ export function PresenceCard({
                 type="button"
                 onClick={() => (event.response.comment ? setConfirmingClear(true) : submit(null))}
                 disabled={pendingAction !== null}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Undo2 className="h-3 w-3" aria-hidden="true" />
                 Effacer ma réponse
@@ -368,7 +302,7 @@ export function PresenceCard({
             <button
               type="button"
               onClick={() => setCommentOpen((open) => !open)}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground dark:hover:text-foreground"
+              className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground dark:hover:text-foreground"
             >
               <MessageSquare className="h-3.5 w-3.5" />
               {event.response.comment ? "Modifier mon commentaire" : "Ajouter un commentaire"}
@@ -393,7 +327,7 @@ export function PresenceCard({
                       type="button"
                       onClick={() => submit(status)}
                       disabled={pendingAction !== null || !commentDirty}
-                      className="inline-flex h-8 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors transition-transform duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
+                      className="inline-flex h-8 cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors transition-transform duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary active:scale-[0.97] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Enregistrer le commentaire
                     </button>

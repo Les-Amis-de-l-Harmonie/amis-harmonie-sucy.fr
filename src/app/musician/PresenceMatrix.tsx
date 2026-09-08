@@ -34,17 +34,7 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
     "sticky left-0 z-10 min-w-[128px] max-w-[180px] px-3 py-2 text-left align-top shadow-[3px_0_6px_-3px_rgba(0,0,0,0.15)]";
 
   return (
-    <section aria-labelledby="presence-matrix-heading" className="space-y-3">
-      <div>
-        <h2 id="presence-matrix-heading" className="font-heading text-xl font-bold text-foreground">
-          Qui vient à quelle date
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Votre ligne porte le badge « Vous »
-          {currentUserId !== null && ", modifiable grâce à l'icône crayon"}.
-        </p>
-      </div>
-
+    <section aria-label="Qui vient à quelle date" className="space-y-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-muted px-3 py-2.5 text-xs font-medium text-muted-foreground dark:bg-muted/40 dark:text-foreground">
         <LegendItem
           shapeClass="rounded-full bg-success text-success-foreground"
@@ -171,7 +161,7 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                               title={label}
                               aria-label={label}
                               className={cn(
-                                "relative mx-auto flex min-h-11 min-w-11 items-center justify-center transition-transform active:scale-95",
+                                "relative mx-auto flex min-h-11 min-w-11 cursor-pointer items-center justify-center transition-transform active:scale-95",
                                 visual.shapeClass
                               )}
                             >

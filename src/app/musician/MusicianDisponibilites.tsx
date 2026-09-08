@@ -5,12 +5,12 @@ import { Calendar, Check, History, Loader2, RefreshCw } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
 import { Switch } from "@/app/components/ui/switch";
 import { EmptyState } from "@/app/components/ui/empty-state";
+import type { PresenceStatus } from "@/db/types";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { PresenceCard } from "./PresenceCard";
 import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
-import { useLingeringCards } from "./useLingeringCards";
 
 interface PresenceApiResponse {
   currentUserId?: number;
@@ -27,7 +27,6 @@ export function MusicianDisponibilites() {
   // fait ici que lui transmettre l'intention, jamais de calcul de date côté client.
   const [showPast, setShowPast] = useState(false);
   const focusedCardRef = useRef<HTMLDivElement | null>(null);
-  const { lingeringIds, armLinger, cancelLinger, handleStatusChanged } = useLingeringCards();
 
   const fetchData = useCallback(async (includePast: boolean) => {
     setLoading(true);
@@ -70,6 +69,12 @@ export function MusicianDisponibilites() {
     setOpenEventId(eventId);
   }, []);
 
+  const handleStatusChanged = useCallback((eventId: number, status: PresenceStatus | null) => {
+    if (status !== null) {
+      setOpenEventId((current) => (current === eventId ? null : current));
+    }
+  }, []);
+
   // Premier chargement : aucune donnée à montrer, la page entière est un état de
   // chargement. Bascule ultérieure du filtre passé/à venir : on garde l'affichage
   // existant et on se contente d'un indicateur discret (cf. `isRefreshing` plus bas),
@@ -94,7 +99,7 @@ export function MusicianDisponibilites() {
         <p className="text-lg font-medium text-destructive">{error}</p>
         <button
           onClick={() => fetchData(showPast)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <RefreshCw className="h-4 w-4" />
           Réessayer
@@ -111,7 +116,7 @@ export function MusicianDisponibilites() {
   ).length;
   const visibleEvents = (events ?? []).filter(
     (event) =>
-      event.response.status === null || event.id === openEventId || lingeringIds.has(event.id)
+      event.response.status === null || event.id === openEventId
   );
   // Le même critère que `unansweredCount` sépare la liste en deux : la file "à répondre"
   // (jamais de prestation passée, par construction) et une zone de consultation à part
@@ -145,6 +150,7 @@ export function MusicianDisponibilites() {
             checked={showPast}
             onCheckedChange={setShowPast}
             disabled={isRefreshing}
+            className="cursor-pointer disabled:cursor-not-allowed"
           />
           <Label
             htmlFor="show-past-events"
@@ -165,7 +171,7 @@ export function MusicianDisponibilites() {
           <button
             type="button"
             onClick={() => fetchData(showPast)}
-            className="inline-flex items-center gap-1.5 font-medium underline-offset-2 hover:underline"
+            className="inline-flex cursor-pointer items-center gap-1.5 font-medium underline-offset-2 hover:underline"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Réessayer
@@ -197,8 +203,6 @@ export function MusicianDisponibilites() {
                       event={event}
                       onUpdate={handleUpdate}
                       onStatusChanged={handleStatusChanged}
-                      onLingerArm={armLinger}
-                      onLingerCancel={cancelLinger}
                     />
                   </div>
                 ))}
@@ -239,8 +243,6 @@ export function MusicianDisponibilites() {
                         event={event}
                         onUpdate={handleUpdate}
                         onStatusChanged={handleStatusChanged}
-                        onLingerArm={armLinger}
-                        onLingerCancel={cancelLinger}
                       />
                     </div>
                   ))}

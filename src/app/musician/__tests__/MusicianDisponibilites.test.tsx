@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MusicianDisponibilites } from "../MusicianDisponibilites";
@@ -64,6 +64,19 @@ describe("MusicianDisponibilites", () => {
       "false"
     );
     expect(screen.getByRole("button", { name: "Absent" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("nomme le tableau sans afficher l'ancien en-tête explicatif", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
+
+    render(<MusicianDisponibilites />);
+
+    expect(
+      await screen.findByRole("region", { name: "Qui vient à quelle date" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Qui vient à quelle date" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Votre ligne porte le badge/)).not.toBeInTheDocument();
   });
 
   it("envoie exactement le statut absent accepté par l'API", async () => {
@@ -500,23 +513,19 @@ describe("effacement d'une réponse", () => {
   });
 });
 
-describe("sursis des cartes après une réponse", () => {
+describe("disparition des cartes après une réponse", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
-    vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date("2026-08-27"));
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  function answeredEvent(eventId = 8, title = "Cérémonie du 11 novembre") {
+  function unansweredEvent() {
     return createEvent({
-      id: eventId,
-      title,
       response: { status: null, comment: null, updated_at: null },
       roster: [
         {
@@ -532,7 +541,7 @@ describe("sursis des cartes après une réponse", () => {
     });
   }
 
-  function savedEvent(event: ReturnType<typeof answeredEvent>) {
+  function savedEvent(event: ReturnType<typeof unansweredEvent>) {
     return {
       ...event,
       response: { status: "present" as const, comment: null, updated_at: "2026-08-27 10:00:00" },
@@ -550,189 +559,36 @@ describe("sursis des cartes après une réponse", () => {
     };
   }
 
-  function getCard(title: string): HTMLElement {
-    const heading = screen.getByRole("heading", { name: title });
-    const card = heading.parentElement?.parentElement?.parentElement?.parentElement;
-    if (!(card instanceof HTMLElement)) throw new Error(`Carte absente : ${title}`);
-    return card;
-  }
-
-  function advance(milliseconds: number) {
-    act(() => {
-      vi.advanceTimersByTime(milliseconds);
-    });
-  }
-
-  async function answerCard(
-    user: ReturnType<typeof userEvent.setup>,
-    card: HTMLElement,
-    event: ReturnType<typeof answeredEvent>
-  ) {
-    await user.click(within(card).getByRole("button", { name: "Présent" }));
-    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-  }
-
-  it("garde la carte après réponse puis la retire 3000 ms après le départ du pointeur", async () => {
+  it("retire la carte immédiatement après une réponse réussie", async () => {
     const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
+    const event = unansweredEvent();
     fetchMock
       .mockResolvedValueOnce(presenceResponse([event], 2))
       .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const user = userEvent.setup();
     render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    await answerCard(user, card, event);
+    await user.click(await screen.findByRole("button", { name: "Présent" }));
 
-    fireEvent.pointerLeave(card, { pointerType: "mouse" });
-    advance(2999);
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-    advance(1);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(screen.queryByRole("heading", { name: event.title })).not.toBeInTheDocument();
   });
 
-  it("annule le retrait si le pointeur revient sur la carte", async () => {
+  it("conserve la carte si l'enregistrement échoue", async () => {
     const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
+    const event = unansweredEvent();
     fetchMock
       .mockResolvedValueOnce(presenceResponse([event], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: false, error: "Erreur serveur" }), { status: 500 })
+      );
 
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const user = userEvent.setup();
     render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    await answerCard(user, card, event);
+    await user.click(await screen.findByRole("button", { name: "Présent" }));
 
-    fireEvent.pointerLeave(card, { pointerType: "mouse" });
-    advance(1500);
-    fireEvent.pointerEnter(card, { pointerType: "mouse" });
-    advance(4000);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-  });
-
-  it("ne retire pas une carte tant que la souris la survole après la réponse", async () => {
-    const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
-    fetchMock
-      .mockResolvedValueOnce(presenceResponse([event], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    fireEvent.pointerEnter(card, { pointerType: "mouse" });
-    await answerCard(user, card, event);
-
-    advance(4000);
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-  });
-
-  it("n'arme pas le retrait si la souris survole la carte sans focus actif", async () => {
-    const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
-    fetchMock
-      .mockResolvedValueOnce(presenceResponse([event], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    await answerCard(user, card, event);
-
-    // Le blur arme d'abord un timer, donc le pointerenter vient ensuite l'annuler et
-    // établir l'état « souris dedans » avant l'interaction testée.
-    fireEvent.blur(card);
-    fireEvent.pointerEnter(card, { pointerType: "mouse" });
-    fireEvent.pointerDown(card, { pointerType: "mouse" });
-    advance(5000);
-
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-  });
-
-  it("arme le retrait tactile après la dernière interaction", async () => {
-    const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
-    fetchMock
-      .mockResolvedValueOnce(presenceResponse([event], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    await answerCard(user, card, event);
-
-    fireEvent.blur(card);
-    fireEvent.pointerLeave(card, { pointerType: "mouse" });
-    advance(2000);
-    fireEvent.pointerDown(card, { pointerType: "touch" });
-    advance(2999);
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-    advance(1);
-    expect(screen.queryByRole("heading", { name: event.title })).not.toBeInTheDocument();
-  });
-
-  it("protège le brouillon de commentaire tant que le focus reste dans la carte", async () => {
-    const fetchMock = vi.mocked(fetch);
-    const event = answeredEvent();
-    fetchMock
-      .mockResolvedValueOnce(presenceResponse([event], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: event.title });
-    const card = getCard(event.title);
-    await answerCard(user, card, event);
-
-    // Aucun survol souris : la garde testée ici doit être focusInsideRef, pas mouseInsideRef.
-    fireEvent.pointerLeave(card, { pointerType: "mouse" });
-    fireEvent.click(within(card).getByRole("button", { name: "Ajouter un commentaire" }));
-    const textbox = within(card).getByRole("textbox");
-    fireEvent.focus(textbox);
-    textbox.focus();
-    await user.type(textbox, "Brouillon à conserver", { skipClick: true });
-
-    advance(5000);
-    expect(screen.getByRole("heading", { name: event.title })).toBeInTheDocument();
-    expect(textbox).toHaveValue("Brouillon à conserver");
-
-    fireEvent.blur(card);
-    advance(3000);
-    expect(screen.queryByRole("heading", { name: event.title })).not.toBeInTheDocument();
-  });
-
-  it("gère le délai de chaque carte indépendamment", async () => {
-    const fetchMock = vi.mocked(fetch);
-    const first = answeredEvent(8, "Première prestation");
-    const second = answeredEvent(9, "Deuxième prestation");
-    fetchMock
-      .mockResolvedValueOnce(presenceResponse([first, second], 2))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(first) }))
-      .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(second) }));
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<MusicianDisponibilites />);
-    await screen.findByRole("heading", { name: first.title });
-    const firstCard = getCard(first.title);
-    const secondCard = getCard(second.title);
-    await answerCard(user, firstCard, first);
-    await user.click(within(secondCard).getByRole("button", { name: "Présent" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-
-    fireEvent.pointerEnter(firstCard, { pointerType: "mouse" });
-    fireEvent.pointerEnter(secondCard, { pointerType: "mouse" });
-    fireEvent.pointerLeave(firstCard, { pointerType: "mouse" });
-    advance(1500);
-    fireEvent.pointerEnter(secondCard, { pointerType: "mouse" });
-    advance(1500);
-
-    expect(screen.queryByRole("heading", { name: first.title })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: second.title })).toBeInTheDocument();
+    expect(screen.getByText("Erreur serveur")).toBeInTheDocument();
   });
 });
