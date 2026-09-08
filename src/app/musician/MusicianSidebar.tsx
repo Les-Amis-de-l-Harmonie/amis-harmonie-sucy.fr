@@ -36,19 +36,7 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
       aria-label="Navigation du portail musicien"
       className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-border bg-surface-raised lg:flex"
     >
-      <div className="flex flex-col gap-4 border-b border-border px-6 py-6">
-        <a href="/musician/" className="flex-shrink-0">
-          <img
-            src="/images/logo.webp"
-            alt="Les Amis de l'Harmonie de Sucy"
-            className="h-10 w-auto dark:hidden"
-          />
-          <img
-            src="/images/logo-dark.webp"
-            alt="Les Amis de l'Harmonie de Sucy"
-            className="hidden h-10 w-auto dark:block"
-          />
-        </a>
+      <div className="flex flex-col border-b border-border px-6 py-6">
         <MusicianUserSummary firstName={firstName} lastName={lastName} avatar={avatar} />
       </div>
 
