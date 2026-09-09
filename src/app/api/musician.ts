@@ -33,6 +33,16 @@ interface HarmonieInstrumentRow {
   is_primary: number;
 }
 
+async function isMusicianMember(userId: number): Promise<boolean> {
+  const profile = await env.DB.prepare(
+    "SELECT adhesion_2026_2027 FROM musician_profiles WHERE user_id = ?"
+  )
+    .bind(userId)
+    .first<{ adhesion_2026_2027: number | null }>();
+
+  return profile?.adhesion_2026_2027 === 1;
+}
+
 export async function handleMusicianProfileApi(request: Request): Promise<Response> {
   const user = await verifySession(request, "musician");
   if (!user) {
@@ -599,13 +609,27 @@ export async function handleMusicianInsuranceApi(request: Request): Promise<Resp
       )
         .bind(user.id)
         .all<InsuranceInstrument>();
+      const isMember = await isMusicianMember(user.id);
 
-      return new Response(JSON.stringify(instruments.results || []), {
+      return new Response(JSON.stringify({ instruments: instruments.results || [], isMember }), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (request.method === "PUT") {
+      const isMember = await isMusicianMember(user.id);
+      if (!isMember) {
+        return new Response(
+          JSON.stringify({
+            error: "L'assurance instrument est réservée aux adhérents de l'association.",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
       const data = (await request.json()) as {
         instruments: Array<{
           id?: number;

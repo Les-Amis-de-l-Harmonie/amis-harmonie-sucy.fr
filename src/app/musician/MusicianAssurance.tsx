@@ -12,7 +12,8 @@ import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { EmptyState } from "@/app/components/ui/empty-state";
-import { Shield, Plus, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Shield, Lock, Plus, Trash2, Loader2, RefreshCw } from "lucide-react";
 import type { InsuranceInstrument } from "@/db/types";
 // Pas d'import de `@/lib/logger` ici : ce module commence par
 // `import { env } from "cloudflare:workers"`, spécificateur qui n'existe que dans
@@ -39,6 +40,7 @@ interface InsuranceInstrumentFormProps {
   index: number;
   errors: Record<string, string>;
   canRemove: boolean;
+  disabled: boolean;
   onRemove: (index: number) => void;
   onChange: (index: number, field: InstrumentField, value: string) => void;
 }
@@ -48,6 +50,7 @@ function InsuranceInstrumentForm({
   index,
   errors,
   canRemove,
+  disabled,
   onRemove,
   onChange,
 }: InsuranceInstrumentFormProps) {
@@ -61,6 +64,7 @@ function InsuranceInstrumentForm({
             variant="ghost"
             size="sm"
             onClick={() => onRemove(index)}
+            disabled={disabled}
             className="text-destructive"
             aria-label={`Supprimer l'instrument ${index + 1}`}
           >
@@ -76,6 +80,7 @@ function InsuranceInstrumentForm({
         <Input
           id={`instrument_${index}_name`}
           value={instrument.instrument_name}
+          disabled={disabled}
           aria-invalid={errors[`instrument_${index}_name`] ? true : undefined}
           aria-describedby={
             errors[`instrument_${index}_name`] ? `instrument_${index}_name-error` : undefined
@@ -98,6 +103,7 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_brand`}
             value={instrument.brand}
+            disabled={disabled}
             aria-invalid={errors[`instrument_${index}_brand`] ? true : undefined}
             aria-describedby={
               errors[`instrument_${index}_brand`] ? `instrument_${index}_brand-error` : undefined
@@ -119,6 +125,7 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_model`}
             value={instrument.model}
+            disabled={disabled}
             aria-invalid={errors[`instrument_${index}_model`] ? true : undefined}
             aria-describedby={
               errors[`instrument_${index}_model`] ? `instrument_${index}_model-error` : undefined
@@ -140,6 +147,7 @@ function InsuranceInstrumentForm({
           <Input
             id={`instrument_${index}_serial`}
             value={instrument.serial_number}
+            disabled={disabled}
             aria-invalid={errors[`instrument_${index}_serial`] ? true : undefined}
             aria-describedby={
               errors[`instrument_${index}_serial`] ? `instrument_${index}_serial-error` : undefined
@@ -158,6 +166,11 @@ function InsuranceInstrumentForm({
   );
 }
 
+interface InsuranceApiResponse {
+  instruments: InsuranceInstrument[];
+  isMember: boolean;
+}
+
 export function MusicianAssuranceClient() {
   const [instruments, setInstruments] = useState<InstrumentForm[]>([
     { instrument_name: "", brand: "", model: "", serial_number: "" },
@@ -167,6 +180,7 @@ export function MusicianAssuranceClient() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isMember, setIsMember] = useState<boolean>(false);
 
   const fetchInstruments = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -178,10 +192,11 @@ export function MusicianAssuranceClient() {
         throw new Error("Erreur lors du chargement des instruments assurés.");
       }
 
-      const data = (await response.json()) as InsuranceInstrument[];
-      if (data.length > 0) {
+      const payload = (await response.json()) as InsuranceApiResponse;
+      setIsMember(payload.isMember);
+      if (payload.instruments.length > 0) {
         setInstruments(
-          data.map((instrument) => ({
+          payload.instruments.map((instrument) => ({
             id: instrument.id,
             instrument_name: instrument.instrument_name,
             brand: instrument.brand,
@@ -283,6 +298,15 @@ export function MusicianAssuranceClient() {
     );
   }
 
+  // Verrouillage pour les non-adhérents : le formulaire de déclaration reste
+  // affiché en arrière-plan (contexte visuel) mais devient à la fois
+  // inaccessible au clavier/lecteur d'écran (aria-hidden + inert) et
+  // non-interactif (pointer-events-none + chaque champ/bouton en `disabled`,
+  // en double sécurité si `inert` n'était pas honoré). Le panneau d'appel à
+  // l'adhésion est un frère du <Card>, pas un enfant : il n'hérite donc pas
+  // de son atténuation et reste pleinement lisible et cliquable.
+  const locked = !loading && !error && !isMember;
+
   return (
     <div className="space-y-6">
       <div>
@@ -307,7 +331,7 @@ export function MusicianAssuranceClient() {
         </div>
       ) : (
         <>
-          {saved && (
+          {saved && !locked && (
             <div
               role="status"
               className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
@@ -316,64 +340,98 @@ export function MusicianAssuranceClient() {
             </div>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Mes instruments assurés
-              </CardTitle>
-              <CardDescription>
-                Vous pouvez enregistrer jusqu'à 2 instruments. Tous les champs sont obligatoires.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {errors.submit && (
-                <div
-                  role="alert"
-                  className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
-                >
-                  {errors.submit}
+          <div className="relative">
+            <Card
+              aria-hidden={locked || undefined}
+              inert={locked || undefined}
+              className={cn(locked && "pointer-events-none select-none opacity-40 grayscale")}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  Mes instruments assurés
+                </CardTitle>
+                <CardDescription>
+                  Vous pouvez enregistrer jusqu'à 2 instruments. Tous les champs sont obligatoires.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {errors.submit && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+                  >
+                    {errors.submit}
+                  </div>
+                )}
+
+                {instruments.map((instrument, index) => (
+                  <InsuranceInstrumentForm
+                    key={instrument.id ?? index}
+                    instrument={instrument}
+                    index={index}
+                    errors={errors}
+                    canRemove={instruments.length > 1}
+                    disabled={locked}
+                    onRemove={removeInstrument}
+                    onChange={updateInstrument}
+                  />
+                ))}
+
+                {instruments.length < 2 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addInstrument}
+                    disabled={locked}
+                    className="w-full gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Ajouter un instrument
+                  </Button>
+                )}
+
+                <div className="flex justify-end">
+                  <Button type="button" onClick={handleSave} disabled={saving || locked} size="lg">
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      "Enregistrer mes instruments"
+                    )}
+                  </Button>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {instruments.map((instrument, index) => (
-                <InsuranceInstrumentForm
-                  key={instrument.id ?? index}
-                  instrument={instrument}
-                  index={index}
-                  errors={errors}
-                  canRemove={instruments.length > 1}
-                  onRemove={removeInstrument}
-                  onChange={updateInstrument}
-                />
-              ))}
-
-              {instruments.length < 2 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addInstrument}
-                  className="w-full gap-2"
+            {locked && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center p-4 sm:p-6">
+                <div
+                  role="status"
+                  aria-live="polite"
+                  aria-labelledby="insurance-locked-heading"
+                  className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-elevation-1 sm:p-8"
                 >
-                  <Plus className="h-4 w-4" />
-                  Ajouter un instrument
-                </Button>
-              )}
-
-              <div className="flex justify-end">
-                <Button type="button" onClick={handleSave} disabled={saving} size="lg">
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Enregistrement...
-                    </>
-                  ) : (
-                    "Enregistrer mes instruments"
-                  )}
-                </Button>
+                  <Lock className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
+                  <h2
+                    id="insurance-locked-heading"
+                    className="mt-3 font-heading text-lg font-bold text-foreground"
+                  >
+                    Réservé aux adhérents
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    L'Assurance instrument est réservée uniquement aux adhérents de l'association
+                    Les Amis de l'Harmonie, nous vous invitons à renouveler/adhérer dès maintenant.
+                  </p>
+                  <Button asChild size="lg" className="mt-5 w-full sm:w-auto">
+                    <a href="/adhesion">Adhésion</a>
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </>
       )}
     </div>
