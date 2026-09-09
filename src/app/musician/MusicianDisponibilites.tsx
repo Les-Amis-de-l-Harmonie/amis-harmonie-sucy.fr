@@ -210,8 +210,7 @@ export function MusicianDisponibilites() {
             ) : (
               <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3.5 text-sm font-medium text-success dark:border-success/40 dark:bg-success/20">
                 <Check className="h-5 w-5 shrink-0" />
-                Vous avez répondu à toutes les prestations à venir. Le tableau ci-dessous récapitule
-                qui vient.
+                Vous avez répondu à toutes les prestations à venir.
               </div>
             )}
 
