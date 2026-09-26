@@ -52,10 +52,10 @@ export function MusicianMoreSheet({
           pour signaler qu'une des pages qu'il contient est ouverte. */}
       <SheetTrigger
         className={cn(
-          "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-0.5 py-2 text-[10px] leading-tight font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground min-[360px]:text-[11px] motion-reduce:transition-none",
+          "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-0.5 py-2 text-[10px] leading-tight font-medium text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white min-[360px]:text-[11px] motion-reduce:transition-none",
           tabActive || open
-            ? "bg-primary-foreground text-primary"
-            : "text-primary-foreground hover:bg-primary-foreground/10"
+            ? "bg-primary text-primary ring-2 ring-white ring-inset"
+            : "hover:bg-white/10"
         )}
       >
         <MoreHorizontal className="h-[22px] w-[22px]" aria-hidden="true" />
