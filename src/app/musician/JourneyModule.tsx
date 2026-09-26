@@ -37,7 +37,7 @@ export function JourneyModule({
       <div className="rounded-xl border border-border bg-card p-5 sm:p-6" aria-hidden="true">
         <Skeleton className="mb-1 h-5 w-48" />
         <Skeleton className="mb-4 h-4 w-64" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
@@ -51,7 +51,7 @@ export function JourneyModule({
   const allDone = doneCount === steps.length;
 
   const stepsList = (
-    <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {steps.map((step, index) => (
         <li key={step.key}>
           <a

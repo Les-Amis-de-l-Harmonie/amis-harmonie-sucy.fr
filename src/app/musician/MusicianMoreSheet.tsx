@@ -52,14 +52,14 @@ export function MusicianMoreSheet({
           pour signaler qu'une des pages qu'il contient est ouverte. */}
       <SheetTrigger
         className={cn(
-          "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium transition-colors",
-          tabActive ? "text-primary" : "text-muted-foreground"
+          "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10",
+          tabActive && "bg-primary-foreground/10"
         )}
       >
         <MoreHorizontal className="h-[22px] w-[22px]" aria-hidden="true" />
         <span>Plus</span>
         {tabActive && (
-          <span className="mt-0.5 h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
+          <span className="mt-0.5 h-1 w-1 rounded-full bg-primary-foreground" aria-hidden="true" />
         )}
       </SheetTrigger>
 

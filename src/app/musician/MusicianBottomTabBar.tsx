@@ -18,7 +18,7 @@ interface MusicianBottomTabBarProps {
  * c'est exactement la plage où coexistaient les deux anciens hamburgers).
  * 4 sections à onglet direct + le sheet « Plus » pour les 4 restantes.
  *
- * L'indicateur actif est une couleur + un point sous le label — jamais une
+ * L'indicateur actif est un fond renforcé + un point sous le label — jamais une
  * translation ni un changement de taille, pour que la barre reste un
  * élément d'ancrage parfaitement stable au fil des taps.
  */
@@ -37,7 +37,7 @@ export function MusicianBottomTabBar({
     // tombée à 14px de haut. Voir gate @oracle Phase 1 (B2).
     <nav
       aria-label="Navigation mobile"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom,0px)] shadow-elevation-1 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-primary-foreground/15 bg-primary text-primary-foreground pb-[env(safe-area-inset-bottom,0px)] shadow-elevation-1 lg:hidden"
     >
       <div className="flex h-16 items-stretch px-1">
         {MUSICIAN_TAB_ITEMS.map((item) => {
@@ -48,14 +48,17 @@ export function MusicianBottomTabBar({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium transition-colors",
-                active ? "text-primary" : "text-muted-foreground"
+                "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10",
+                active && "bg-primary-foreground/10"
               )}
             >
               <item.icon className="h-[22px] w-[22px]" aria-hidden="true" />
               <span>{item.tabLabel ?? item.label}</span>
               {active && (
-                <span className="mt-0.5 h-1 w-1 rounded-full bg-primary" aria-hidden="true" />
+                <span
+                  className="mt-0.5 h-1 w-1 rounded-full bg-primary-foreground"
+                  aria-hidden="true"
+                />
               )}
             </a>
           );
