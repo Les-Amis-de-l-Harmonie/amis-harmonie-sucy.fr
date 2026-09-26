@@ -18,8 +18,8 @@ interface MusicianBottomTabBarProps {
  * c'est exactement la plage où coexistaient les deux anciens hamburgers).
  * 4 sections à onglet direct + le sheet « Plus » pour les 4 restantes.
  *
- * L'indicateur actif est un fond renforcé + un point sous le label — jamais une
- * translation ni un changement de taille, pour que la barre reste un
+ * L'indicateur actif est une pastille contrastée — jamais une translation
+ * ni un changement de taille, pour que la barre reste un
  * élément d'ancrage parfaitement stable au fil des taps.
  */
 export function MusicianBottomTabBar({
@@ -29,17 +29,13 @@ export function MusicianBottomTabBar({
   avatar,
 }: MusicianBottomTabBarProps) {
   return (
-    // La zone de sécurité tactile (encoche / barre gestuelle) vit sur cet
-    // élément externe, en plus de la hauteur de la rangée — jamais mêlée à
-    // elle. Avec `box-sizing: border-box` (Preflight), un `pb-safe` posé
-    // directement sur un conteneur `h-16` aurait rogné cette même hauteur au
-    // lieu de s'y ajouter : à 34px d'encoche, la rangée interne serait
-    // tombée à 14px de haut. Voir gate @oracle Phase 1 (B2).
+    // La barre flotte au-dessus de la zone gestuelle sans réduire les cibles
+    // tactiles. MusicianLayout réserve sa hauteur et ses marges dans le flux.
     <nav
       aria-label="Navigation mobile"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-primary-foreground/15 bg-primary text-primary-foreground pb-[env(safe-area-inset-bottom,0px)] shadow-elevation-1 lg:hidden"
+      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto max-w-md rounded-[1.75rem] border border-primary-foreground/10 bg-primary p-1.5 text-primary-foreground shadow-[0_8px_32px_-8px] shadow-primary-foreground/25 lg:hidden"
     >
-      <div className="flex h-16 items-stretch px-1">
+      <div className="grid grid-cols-5 gap-1">
         {MUSICIAN_TAB_ITEMS.map((item) => {
           const active = isMusicianPathActive(pathname, item.href);
           return (
@@ -48,18 +44,14 @@ export function MusicianBottomTabBar({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/10",
-                active && "bg-primary-foreground/10"
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-0.5 py-2 text-[10px] leading-tight font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground min-[360px]:text-[11px] motion-reduce:transition-none",
+                active
+                  ? "bg-primary-foreground text-primary"
+                  : "text-primary-foreground hover:bg-primary-foreground/10"
               )}
             >
               <item.icon className="h-[22px] w-[22px]" aria-hidden="true" />
-              <span>{item.tabLabel ?? item.label}</span>
-              {active && (
-                <span
-                  className="mt-0.5 h-1 w-1 rounded-full bg-primary-foreground"
-                  aria-hidden="true"
-                />
-              )}
+              <span className="tracking-tight">{item.tabLabel ?? item.label}</span>
             </a>
           );
         })}

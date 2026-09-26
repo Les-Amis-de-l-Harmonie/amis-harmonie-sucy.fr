@@ -45,14 +45,14 @@ export function MusicianLayout({
 
       <MusicianMobileHeader pathname={pathname} />
 
-      {/* pb-* : réserve la hauteur de la barre d'onglets basse (64px) + sa
-          propre zone de sécurité tactile (voir MusicianBottomTabBar) — sans
+      {/* pb-* : réserve la barre flottante (70px), ses marges et la
+          zone de sécurité tactile (voir MusicianBottomTabBar) — sans
           cette marge, le bas de page repasserait sous la barre sur un
           appareil à encoche. max-w-6xl : plafond de largeur du contenu,
           repris à l'identique de l'ancien MusicianLayout (qui allait jusqu'à
           max-w-7xl en 2xl ; 6xl suffit ici et évite des lignes de formulaire
           ou des cartes de dashboard étirées à l'excès sur grand écran). */}
-      <main className="min-w-0 flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-6 sm:px-6 lg:px-8 lg:pb-8">
+      <main className="min-w-0 flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] pt-6 sm:px-6 lg:px-8 lg:pb-8">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 
