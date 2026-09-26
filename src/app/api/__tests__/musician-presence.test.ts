@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { handleMusicianPresenceApi } from "../musician-presence";
 import { verifySession } from "../auth";
 import { invalidateCache } from "@/lib/cache";
-import { PRESENCE_MEMBER_QUERY } from "@/lib/presence";
+import { MUSICIAN_PRESENCE_MEMBER_QUERY } from "@/lib/presence";
 
 vi.mock("../auth", () => ({
   verifySession: vi.fn(),
@@ -282,9 +282,10 @@ describe("handleMusicianPresenceApi", () => {
     expect(
       fakeDb.calls.filter((call) => call.sql.includes("FROM event_presences WHERE"))
     ).toHaveLength(0);
-    expect(fakeDb.calls.find((call) => call.sql === PRESENCE_MEMBER_QUERY)?.sql).not.toContain(
-      "comment"
-    );
+    expect(
+      fakeDb.calls.find((call) => call.sql === MUSICIAN_PRESENCE_MEMBER_QUERY)?.sql
+    ).not.toContain("comment");
+    expect(MUSICIAN_PRESENCE_MEMBER_QUERY).toContain("AND u.role = 'MUSICIAN'");
   });
 
   it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {

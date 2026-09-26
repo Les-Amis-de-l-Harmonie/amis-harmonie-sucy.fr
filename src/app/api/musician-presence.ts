@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { verifySession } from "./auth";
 import { logger } from "@/lib/logger";
 import {
-  PRESENCE_MEMBER_QUERY,
+  MUSICIAN_PRESENCE_MEMBER_QUERY,
   PRESENCE_UPSERT_SQL,
   summarisePresence,
   type PresenceRow,
@@ -103,7 +103,9 @@ async function readPresenceEvent(
     .bind(event.id, userId)
     .first<OwnPresenceRow>();
 
-  const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
+  const memberRows = await env.DB.prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
+    .bind(event.id)
+    .all<PresenceRow>();
   const summary = summarisePresence(memberRows.results || []);
   const roster: PresenceRosterEntry[] = summary.members.map((member) => ({
     userId: member.userId,
@@ -153,7 +155,7 @@ async function readPresenceEvents(
   // Le statut de la colonne jointe n'est pas utilisé ici : les réponses sont chargées en une
   // seule requête groupée ci-dessous. L'identifiant lié est donc arbitraire et sans effet sur
   // l'effectif, qui dépend uniquement des utilisateurs actifs et de leurs instruments.
-  const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY)
+  const memberRows = await env.DB.prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
     .bind(events[0]?.id ?? 0)
     .all<PresenceRow>();
   const summary = summarisePresence(
@@ -263,7 +265,9 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
     return jsonResponse({ error: "Cet événement n'existe pas ou n'accepte plus de réponse." }, 400);
   }
 
-  const memberRows = await env.DB.prepare(PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
+  const memberRows = await env.DB.prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
+    .bind(event.id)
+    .all<PresenceRow>();
   if (!(memberRows.results || []).some((member) => member.userId === userId)) {
     // L'adhésion n'entre plus dans l'effectif de référence : ce refus ne concerne
     // pas la cotisation, mais l'appartenance à l'effectif (compte désactivé, ou

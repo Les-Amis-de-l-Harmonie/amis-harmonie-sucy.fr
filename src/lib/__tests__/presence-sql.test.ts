@@ -1,10 +1,15 @@
 // @vitest-environment node
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
-import { PRESENCE_MEMBER_QUERY, summarisePresence, type PresenceRow } from "../presence";
+import {
+  MUSICIAN_PRESENCE_MEMBER_QUERY,
+  PRESENCE_MEMBER_QUERY,
+  summarisePresence,
+  type PresenceRow,
+} from "../presence";
 
 describe("PRESENCE_MEMBER_QUERY", () => {
-  it("selects only eligible members and preserves one row per harmonie instrument", () => {
+  it("préserve la grille admin et réserve le roster musicien aux MUSICIAN actifs", () => {
     const database = new DatabaseSync(":memory:");
     database.exec(`
       CREATE TABLE users (
@@ -84,6 +89,9 @@ describe("PRESENCE_MEMBER_QUERY", () => {
       [5, "cinq@exemple.fr", "MUSICIAN", 0, "Inactif", "Adherent", 1],
       [6, "chef@exemple.fr", "ADMIN", 1, "Chef", "Orchestre", 1],
       [7, "admin@exemple.fr", "ADMIN", 1, "Admin", "Bureau", 1],
+      [10, "carole-admin@exemple.fr", "ADMIN", 1, "Carole", "Admin", 1],
+      [16, "carole-musicienne@exemple.fr", "MUSICIAN", 1, "Carole", "Musicienne", 1],
+      [18, "superadmin@exemple.fr", "SUPER_ADMIN", 1, "Super", "Admin", 1],
     ] as const;
 
     for (const [id, email, role, isActive, firstName, lastName, adhesion] of fixtures) {
@@ -97,12 +105,17 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     insertInstrument.run(5, "Saxophone alto");
     insertInstrument.run(6, "Chef d'orchestre");
     insertInstrument.run(6, "Chef adjoint");
+    insertInstrument.run(10, "Percussions");
+    insertInstrument.run(16, "Saxophone alto");
+    insertInstrument.run(18, "Clarinette");
     database
       .prepare(
         "UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id = 2 AND instrument_name = ?"
       )
       .run("Trompette");
-    database.prepare("UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id = 6").run();
+    database
+      .prepare("UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id IN (6, 16)")
+      .run();
     insertPresence.run(42, 1, "present", "2026-09-01 10:00:00");
     insertPresence.run(42, 2, "absent", "2026-09-01 11:00:00");
     insertPresence.run(42, 6, "present", "2026-09-01 12:00:00");
@@ -120,7 +133,9 @@ describe("PRESENCE_MEMBER_QUERY", () => {
         statusChangedAt: result.statusChangedAt as string | null,
       }));
 
-    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([1, 2, 2, 3, 4, 6, 6]);
+    expect(rows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([
+      1, 2, 2, 3, 4, 6, 6, 10, 16, 18,
+    ]);
     expect(rows.filter((row) => row.userId === 2)).toHaveLength(2);
     expect(
       summarisePresence(rows).members.find((member) => member.userId === 2)?.primaryInstrument
@@ -142,7 +157,27 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     // Administrateur sans instrument : hors effectif.
     expect(rows.some((row) => row.userId === 7)).toBe(false);
 
-    expect(summarisePresence(rows).totalMembers).toBe(5);
+    expect(summarisePresence(rows).totalMembers).toBe(8);
+
+    const musicianRows = database
+      .prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
+      .all(42) as unknown as PresenceRow[];
+    const musicianSummary = summarisePresence(musicianRows);
+    expect(musicianRows.map((row) => row.userId).sort((a, b) => a - b)).toEqual([
+      1, 2, 2, 3, 4, 16,
+    ]);
+    expect(musicianSummary.totalMembers).toBe(5);
+    expect(musicianSummary.present).toBe(1);
+    expect(musicianSummary.absent).toBe(1);
+    expect(musicianSummary.noAnswer).toBe(3);
+    expect(musicianSummary.members.find((member) => member.userId === 16)).toEqual(
+      expect.objectContaining({
+        instruments: ["Saxophone alto"],
+        primaryInstrument: "Saxophone alto",
+      })
+    );
+    expect(musicianRows.some((row) => row.userId === 10)).toBe(false);
+    expect(musicianRows.some((row) => row.userId === 18)).toBe(false);
 
     database.close();
   });
@@ -240,6 +275,7 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     expect(rows.filter((row) => row.is_primary === 1).map((row) => row.id)).toEqual([10, 20]);
     database.close();
   });
+
 });
 
 describe("filtrage JSON des événements de présence", () => {

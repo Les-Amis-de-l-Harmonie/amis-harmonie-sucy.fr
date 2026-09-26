@@ -1,18 +1,8 @@
 import { compareInstruments } from "@/lib/instruments";
 
-// Cette requête alimente la réponse envoyée aux musiciens : ne JAMAIS y ajouter la colonne
-// `comment`. Les commentaires sont joints séparément, côté administration uniquement
-// (`src/app/api/admin/presence.ts`).
-//
-// EFFECTIF DE RÉFÉRENCE = la liste des utilisateurs musiciens actifs.
-// Volontairement SANS condition d'adhésion : l'adhésion est remise à zéro à chaque
-// saison (`migrations/0012_rollover_membership_season.sql`), ce qui viderait
-// l'effectif — et donc le dénominateur du taux de réponse — jusqu'à ce que chacun
-// ait ré-adhéré. Un musicien doit être compté et relancé qu'il soit à jour de sa
-// cotisation ou non ; l'adhésion se suit dans l'espace Utilisateurs, pas ici.
-//
-// La disjonction rôle / instruments inclut le chef d'orchestre, qui est un ADMIN
-// mais joue, et exclut les administrateurs purement back-office.
+// Cette requête est conservée pour la grille d'administration : elle inclut les comptes
+// ADMIN qui jouent d'un instrument, notamment le chef d'orchestre. Ne JAMAIS y ajouter
+// la colonne `comment` ; les commentaires sont joints séparément côté administration.
 export const PRESENCE_MEMBER_QUERY = `SELECT
   u.id                 AS userId,
   mp.first_name        AS firstName,
@@ -30,6 +20,24 @@ WHERE u.is_active = 1
     u.role = 'MUSICIAN'
     OR EXISTS (SELECT 1 FROM harmonie_instruments h WHERE h.user_id = u.id)
   )`;
+
+// Le portail musicien ne doit pas confondre deux comptes distincts d'une même personne :
+// seuls les comptes MUSICIAN actifs font partie de son roster. La condition d'adhésion
+// reste volontairement absente, comme pour la grille d'administration.
+export const MUSICIAN_PRESENCE_MEMBER_QUERY = `SELECT
+  u.id                 AS userId,
+  mp.first_name        AS firstName,
+  mp.last_name         AS lastName,
+  hi.instrument_name   AS instrument,
+  hi.is_primary        AS isPrimary,
+  ep.status            AS status,
+  ep.status_changed_at AS statusChangedAt
+FROM users u
+JOIN musician_profiles mp ON mp.user_id = u.id
+LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
+LEFT JOIN event_presences ep ON ep.user_id = u.id AND ep.event_id = ?
+WHERE u.is_active = 1
+  AND u.role = 'MUSICIAN'`;
 
 // Les deux variantes d'enregistrement d'une réponse sont placées côte à côte :
 // elles ne diffèrent que par la ligne `comment`, et cette différence est délibérée.
