@@ -221,7 +221,7 @@ describe("MusicianDisponibilites", () => {
     expect(await screen.findByRole("heading", { name: "Concert de rentrée" })).toBeInTheDocument();
   });
 
-  it("groupe les pupitres avec Direction en tête et Sans pupitre renseigné en dernier", async () => {
+  it("groupe, compte et affiche uniquement l'instrument principal", async () => {
     const fetchMock = vi.mocked(fetch);
     const event = createEvent({
       roster: [
@@ -273,6 +273,14 @@ describe("MusicianDisponibilites", () => {
           primaryInstrument: null,
           status: null,
         },
+        {
+          userId: 7,
+          firstName: "Félix",
+          lastName: "Repli",
+          instruments: ["Trombone", "Clarinette"],
+          primaryInstrument: null,
+          status: null,
+        },
       ],
     });
     fetchMock.mockResolvedValueOnce(presenceResponse([event], 999));
@@ -300,8 +308,20 @@ describe("MusicianDisponibilites", () => {
     expect(directionText.indexOf("Zoé Orchestre")).toBeLessThan(
       directionText.indexOf("Alice Adjointe")
     );
-    expect(directionText).toContain("Paul Principal");
-    expect(trompette.textContent).not.toContain("Paul Principal");
+    expect(directionText).not.toContain("Paul Principal");
+    expect(directionText).toContain("(2)");
+    expect(groups[1]?.textContent).toContain("(2)");
+    expect(trompette.textContent).toContain("(2)");
+    expect(trompette.textContent).toContain("Paul Principal");
+    expect(trompette.textContent).not.toContain("Chef d'orchestre");
+
+    const paulRow = within(trompette).getByRole("row", { name: /Paul Principal/ });
+    expect(paulRow).toHaveTextContent("Trompette");
+    expect(paulRow).not.toHaveTextContent("Chef d'orchestre");
+
+    const fallbackRow = within(groups[1] as HTMLElement).getByRole("row", { name: /Félix Repli/ });
+    expect(fallbackRow).toHaveTextContent("Clarinette");
+    expect(fallbackRow).not.toHaveTextContent("Trombone");
   });
 
   it("charge les prestations passées via le filtre et désactive leurs contrôles", async () => {

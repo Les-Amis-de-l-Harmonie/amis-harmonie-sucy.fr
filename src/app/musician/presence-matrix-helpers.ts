@@ -1,5 +1,6 @@
 import { Check, Minus, X, type LucideIcon } from "lucide-react";
 import type { PresenceStatus } from "@/db/types";
+import { compareInstruments } from "@/lib/instruments";
 import type { PresenceEvent } from "./musician-types";
 
 export interface MusicianRow {
@@ -21,6 +22,21 @@ export interface CellVisual {
 export function getFullName(firstName: string | null, lastName: string | null): string {
   if (!firstName && !lastName) return "Anonyme";
   return [firstName, lastName].filter(Boolean).join(" ");
+}
+
+/**
+ * Le tableau musicien ne doit rattacher un membre qu'à son instrument principal.
+ * Le serveur applique déjà ce repli lors de la synthèse de l'effectif ; on le
+ * répète ici pour rester sûr face à une réponse ancienne ou incohérente.
+ */
+function resolvePresencePrimaryInstrument(
+  instruments: string[],
+  primaryInstrument: string | null
+): string | null {
+  if (primaryInstrument !== null && instruments.includes(primaryInstrument)) {
+    return primaryInstrument;
+  }
+  return instruments.slice().sort(compareInstruments)[0] ?? null;
 }
 
 /** Construit une ligne par musicien à partir des rosters de tous les événements, en
@@ -65,12 +81,18 @@ export function buildMusicianRows(
 
   return order.map((userId) => {
     const details = info.get(userId);
+    const primaryInstrument = resolvePresencePrimaryInstrument(
+      details?.instruments ?? [],
+      details?.primaryInstrument ?? null
+    );
     return {
       userId,
       firstName: details?.firstName ?? null,
       lastName: details?.lastName ?? null,
-      instruments: details?.instruments ?? [],
-      primaryInstrument: details?.primaryInstrument ?? null,
+      // Une seule valeur est conservée : elle sert à la fois à l'affichage, au
+      // regroupement et donc au compte affiché par pupitre.
+      instruments: primaryInstrument === null ? [] : [primaryInstrument],
+      primaryInstrument,
       isCurrentUser: userId === currentUserId,
       statuses: statuses.get(userId) ?? new Map<number, PresenceStatus | null>(),
     };
