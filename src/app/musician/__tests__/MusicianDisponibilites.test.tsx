@@ -75,7 +75,9 @@ describe("MusicianDisponibilites", () => {
     expect(
       await screen.findByRole("region", { name: "Qui vient à quelle date" })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Qui vient à quelle date" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Qui vient à quelle date" })
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Votre ligne porte le badge/)).not.toBeInTheDocument();
   });
 
@@ -103,6 +105,90 @@ describe("MusicianDisponibilites", () => {
       status: "absent",
       comment: null,
     });
+  });
+
+  it("permet de répondre puis modifier depuis Mes réponses sans chercher sa ligne", async () => {
+    const event = createEvent({
+      roster: [
+        {
+          userId: 2,
+          firstName: "Lucas",
+          lastName: "Martin",
+          instruments: [],
+          primaryInstrument: null,
+          status: null,
+        },
+        {
+          userId: 3,
+          firstName: "Camille",
+          lastName: "Bernard",
+          instruments: [],
+          primaryInstrument: null,
+          status: "present",
+        },
+      ],
+    });
+    const present = { ...event, response: { ...event.response, status: "present" } };
+    const absent = { ...event, response: { ...event.response, status: "absent" } };
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce(presenceResponse([event]))
+      .mockResolvedValueOnce(jsonResponse({ success: true, event: present }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, event: absent }));
+    const user = userEvent.setup();
+    render(<MusicianDisponibilites />);
+    const responses = await screen.findByRole("region", { name: "Mes réponses" });
+    expect(responses).toHaveClass("md:hidden");
+    expect(within(responses).getByText("Sans réponse")).toBeInTheDocument();
+    await user.click(within(responses).getByRole("button", { name: /^Répondre :/ }));
+    expect(document.activeElement).toContainElement(
+      screen.getByRole("button", { name: "Présent" })
+    );
+    await user.click(screen.getByRole("button", { name: "Présent" }));
+    await user.click(
+      await within(responses).findByRole("button", { name: /^Modifier :.*présent$/ })
+    );
+    expect(screen.getByRole("button", { name: "Présent" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Absent" }));
+    expect(
+      await within(responses).findByRole("button", { name: /^Modifier :.*absent$/ })
+    ).toBeInTheDocument();
+    expect(within(responses).getByRole("button", { name: /^Modifier :.*absent$/ })).toHaveFocus();
+    const otherRow = within(screen.getByRole("table")).getByRole("row", {
+      name: /Camille Bernard/,
+    });
+    expect(within(otherRow).queryByRole("button")).not.toBeInTheDocument();
+    expect(JSON.parse(String(fetchMock.mock.calls[2]?.[1]?.body))).toEqual({
+      eventId: 8,
+      status: "absent",
+      comment: null,
+    });
+  });
+
+  it("propose seulement de consulter une réponse passée dans la liste mobile", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      presenceResponse([
+        createEvent({
+          date: "2026-08-01",
+          response: { status: "present", comment: null, updated_at: null },
+        }),
+      ])
+    );
+    const user = userEvent.setup();
+    render(<MusicianDisponibilites />);
+    const responses = await screen.findByRole("region", { name: "Mes réponses" });
+    expect(within(responses).getByText(/Réponses closes/)).toBeInTheDocument();
+    await user.click(within(responses).getByRole("button", { name: /^Consulter :/ }));
+    expect(screen.getByRole("button", { name: "Présent" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Absent" })).toBeDisabled();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("ne propose pas la liste personnelle sans identifiant de session", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
+    render(<MusicianDisponibilites />);
+    await screen.findByRole("table");
+    expect(screen.queryByRole("region", { name: "Mes réponses" })).not.toBeInTheDocument();
   });
 
   it("n'affiche pas les commentaires présents dans les entrées du roster", async () => {

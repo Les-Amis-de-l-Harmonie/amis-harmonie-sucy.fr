@@ -11,10 +11,16 @@ import { cn } from "@/lib/utils";
 import { PresenceCard } from "./PresenceCard";
 import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
+import { PresenceResponses } from "./PresenceResponses";
 
 interface PresenceApiResponse {
   currentUserId?: number;
   events: PresenceEvent[];
+}
+
+function focusResponseCard(card: HTMLDivElement | null) {
+  card?.focus({ preventScroll: true });
+  card?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 export function MusicianDisponibilites() {
@@ -27,6 +33,7 @@ export function MusicianDisponibilites() {
   // fait ici que lui transmettre l'intention, jamais de calcul de date côté client.
   const [showPast, setShowPast] = useState(false);
   const focusedCardRef = useRef<HTMLDivElement | null>(null);
+  const mobileResponseTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const fetchData = useCallback(async (includePast: boolean) => {
     setLoading(true);
@@ -56,7 +63,7 @@ export function MusicianDisponibilites() {
 
   useEffect(() => {
     if (openEventId === null) return;
-    focusedCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    focusResponseCard(focusedCardRef.current);
   }, [openEventId]);
 
   const handleUpdate = useCallback((updatedEvent: PresenceEvent) => {
@@ -65,15 +72,32 @@ export function MusicianDisponibilites() {
     );
   }, []);
 
-  const handleEditResponse = useCallback((eventId: number) => {
-    setOpenEventId(eventId);
-  }, []);
+  const handleEditResponse = useCallback(
+    (eventId: number, trigger?: HTMLButtonElement) => {
+      mobileResponseTriggerRef.current = trigger ?? null;
+      if (eventId === openEventId) focusResponseCard(focusedCardRef.current);
+      setOpenEventId(eventId);
+    },
+    [openEventId]
+  );
 
-  const handleStatusChanged = useCallback((eventId: number, status: PresenceStatus | null) => {
-    if (status !== null) {
-      setOpenEventId((current) => (current === eventId ? null : current));
-    }
-  }, []);
+  const handleStatusChanged = useCallback(
+    (eventId: number, status: PresenceStatus | null) => {
+      if (status !== null) {
+        setOpenEventId((current) => (current === eventId ? null : current));
+        // La carte se ferme après l'enregistrement : revenir à la réponse qui l'a ouverte.
+        if (eventId === openEventId) {
+          mobileResponseTriggerRef.current?.focus({ preventScroll: true });
+          mobileResponseTriggerRef.current?.scrollIntoView({
+            block: "center",
+            behavior: "instant",
+          });
+          mobileResponseTriggerRef.current = null;
+        }
+      }
+    },
+    [openEventId]
+  );
 
   // Premier chargement : aucune donnée à montrer, la page entière est un état de
   // chargement. Bascule ultérieure du filtre passé/à venir : on garde l'affichage
@@ -115,8 +139,7 @@ export function MusicianDisponibilites() {
     (event) => event.response.status === null && !isEventPast(event.date)
   ).length;
   const visibleEvents = (events ?? []).filter(
-    (event) =>
-      event.response.status === null || event.id === openEventId
+    (event) => event.response.status === null || event.id === openEventId
   );
   // Le même critère que `unansweredCount` sépare la liste en deux : la file "à répondre"
   // (jamais de prestation passée, par construction) et une zone de consultation à part
@@ -195,10 +218,17 @@ export function MusicianDisponibilites() {
           />
         ) : (
           <div className="space-y-6">
+            {currentUserId !== null && (
+              <PresenceResponses events={events} onEditResponse={handleEditResponse} />
+            )}
             {pendingEvents.length > 0 ? (
               <div className="space-y-4">
                 {pendingEvents.map((event) => (
-                  <div key={event.id} ref={event.id === openEventId ? focusedCardRef : undefined}>
+                  <div
+                    key={event.id}
+                    tabIndex={-1}
+                    ref={event.id === openEventId ? focusedCardRef : undefined}
+                  >
                     <PresenceCard
                       event={event}
                       onUpdate={handleUpdate}
@@ -237,7 +267,11 @@ export function MusicianDisponibilites() {
                 </div>
                 <div className="space-y-4">
                   {revealedPastEvents.map((event) => (
-                    <div key={event.id} ref={event.id === openEventId ? focusedCardRef : undefined}>
+                    <div
+                      key={event.id}
+                      tabIndex={-1}
+                      ref={event.id === openEventId ? focusedCardRef : undefined}
+                    >
                       <PresenceCard
                         event={event}
                         onUpdate={handleUpdate}

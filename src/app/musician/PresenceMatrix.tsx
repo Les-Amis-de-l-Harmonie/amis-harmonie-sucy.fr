@@ -65,11 +65,14 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
           reste comptée dans la largeur de défilement du document malgré le
           `overflow-x-auto` du conteneur, ce qui faisait défiler la page entière en 375px
           (mesuré : 736px de large pour un écran de 375px). Vérifié : sans lui 736, avec lui 375. */}
-      <div className="overflow-x-auto overscroll-x-contain [contain:paint] rounded-xl border border-border">
+      <p className="text-xs text-muted-foreground md:hidden">
+        Toutes les réponses : faites défiler le tableau vers la droite.
+      </p>
+      <div className="isolate overflow-x-auto overscroll-x-contain [contain:paint] rounded-xl border border-border bg-card">
         <table className="w-full min-w-max border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-border">
-              <th scope="col" className={cn(stickyCell, "bg-muted dark:bg-muted/60")}>
+              <th scope="col" className={cn(stickyCell, "bg-muted text-foreground")}>
                 Musicien
               </th>
               {events.map((event) => (
@@ -106,7 +109,7 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                   colSpan={events.length + 1}
                   className="border-b border-t border-border bg-muted/80 p-0 text-left dark:border-border dark:bg-muted/60"
                 >
-                  <span className="sticky left-0 z-10 inline-block max-w-[80vw] truncate whitespace-nowrap bg-muted/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:bg-muted/60 dark:text-foreground">
+                  <span className="sticky left-0 z-10 inline-block max-w-[80vw] truncate whitespace-nowrap bg-muted px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-foreground">
                     {group.label}
                     <span className="ml-1.5 font-normal normal-case text-muted-foreground">
                       ({group.members.length})
@@ -125,7 +128,18 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                     key={row.userId}
                     className={cn("border-b border-border last:border-0", rowTint)}
                   >
-                    <th scope="row" className={cn(stickyCell, rowTint)}>
+                    {/* Fond opaque : les réponses défilent derrière, jamais à travers les noms. */}
+                    <th
+                      scope="row"
+                      className={cn(
+                        stickyCell,
+                        "bg-card",
+                        row.isCurrentUser
+                          ? "bg-linear-to-r from-primary/10 to-primary/10 dark:from-primary/15 dark:to-primary/15"
+                          : index % 2 === 1 &&
+                              "bg-linear-to-r from-muted/70 to-muted/70 dark:from-muted/20 dark:to-muted/20"
+                      )}
+                    >
                       <span className="flex flex-wrap items-center gap-1.5 font-semibold text-foreground">
                         {getFullName(row.firstName, row.lastName)}
                         {row.isCurrentUser && (
