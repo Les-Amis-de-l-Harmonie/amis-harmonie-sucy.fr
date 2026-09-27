@@ -16,7 +16,7 @@ interface MusicianBottomTabBarProps {
  * Seule navigation visible en dessous de 1024px (mobile ET tablette —
  * aucun troisième comportement intermédiaire, voir direction design §B2 :
  * c'est exactement la plage où coexistaient les deux anciens hamburgers).
- * 4 sections à onglet direct + le sheet « Plus » pour les 4 restantes.
+ * 3 sections à onglet direct + le sheet « Plus » pour les 5 restantes.
  *
  * L'indicateur actif est une pastille contrastée — jamais une translation
  * ni un changement de taille, pour que la barre reste un
@@ -35,7 +35,7 @@ export function MusicianBottomTabBar({
       aria-label="Navigation mobile"
       className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto max-w-md rounded-[1.75rem] border border-white/15 bg-primary p-1.5 text-white shadow-[0_10px_30px_-12px] shadow-primary-dark/40 lg:hidden"
     >
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-4 gap-1">
         {MUSICIAN_TAB_ITEMS.map((item) => {
           const active = isMusicianPathActive(pathname, item.href);
           return (

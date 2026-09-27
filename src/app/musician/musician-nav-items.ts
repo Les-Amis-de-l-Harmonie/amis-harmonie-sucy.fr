@@ -33,9 +33,8 @@ export interface MusicianNavItem {
  * barre d'onglets mobile, sheet « Plus ») : 6 pages du portail + 2 destinations
  * hors coquille (hors /musician/login, qui n'a pas de shell) — voir src/worker.tsx:507-569.
  *
- * L'ordre choisi groupe volontairement les 4 sections à plus forte fréquence
- * en tête (identique à l'ordre des onglets mobiles), pour que la sidebar
- * desktop et la barre basse mobile racontent la même histoire de priorité.
+ * L'ordre de cette liste reste celui de la sidebar desktop. Les onglets
+ * mobiles ont leur propre ordre, défini dans `MUSICIAN_TAB_ITEMS`.
  *
  * Les deux derniers items (`external: true`) forment un second groupe visuel
  * dans la sidebar et le sheet « Plus » (séparateur + libellé « Hors du
@@ -63,7 +62,7 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
     label: "Mon profil",
     tabLabel: "Profil",
     icon: User,
-    inTabBar: true,
+    inTabBar: false,
   },
   {
     href: "/musician/idee",
@@ -84,7 +83,11 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
   },
 ];
 
-export const MUSICIAN_TAB_ITEMS = MUSICIAN_NAV_ITEMS.filter((item) => item.inTabBar);
+export const MUSICIAN_TAB_ITEMS = [
+  "/musician/disponibilites",
+  "/musician/",
+  "/musician/idee",
+].flatMap((href) => MUSICIAN_NAV_ITEMS.filter((item) => item.inTabBar && item.href === href));
 export const MUSICIAN_OVERFLOW_ITEMS = MUSICIAN_NAV_ITEMS.filter((item) => !item.inTabBar);
 
 export function isNavItemActive(item: MusicianNavItem, pathname: string): boolean {

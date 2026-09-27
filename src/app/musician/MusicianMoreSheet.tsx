@@ -25,7 +25,7 @@ interface MusicianMoreSheetProps {
 }
 
 /**
- * 5e "onglet" de la barre basse mobile : ouvre un panneau glissant depuis le
+ * Dernier "onglet" de la barre basse mobile : ouvre un panneau glissant depuis le
  * bas listant les sections de consultation ponctuelle définies dans
  * `MUSICIAN_OVERFLOW_ITEMS`, plus le site public, le thème et la déconnexion. C'est
  * l'équivalent mobile du bas de sidebar desktop, sous une présentation différente.
