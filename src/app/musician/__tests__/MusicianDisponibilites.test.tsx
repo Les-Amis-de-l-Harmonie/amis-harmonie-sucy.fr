@@ -40,6 +40,19 @@ function presenceResponse(events: unknown[], currentUserId = 2): Response {
   return jsonResponse({ currentUserId, events });
 }
 
+function useMobileViewport() {
+  vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+    matches: true,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  }));
+}
+
 describe("MusicianDisponibilites", () => {
   beforeEach(() => {
     vi.setSystemTime(new Date("2026-08-27"));
@@ -108,6 +121,7 @@ describe("MusicianDisponibilites", () => {
   });
 
   it("permet de répondre puis modifier depuis Mes réponses sans chercher sa ligne", async () => {
+    useMobileViewport();
     const event = createEvent({
       roster: [
         {
@@ -141,9 +155,8 @@ describe("MusicianDisponibilites", () => {
     expect(responses).toHaveClass("md:hidden");
     expect(within(responses).getByText("Sans réponse")).toBeInTheDocument();
     await user.click(within(responses).getByRole("button", { name: /^Répondre :/ }));
-    expect(document.activeElement).toContainElement(
-      screen.getByRole("button", { name: "Présent" })
-    );
+    expect(within(responses).getByRole("button", { name: /^Répondre :/ })).toHaveFocus();
+    expect(screen.getAllByRole("button", { name: "Présent" })).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "Présent" }));
     await user.click(
       await within(responses).findByRole("button", { name: /^Modifier :.*présent$/ })
@@ -163,9 +176,19 @@ describe("MusicianDisponibilites", () => {
       status: "absent",
       comment: null,
     });
+    await user.click(
+      within(screen.getByRole("table")).getByRole("button", { name: /Modifier votre réponse/ })
+    );
+    expect(within(responses).getByRole("button", { name: /^Modifier :/ })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    expect(within(responses).getByRole("button", { name: "Fermer" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Présent" })).toHaveLength(1);
   });
 
   it("propose seulement de consulter une réponse passée dans la liste mobile", async () => {
+    useMobileViewport();
     vi.mocked(fetch).mockResolvedValueOnce(
       presenceResponse([
         createEvent({
@@ -181,14 +204,82 @@ describe("MusicianDisponibilites", () => {
     await user.click(within(responses).getByRole("button", { name: /^Consulter :/ }));
     expect(screen.getByRole("button", { name: "Présent" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Absent" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    expect(screen.queryByRole("button", { name: "Présent" })).not.toBeInTheDocument();
+    expect(within(responses).getByRole("button", { name: /^Consulter :/ })).toHaveFocus();
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it("ne propose pas la liste personnelle sans identifiant de session", async () => {
+    useMobileViewport();
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
     render(<MusicianDisponibilites />);
     await screen.findByRole("table");
     expect(screen.queryByRole("region", { name: "Mes réponses" })).not.toBeInTheDocument();
+  });
+
+  it("déplie un seul formulaire sous sa prestation et permet de le fermer sans enregistrer", async () => {
+    useMobileViewport();
+    vi.mocked(fetch).mockResolvedValueOnce(
+      presenceResponse([
+        createEvent(),
+        createEvent({
+          id: 9,
+          title: "Concert de décembre",
+          response: { status: "present", comment: null, updated_at: null },
+        }),
+      ])
+    );
+    const user = userEvent.setup();
+    render(<MusicianDisponibilites />);
+    const responses = await screen.findByRole("region", { name: "Mes réponses" });
+    const first = within(responses).getByRole("button", { name: /^Répondre :/ });
+    const second = within(responses).getByRole("button", { name: /^Modifier :/ });
+    expect(screen.queryByRole("button", { name: "Présent" })).not.toBeInTheDocument();
+    expect(first).toHaveAttribute("aria-expanded", "false");
+    await user.click(first);
+    const panel = document.getElementById(first.getAttribute("aria-controls") ?? "");
+    expect(panel).toBe(first.nextElementSibling);
+    expect(panel?.parentElement).toBe(first.closest("li"));
+    expect(panel).toContainElement(screen.getByRole("button", { name: "Présent" }));
+    expect(first).toHaveAttribute("aria-expanded", "true");
+    await user.click(second);
+    expect(first).toHaveAttribute("aria-expanded", "false");
+    expect(panel).not.toBeVisible();
+    expect(second).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("button", { name: "Présent" })).toHaveLength(1);
+    expect(second.nextElementSibling).toContainElement(
+      screen.getByRole("button", { name: "Présent" })
+    );
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    expect(second).toHaveFocus();
+    expect(second).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Présent" })).not.toBeInTheDocument();
+    await user.click(first);
+    await user.click(first);
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute("aria-expanded", "false");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("garde le formulaire mobile ouvert et refermable si l'enregistrement échoue", async () => {
+    useMobileViewport();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(presenceResponse([createEvent()]))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
+      );
+    const user = userEvent.setup();
+    render(<MusicianDisponibilites />);
+    await user.click(await screen.findByRole("button", { name: /^Répondre :/ }));
+    await user.click(screen.getByRole("button", { name: "Présent" }));
+    expect(await screen.findByText("Erreur serveur")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Répondre :/ })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    expect(screen.getByRole("button", { name: /^Répondre :/ })).toHaveFocus();
   });
 
   it("n'affiche pas les commentaires présents dans les entrées du roster", async () => {

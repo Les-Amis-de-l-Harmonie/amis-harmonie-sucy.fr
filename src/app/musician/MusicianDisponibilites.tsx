@@ -33,7 +33,16 @@ export function MusicianDisponibilites() {
   // fait ici que lui transmettre l'intention, jamais de calcul de date côté client.
   const [showPast, setShowPast] = useState(false);
   const focusedCardRef = useRef<HTMLDivElement | null>(null);
-  const mobileResponseTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const useInlineResponses = isMobile && currentUserId !== null;
+
+  useEffect(() => {
+    const media = window.matchMedia("(width < 48rem)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const fetchData = useCallback(async (includePast: boolean) => {
     setLoading(true);
@@ -62,9 +71,9 @@ export function MusicianDisponibilites() {
   }, [showPast, fetchData]);
 
   useEffect(() => {
-    if (openEventId === null) return;
+    if (openEventId === null || useInlineResponses) return;
     focusResponseCard(focusedCardRef.current);
-  }, [openEventId]);
+  }, [openEventId, useInlineResponses]);
 
   const handleUpdate = useCallback((updatedEvent: PresenceEvent) => {
     setEvents((prev) =>
@@ -73,31 +82,18 @@ export function MusicianDisponibilites() {
   }, []);
 
   const handleEditResponse = useCallback(
-    (eventId: number, trigger?: HTMLButtonElement) => {
-      mobileResponseTriggerRef.current = trigger ?? null;
-      if (eventId === openEventId) focusResponseCard(focusedCardRef.current);
+    (eventId: number) => {
+      if (eventId === openEventId && !useInlineResponses) focusResponseCard(focusedCardRef.current);
       setOpenEventId(eventId);
     },
-    [openEventId]
+    [openEventId, useInlineResponses]
   );
 
-  const handleStatusChanged = useCallback(
-    (eventId: number, status: PresenceStatus | null) => {
-      if (status !== null) {
-        setOpenEventId((current) => (current === eventId ? null : current));
-        // La carte se ferme après l'enregistrement : revenir à la réponse qui l'a ouverte.
-        if (eventId === openEventId) {
-          mobileResponseTriggerRef.current?.focus({ preventScroll: true });
-          mobileResponseTriggerRef.current?.scrollIntoView({
-            block: "center",
-            behavior: "instant",
-          });
-          mobileResponseTriggerRef.current = null;
-        }
-      }
-    },
-    [openEventId]
-  );
+  const handleStatusChanged = useCallback((eventId: number, status: PresenceStatus | null) => {
+    if (status !== null) {
+      setOpenEventId((current) => (current === eventId ? null : current));
+    }
+  }, []);
 
   // Premier chargement : aucune donnée à montrer, la page entière est un état de
   // chargement. Bascule ultérieure du filtre passé/à venir : on garde l'affichage
@@ -218,69 +214,79 @@ export function MusicianDisponibilites() {
           />
         ) : (
           <div className="space-y-6">
-            {currentUserId !== null && (
-              <PresenceResponses events={events} onEditResponse={handleEditResponse} />
-            )}
-            {pendingEvents.length > 0 ? (
-              <div className="space-y-4">
-                {pendingEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    tabIndex={-1}
-                    ref={event.id === openEventId ? focusedCardRef : undefined}
-                  >
-                    <PresenceCard
-                      event={event}
-                      onUpdate={handleUpdate}
-                      onStatusChanged={handleStatusChanged}
-                    />
-                  </div>
-                ))}
-              </div>
+            {useInlineResponses ? (
+              <PresenceResponses
+                events={events}
+                openEventId={openEventId}
+                onEditResponse={handleEditResponse}
+                onClose={() => setOpenEventId(null)}
+                onUpdate={handleUpdate}
+                onStatusChanged={handleStatusChanged}
+              />
             ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3.5 text-sm font-medium text-success dark:border-success/40 dark:bg-success/20">
-                <Check className="h-5 w-5 shrink-0" />
-                Vous avez répondu à toutes les prestations à venir.
-              </div>
-            )}
+              <>
+                {pendingEvents.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        tabIndex={-1}
+                        ref={event.id === openEventId ? focusedCardRef : undefined}
+                      >
+                        <PresenceCard
+                          event={event}
+                          onUpdate={handleUpdate}
+                          onStatusChanged={handleStatusChanged}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3.5 text-sm font-medium text-success dark:border-success/40 dark:bg-success/20">
+                    <Check className="h-5 w-5 shrink-0" />
+                    Vous avez répondu à toutes les prestations à venir.
+                  </div>
+                )}
 
-            {/* Zone à part, jamais mêlée à la file "à répondre" ci-dessus : ce sont des
+                {/* Zone à part, jamais mêlée à la file "à répondre" ci-dessus : ce sont des
                 prestations révélées par le bouton "Prestations passées", pas des cartes en
                 attente — le compteur d'en-tête ne les compte déjà plus, la mise en page doit
                 le confirmer plutôt que le contredire. */}
-            {revealedPastEvents.length > 0 && (
-              <section
-                aria-labelledby="past-events-heading"
-                className="space-y-3 border-t border-dashed border-border pt-4"
-              >
-                <div>
-                  <h2
-                    id="past-events-heading"
-                    className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
+                {revealedPastEvents.length > 0 && (
+                  <section
+                    aria-labelledby="past-events-heading"
+                    className="space-y-3 border-t border-dashed border-border pt-4"
                   >
-                    <History className="h-4 w-4" aria-hidden="true" />
-                    Prestations passées
-                  </h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Terminées : elles ne sont plus comptées ni modifiables.
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  {revealedPastEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      tabIndex={-1}
-                      ref={event.id === openEventId ? focusedCardRef : undefined}
-                    >
-                      <PresenceCard
-                        event={event}
-                        onUpdate={handleUpdate}
-                        onStatusChanged={handleStatusChanged}
-                      />
+                    <div>
+                      <h2
+                        id="past-events-heading"
+                        className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
+                      >
+                        <History className="h-4 w-4" aria-hidden="true" />
+                        Prestations passées
+                      </h2>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Terminées : elles ne sont plus comptées ni modifiables.
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </section>
+                    <div className="space-y-4">
+                      {revealedPastEvents.map((event) => (
+                        <div
+                          key={event.id}
+                          tabIndex={-1}
+                          ref={event.id === openEventId ? focusedCardRef : undefined}
+                        >
+                          <PresenceCard
+                            event={event}
+                            onUpdate={handleUpdate}
+                            onStatusChanged={handleStatusChanged}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </>
             )}
 
             <PresenceMatrix
