@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Globe, Loader2, Lock, Send } from "lucide-react";
+import { Check, Globe, Loader2, Lock, Save, Send } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -13,11 +13,13 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-import type { IdeaCategory } from "@/db/types";
+import type { IdeaCategory, IdeaWithLikes } from "@/db/types";
 import { CATEGORY_LABELS } from "./idea-filters";
 
 interface IdeaComposerDialogProps {
   open: boolean;
+  /** Idée à modifier. Sans idée, la fenêtre sert à en créer une nouvelle. */
+  idea?: IdeaWithLikes | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: () => void;
 }
@@ -29,16 +31,43 @@ interface IdeaFormData {
   is_public: boolean;
 }
 
-export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComposerDialogProps) {
+const EMPTY_FORM: IdeaFormData = {
+  title: "",
+  description: "",
+  category: "",
+  is_public: false,
+};
+
+function getInitialForm(idea: IdeaWithLikes | null | undefined): IdeaFormData {
+  if (!idea) return EMPTY_FORM;
+  return {
+    title: idea.title,
+    description: idea.description,
+    category: idea.category,
+    is_public: idea.is_public === 1,
+  };
+}
+
+export function IdeaComposerDialog({
+  open,
+  idea = null,
+  onOpenChange,
+  onSubmitted,
+}: IdeaComposerDialogProps) {
+  const isEditing = idea !== null;
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState<IdeaFormData>({
-    title: "",
-    description: "",
-    category: "",
-    is_public: false,
-  });
+  const [formData, setFormData] = useState<IdeaFormData>(() => getInitialForm(idea));
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // À chaque ouverture : formulaire prérempli (modification) ou vide (création),
+  // sans erreur ni écran de confirmation de la fois précédente.
+  useEffect(() => {
+    if (!open) return;
+    setFormData(getInitialForm(idea));
+    setErrors({});
+    setSubmitted(false);
+  }, [open, idea]);
 
   useEffect(() => {
     if (!submitted) return;
@@ -62,8 +91,9 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
     if (!validateForm()) return;
     setSubmitting(true);
     try {
-      const response = await fetch("/api/musician/ideas", {
-        method: "POST",
+      const url = idea ? `/api/musician/ideas?id=${idea.id}` : "/api/musician/ideas";
+      const response = await fetch(url, {
+        method: idea ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
@@ -81,11 +111,13 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
 
       setSubmitted(true);
       setErrors({});
-      setFormData({ title: "", description: "", category: "", is_public: false });
+      setFormData(EMPTY_FORM);
       onSubmitted();
     } catch (error) {
       console.error("Error submitting idea:", error);
-      setErrors({ submit: "Erreur lors de l'envoi" });
+      setErrors({
+        submit: isEditing ? "Erreur lors de l'enregistrement" : "Erreur lors de l'envoi",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -95,17 +127,33 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{submitted ? "Idée envoyée avec succès !" : "Nouvelle idée"}</DialogTitle>
+          <DialogTitle>
+            {submitted
+              ? isEditing
+                ? "Idée modifiée"
+                : "Idée envoyée avec succès !"
+              : isEditing
+                ? "Modifier l'idée"
+                : "Nouvelle idée"}
+          </DialogTitle>
           <DialogDescription>
             {submitted
-              ? "Merci pour votre contribution. Votre idée sera examinée par le bureau."
-              : "Décrivez votre idée en détail pour nous aider à l'évaluer."}
+              ? isEditing
+                ? "Vos modifications ont bien été enregistrées."
+                : "Merci pour votre contribution. Votre idée sera examinée par le bureau."
+              : isEditing
+                ? "Corrigez ou complétez votre idée, puis enregistrez."
+                : "Décrivez votre idée en détail pour nous aider à l'évaluer."}
           </DialogDescription>
         </DialogHeader>
 
         {submitted ? (
           <div role="status" className="flex flex-col items-center justify-center py-8 text-center">
-            <Send className="mb-4 h-16 w-16 text-success" />
+            {isEditing ? (
+              <Check className="mb-4 h-16 w-16 text-success" />
+            ) : (
+              <Send className="mb-4 h-16 w-16 text-success" />
+            )}
             <p className="text-sm text-muted-foreground">La fenêtre se fermera automatiquement.</p>
           </div>
         ) : (
@@ -249,7 +297,12 @@ export function IdeaComposerDialog({ open, onOpenChange, onSubmitted }: IdeaComp
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Envoi en cours...
+                    {isEditing ? "Enregistrement…" : "Envoi en cours..."}
+                  </>
+                ) : isEditing ? (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Enregistrer les modifications
                   </>
                 ) : (
                   <>

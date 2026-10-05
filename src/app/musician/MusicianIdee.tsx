@@ -23,6 +23,7 @@ export function MusicianIdeeClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<IdeaWithLikes | null>(null);
   const [likingId, setLikingId] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,6 +141,16 @@ export function MusicianIdeeClient() {
     nextRef.current?.focus();
   };
 
+  function openComposer() {
+    setEditingIdea(null);
+    setComposerOpen(true);
+  }
+
+  function openEditor(idea: IdeaWithLikes) {
+    setEditingIdea(idea);
+    setComposerOpen(true);
+  }
+
   function openResponse(idea: IdeaWithLikes) {
     setViewingResponse(idea);
     setResponseDialogOpen(true);
@@ -161,7 +172,7 @@ export function MusicianIdeeClient() {
             Partagez-la avec nous !
           </p>
         </div>
-        <Button type="button" onClick={() => setComposerOpen(true)} className="gap-2">
+        <Button type="button" onClick={openComposer} className="gap-2">
           <Send className="h-4 w-4" />
           Soumettre une idée
         </Button>
@@ -225,7 +236,8 @@ export function MusicianIdeeClient() {
       ) : activeTab === "my-ideas" ? (
         <MyIdeasTab
           ideas={myIdeas}
-          onOpenComposer={() => setComposerOpen(true)}
+          onOpenComposer={openComposer}
+          onEdit={openEditor}
           onDelete={(idea) => {
             setIdeaToDelete(idea);
             setDeleteDialogOpen(true);
@@ -265,6 +277,7 @@ export function MusicianIdeeClient() {
 
       <IdeaComposerDialog
         open={composerOpen}
+        idea={editingIdea}
         onOpenChange={setComposerOpen}
         onSubmitted={() => void fetchIdeas(false)}
       />

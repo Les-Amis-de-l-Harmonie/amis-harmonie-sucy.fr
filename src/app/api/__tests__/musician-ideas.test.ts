@@ -65,7 +65,8 @@ function createDatabase(): DatabaseSync {
       description TEXT NOT NULL,
       category TEXT NOT NULL,
       is_public INTEGER NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     );
     CREATE TABLE musician_profiles (
       user_id INTEGER PRIMARY KEY,
@@ -158,5 +159,159 @@ describe("handleMusicianIdeasApi avec count=unread", () => {
       .prepare("SELECT idea_id, user_id FROM idea_reads ORDER BY idea_id")
       .all();
     expect(after).toEqual(before);
+  });
+});
+
+describe("handleMusicianIdeasApi avec PATCH", () => {
+  let database: DatabaseSync;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    database = createDatabase();
+    Object.assign(env, { DB: createD1Database(database) });
+    vi.mocked(verifySession).mockResolvedValue({
+      id: 1,
+      email: "musicien@example.fr",
+      role: "MUSICIAN",
+      is_active: 1,
+      last_login: null,
+      created_at: "2026-01-01",
+      sessionId: "session-id",
+    });
+  });
+
+  afterEach(() => {
+    database.close();
+    Object.assign(env, { DB: originalDb });
+  });
+
+  it("permet au propriétaire de modifier son idée", async () => {
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?id=3", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "  Nouvelle idée  ",
+          description: "  Nouvelle description  ",
+          category: "website",
+          is_public: false,
+        }),
+      })
+    );
+    const row = database
+      .prepare("SELECT title, description, category, is_public, updated_at FROM ideas WHERE id = 3")
+      .get() as
+      | {
+          title: string;
+          description: string;
+          category: string;
+          is_public: number;
+          updated_at: string | null;
+        }
+      | undefined;
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true });
+    expect(row).toMatchObject({
+      title: "Nouvelle idée",
+      description: "Nouvelle description",
+      category: "website",
+      is_public: 0,
+    });
+    expect(row?.updated_at).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  });
+
+  it("refuse la modification d'une idée qui appartient à un autre musicien", async () => {
+    const before = database.prepare("SELECT * FROM ideas WHERE id = 1").get();
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?id=1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Nouvelle idée",
+          description: "Nouvelle description",
+          category: "harmonie",
+          is_public: false,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Vous ne pouvez modifier que vos propres idées",
+    });
+    expect(database.prepare("SELECT * FROM ideas WHERE id = 1").get()).toEqual(before);
+  });
+
+  it("retourne 404 quand l'idée n'existe pas", async () => {
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?id=999", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Nouvelle idée",
+          description: "Nouvelle description",
+          category: "harmonie",
+          is_public: true,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Idée non trouvée" });
+  });
+
+  it("retourne 400 si l'identifiant est manquant", async () => {
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Nouvelle idée",
+          description: "Nouvelle description",
+          category: "harmonie",
+          is_public: true,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "ID manquant" });
+  });
+
+  it("retourne 400 si le titre est vide", async () => {
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?id=3", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "  ",
+          description: "Nouvelle description",
+          category: "harmonie",
+          is_public: true,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Le titre est obligatoire" });
+  });
+
+  it("retourne 400 si la catégorie est invalide", async () => {
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?id=3", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Nouvelle idée",
+          description: "Nouvelle description",
+          category: "autre",
+          is_public: true,
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Catégorie invalide" });
   });
 });

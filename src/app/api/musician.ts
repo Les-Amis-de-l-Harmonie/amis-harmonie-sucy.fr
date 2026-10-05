@@ -28,6 +28,27 @@ interface IdeaInput {
   is_public: boolean;
 }
 
+function validateIdeaInput(data: IdeaInput): string | null {
+  if (!data.title?.trim()) {
+    return "Le titre est obligatoire";
+  }
+
+  if (!data.description?.trim()) {
+    return "La description est obligatoire";
+  }
+
+  if (!data.category) {
+    return "La catégorie est obligatoire";
+  }
+
+  const validCategories: IdeaCategory[] = ["association", "harmonie", "website"];
+  if (!validCategories.includes(data.category)) {
+    return "Catégorie invalide";
+  }
+
+  return null;
+}
+
 interface HarmonieInstrumentRow {
   instrument_name: string;
   is_primary: number;
@@ -435,31 +456,9 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
 
     if (request.method === "POST") {
       const data = (await request.json()) as IdeaInput;
-
-      if (!data.title?.trim()) {
-        return new Response(JSON.stringify({ error: "Le titre est obligatoire" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      if (!data.description?.trim()) {
-        return new Response(JSON.stringify({ error: "La description est obligatoire" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      if (!data.category) {
-        return new Response(JSON.stringify({ error: "La catégorie est obligatoire" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      const validCategories: IdeaCategory[] = ["association", "harmonie", "website"];
-      if (!validCategories.includes(data.category)) {
-        return new Response(JSON.stringify({ error: "Catégorie invalide" }), {
+      const validationError = validateIdeaInput(data);
+      if (validationError) {
+        return new Response(JSON.stringify({ error: validationError }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
@@ -475,6 +474,65 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
 
       return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
         status: 201,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (request.method === "PATCH") {
+      const url = new URL(request.url);
+      const ideaId = url.searchParams.get("id");
+
+      if (!ideaId) {
+        return new Response(JSON.stringify({ error: "ID manquant" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const data = (await request.json()) as IdeaInput;
+      const validationError = validateIdeaInput(data);
+      if (validationError) {
+        return new Response(JSON.stringify({ error: validationError }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const idea = await env.DB.prepare("SELECT user_id FROM ideas WHERE id = ?")
+        .bind(ideaId)
+        .first<{ user_id: number }>();
+
+      if (!idea) {
+        return new Response(JSON.stringify({ error: "Idée non trouvée" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (idea.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Vous ne pouvez modifier que vos propres idées" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      await env.DB.prepare(
+        "UPDATE ideas SET title = ?, description = ?, category = ?, is_public = ?, updated_at = datetime('now') WHERE id = ? AND user_id = ?"
+      )
+        .bind(
+          data.title.trim(),
+          data.description.trim(),
+          data.category,
+          data.is_public ? 1 : 0,
+          ideaId,
+          user.id
+        )
+        .run();
+
+      return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" },
       });
     }

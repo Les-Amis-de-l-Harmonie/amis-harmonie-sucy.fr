@@ -9,11 +9,18 @@ import { IdeaCard } from "./IdeaCard";
 interface MyIdeasTabProps {
   ideas: IdeaWithLikes[];
   onOpenComposer: () => void;
+  onEdit: (idea: IdeaWithLikes) => void;
   onDelete: (idea: IdeaWithLikes) => void;
   onViewResponse: (idea: IdeaWithLikes) => void;
 }
 
-export function MyIdeasTab({ ideas, onOpenComposer, onDelete, onViewResponse }: MyIdeasTabProps) {
+export function MyIdeasTab({
+  ideas,
+  onOpenComposer,
+  onEdit,
+  onDelete,
+  onViewResponse,
+}: MyIdeasTabProps) {
   if (ideas.length === 0) {
     return (
       <EmptyState
@@ -38,6 +45,7 @@ export function MyIdeasTab({ ideas, onOpenComposer, onDelete, onViewResponse }: 
           key={idea.id}
           idea={idea}
           mode="mine"
+          onEdit={onEdit}
           onDelete={onDelete}
           onViewResponse={onViewResponse}
         />

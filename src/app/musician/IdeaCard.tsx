@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Heart, Globe, Loader2, Lock, MessageCircle, Trash2 } from "lucide-react";
+import { Heart, Globe, Loader2, Lock, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import type { IdeaWithLikes } from "@/db/types";
 import { CATEGORY_LABELS, formatIdeaDate } from "./idea-filters";
 
@@ -17,6 +17,7 @@ type IdeaCardProps =
   | {
       mode: "mine";
       idea: IdeaWithLikes;
+      onEdit: (idea: IdeaWithLikes) => void;
       onDelete: (idea: IdeaWithLikes) => void;
       onViewResponse: (idea: IdeaWithLikes) => void;
     }
@@ -57,16 +58,28 @@ export function IdeaCard(props: IdeaCardProps) {
                 {CATEGORY_LABELS[idea.category]} • {formatIdeaDate(idea.created_at)}
               </CardDescription>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => props.onDelete(idea)}
-              aria-label="Supprimer l'idée"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="-mr-2 -mt-2 flex shrink-0 items-center gap-1 sm:-mr-1 sm:-mt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-9 sm:w-9"
+                onClick={() => props.onEdit(idea)}
+                aria-label="Modifier l'idée"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-9 sm:w-9"
+                onClick={() => props.onDelete(idea)}
+                aria-label="Supprimer l'idée"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
