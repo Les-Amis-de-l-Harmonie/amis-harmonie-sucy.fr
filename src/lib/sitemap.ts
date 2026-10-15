@@ -12,7 +12,8 @@ const staticRoutes = [
   { path: "/partenaires", priority: "0.6", changefreq: "monthly" },
   { path: "/contact", priority: "0.7", changefreq: "monthly" },
   { path: "/billetterie", priority: "0.9", changefreq: "weekly" },
-  { path: "/the-dansant", priority: "0.9", changefreq: "weekly" },
+  { path: "/sucy-dansant-2027", priority: "0.9", changefreq: "weekly" },
+  { path: "/the-dansant-2026", priority: "0.5", changefreq: "yearly" },
   { path: "/videos", priority: "0.8", changefreq: "weekly" },
   { path: "/publications", priority: "0.8", changefreq: "weekly" },
   { path: "/livre-or", priority: "0.6", changefreq: "monthly" },
@@ -37,9 +38,7 @@ export async function generateSitemap(): Promise<string> {
 
   try {
     // Dynamic events
-    const events = await env.DB.prepare(
-      PUBLIC_EVENTS_SITEMAP_QUERY
-    ).all<Event>();
+    const events = await env.DB.prepare(PUBLIC_EVENTS_SITEMAP_QUERY).all<Event>();
 
     for (const event of events.results || []) {
       xml += `  <url>\n`;

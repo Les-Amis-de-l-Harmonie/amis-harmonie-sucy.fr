@@ -35,7 +35,7 @@ describe("Header", () => {
 
     expect(screen.getAllByRole("link", { name: "Thé Dansant" })[0]).toHaveAttribute(
       "href",
-      "/the-dansant"
+      "/sucy-dansant-2027"
     );
     expect(screen.getAllByRole("link", { name: "Adhésion" })[0]).toHaveAttribute(
       "href",
@@ -96,5 +96,51 @@ describe("Header", () => {
 
     const billetterieLink = screen.getAllByRole("link", { name: "Billetterie" })[0];
     expect(billetterieLink).toHaveAttribute("href", "/billetterie");
+  });
+
+  it("affiche les éditions du Thé Dansant dans le menu déroulant dans l'ordre prévu", () => {
+    render(<Header />);
+
+    const desktopNavLink = screen.getAllByRole("link", { name: "Thé Dansant" })[0];
+    const navItemContainer = desktopNavLink.closest("div");
+    expect(navItemContainer).toBeTruthy();
+    if (!navItemContainer) {
+      throw new Error("Expected desktop nav container to exist");
+    }
+
+    fireEvent.mouseEnter(navItemContainer);
+
+    const dropdown = navItemContainer.querySelector("div.absolute");
+    expect(dropdown).toBeTruthy();
+    if (!dropdown) {
+      throw new Error("Expected dropdown container to exist");
+    }
+
+    const links = Array.from(dropdown.querySelectorAll("a"));
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Sucy Dansant 2027", "/sucy-dansant-2027"],
+      ["Thé Dansant 2026", "/the-dansant-2026"],
+    ]);
+  });
+
+  it("expose les deux éditions du Thé Dansant dans l'accordéon mobile", async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+
+    await user.click(screen.getByRole("button", { name: "Ouvrir le menu" }));
+    const accordionButton = screen.getAllByRole("button", { name: "Thé Dansant" })[0];
+    await user.click(accordionButton);
+
+    const accordion = accordionButton.parentElement;
+    expect(accordion).toBeTruthy();
+    if (!accordion) {
+      throw new Error("Expected mobile accordion to exist");
+    }
+
+    const links = Array.from(accordion.querySelectorAll("a"));
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Sucy Dansant 2027", "/sucy-dansant-2027"],
+      ["Thé Dansant 2026", "/the-dansant-2026"],
+    ]);
   });
 });

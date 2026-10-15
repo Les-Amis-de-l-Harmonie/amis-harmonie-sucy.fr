@@ -787,7 +787,7 @@ export function EventsAdminClient() {
                     onChange={(e) =>
                       setEditingEvent({ ...editingEvent, details_link: e.target.value })
                     }
-                    placeholder="/the-dansant"
+                    placeholder="/sucy-dansant-2027"
                   />
                 </div>
                 <div className="grid gap-2">

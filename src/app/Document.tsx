@@ -1,13 +1,6 @@
 import type { DocumentProps } from "rwsdk/router";
 import styles from "./styles.css?url";
-import {
-  SITE_NAME,
-  SITE_URL,
-  DEFAULT_OG_IMAGE,
-  DEFAULT_DESCRIPTION,
-  getPageSeo,
-  isNoIndexPath,
-} from "@/app/seo";
+import { SITE_NAME, SITE_URL, DEFAULT_DESCRIPTION, getPageSeo, isNoIndexPath } from "@/app/seo";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -39,7 +32,7 @@ const structuredData = {
 const structuredDataJson = JSON.stringify(structuredData);
 
 export const Document: React.FC<DocumentProps> = ({ children, path = "/", rw }) => {
-  const { title, description } = getPageSeo(path);
+  const { title, description, ogImage, hasCustomOgImage } = getPageSeo(path);
   const canonical = `${SITE_URL}${path.replace(/\/+$/, "") || "/"}`;
   const noindex = isNoIndexPath(path);
 
@@ -64,14 +57,14 @@ export const Document: React.FC<DocumentProps> = ({ children, path = "/", rw }) 
         <meta property="og:site_name" content={SITE_NAME} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image" content={ogImage} />
         <meta property="og:url" content={canonical} />
         <meta property="og:locale" content="fr_FR" />
 
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content={hasCustomOgImage ? "summary_large_image" : "summary"} />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:image" content={ogImage} />
 
         <meta name="geo.region" content="FR-94" />
         <meta name="geo.placename" content="Sucy-en-Brie" />

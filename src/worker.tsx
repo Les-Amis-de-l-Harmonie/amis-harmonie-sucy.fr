@@ -9,6 +9,7 @@ import { Layout } from "@/app/Layout";
 import { setCommonHeaders } from "@/app/headers";
 import { Home } from "@/app/pages/Home";
 import { TheDansant } from "@/app/pages/TheDansant";
+import { SucyDansant2027 } from "@/app/pages/SucyDansant2027";
 import { Billetterie } from "@/app/pages/Billetterie";
 import { About } from "@/app/pages/About";
 import { Harmonie } from "@/app/pages/Harmonie";
@@ -339,6 +340,11 @@ const app = defineApp([
 
   route("/images/r2/*", ({ request }: { request: Request }) => handleImageServing(request)),
 
+  route("/the-dansant", ({ request }: { request: Request }) => {
+    const url = new URL(request.url);
+    url.pathname = "/sucy-dansant-2027";
+    return Response.redirect(url.toString(), 302);
+  }),
   route("/sitemap.xml", () => sitemapHandler()),
   route("/robots.txt", () => robotsHandler()),
 
@@ -361,7 +367,8 @@ const app = defineApp([
   render(Document, [
     layout(Layout, [
       route("/", Home),
-      route("/the-dansant", TheDansant),
+      route("/sucy-dansant-2027", SucyDansant2027),
+      route("/the-dansant-2026", TheDansant),
       route("/billetterie", Billetterie),
       route("/about", About),
       route("/harmonie", Harmonie),

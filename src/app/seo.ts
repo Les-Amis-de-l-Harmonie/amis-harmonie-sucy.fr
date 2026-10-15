@@ -1,6 +1,6 @@
 export const SITE_NAME = "Les Amis de l'Harmonie de Sucy";
 export const SITE_URL = "https://amis-harmonie-sucy.fr";
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/logo.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/images/logo.webp`;
 
 export const DEFAULT_DESCRIPTION =
   "Association Les Amis de l'Harmonie de Sucy-en-Brie — Soutenez l'Harmonie Municipale, participez à nos événements musicaux et rejoignez notre communauté passionnée de musique.";
@@ -8,6 +8,7 @@ export const DEFAULT_DESCRIPTION =
 interface PageSeo {
   title: string | null;
   description: string;
+  ogImage?: string;
 }
 
 const PAGE_SEO: Record<string, PageSeo> = {
@@ -26,10 +27,16 @@ const PAGE_SEO: Record<string, PageSeo> = {
     description:
       "L'Harmonie Municipale de Sucy-en-Brie : orchestre d'harmonie, répétitions, concerts et événements musicaux dans le Val-de-Marne.",
   },
-  "/the-dansant": {
-    title: "Thé Dansant",
+  "/sucy-dansant-2027": {
+    title: "Sucy Dansant 2027 : le thé dansant concert",
     description:
-      "Participez à nos thés dansants à Sucy-en-Brie. Danse, musique live et convivialité au programme.",
+      "Sucy Dansant, le thé dansant nouvelle version : dimanche 31 janvier 2027 à 14h, Espace Jean-Marie Poirier. L'Harmonie en live, ProviDanse et les danses en ligne. Réservez !",
+    ogImage: "/images/sucy-dansant-2027/og.jpg",
+  },
+  "/the-dansant-2026": {
+    title: "Thé Dansant 2026",
+    description:
+      "Thé Dansant 2026 à Sucy-en-Brie : une journée de danse et de musique avec l'Harmonie Municipale et le Picotango Orquesta. Vidéos, photos et partenaires.",
   },
   "/billetterie": {
     title: "Billetterie",
@@ -72,14 +79,21 @@ const PAGE_SEO: Record<string, PageSeo> = {
   },
 };
 
-export function getPageSeo(path: string): { title: string; description: string } {
+export function getPageSeo(path: string): {
+  title: string;
+  description: string;
+  ogImage: string;
+  hasCustomOgImage: boolean;
+} {
   const normalized = path.replace(/\/+$/, "") || "/";
   const page = PAGE_SEO[normalized];
 
   const title = page?.title ? `${page.title} | ${SITE_NAME}` : SITE_NAME;
   const description = page?.description || DEFAULT_DESCRIPTION;
+  const hasCustomOgImage = Boolean(page?.ogImage);
+  const ogImage = page?.ogImage ? `${SITE_URL}${page.ogImage}` : DEFAULT_OG_IMAGE;
 
-  return { title, description };
+  return { title, description, ogImage, hasCustomOgImage };
 }
 
 export function isNoIndexPath(path: string): boolean {

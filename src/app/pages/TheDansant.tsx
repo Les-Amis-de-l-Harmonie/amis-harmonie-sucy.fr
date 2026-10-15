@@ -1,12 +1,9 @@
+import { ArrowRight } from "lucide-react";
 import { TheDansantClient } from "./TheDansantClient";
 import { getGalleryImages } from "@/app/shared/gallery";
 import { ScrollReveal } from "@/app/components/ScrollReveal";
 
 export async function TheDansant() {
-  const pageTitle = "Thé Dansant 2026 | Les Amis de l'Harmonie de Sucy";
-  const pageDescription =
-    "Thé Dansant 2026 à Sucy-en-Brie - Journée de danse et musique avec l'Harmonie Municipale et Picotango Orquesta.";
-
   const [flyers, sponsors, galleryImages] = await Promise.all([
     getGalleryImages("thedansant_flyers"),
     getGalleryImages("thedansant_sponsors"),
@@ -62,12 +59,26 @@ export async function TheDansant() {
 
   return (
     <>
-      <title>{pageTitle}</title>
-      <meta name="description" content={pageDescription} />
-      <meta property="og:title" content={pageTitle} />
-      <meta property="og:description" content={pageDescription} />
-      <meta property="og:url" content="https://amis-harmonie-sucy.fr/the-dansant" />
-      <link rel="canonical" href="https://amis-harmonie-sucy.fr/the-dansant" />
+      <a
+        href="/sucy-dansant-2027"
+        className="group block bg-gradient-to-r from-fuchsia-700 via-violet-700 to-indigo-800 text-white transition hover:brightness-110 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+      >
+        <span className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-3 text-center text-sm sm:text-base">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase">
+            Prochaine édition
+          </span>
+          <span>
+            <strong className="font-bold">Sucy Dansant 2027</strong> — dimanche 31 janvier 2027
+          </span>
+          <span className="inline-flex items-center gap-1 font-semibold underline-offset-4 group-hover:underline">
+            Découvrir et réserver
+            <ArrowRight
+              className="size-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </span>
+      </a>
       <div className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal>

@@ -97,7 +97,14 @@ const navItems: NavItem[] = [
       { label: "Billetterie", href: "/billetterie" },
     ],
   },
-  { label: "Thé Dansant", href: "/the-dansant" },
+  {
+    label: "Thé Dansant",
+    href: "/sucy-dansant-2027",
+    children: [
+      { label: "Sucy Dansant 2027", href: "/sucy-dansant-2027" },
+      { label: "Thé Dansant 2026", href: "/the-dansant-2026" },
+    ],
+  },
   {
     label: "À Propos",
     href: "/about",
