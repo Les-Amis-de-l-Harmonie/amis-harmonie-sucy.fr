@@ -327,6 +327,32 @@ export interface InfoSettings {
   updated_at: string;
 }
 
+export type FreeReservationStatus = "active" | "cancelled";
+export type FreeReservationOrigin = "web" | "admin";
+
+export interface FreeReservation {
+  id: number;
+  event_slug: string;
+  last_name: string | null;
+  first_name: string | null;
+  email: string | null;
+  email_normalized: string | null;
+  party_size: number;
+  interests: string;
+  source: string | null;
+  newsletter_opt_in: number;
+  newsletter_consent_at: string | null;
+  consent_text_version: string | null;
+  status: FreeReservationStatus;
+  origin: FreeReservationOrigin;
+  confirmation_sent_at: string | null;
+  confirmation_error: string | null;
+  unsubscribed_at: string | null;
+  anonymized_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Les types PlanningEvent / PlanningAvailability / PlanningStatus / PlanningInput
 // ont été supprimés : la table `events` est désormais la source unique, et les
 // présences sont modélisées par `EventPresence` (statut à deux valeurs, sans

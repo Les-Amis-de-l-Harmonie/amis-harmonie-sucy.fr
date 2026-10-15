@@ -97,6 +97,7 @@ const navItems: NavItem[] = [
       { label: "Billetterie", href: "/billetterie" },
     ],
   },
+  { label: "Rencontre d'Harmonies", href: "/rencontre-harmonies-2026" },
   {
     label: "Thé Dansant",
     href: "/sucy-dansant-2027",
@@ -182,7 +183,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl 2xl:max-w-[88rem] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <a href="/" className="flex-shrink-0">
             <img
@@ -207,7 +208,7 @@ export function Header() {
               >
                 <a
                   href={item.href}
-                  className="px-4 py-2 text-[15px] font-medium text-gray-900 dark:text-gray-100 hover:text-primary transition-colors flex items-center gap-1"
+                  className="px-2 xl:px-3 py-2 text-sm xl:text-[15px] font-medium whitespace-nowrap text-gray-900 dark:text-gray-100 hover:text-primary transition-colors flex items-center gap-1"
                 >
                   {item.label}
                   {item.children && (
@@ -247,7 +248,9 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-2">
-            <SocialIcons iconSize={20} />
+            <div className="hidden 2xl:block">
+              <SocialIcons iconSize={20} />
+            </div>
             <ThemeToggle />
             <UserMenu />
           </div>

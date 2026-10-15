@@ -9,6 +9,8 @@ interface EventCardProps {
 
 export const EventCard = memo(function EventCard({ event }: EventCardProps) {
   const isPast = isEventPast(event.date);
+  // Les liens internes (ex. réservation gratuite sur le site) restent dans le même onglet.
+  const isExternalReservation = /^https?:\/\//.test(event.reservation_link ?? "");
   return (
     <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/80 transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
       {event.image && (
@@ -83,8 +85,7 @@ export const EventCard = memo(function EventCard({ event }: EventCardProps) {
           {event.reservation_link && !isPast && (
             <a
               href={event.reservation_link}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(isExternalReservation ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="block w-full py-3 text-white text-center font-bold bg-primary hover:bg-primary-dark transition-colors rounded-b-lg -mx-5 -mb-5 mt-4"
               style={{ width: "calc(100% + 2.5rem)" }}
             >

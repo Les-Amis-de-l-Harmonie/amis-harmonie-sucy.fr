@@ -15,6 +15,7 @@ declare namespace Cloudflare {
     RATE_LIMIT_AUTH_MAX: string;
     RATE_LIMIT_CONTACT_MAX: string;
     RATE_LIMIT_GUESTBOOK_MAX: string;
+    RATE_LIMIT_RESERVATION_MAX: string;
     RATE_LIMIT_UPLOAD_MAX: string;
   }
 }

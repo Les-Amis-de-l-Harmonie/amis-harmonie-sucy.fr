@@ -10,6 +10,7 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "/api/auth/magic-link": RATE_LIMIT_CONFIG.AUTH_MAGIC_LINK,
   "/api/auth/musician-magic-link": RATE_LIMIT_CONFIG.AUTH_MAGIC_LINK,
   "/api/contact": RATE_LIMIT_CONFIG.CONTACT_FORM,
+  "/api/reservations": RATE_LIMIT_CONFIG.RESERVATION,
   "/api/guestbook": RATE_LIMIT_CONFIG.GUESTBOOK,
   "/api/admin/upload": RATE_LIMIT_CONFIG.ADMIN_UPLOAD,
 };

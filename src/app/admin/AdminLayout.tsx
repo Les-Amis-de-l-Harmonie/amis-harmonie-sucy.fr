@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Calendar,
+  CalendarCheck,
   Video,
   Instagram,
   BookOpen,
@@ -32,6 +33,7 @@ interface AdminLayoutProps {
 const navItems = [
   { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/admin/events", label: "Événements", icon: Calendar },
+  { href: "/admin/reservations", label: "Réservations", icon: CalendarCheck },
   { href: "/admin/gallery", label: "Galerie", icon: Images },
   { href: "/admin/videos", label: "Vidéos", icon: Video },
   { href: "/admin/publications", label: "Publications", icon: Instagram },
@@ -78,8 +80,8 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
-      <div className="lg:hidden sticky top-0 z-50 bg-card border-b border-border">
+    <div className="min-h-screen bg-background lg:flex print:block print:min-h-0 print:bg-white">
+      <div className="lg:hidden sticky top-0 z-50 bg-card border-b border-border print:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -104,7 +106,7 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
 
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm print:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -112,7 +114,7 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
       <aside
         className={`fixed top-0 left-0 z-50 h-full w-[220px] bg-card border-r border-border transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:static lg:top-auto lg:left-auto lg:z-auto lg:bg-transparent lg:border-r lg:flex-shrink-0 lg:h-screen lg:sticky lg:top-0`}
+        } lg:translate-x-0 lg:static lg:top-auto lg:left-auto lg:z-auto lg:bg-transparent lg:border-r lg:flex-shrink-0 lg:h-screen lg:sticky lg:top-0 print:hidden`}
       >
         <div className="h-full flex flex-col bg-card lg:bg-transparent">
           <div className="flex-shrink-0 px-6 py-5 border-b border-border lg:hidden">
@@ -136,7 +138,9 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
 
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0">
             {navItems.map((item) => {
-              const isActive = currentPage === item.href;
+              const isActive =
+                currentPage === item.href ||
+                (item.href !== "/admin" && currentPage.startsWith(`${item.href}/`));
               return (
                 <a
                   key={item.href}
@@ -207,8 +211,8 @@ export function AdminLayout({ children, email, role }: AdminLayoutProps) {
         </div>
       </aside>
 
-      <main className="min-h-[calc(100vh-64px)] lg:min-h-screen lg:flex-1 lg:min-w-0">
-        <div className="px-4 py-4 sm:px-6 lg:px-8 pb-8">{children}</div>
+      <main className="min-h-[calc(100vh-64px)] lg:min-h-screen lg:flex-1 lg:min-w-0 print:min-h-0">
+        <div className="px-4 py-4 sm:px-6 lg:px-8 pb-8 print:p-0">{children}</div>
       </main>
     </div>
   );

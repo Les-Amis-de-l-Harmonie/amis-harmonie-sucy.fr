@@ -1,0 +1,452 @@
+import { ArrowRight, ExternalLink, Mail, Music, Navigation, Phone, Ticket } from "lucide-react";
+import type { ReactNode } from "react";
+import { ScrollReveal } from "@/app/components/ScrollReveal";
+import { SITE_NAME, SITE_URL } from "@/app/seo";
+import { RENCONTRE_HARMONIES_2026 } from "@/lib/free-events";
+import { cn } from "@/lib/utils";
+import { StickyReserveBar } from "./RencontreHarmonies2026Client";
+import { RencontreHarmonies2026Form } from "./RencontreHarmonies2026Form";
+
+/* -------------------------------------------------------------------------- */
+/*  Direction visuelle : l'affiche du concert                                  */
+/*  Orange papier, bandeaux inclinés rouge → bordeaux, texte blanc italique.   */
+/*  Couleurs fixes (identiques en mode clair et sombre) : c'est une affiche.   */
+/* -------------------------------------------------------------------------- */
+
+const ASSETS = "/images/rencontre-harmonies-2026";
+const HERO_CTA_ID = "rencontre-hero-cta";
+const FORM_ID = "reserver";
+
+const event = RENCONTRE_HARMONIES_2026;
+
+const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  `${event.venue.name}, ${event.venue.streetAddress}, ${event.venue.postalCode} ${event.venue.city}`
+)}`;
+
+const eventJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: event.title,
+  description: event.intro,
+  startDate: event.startsAt,
+  endDate: "2026-11-14T18:00:00+01:00",
+  doorTime: "2026-11-14T14:30:00+01:00",
+  eventStatus: "https://schema.org/EventScheduled",
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+  isAccessibleForFree: true,
+  inLanguage: "fr",
+  image: [`${SITE_URL}${ASSETS}/og.jpg`],
+  location: {
+    "@type": "Place",
+    name: event.venue.name,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: event.venue.streetAddress,
+      postalCode: event.venue.postalCode,
+      addressLocality: event.venue.city,
+      addressCountry: "FR",
+    },
+  },
+  performer: event.form.interests
+    .filter((option) => option.code !== "curiosite")
+    .map((option) => ({ "@type": "MusicGroup", name: option.label })),
+  organizer: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  offers: {
+    "@type": "Offer",
+    price: 0,
+    priceCurrency: "EUR",
+    availability: "https://schema.org/InStock",
+    url: `${SITE_URL}${event.path}`,
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Styles                                                                     */
+/* -------------------------------------------------------------------------- */
+
+const container = "mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8";
+
+/** Dégradé des bandeaux : rouge → bordeaux. Blanc dessus : contraste ≥ 4,6:1. */
+const bandGradient = "bg-gradient-to-r from-[#d93a1c] to-[#7c0e37]";
+
+const headingFont = "font-[family-name:var(--font-heading)]";
+
+/** Entrée orchestrée du hero. */
+const enter = "animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-backwards";
+
+/** Grain de papier : bruit SVG en data URI (img-src data: autorisé par la CSP). */
+const PAPER_GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .25 0 0 0 0 .05 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
+
+/** Bord de papier déchiré, généré une fois (déterministe, donc identique serveur/client). */
+function tornPath(seed: number, base: number, amplitude: number): string {
+  let s = seed;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+  const parts = [`M0 40 L0 ${base}`];
+  let x = 0;
+  while (x < 1200) {
+    x = Math.min(1200, x + 7 + rand() * 20);
+    parts.push(`L${x.toFixed(0)} ${(base - amplitude / 2 + rand() * amplitude).toFixed(0)}`);
+  }
+  parts.push("L1200 40 Z");
+  return parts.join(" ");
+}
+
+const TORN_BACK = tornPath(7, 14, 16);
+const TORN_FRONT = tornPath(31, 22, 14);
+
+function TornEdge({ fill, rim }: { fill: string; rim: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 1200 40"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-7 w-full sm:h-10"
+    >
+      <path d={TORN_BACK} fill={rim} />
+      <path d={TORN_FRONT} fill={fill} />
+    </svg>
+  );
+}
+
+function PaperBackground() {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-20 bg-[#f5921e] bg-[radial-gradient(ellipse_at_85%_0%,#ffb84d_0,transparent_55%),radial-gradient(ellipse_at_0%_100%,#e46f17_0,transparent_60%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 opacity-60 mix-blend-multiply"
+        style={{ backgroundImage: PAPER_GRAIN }}
+      />
+    </>
+  );
+}
+
+function SectionTitle({ children, id }: { children: ReactNode; id?: string }) {
+  return (
+    <div className="mb-7">
+      <h2
+        id={id}
+        className="text-3xl leading-none font-bold tracking-tight text-[#7c0e37] uppercase italic sm:text-4xl"
+      >
+        {children}
+      </h2>
+      <span
+        aria-hidden="true"
+        className="mt-3 block h-1.5 w-24 -skew-x-12 bg-gradient-to-r from-[#d93a1c] to-[#f5921e]"
+      />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export function RencontreHarmonies2026() {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
+      />
+
+      {/* ───────────────────────────── Hero ───────────────────────────── */}
+      <section className="relative isolate overflow-hidden text-[#2b0b12]">
+        <PaperBackground />
+
+        <div
+          className={cn(
+            container,
+            "grid items-center gap-x-10 pb-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:py-16"
+          )}
+        >
+          {/* Photo + « CONCERT » : en tête sur mobile, à droite sur desktop */}
+          <div
+            className={cn(enter, "relative order-first -mx-4 sm:-mx-6 lg:order-last lg:mx-0")}
+            style={{ animationDelay: "0ms" }}
+          >
+            <div className="relative h-56 overflow-hidden [clip-path:polygon(0_0,100%_0,100%_88%,0_100%)] sm:h-72 lg:h-[24rem] lg:[clip-path:polygon(13%_0,100%_0,100%_100%,0_100%)]">
+              <picture>
+                <source
+                  media="(min-width: 640px)"
+                  srcSet={`${ASSETS}/orchestre-1052.webp`}
+                  type="image/webp"
+                />
+                <img
+                  src={`${ASSETS}/orchestre-640.webp`}
+                  srcSet={`${ASSETS}/orchestre-640.webp 640w, ${ASSETS}/orchestre-1052.webp 1052w`}
+                  sizes="(min-width: 1024px) 560px, 100vw"
+                  alt="Des musiciens d'un orchestre d'harmonie en concert, saxophones au premier plan"
+                  width={1052}
+                  height={444}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="size-full object-cover object-[60%_40%]"
+                />
+              </picture>
+              {/* Voile chaud orange → magenta, comme sur l'affiche */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-br from-[#b82a1b]/55 via-[#a81c55]/35 to-[#f5921e]/35"
+              />
+            </div>
+            <p
+              aria-hidden="true"
+              className={cn(
+                headingFont,
+                "relative z-10 -mt-[0.5em] px-4 text-center text-[clamp(3.4rem,18.5vw,6.2rem)] leading-[0.95] font-bold tracking-[-0.03em] whitespace-nowrap text-white uppercase italic [-webkit-text-stroke:0.03em_white] [text-shadow:0_0.05em_0_rgba(124,14,55,0.4),0_0.12em_0.3em_rgba(43,11,18,0.35)] sm:text-[6.2rem] lg:text-[clamp(4.25rem,7.2vw,6.5rem)]"
+              )}
+            >
+              Concert
+            </p>
+          </div>
+
+          <div className="relative z-10 pt-2 lg:pt-0">
+            <h1
+              className={cn(
+                enter,
+                bandGradient,
+                "-ml-5 w-fit max-w-[calc(100%+1.25rem)] py-3.5 pr-12 pl-9 text-[2.15rem] leading-[1.02] font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] sm:-ml-7 sm:pl-11 sm:text-5xl lg:ml-0 lg:text-[3.2rem] xl:text-6xl"
+              )}
+              style={{ animationDelay: "120ms" }}
+            >
+              {event.title}
+            </h1>
+
+            <p
+              className={cn(
+                enter,
+                headingFont,
+                "mt-2 -mr-5 ml-4 bg-gradient-to-r from-[#7c0e37] to-[#c8301a] py-3 pr-7 pl-8 text-[0.9rem] leading-snug font-bold tracking-wide text-white uppercase italic [clip-path:polygon(1.1rem_0,100%_0,100%_100%,0_100%)] sm:-mr-7 sm:text-xl lg:mr-0 lg:pr-12 lg:[clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)]"
+              )}
+              style={{ animationDelay: "220ms" }}
+            >
+              <span className="block">{event.dateLabel}</span>
+              <span className="sr-only"> · </span>
+              <span className="block text-[0.85em]">{event.placeLabel}</span>
+            </p>
+
+            <p
+              className={cn(
+                enter,
+                "mt-6 inline-flex -rotate-2 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm leading-tight font-extrabold tracking-wide text-[#c2410c] uppercase shadow-[0_5px_0_rgba(124,14,55,0.45)] sm:text-base"
+              )}
+              style={{ animationDelay: "320ms" }}
+            >
+              <Ticket className="size-5 shrink-0" aria-hidden="true" />
+              {event.admissionLabel}
+            </p>
+
+            <p
+              className={cn(
+                enter,
+                "mt-6 max-w-xl text-lg leading-relaxed font-medium text-[#2b0b12]"
+              )}
+              style={{ animationDelay: "420ms" }}
+            >
+              {event.intro}
+            </p>
+
+            <div className={cn(enter, "mt-8")} style={{ animationDelay: "520ms" }}>
+              <a
+                id={HERO_CTA_ID}
+                href={`#${FORM_ID}`}
+                className="group inline-block -skew-x-12 rounded-md bg-gradient-to-r from-[#d93a1c] to-[#7c0e37] shadow-[6px_6px_0_#2b0b12] transition-all duration-200 hover:translate-x-px hover:translate-y-px hover:shadow-[4px_4px_0_#2b0b12] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#2b0b12]"
+              >
+                <span
+                  className={cn(
+                    headingFont,
+                    "inline-flex min-h-14 skew-x-12 items-center gap-3 px-8 py-3 text-2xl font-bold tracking-wide text-white uppercase italic"
+                  )}
+                >
+                  Je réserve
+                  <ArrowRight
+                    className="size-6 transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <TornEdge fill="#fff1dc" rim="#ffd49a" />
+      </section>
+
+      {/* ───────────────────────────── Programme & infos ───────────────────────────── */}
+      <section className="bg-[#fff1dc] pt-6 pb-16 text-[#2b0b12] md:pt-10 md:pb-24">
+        <div className={cn(container, "grid gap-12 lg:grid-cols-12 lg:gap-14")}>
+          <div className="lg:col-span-7">
+            <SectionTitle id="programme">Programme</SectionTitle>
+            <ol aria-labelledby="programme" className="space-y-2.5">
+              {event.program.map((item) => (
+                <li key={item.time}>
+                  <div className="flex items-stretch shadow-[0_6px_16px_-10px_rgba(124,14,55,0.5)]">
+                    <span
+                      className={cn(
+                        headingFont,
+                        bandGradient,
+                        "flex w-[5.25rem] shrink-0 items-center justify-center py-3 pr-3 text-xl font-bold text-white italic [clip-path:polygon(0_0,100%_0,calc(100%-0.8rem)_100%,0_100%)] sm:w-28 sm:text-2xl"
+                      )}
+                    >
+                      {item.time}
+                    </span>
+                    <span className="flex flex-1 items-center bg-white/75 py-3 pr-3 pl-3 text-sm leading-snug font-bold tracking-wide text-[#2b0b12] uppercase sm:pl-4 sm:text-base">
+                      {item.label}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="lg:col-span-5">
+            <SectionTitle id="infos">Infos pratiques</SectionTitle>
+            <dl
+              aria-labelledby="infos"
+              className="divide-y divide-[#f0cfa6] rounded-2xl bg-white p-6 shadow-[0_14px_34px_-16px_rgba(124,14,55,0.45)] ring-1 ring-[#f0cfa6]"
+            >
+              <div className="pb-4">
+                <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
+                  Adresse
+                </dt>
+                <dd className="mt-1.5 leading-relaxed">
+                  <address className="not-italic">
+                    <span className="font-bold">{event.venue.name}</span>
+                    <br />
+                    {event.venue.streetAddress}
+                    <br />
+                    {event.venue.postalCode} {event.venue.city}
+                  </address>
+                  <a
+                    href={MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex min-h-11 items-center gap-2 font-semibold text-[#7c0e37] underline underline-offset-4 hover:text-[#d93a1c]"
+                  >
+                    <Navigation className="size-4" aria-hidden="true" />
+                    Itinéraire
+                    <ExternalLink className="size-3.5 opacity-70" aria-hidden="true" />
+                    <span className="sr-only">(s'ouvre dans un nouvel onglet)</span>
+                  </a>
+                </dd>
+              </div>
+              <div className="py-4">
+                <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
+                  Stationnement
+                </dt>
+                <dd className="mt-1.5 leading-relaxed first-letter:uppercase">{event.parking}</dd>
+              </div>
+              <div className="py-4">
+                <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
+                  Réservation
+                </dt>
+                <dd className="mt-1.5 leading-relaxed first-letter:uppercase">
+                  {event.reservationInfo}
+                </dd>
+              </div>
+              <div className="pt-4">
+                <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
+                  Renseignements
+                </dt>
+                <dd className="mt-1.5 flex flex-col items-start">
+                  <a
+                    href={event.contact.phoneHref}
+                    className="inline-flex min-h-11 items-center gap-2 font-semibold text-[#7c0e37] underline underline-offset-4 hover:text-[#d93a1c]"
+                  >
+                    <Phone className="size-4 shrink-0" aria-hidden="true" />
+                    {event.contact.phone}
+                  </a>
+                  <a
+                    href={`mailto:${event.contact.email}`}
+                    className="inline-flex min-h-11 items-center gap-2 font-semibold break-all text-[#7c0e37] underline underline-offset-4 hover:text-[#d93a1c]"
+                  >
+                    <Mail className="size-4 shrink-0" aria-hidden="true" />
+                    {event.contact.email}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* ───────────────────────────── Vous jouez d'un instrument ? ───────────────────────────── */}
+      <div className="bg-[linear-gradient(to_bottom,#fff1dc_50%,#f5921e_50%)]">
+        <section
+          aria-labelledby="rejoindre"
+          className="relative isolate overflow-hidden bg-gradient-to-br from-[#b82a1b] via-[#8f1740] to-[#5e0b2c] py-20 text-white [clip-path:polygon(0_2.5rem,100%_0,100%_calc(100%-2.5rem),0_100%)] sm:py-24 sm:[clip-path:polygon(0_4rem,100%_0,100%_calc(100%-4rem),0_100%)]"
+        >
+          <Music
+            className="absolute -right-6 bottom-2 -z-10 size-56 -rotate-12 text-white/10 sm:size-72"
+            aria-hidden="true"
+          />
+          <div className={cn(container, "max-w-4xl")}>
+            <ScrollReveal>
+              <h2
+                id="rejoindre"
+                className="text-3xl leading-[1.05] font-bold tracking-tight uppercase italic sm:text-5xl"
+              >
+                {event.joinTitle}
+              </h2>
+              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white sm:text-xl">
+                {event.joinText}
+              </p>
+            </ScrollReveal>
+          </div>
+        </section>
+      </div>
+
+      {/* ───────────────────────────── Réservation ───────────────────────────── */}
+      <section
+        id={FORM_ID}
+        aria-labelledby="reserver-titre"
+        className="relative isolate scroll-mt-20 overflow-hidden pb-24 text-[#2b0b12] md:pb-20"
+      >
+        <PaperBackground />
+
+        {/* Bandeau de photos des orchestres, découpé en diagonales comme sur l'affiche */}
+        <picture>
+          <source
+            media="(min-width: 768px)"
+            srcSet={`${ASSETS}/bandeau-1200.webp`}
+            type="image/webp"
+          />
+          <img
+            src={`${ASSETS}/bandeau-700.webp`}
+            alt=""
+            width={1200}
+            height={123}
+            loading="lazy"
+            decoding="async"
+            className="block h-24 w-full object-cover sm:h-28 md:h-auto"
+          />
+        </picture>
+
+        <div className={cn(container, "max-w-2xl pt-10")}>
+          <h2
+            id="reserver-titre"
+            className={cn(
+              bandGradient,
+              "-ml-5 w-fit py-3 pr-12 pl-9 text-2xl leading-tight font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] sm:-ml-7 sm:pl-11 sm:text-4xl lg:-ml-8"
+            )}
+          >
+            Réserver vos places
+          </h2>
+
+          <div className="mt-8 rounded-2xl bg-white p-5 shadow-[8px_8px_0_rgba(124,14,55,0.9)] sm:p-8">
+            <RencontreHarmonies2026Form event={event} />
+          </div>
+        </div>
+      </section>
+
+      <StickyReserveBar event={event} heroTargetId={HERO_CTA_ID} formTargetId={FORM_ID} />
+    </>
+  );
+}

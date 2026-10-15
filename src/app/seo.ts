@@ -27,6 +27,12 @@ const PAGE_SEO: Record<string, PageSeo> = {
     description:
       "L'Harmonie Municipale de Sucy-en-Brie : orchestre d'harmonie, répétitions, concerts et événements musicaux dans le Val-de-Marne.",
   },
+  "/rencontre-harmonies-2026": {
+    title: "Rencontre d'Harmonies : concert du 14 novembre 2026",
+    description:
+      "Rencontre d'Harmonies, samedi 14 novembre 2026 à 15h, Espace Jean-Marie Poirier à Sucy-en-Brie : quatre orchestres, 80 musiciens. Entrée gratuite sur réservation.",
+    ogImage: "/images/rencontre-harmonies-2026/og.jpg",
+  },
   "/sucy-dansant-2027": {
     title: "Sucy Dansant 2027 : le thé dansant concert",
     description:

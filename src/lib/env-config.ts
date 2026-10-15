@@ -17,6 +17,10 @@ export const RATE_LIMIT_CONFIG = {
     maxRequests: parseInt(env.RATE_LIMIT_CONTACT_MAX || "3", 10),
     windowMs: 60 * 60 * 1000,
   },
+  RESERVATION: {
+    maxRequests: parseInt(env.RATE_LIMIT_RESERVATION_MAX || "20", 10),
+    windowMs: 60 * 60 * 1000,
+  },
   GUESTBOOK: {
     maxRequests: parseInt(env.RATE_LIMIT_GUESTBOOK_MAX || "3", 10),
     windowMs: 60 * 60 * 1000,

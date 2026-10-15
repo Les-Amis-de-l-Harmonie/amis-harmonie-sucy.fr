@@ -12,6 +12,7 @@ import { OutingSettingsClient } from "./OutingSettingsAdmin";
 import { InfoSettingsClient } from "./InfoSettingsAdmin";
 import { InsuranceAdminClient } from "./InsuranceAdmin";
 import { PresenceAdminClient } from "./PresenceAdmin";
+import { ReservationsAdminClient, ReservationsPrintClient } from "./ReservationsAdmin";
 
 import type { UserRole } from "@/db/types";
 
@@ -120,6 +121,22 @@ export function AdminPresencePage({ email, role }: AdminPageProps) {
   return (
     <AdminLayout email={email} role={role}>
       <PresenceAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminReservationsPage({ email, role }: AdminPageProps) {
+  return (
+    <AdminLayout email={email} role={role}>
+      <ReservationsAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminReservationsPrintPage({ email, role }: AdminPageProps) {
+  return (
+    <AdminLayout email={email} role={role}>
+      <ReservationsPrintClient />
     </AdminLayout>
   );
 }

@@ -3,18 +3,6 @@ import { ScrollReveal } from "@/app/components/ScrollReveal";
 export function Legal() {
   return (
     <>
-      <title>Mentions Légales | Les Amis de l'Harmonie de Sucy</title>
-      <meta
-        name="description"
-        content="Mentions légales du site Les Amis de l'Harmonie de Sucy-en-Brie. Informations sur l'éditeur, l'hébergement et la protection des données."
-      />
-      <meta property="og:title" content="Mentions Légales | Les Amis de l'Harmonie de Sucy" />
-      <meta
-        property="og:description"
-        content="Mentions légales du site Les Amis de l'Harmonie de Sucy-en-Brie."
-      />
-      <meta property="og:url" content="https://amis-harmonie-sucy.fr/legal" />
-      <link rel="canonical" href="https://amis-harmonie-sucy.fr/legal" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
@@ -110,6 +98,22 @@ export function Legal() {
                   respect de la vie privée, disponible depuis la section "Charte de Protection des
                   Données Personnelles", conformément au Règlement Général sur la Protection des
                   Données 2016/679 du 27 avril 2016 («RGPD»).
+                </p>
+                <p className="text-gray-600 dark:text-gray-400 mt-4">
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    Réservations gratuites (Rencontre d'Harmonies du 14 novembre 2026).
+                  </span>{" "}
+                  Les nom, prénom, adresse e-mail et nombre de places saisis dans le formulaire de
+                  réservation sont traités par l'association pour gérer votre réservation :
+                  confirmation, rappel et message de remerciement après le concert. Seuls les
+                  membres du Bureau y ont accès ; elles ne sont transmises à personne.
+                  Ces données sont supprimées au plus
+                  tard le 31 décembre 2026, sauf si vous avez demandé à recevoir nos prochaines
+                  dates : dans ce cas, nous conservons votre nom, votre prénom et votre adresse
+                  e-mail jusqu'à votre désinscription, possible à tout moment. Les e-mails sont
+                  envoyés par nos prestataires d'envoi (Resend, Mailchimp). Vous pouvez accéder à
+                  vos données, les faire corriger ou supprimer en écrivant à
+                  contact@amis-harmonie-sucy.fr.
                 </p>
               </section>
             </ScrollReveal>

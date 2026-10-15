@@ -10,6 +10,7 @@ import { setCommonHeaders } from "@/app/headers";
 import { Home } from "@/app/pages/Home";
 import { TheDansant } from "@/app/pages/TheDansant";
 import { SucyDansant2027 } from "@/app/pages/SucyDansant2027";
+import { RencontreHarmonies2026 } from "@/app/pages/RencontreHarmonies2026";
 import { Billetterie } from "@/app/pages/Billetterie";
 import { About } from "@/app/pages/About";
 import { Harmonie } from "@/app/pages/Harmonie";
@@ -22,6 +23,8 @@ import { Adhesion } from "@/app/pages/Adhesion";
 import { Legal } from "@/app/pages/Legal";
 import { handleContactSubmission } from "@/app/api/contact";
 import { handleGuestbookSubmission } from "@/app/api/guestbook";
+import { handleReservationSubmission } from "@/app/api/reservations";
+import { handleReservationsAdminApi } from "@/app/api/admin/reservations";
 import {
   handleMagicLinkRequest,
   handleMagicLinkVerify,
@@ -75,6 +78,8 @@ import {
   AdminInfoSettingsPage,
   AdminInsurancePage,
   AdminPresencePage,
+  AdminReservationsPage,
+  AdminReservationsPrintPage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -155,6 +160,14 @@ const app = defineApp([
     },
   }),
 
+  route("/api/reservations", {
+    post: async ({ request }: { request: Request }) => {
+      const rateLimitResponse = await checkRateLimit(request);
+      if (rateLimitResponse) return rateLimitResponse;
+      return handleReservationSubmission(request);
+    },
+  }),
+
   route("/api/gallery", ({ request }: { request: Request }) => handlePublicGalleryApi(request)),
 
   route("/api/events", async () => {
@@ -207,6 +220,9 @@ const app = defineApp([
   route("/api/admin/guestbook", ({ request }: { request: Request }) => handleGuestbookApi(request)),
   route("/api/admin/contact", ({ request }: { request: Request }) => handleContactApi(request)),
   route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
+  route("/api/admin/reservations", ({ request }: { request: Request }) =>
+    handleReservationsAdminApi(request)
+  ),
   route("/api/admin/gallery", ({ request }: { request: Request }) => handleGalleryApi(request)),
   route("/api/admin/upload", async ({ request }: { request: Request }) => {
     const rateLimitResponse = await checkRateLimit(request);
@@ -367,6 +383,8 @@ const app = defineApp([
   render(Document, [
     layout(Layout, [
       route("/", Home),
+      // URL imprimée en QR code sur l'affiche : ne jamais la changer.
+      route("/rencontre-harmonies-2026", RencontreHarmonies2026),
       route("/sucy-dansant-2027", SucyDansant2027),
       route("/the-dansant-2026", TheDansant),
       route("/billetterie", Billetterie),
@@ -459,6 +477,18 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminPresencePage email={auth.email} role={auth.role} />;
+    }),
+
+    route("/admin/reservations", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminReservationsPage email={auth.email} role={auth.role} />;
+    }),
+
+    route("/admin/reservations/impression", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminReservationsPrintPage email={auth.email} role={auth.role} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),

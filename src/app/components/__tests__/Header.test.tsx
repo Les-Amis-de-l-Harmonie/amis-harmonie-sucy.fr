@@ -43,6 +43,47 @@ describe("Header", () => {
     );
   });
 
+  it("place « Rencontre d'Harmonies » juste avant « Thé Dansant » (desktop)", () => {
+    render(<Header />);
+
+    const [desktopLink] = screen.getAllByRole("link", { name: "Rencontre d'Harmonies" });
+    expect(desktopLink).toHaveAttribute("href", "/rencontre-harmonies-2026");
+
+    const nav = desktopLink.closest("nav");
+    expect(nav).toBeTruthy();
+    if (!nav) {
+      throw new Error("Expected desktop nav to exist");
+    }
+
+    const topLevelLabels = Array.from(nav.children).map(
+      (item) => item.querySelector(":scope > a")?.textContent
+    );
+    const rencontreIndex = topLevelLabels.indexOf("Rencontre d'Harmonies");
+    expect(rencontreIndex).toBeGreaterThan(-1);
+    expect(topLevelLabels[rencontreIndex + 1]).toBe("Thé Dansant");
+  });
+
+  it("expose « Rencontre d'Harmonies » comme lien simple avant « Thé Dansant » (mobile)", async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+
+    await user.click(screen.getByRole("button", { name: "Ouvrir le menu" }));
+
+    const links = screen.getAllByRole("link", { name: "Rencontre d'Harmonies" });
+    expect(links).toHaveLength(2);
+    expect(links[1]).toHaveAttribute("href", "/rencontre-harmonies-2026");
+
+    const mobileNav = links[1].closest("nav");
+    expect(mobileNav).toBeTruthy();
+    if (!mobileNav) {
+      throw new Error("Expected mobile nav to exist");
+    }
+    const entries = Array.from(mobileNav.children).map((item) => item.textContent ?? "");
+    const rencontreIndex = entries.findIndex((text) => text.startsWith("Rencontre d'Harmonies"));
+    expect(rencontreIndex).toBeGreaterThan(-1);
+    expect(entries[rencontreIndex + 1]).toMatch(/^Thé Dansant/);
+  });
+
   it("toggles mobile menu and closes it on Escape", async () => {
     const user = userEvent.setup();
     render(<Header />);
