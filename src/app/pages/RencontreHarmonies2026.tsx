@@ -5,6 +5,7 @@ import { SITE_NAME, SITE_URL } from "@/app/seo";
 import { RENCONTRE_HARMONIES_2026 } from "@/lib/free-events";
 import { cn } from "@/lib/utils";
 import { StickyReserveBar } from "./RencontreHarmonies2026Client";
+import { tidy } from "./RencontreHarmonies2026Typo";
 import { RencontreHarmonies2026Form } from "./RencontreHarmonies2026Form";
 
 /* -------------------------------------------------------------------------- */
@@ -64,7 +65,8 @@ const eventJsonLd = {
 /*  Styles                                                                     */
 /* -------------------------------------------------------------------------- */
 
-const container = "mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8";
+/** Même gouttière et même largeur maximale que le header : les bords gauches s'alignent. */
+const container = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]";
 
 /** Dégradé des bandeaux : rouge → bordeaux. Blanc dessus : contraste ≥ 4,6:1. */
 const bandGradient = "bg-gradient-to-r from-[#d93a1c] to-[#7c0e37]";
@@ -163,15 +165,18 @@ export function RencontreHarmonies2026() {
         <div
           className={cn(
             container,
-            "grid items-center gap-x-10 pb-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:py-16"
+            "grid pb-16 sm:pb-20 lg:grid-cols-2 lg:items-stretch lg:gap-x-12 lg:py-14 xl:gap-x-16"
           )}
         >
           {/* Photo + « CONCERT » : en tête sur mobile, à droite sur desktop */}
           <div
-            className={cn(enter, "relative order-first -mx-4 sm:-mx-6 lg:order-last lg:mx-0")}
+            className={cn(
+              enter,
+              "relative order-first -mx-4 flex flex-col [container-type:inline-size] sm:-mx-6 lg:order-last lg:mx-0"
+            )}
             style={{ animationDelay: "0ms" }}
           >
-            <div className="relative h-56 overflow-hidden [clip-path:polygon(0_0,100%_0,100%_88%,0_100%)] sm:h-72 lg:h-[24rem] lg:[clip-path:polygon(13%_0,100%_0,100%_100%,0_100%)]">
+            <div className="relative h-56 overflow-hidden [clip-path:polygon(0_0,100%_0,100%_88%,0_100%)] sm:h-72 lg:h-auto lg:min-h-[22rem] lg:flex-1 lg:[clip-path:polygon(13%_0,100%_0,100%_100%,0_100%)]">
               <picture>
                 <source
                   media="(min-width: 640px)"
@@ -200,14 +205,14 @@ export function RencontreHarmonies2026() {
               aria-hidden="true"
               className={cn(
                 headingFont,
-                "relative z-10 -mt-[0.5em] px-4 text-center text-[clamp(3.4rem,18.5vw,6.2rem)] leading-[0.95] font-bold tracking-[-0.03em] whitespace-nowrap text-white uppercase italic [-webkit-text-stroke:0.03em_white] [text-shadow:0_0.05em_0_rgba(124,14,55,0.4),0_0.12em_0.3em_rgba(43,11,18,0.35)] sm:text-[6.2rem] lg:text-[clamp(4.25rem,7.2vw,6.5rem)]"
+                "relative z-10 -mt-[0.5em] text-center text-[min(18.5cqw,6.5rem)] leading-[0.95] font-bold tracking-[-0.03em] whitespace-nowrap text-white uppercase italic [-webkit-text-stroke:0.03em_white] [text-shadow:0_0.05em_0_rgba(124,14,55,0.4),0_0.12em_0.3em_rgba(43,11,18,0.35)] lg:pl-[8%]"
               )}
             >
               Concert
             </p>
           </div>
 
-          <div className="relative z-10 pt-2 lg:pt-0">
+          <div className="relative z-10 pt-2 lg:flex lg:flex-col lg:justify-center lg:pt-0">
             <h1
               className={cn(
                 enter,
@@ -223,19 +228,19 @@ export function RencontreHarmonies2026() {
               className={cn(
                 enter,
                 headingFont,
-                "mt-2 -mr-5 ml-4 bg-gradient-to-r from-[#7c0e37] to-[#c8301a] py-3 pr-7 pl-8 text-[0.9rem] leading-snug font-bold tracking-wide text-white uppercase italic [clip-path:polygon(1.1rem_0,100%_0,100%_100%,0_100%)] sm:-mr-7 sm:text-xl lg:mr-0 lg:pr-12 lg:[clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)]"
+                "mt-2 -mr-5 ml-4 bg-gradient-to-r from-[#7c0e37] to-[#c8301a] py-3 pr-7 pl-8 text-[0.9rem] leading-snug font-bold tracking-wide text-white uppercase italic [clip-path:polygon(1.1rem_0,100%_0,100%_100%,0_100%)] sm:-mr-7 sm:text-xl lg:mr-0 lg:w-fit lg:max-w-full lg:pr-12 lg:text-base xl:text-xl lg:[clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)]"
               )}
               style={{ animationDelay: "220ms" }}
             >
-              <span className="block">{event.dateLabel}</span>
+              <span className="block text-balance">{tidy(event.dateLabel, 3)}</span>
               <span className="sr-only"> · </span>
-              <span className="block text-[0.85em]">{event.placeLabel}</span>
+              <span className="block text-[0.85em] text-balance">{tidy(event.placeLabel)}</span>
             </p>
 
             <p
               className={cn(
                 enter,
-                "mt-6 inline-flex -rotate-2 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm leading-tight font-extrabold tracking-wide text-[#c2410c] uppercase shadow-[0_5px_0_rgba(124,14,55,0.45)] sm:text-base"
+                "mt-6 inline-flex w-fit -rotate-2 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm leading-tight font-extrabold tracking-wide text-[#c2410c] uppercase shadow-[0_5px_0_rgba(124,14,55,0.45)] sm:text-base"
               )}
               style={{ animationDelay: "320ms" }}
             >
@@ -246,11 +251,11 @@ export function RencontreHarmonies2026() {
             <p
               className={cn(
                 enter,
-                "mt-6 max-w-xl text-lg leading-relaxed font-medium text-[#2b0b12]"
+                "mt-6 max-w-xl text-lg leading-relaxed font-medium text-[#2b0b12] md:max-w-2xl lg:max-w-xl"
               )}
               style={{ animationDelay: "420ms" }}
             >
-              {event.intro}
+              {tidy(event.intro)}
             </p>
 
             <div className={cn(enter, "mt-8")} style={{ animationDelay: "520ms" }}>
@@ -280,14 +285,14 @@ export function RencontreHarmonies2026() {
       </section>
 
       {/* ───────────────────────────── Programme & infos ───────────────────────────── */}
-      <section className="bg-[#fff1dc] pt-6 pb-16 text-[#2b0b12] md:pt-10 md:pb-24">
-        <div className={cn(container, "grid gap-12 lg:grid-cols-12 lg:gap-14")}>
-          <div className="lg:col-span-7">
+      <section className="bg-[#fff1dc] pt-8 pb-16 text-[#2b0b12] md:pt-12 md:pb-24">
+        <div className={cn(container, "grid gap-12 lg:grid-cols-12 lg:gap-x-14")}>
+          <div className="flex flex-col lg:col-span-7">
             <SectionTitle id="programme">Programme</SectionTitle>
-            <ol aria-labelledby="programme" className="space-y-2.5">
+            <ol aria-labelledby="programme" className="flex flex-1 flex-col gap-2.5">
               {event.program.map((item) => (
-                <li key={item.time}>
-                  <div className="flex items-stretch shadow-[0_6px_16px_-10px_rgba(124,14,55,0.5)]">
+                <li key={item.time} className="flex flex-1">
+                  <div className="flex w-full items-stretch shadow-[0_6px_16px_-10px_rgba(124,14,55,0.5)]">
                     <span
                       className={cn(
                         headingFont,
@@ -298,7 +303,7 @@ export function RencontreHarmonies2026() {
                       {item.time}
                     </span>
                     <span className="flex flex-1 items-center bg-white/75 py-3 pr-3 pl-3 text-sm leading-snug font-bold tracking-wide text-[#2b0b12] uppercase sm:pl-4 sm:text-base">
-                      {item.label}
+                      <span>{tidy(item.label)}</span>
                     </span>
                   </div>
                 </li>
@@ -306,11 +311,11 @@ export function RencontreHarmonies2026() {
             </ol>
           </div>
 
-          <div className="lg:col-span-5">
+          <div className="flex flex-col lg:col-span-5">
             <SectionTitle id="infos">Infos pratiques</SectionTitle>
             <dl
               aria-labelledby="infos"
-              className="divide-y divide-[#f0cfa6] rounded-2xl bg-white p-6 shadow-[0_14px_34px_-16px_rgba(124,14,55,0.45)] ring-1 ring-[#f0cfa6]"
+              className="divide-y divide-[#f0cfa6] flex-1 rounded-2xl bg-white p-5 shadow-[0_14px_34px_-16px_rgba(124,14,55,0.45)] ring-1 ring-[#f0cfa6] sm:p-6"
             >
               <div className="pb-4">
                 <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
@@ -341,14 +346,16 @@ export function RencontreHarmonies2026() {
                 <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
                   Stationnement
                 </dt>
-                <dd className="mt-1.5 leading-relaxed first-letter:uppercase">{event.parking}</dd>
+                <dd className="mt-1.5 leading-relaxed first-letter:uppercase">
+                  {tidy(event.parking)}
+                </dd>
               </div>
               <div className="py-4">
                 <dt className="text-xs font-bold tracking-[0.16em] text-[#7c0e37] uppercase">
                   Réservation
                 </dt>
                 <dd className="mt-1.5 leading-relaxed first-letter:uppercase">
-                  {event.reservationInfo}
+                  {tidy(event.reservationInfo)}
                 </dd>
               </div>
               <div className="pt-4">
@@ -365,7 +372,7 @@ export function RencontreHarmonies2026() {
                   </a>
                   <a
                     href={`mailto:${event.contact.email}`}
-                    className="inline-flex min-h-11 items-center gap-2 font-semibold break-all text-[#7c0e37] underline underline-offset-4 hover:text-[#d93a1c]"
+                    className="inline-flex min-h-11 items-center gap-2 text-[0.95rem] font-semibold [overflow-wrap:anywhere] text-[#7c0e37] sm:text-base underline underline-offset-4 hover:text-[#d93a1c]"
                   >
                     <Mail className="size-4 shrink-0" aria-hidden="true" />
                     {event.contact.email}
@@ -387,16 +394,16 @@ export function RencontreHarmonies2026() {
             className="absolute -right-6 bottom-2 -z-10 size-56 -rotate-12 text-white/10 sm:size-72"
             aria-hidden="true"
           />
-          <div className={cn(container, "max-w-4xl")}>
+          <div className={container}>
             <ScrollReveal>
               <h2
                 id="rejoindre"
-                className="text-3xl leading-[1.05] font-bold tracking-tight uppercase italic sm:text-5xl"
+                className="max-w-3xl text-3xl leading-[1.05] font-bold tracking-tight text-balance uppercase italic sm:text-5xl"
               >
                 {event.joinTitle}
               </h2>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white sm:text-xl">
-                {event.joinText}
+                {tidy(event.joinText)}
               </p>
             </ScrollReveal>
           </div>
@@ -407,7 +414,7 @@ export function RencontreHarmonies2026() {
       <section
         id={FORM_ID}
         aria-labelledby="reserver-titre"
-        className="relative isolate scroll-mt-20 overflow-hidden pb-24 text-[#2b0b12] md:pb-20"
+        className="relative isolate scroll-mt-20 overflow-hidden pb-16 text-[#2b0b12] md:pb-24"
       >
         <PaperBackground />
 
@@ -425,16 +432,16 @@ export function RencontreHarmonies2026() {
             height={123}
             loading="lazy"
             decoding="async"
-            className="block h-24 w-full object-cover sm:h-28 md:h-auto"
+            className="mx-auto block h-24 w-full max-w-[1500px] object-cover sm:h-28 md:h-auto"
           />
         </picture>
 
-        <div className={cn(container, "max-w-2xl pt-10")}>
+        <div className={cn(container, "max-w-3xl pt-10 md:pt-12 2xl:max-w-3xl")}>
           <h2
             id="reserver-titre"
             className={cn(
               bandGradient,
-              "-ml-5 w-fit py-3 pr-12 pl-9 text-2xl leading-tight font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] sm:-ml-7 sm:pl-11 sm:text-4xl lg:-ml-8"
+              "-ml-5 w-fit py-3 pr-10 pl-9 text-[1.4rem] leading-tight min-[390px]:pr-12 min-[390px]:text-2xl font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] sm:-ml-7 sm:pl-11 sm:text-4xl lg:-ml-8"
             )}
           >
             Réserver vos places

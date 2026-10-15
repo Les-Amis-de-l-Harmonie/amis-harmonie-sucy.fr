@@ -6,6 +6,7 @@ import { ArrowRight, CircleAlert, Loader2, Minus, PartyPopper, Plus } from "luci
 import { formatSuccessMessage, isEventClosed } from "@/lib/free-events";
 import type { FreeEventConfig } from "@/lib/free-events";
 import { cn } from "@/lib/utils";
+import { nbspPunctuation, tidy } from "./RencontreHarmonies2026Typo";
 
 type FieldKey = "lastName" | "firstName" | "email" | "partySize" | "interests" | "source";
 type FieldErrors = Partial<Record<FieldKey, string>>;
@@ -37,7 +38,7 @@ const inputClass =
 const choiceClass =
   "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border-2 border-[#e6c9a8] bg-[#fff8ee] px-3.5 py-2.5 text-base leading-snug text-[#2b0b12] transition-colors hover:border-[#c98a55] has-[:checked]:border-[#7c0e37] has-[:checked]:bg-[#ffe6c8] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#7c0e37]/25";
 
-const checkboxClass = "mt-0.5 size-6 shrink-0 cursor-pointer accent-[#7c0e37]";
+const checkboxClass = "size-6 shrink-0 cursor-pointer accent-[#7c0e37]";
 
 const stepperButtonClass =
   "inline-flex size-12 shrink-0 items-center justify-center rounded-lg border-2 border-[#8a5a3c] bg-white text-[#2b0b12] transition-colors hover:bg-[#ffe6c8] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#7c0e37]/25 disabled:cursor-not-allowed disabled:opacity-40";
@@ -57,7 +58,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 function Optional() {
-  return <span className="font-normal text-[#6b4a3a]"> (facultatif)</span>;
+  return <span className="font-normal whitespace-nowrap text-[#6b4a3a]"> (facultatif)</span>;
 }
 
 function Field({
@@ -284,7 +285,7 @@ export function RencontreHarmonies2026Form({ event }: { event: FreeEventConfig }
       onSubmit={handleSubmit}
       noValidate
       aria-busy={submitting}
-      className="relative space-y-5 text-[#2b0b12] [color-scheme:light]"
+      className="relative space-y-5 text-[#2b0b12] [color-scheme:light] md:space-y-6"
     >
       <p className="text-sm text-[#6b4a3a]">
         Tous les champs sont requis, sauf ceux marqués « facultatif ».
@@ -401,7 +402,7 @@ export function RencontreHarmonies2026Form({ event }: { event: FreeEventConfig }
           {event.form.interestsLegend}
           <Optional />
         </legend>
-        <div className="grid gap-2">
+        <div className="grid gap-2.5 md:grid-cols-2">
           {event.form.interests.map((option, index) => (
             <label key={option.code} className={choiceClass}>
               <input
@@ -413,14 +414,19 @@ export function RencontreHarmonies2026Form({ event }: { event: FreeEventConfig }
                 onChange={() => toggleInterest(option.code)}
                 className={checkboxClass}
               />
-              <span>{option.label}</span>
+              <span className="leading-6">{tidy(option.label)}</span>
             </label>
           ))}
         </div>
         <FieldError id={interestsErrorId} message={errors.interests} />
       </fieldset>
 
-      <Field id={idOf("source")} label={event.form.sourceLabel} optional error={errors.source}>
+      <Field
+        id={idOf("source")}
+        label={nbspPunctuation(event.form.sourceLabel)}
+        optional
+        error={errors.source}
+      >
         {(describedBy) => (
           <div className="relative">
             <select
@@ -463,7 +469,7 @@ export function RencontreHarmonies2026Form({ event }: { event: FreeEventConfig }
           onChange={(e) => setNewsletterOptIn(e.target.checked)}
           className={checkboxClass}
         />
-        <span className="text-[0.95rem]">{event.form.newsletterLabel}</span>
+        <span className="text-[0.95rem] leading-6">{tidy(event.form.newsletterLabel)}</span>
       </label>
 
       {/* Champ piège : invisible et inaccessible pour les humains et les lecteurs d'écran. */}
@@ -519,7 +525,9 @@ export function RencontreHarmonies2026Form({ event }: { event: FreeEventConfig }
             )}
           </span>
         </button>
-        <p className="mt-4 text-xs leading-relaxed text-[#5a3a2a]">{event.form.privacyNotice}</p>
+        <p className="mt-4 text-xs leading-relaxed text-[#5a3a2a]">
+          {tidy(event.form.privacyNotice)}
+        </p>
       </div>
     </form>
   );

@@ -19,6 +19,7 @@ const subscribeNone = () => () => {};
 export function StickyReserveBar({ event, heroTargetId, formTargetId }: StickyReserveBarProps) {
   const [heroVisible, setHeroVisible] = useState(true);
   const [formVisible, setFormVisible] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
   const closed = useSyncExternalStore(
     subscribeNone,
     () => isEventClosed(event),
@@ -28,6 +29,8 @@ export function StickyReserveBar({ event, heroTargetId, formTargetId }: StickyRe
   useEffect(() => {
     const hero = document.getElementById(heroTargetId);
     const form = document.getElementById(formTargetId);
+    // Le pied de page est lui aussi libre : la barre ne doit pas le recouvrir.
+    const footer = document.querySelector("footer");
     const observers: IntersectionObserver[] = [];
 
     if (hero) {
@@ -40,16 +43,23 @@ export function StickyReserveBar({ event, heroTargetId, formTargetId }: StickyRe
       o.observe(form);
       observers.push(o);
     }
+    if (footer) {
+      const o = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting));
+      o.observe(footer);
+      observers.push(o);
+    }
     return () => observers.forEach((o) => o.disconnect());
   }, [heroTargetId, formTargetId]);
 
-  const show = !heroVisible && !formVisible && !closed;
+  const show = !heroVisible && !formVisible && !footerVisible && !closed;
 
   return (
     <div
       aria-hidden={!show}
-      className={`fixed inset-x-0 bottom-0 z-40 border-t-2 border-white/20 bg-gradient-to-r from-[#b82a1b] to-[#7c0e37] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] text-white shadow-[0_-8px_24px_rgba(43,11,18,0.35)] transition-transform duration-300 md:hidden ${
-        show ? "translate-y-0" : "pointer-events-none translate-y-full"
+      className={`fixed inset-x-0 bottom-0 z-40 border-t-2 border-white/20 bg-gradient-to-r from-[#b82a1b] to-[#7c0e37] px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] text-white transition-transform duration-300 md:hidden ${
+        show
+          ? "translate-y-0 shadow-[0_-8px_24px_rgba(43,11,18,0.35)]"
+          : "pointer-events-none translate-y-full"
       }`}
     >
       <div className="mx-auto flex max-w-md items-center justify-between gap-3">
