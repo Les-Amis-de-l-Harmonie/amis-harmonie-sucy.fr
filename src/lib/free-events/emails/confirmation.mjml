@@ -1,0 +1,259 @@
+<mjml lang="fr" dir="ltr">
+  <mj-head>
+    <mj-title>Votre réservation pour la Rencontre d'Harmonies</mj-title>
+    <mj-preview>Votre réservation est enregistrée : samedi 14 novembre à 15h</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text font-size="16px" line-height="1.6" color="#2b0b12" />
+      <mj-section padding="0" />
+      <mj-column padding="0" />
+    </mj-attributes>
+    <mj-raw>
+      <meta name="color-scheme" content="light" />
+      <meta name="supported-color-schemes" content="light" />
+    </mj-raw>
+    <mj-style>
+      :root { color-scheme: light; supported-color-schemes: light; }
+      a { color: #7c0e37; }
+    </mj-style>
+    <mj-style inline="inline">
+      .band { background-image: linear-gradient(90deg, #d93a1c 0%, #7c0e37 100%) !important; }
+      .band > table { background: transparent !important; }
+    </mj-style>
+  </mj-head>
+
+  <mj-body width="600px" background-color="#f5921e">
+    <!-- Bandeau photo, décoratif : le texte du bandeau suivant porte l'information -->
+    <mj-section background-color="#f5921e" padding="0">
+      <mj-column>
+        <mj-image
+          src="https://amis-harmonie-sucy.fr/images/rencontre-harmonies-2026/email-bandeau.jpg"
+          alt=""
+          width="600px"
+          height="62px"
+          padding="0"
+          fluid-on-mobile="true"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- Titre : repli uni bordeaux pour Outlook, dégradé rouge → bordeaux ailleurs -->
+    <mj-section background-color="#b82a1b" css-class="band" padding="0">
+      <mj-column padding="28px 24px 26px 24px">
+        <mj-text
+          align="center"
+          padding="0"
+          color="#ffffff"
+          font-size="34px"
+          line-height="38px"
+          font-weight="800"
+          font-style="italic"
+          text-transform="uppercase"
+        >
+          <h1
+            style="margin: 0; font-size: 34px; line-height: 38px; font-weight: 800; font-style: italic; text-transform: uppercase; color: #ffffff;"
+          >
+            Rencontre d'Harmonies
+          </h1>
+        </mj-text>
+        <mj-text
+          align="center"
+          padding="12px 0 0 0"
+          color="#ffffff"
+          font-size="18px"
+          line-height="24px"
+          font-weight="700"
+          font-style="italic"
+          text-transform="uppercase"
+        >
+          Samedi 14 novembre 2026 à&#160;15h
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Contenu : fond crème, texte foncé -->
+    <mj-section background-color="#fff1dc" padding="0">
+      <mj-column padding="32px 24px 8px 24px">
+        <mj-text
+          padding="0 0 8px 0"
+          font-size="22px"
+          line-height="28px"
+          font-weight="700"
+          color="#7c0e37"
+        >
+          {{firstNameGreeting}}
+        </mj-text>
+        <mj-text padding="0" font-size="18px" line-height="26px" font-weight="700">
+          Votre réservation pour {{partySize}} personne(s) est bien enregistrée.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Récapitulatif en trois pastilles, côte à côte même sur mobile -->
+    <mj-section background-color="#fff1dc" padding="0">
+      <mj-group>
+        <mj-column
+          width="33.33%"
+          padding="16px 4px 8px 24px"
+          inner-background-color="#ffffff"
+          inner-border="1px solid #f0cfa6"
+          inner-border-radius="10px"
+        >
+          <mj-text
+            align="center"
+            padding="12px 4px"
+            font-size="12px"
+            line-height="16px"
+            color="#7c0e37"
+          >
+            <span style="text-transform: uppercase; letter-spacing: 1px; font-weight: 700;"
+              >Portes</span
+            ><br /><span
+              style="font-size: 22px; line-height: 30px; font-weight: 800; font-style: italic; color: #2b0b12;"
+              >14h30</span
+            >
+          </mj-text>
+        </mj-column>
+        <mj-column
+          width="33.33%"
+          padding="16px 4px 8px 4px"
+          inner-background-color="#ffffff"
+          inner-border="1px solid #f0cfa6"
+          inner-border-radius="10px"
+        >
+          <mj-text
+            align="center"
+            padding="12px 4px"
+            font-size="12px"
+            line-height="16px"
+            color="#7c0e37"
+          >
+            <span style="text-transform: uppercase; letter-spacing: 1px; font-weight: 700;"
+              >Concert</span
+            ><br /><span
+              style="font-size: 22px; line-height: 30px; font-weight: 800; font-style: italic; color: #2b0b12;"
+              >15h</span
+            >
+          </mj-text>
+        </mj-column>
+        <mj-column
+          width="33.33%"
+          padding="16px 24px 8px 4px"
+          inner-background-color="#ffffff"
+          inner-border="1px solid #f0cfa6"
+          inner-border-radius="10px"
+        >
+          <mj-text
+            align="center"
+            padding="12px 4px"
+            font-size="12px"
+            line-height="16px"
+            color="#7c0e37"
+          >
+            <span style="text-transform: uppercase; letter-spacing: 1px; font-weight: 700;"
+              >Places</span
+            ><br /><span
+              style="font-size: 22px; line-height: 30px; font-weight: 800; font-style: italic; color: #2b0b12;"
+              >{{partySize}}</span
+            >
+          </mj-text>
+        </mj-column>
+      </mj-group>
+    </mj-section>
+
+    <!-- Encadré : infos pratiques -->
+    <mj-section background-color="#fff1dc" padding="0">
+      <mj-column
+        padding="16px 24px 8px 24px"
+        inner-background-color="#ffffff"
+        inner-border="1px solid #f0cfa6"
+        inner-border-left="6px solid #7c0e37"
+        inner-border-radius="10px"
+      >
+        <mj-text
+          padding="18px 20px"
+          font-size="16px"
+          line-height="25px"
+        >
+          <p
+            style="margin: 0 0 8px 0; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #7c0e37;"
+          >
+            Infos pratiques
+          </p>
+          <p style="margin: 0;">
+            Samedi 14 novembre 2026, ouverture des portes à 14h30, concert à 15h, à l'Espace
+            <span style="white-space: nowrap;">Jean-Marie</span> Poirier, 1 esplanade du 18 Juin
+            1940, <span style="white-space: nowrap;">Sucy-en-Brie</span>. Pour vous garer : parking
+            des Fontaines (gratuit) ou parking Montaleau (gratuit : à l'accueil, échangez votre
+            ticket contre une contremarque de parking).
+          </p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#fff1dc" padding="0">
+      <mj-column padding="16px 24px 0 24px">
+        <mj-text padding="0 0 16px 0">
+          À l'entrée, donnez simplement votre nom. Un empêchement ? Répondez à ce mail pour libérer
+          vos places.
+        </mj-text>
+        <mj-text
+          padding="0 0 4px 0"
+          font-size="24px"
+          line-height="30px"
+          font-weight="800"
+          font-style="italic"
+          color="#7c0e37"
+        >
+          À samedi 14 novembre !
+        </mj-text>
+        <mj-text padding="0 0 8px 0" font-weight="700">
+          Les Amis de l'Harmonie de <span style="white-space: nowrap;">Sucy-en-Brie</span>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#fff1dc" padding="0">
+      <mj-column padding="12px 24px 32px 24px">
+        <mj-button
+          href="https://amis-harmonie-sucy.fr/rencontre-harmonies-2026"
+          background-color="#7c0e37"
+          color="#ffffff"
+          font-size="16px"
+          font-weight="700"
+          border-radius="8px"
+          inner-padding="14px 28px"
+          padding="0"
+          align="left"
+        >
+          Voir la page de l'événement
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Pied de page -->
+    <mj-section background-color="#ffffff" padding="0">
+      <mj-column padding="24px 24px 8px 24px">
+        <mj-image
+          src="https://amis-harmonie-sucy.fr/images/rencontre-harmonies-2026/email-logo.jpg"
+          alt="Les Amis de l'Harmonie de Sucy"
+          width="80px"
+          height="80px"
+          padding="0"
+          align="center"
+        />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="0">
+      <mj-column padding="0 24px 28px 24px">
+        <mj-text align="center" padding="0" font-size="14px" line-height="22px" color="#5a3a2a">
+          <a
+            href="https://amis-harmonie-sucy.fr"
+            style="color: #7c0e37; text-decoration: underline;"
+            >amis-harmonie-sucy.fr</a
+          >
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
