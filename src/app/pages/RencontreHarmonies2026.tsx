@@ -237,16 +237,19 @@ export function RencontreHarmonies2026() {
               <span className="block text-[0.85em] text-balance">{tidy(event.placeLabel)}</span>
             </p>
 
-            <p
-              className={cn(
-                enter,
-                "mt-6 inline-flex w-fit -rotate-2 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm leading-tight font-extrabold tracking-wide text-[#c2410c] uppercase shadow-[0_5px_0_rgba(124,14,55,0.45)] sm:text-base"
-              )}
-              style={{ animationDelay: "320ms" }}
-            >
-              <Ticket className="size-5 shrink-0" aria-hidden="true" />
-              {event.admissionLabel}
-            </p>
+            {/* Centré dans la colonne ; la rotation se fait autour du centre de la pastille. */}
+            <div className="mt-6 flex justify-center">
+              <p
+                className={cn(
+                  enter,
+                  "inline-flex max-w-full -rotate-2 items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm leading-tight font-extrabold tracking-wide text-[#c2410c] uppercase shadow-[0_5px_0_rgba(124,14,55,0.45)] sm:text-base"
+                )}
+                style={{ animationDelay: "320ms" }}
+              >
+                <Ticket className="size-5 shrink-0" aria-hidden="true" />
+                {event.admissionLabel}
+              </p>
+            </div>
 
             <p
               className={cn(
@@ -258,11 +261,14 @@ export function RencontreHarmonies2026() {
               {tidy(event.intro)}
             </p>
 
-            <div className={cn(enter, "mt-8")} style={{ animationDelay: "520ms" }}>
+            <div
+              className={cn(enter, "mt-8 flex justify-center")}
+              style={{ animationDelay: "520ms" }}
+            >
               <a
                 id={HERO_CTA_ID}
                 href={`#${FORM_ID}`}
-                className="group inline-block -skew-x-12 rounded-md bg-gradient-to-r from-[#d93a1c] to-[#7c0e37] shadow-[6px_6px_0_#2b0b12] transition-all duration-200 hover:translate-x-px hover:translate-y-px hover:shadow-[4px_4px_0_#2b0b12] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#2b0b12]"
+                className="group mr-[7px] inline-block -skew-x-12 rounded-md bg-gradient-to-r from-[#d93a1c] to-[#7c0e37] shadow-[6px_6px_0_#2b0b12] transition-all duration-200 hover:translate-x-px hover:translate-y-px hover:shadow-[4px_4px_0_#2b0b12] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#2b0b12]"
               >
                 <span
                   className={cn(
@@ -437,15 +443,18 @@ export function RencontreHarmonies2026() {
         </picture>
 
         <div className={cn(container, "max-w-3xl pt-10 md:pt-12 2xl:max-w-3xl")}>
-          <h2
-            id="reserver-titre"
-            className={cn(
-              bandGradient,
-              "-ml-5 w-fit py-3 pr-10 pl-9 text-[1.4rem] leading-tight min-[390px]:pr-12 min-[390px]:text-2xl font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] sm:-ml-7 sm:pl-11 sm:text-4xl lg:-ml-8"
-            )}
-          >
-            Réserver vos places
-          </h2>
+          {/* Bandeau centré sur la carte du formulaire : padding symétrique, découpe symétrique. */}
+          <div className="flex justify-center">
+            <h2
+              id="reserver-titre"
+              className={cn(
+                bandGradient,
+                "max-w-full px-8 py-3 text-center text-[1.4rem] leading-tight font-bold tracking-tight text-white uppercase italic shadow-lg [clip-path:polygon(1.1rem_0,100%_0,calc(100%-1.1rem)_100%,0_100%)] min-[390px]:px-10 min-[390px]:text-2xl sm:px-12 sm:text-4xl"
+              )}
+            >
+              Réserver vos places
+            </h2>
+          </div>
 
           <div className="mt-8 rounded-2xl bg-white p-5 shadow-[8px_8px_0_rgba(124,14,55,0.9)] sm:p-8">
             <RencontreHarmonies2026Form event={event} />
