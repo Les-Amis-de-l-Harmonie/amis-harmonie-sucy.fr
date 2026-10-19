@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { RATE_LIMIT_CONFIG } from "./env-config";
+import { logger } from "./logger";
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -41,7 +42,17 @@ export async function checkRateLimit(request: Request): Promise<Response | null>
   const now = Date.now();
   const windowStart = now - config.windowMs;
 
-  const stored = await env.CACHE.get(key);
+  let stored: string | null;
+  try {
+    stored = await env.CACHE.get(key);
+  } catch (error) {
+    // Fail open: KV unavailable (e.g. daily quota exceeded) must not block login or forms.
+    logger.warn("Rate limit KV indisponible, requête autorisée", {
+      path: url.pathname,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
   const requests: number[] = stored ? JSON.parse(stored) : [];
 
   const recentRequests = requests.filter((timestamp) => timestamp > windowStart);
@@ -70,9 +81,16 @@ export async function checkRateLimit(request: Request): Promise<Response | null>
 
   recentRequests.push(now);
 
-  await env.CACHE.put(key, JSON.stringify(recentRequests), {
-    expirationTtl: Math.ceil(config.windowMs / 1000),
-  });
+  try {
+    await env.CACHE.put(key, JSON.stringify(recentRequests), {
+      expirationTtl: Math.ceil(config.windowMs / 1000),
+    });
+  } catch (error) {
+    logger.warn("Rate limit KV indisponible, compteur non enregistré", {
+      path: url.pathname,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   return null;
 }
