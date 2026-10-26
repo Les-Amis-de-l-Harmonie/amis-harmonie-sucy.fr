@@ -76,6 +76,21 @@ const headingFont = "font-[family-name:var(--font-heading)]";
 /** Entrée orchestrée du hero. */
 const enter = "animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-backwards";
 
+/**
+ * Diaporama du hero. La première photo reste toujours en dessous, visible dès le rendu serveur
+ * (c'est le LCP) ; les trois autres se superposent à tour de rôle (voir `hero-carousel-slide`
+ * dans styles.css). Le décalage entre deux photos doit rester égal à `HERO_SLIDE_STEP`, qui
+ * correspond au cycle de 25,2 s de l'animation (4 × 6 s + 1,2 s de fondu).
+ */
+const HERO_SLIDE_STEP = 6;
+const HERO_SLIDES = [
+  { name: "orchestre-plein-air", height: 675, position: "object-[70%_50%]" },
+  // Cadrage à gauche : garde le chef d'orchestre en dehors de la découpe en biais (desktop).
+  { name: "orchestre-salle", height: 600, position: "object-[0%_50%]" },
+  { name: "orchestre-scene", height: 777, position: "object-[50%_50%]" },
+  { name: "orchestre-saxophones", height: 981, position: "object-[50%_35%]" },
+] as const;
+
 /** Grain de papier : bruit SVG en data URI (img-src data: autorisé par la CSP). */
 const PAPER_GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .25 0 0 0 0 .05 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
 
@@ -172,29 +187,37 @@ export function RencontreHarmonies2026() {
           <div
             className={cn(
               enter,
-              "relative order-first -mx-4 flex flex-col [container-type:inline-size] sm:-mx-6 lg:order-last lg:mx-0"
+              "relative order-first -mx-4 flex flex-col [container-type:inline-size] sm:-mx-6 lg:order-last lg:mx-0 lg:justify-center"
             )}
             style={{ animationDelay: "0ms" }}
           >
-            <div className="relative h-56 overflow-hidden [clip-path:polygon(0_0,100%_0,100%_88%,0_100%)] sm:h-72 lg:h-auto lg:min-h-[22rem] lg:flex-1 lg:[clip-path:polygon(13%_0,100%_0,100%_100%,0_100%)]">
-              <picture>
-                <source
-                  media="(min-width: 640px)"
-                  srcSet={`${ASSETS}/orchestre-1052.webp`}
-                  type="image/webp"
-                />
+            {/* Diaporama sans commande : fondu enchaîné en CSS pur (voir styles.css).
+                Un seul message pour les lecteurs d'écran, les images sont décoratives. */}
+            <div
+              role="img"
+              aria-label="Photos de concerts d'orchestres d'harmonie : musiciens en plein air, en salle, sur scène de nuit et ensemble de saxophones"
+              className="hero-carousel relative aspect-[3/2] overflow-hidden bg-[#b82a1b] [clip-path:polygon(0_0,100%_0,100%_88%,0_100%)] sm:aspect-[2/1] lg:aspect-[3/2] lg:[clip-path:polygon(13%_0,100%_0,100%_100%,0_100%)]"
+            >
+              {HERO_SLIDES.map((slide, index) => (
                 <img
-                  src={`${ASSETS}/orchestre-640.webp`}
-                  srcSet={`${ASSETS}/orchestre-640.webp 640w, ${ASSETS}/orchestre-1052.webp 1052w`}
-                  sizes="(min-width: 1024px) 560px, 100vw"
-                  alt="Des musiciens d'un orchestre d'harmonie en concert, saxophones au premier plan"
-                  width={1052}
-                  height={444}
-                  fetchPriority="high"
+                  key={slide.name}
+                  src={`${ASSETS}/${slide.name}-640.webp`}
+                  srcSet={`${ASSETS}/${slide.name}-640.webp 640w, ${ASSETS}/${slide.name}-1200.webp 1200w`}
+                  sizes="(min-width: 1024px) 580px, 100vw"
+                  alt=""
+                  width={1200}
+                  height={slide.height}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "low"}
                   decoding="async"
-                  className="size-full object-cover object-[60%_40%]"
+                  className={cn(
+                    "absolute inset-0 size-full object-cover",
+                    slide.position,
+                    index > 0 && "hero-carousel-slide"
+                  )}
+                  style={index > 0 ? { animationDelay: `${index * HERO_SLIDE_STEP}s` } : undefined}
                 />
-              </picture>
+              ))}
               {/* Voile chaud orange → magenta, comme sur l'affiche */}
               <div
                 aria-hidden="true"

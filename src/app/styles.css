@@ -208,6 +208,46 @@ h4 {
   }
 }
 
+/* Diaporama du hero de /rencontre-harmonies-2026 (fondu enchaîné sans JS).
+   La 1re photo est fixe, en dessous ; les 3 autres (.hero-carousel-slide) se
+   superposent avec un décalage de 6 s (animation-delay posé en ligne).
+   Cycle : 4 × 6 s + 1,2 s = 25,2 s. Chaque photo apparaît en 1,2 s (0 → 4,76 %),
+   reste jusqu'à ce que la suivante soit totalement opaque (28,57 %), puis
+   s'efface en 1,2 s (→ 33,33 %) : jamais de creux de transparence, et la
+   dernière révèle la 1re. Pause au survol (souris uniquement). */
+@keyframes hero-carousel-fade {
+  0% {
+    opacity: 0;
+  }
+  4.762%,
+  28.571% {
+    opacity: 1;
+  }
+  33.333%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.hero-carousel-slide {
+  opacity: 0;
+  animation: hero-carousel-fade 25.2s ease-in-out infinite;
+}
+
+@media (hover: hover) {
+  .hero-carousel:hover .hero-carousel-slide {
+    animation-play-state: paused;
+  }
+}
+
+/* Mouvement réduit : pas de défilement, seule la 1re photo reste affichée. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel-slide {
+    animation: none !important;
+    opacity: 0;
+  }
+}
+
 /* `prefers-reduced-motion` n'était géré nulle part dans le portail avant la
    Phase 2A (ni dans les utilitaires ci-dessus, ni dans `scroll-behavior:
    smooth` posé plus haut sur `html`) : une règle globale plutôt qu'un
