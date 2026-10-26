@@ -24,6 +24,7 @@ import { Legal } from "@/app/pages/Legal";
 import { handleContactSubmission } from "@/app/api/contact";
 import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import { handleReservationSubmission } from "@/app/api/reservations";
+import { handleReservationStatsApi } from "@/app/api/reservations-stats";
 import { handleReservationsAdminApi } from "@/app/api/admin/reservations";
 import {
   handleMagicLinkRequest,
@@ -167,6 +168,10 @@ const app = defineApp([
       return handleReservationSubmission(request);
     },
   }),
+
+  route("/api/reservations/stats", ({ request }: { request: Request }) =>
+    handleReservationStatsApi(request)
+  ),
 
   route("/api/gallery", ({ request }: { request: Request }) => handlePublicGalleryApi(request)),
 
