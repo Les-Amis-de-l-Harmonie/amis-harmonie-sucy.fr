@@ -95,7 +95,7 @@ export const RENCONTRE_HARMONIES_2026: FreeEventConfig = {
     city: "Sucy-en-Brie",
   },
   parking:
-    "parking des Fontaines (gratuit) ; parking Montaleau (gratuit : à l'accueil de l'Espace Jean-Marie Poirier, échangez votre ticket contre une contremarque de parking)",
+    "parking des Fontaines (gratuit) ; parking Montaleau (payant)",
   reservationInfo:
     "gratuite, elle nous aide à préparer l'accueil. Sans réservation, vous serez accueillis dans la limite des places disponibles.",
   contact: {

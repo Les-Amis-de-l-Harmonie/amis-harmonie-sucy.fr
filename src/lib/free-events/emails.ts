@@ -18,7 +18,7 @@ export function buildConfirmationEmail(
   const subject = "Votre réservation pour la Rencontre d'Harmonies du samedi 14 novembre";
   const text = `${greeting}
 Votre réservation pour ${reservation.partySize} personne(s) est bien enregistrée.
-Samedi 14 novembre 2026, ouverture des portes à 14h30, concert à 15h, à l'Espace Jean-Marie Poirier, 1 esplanade du 18 Juin 1940, Sucy-en-Brie. Pour vous garer : parking des Fontaines (gratuit) ou parking Montaleau (gratuit : à l'accueil, échangez votre ticket contre une contremarque de parking).
+Samedi 14 novembre 2026, ouverture des portes à 14h30, concert à 15h, à l'Espace Jean-Marie Poirier, 1 esplanade du 18 Juin 1940, Sucy-en-Brie. Pour vous garer : parking des Fontaines (gratuit) ou parking Montaleau (payant).
 À l'entrée, donnez simplement votre nom. Un empêchement ? Répondez à ce mail pour libérer vos places.
 À samedi 14 novembre !
 Les Amis de l'Harmonie de Sucy-en-Brie`;

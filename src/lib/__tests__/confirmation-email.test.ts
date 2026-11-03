@@ -45,7 +45,7 @@ describe("e-mail de confirmation (MJML)", () => {
     expect(html).not.toContain("<script");
     expect(text).toContain("Votre réservation pour 4 personne(s) est bien enregistrée.");
     expect(text).toContain(
-      "Samedi 14 novembre 2026, ouverture des portes à 14h30, concert à 15h, à l'Espace Jean-Marie Poirier, 1 esplanade du 18 Juin 1940, Sucy-en-Brie. Pour vous garer : parking des Fontaines (gratuit) ou parking Montaleau (gratuit : à l'accueil, échangez votre ticket contre une contremarque de parking)."
+      "Samedi 14 novembre 2026, ouverture des portes à 14h30, concert à 15h, à l'Espace Jean-Marie Poirier, 1 esplanade du 18 Juin 1940, Sucy-en-Brie. Pour vous garer : parking des Fontaines (gratuit) ou parking Montaleau (payant)."
     );
     expect(text).toContain(
       "À l'entrée, donnez simplement votre nom. Un empêchement ? Répondez à ce mail pour libérer vos places."
