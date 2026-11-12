@@ -40,7 +40,9 @@ for (const file of files) {
   const output =
     HEADER.replace("%SOURCE%", file) +
     `export const ${constantName(file)} = ${JSON.stringify(html)};\n`;
-  const target = path.join(emailsDir, `${path.basename(file, ".mjml")}.html.ts`);
+  // Pas de suffixe `.html.ts` : l'import `./x.html` serait pris pour un module texte
+  // par le plugin Cloudflare de Vite et le serveur de dev ne démarrerait plus.
+  const target = path.join(emailsDir, `${path.basename(file, ".mjml")}-html.ts`);
   await writeFile(target, output, "utf8");
   process.stdout.write(`${file} → ${path.basename(target)} (${html.length} octets)\n`);
 }

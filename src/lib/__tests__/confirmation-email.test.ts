@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import mjml2html from "mjml";
 import { describe, expect, it } from "vitest";
 import { buildConfirmationEmail } from "@/lib/free-events/emails";
-import { CONFIRMATION_HTML } from "@/lib/free-events/emails/confirmation.html";
+import { CONFIRMATION_HTML } from "@/lib/free-events/emails/confirmation-html";
 import { RENCONTRE_HARMONIES_2026 } from "@/lib/free-events/rencontre-harmonies-2026";
 
 const MJML_PATH = fileURLToPath(

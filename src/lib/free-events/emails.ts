@@ -1,4 +1,4 @@
-import { CONFIRMATION_HTML } from "./emails/confirmation.html";
+import { CONFIRMATION_HTML } from "./emails/confirmation-html";
 import type { FreeEventConfig } from "./rencontre-harmonies-2026";
 
 function escapeHtml(value: string): string {
