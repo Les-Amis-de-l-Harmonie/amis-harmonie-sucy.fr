@@ -13,6 +13,7 @@ import { InfoSettingsClient } from "./InfoSettingsAdmin";
 import { InsuranceAdminClient } from "./InsuranceAdmin";
 import { PresenceAdminClient } from "./PresenceAdmin";
 import { ReservationsAdminClient, ReservationsPrintClient } from "./ReservationsAdmin";
+import { ReservationsCheckinClient } from "./ReservationsCheckin";
 
 import type { UserRole } from "@/db/types";
 
@@ -139,4 +140,9 @@ export function AdminReservationsPrintPage({ email, role }: AdminPageProps) {
       <ReservationsPrintClient />
     </AdminLayout>
   );
+}
+
+/** Pointage à l'entrée : plein écran pour téléphone, sans le menu de l'admin. */
+export function AdminReservationsCheckinPage({ email }: AdminPageProps) {
+  return <ReservationsCheckinClient email={email} />;
 }

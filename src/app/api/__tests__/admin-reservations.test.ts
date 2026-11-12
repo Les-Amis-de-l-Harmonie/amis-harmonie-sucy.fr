@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "cloudflare:workers";
 import { handleReservationsAdminApi } from "../admin/reservations";
 import { verifySession } from "../auth";
+import { createD1Database } from "./d1-adapter";
 
 vi.mock("../auth", () => ({ verifySession: vi.fn() }));
 vi.mock("@/lib/logger", () => ({
@@ -16,53 +17,10 @@ vi.mock("@/lib/logger", () => ({
 const originalDb = env.DB;
 const originalApiKey = env.RESEND_API_KEY;
 
-interface SqliteStatement {
-  bind(...values: Array<string | number | null>): SqliteStatement;
-  first<T>(): Promise<T | null>;
-  all<T>(): Promise<{ results: T[] }>;
-  run(): Promise<{ meta: { changes: number; last_row_id: number } }>;
-}
-
-function createD1Database(database: DatabaseSync): {
-  prepare: (sql: string) => SqliteStatement;
-  batch: (statements: SqliteStatement[]) => Promise<unknown>;
-} {
-  return {
-    async batch(statements) {
-      for (const statement of statements) await statement.run();
-      return [];
-    },
-    prepare(sql: string): SqliteStatement {
-      let values: Array<string | number | null> = [];
-      const statement: SqliteStatement = {
-        bind(...boundValues) {
-          values = boundValues;
-          return statement;
-        },
-        async first<T>() {
-          return (database.prepare(sql).get(...values) as T | undefined) ?? null;
-        },
-        async all<T>() {
-          return { results: database.prepare(sql).all(...values) as T[] };
-        },
-        async run() {
-          const result = database.prepare(sql).run(...values);
-          return {
-            meta: {
-              changes: Number(result.changes),
-              last_row_id: Number(result.lastInsertRowid),
-            },
-          };
-        },
-      };
-      return statement;
-    },
-  };
-}
-
 function createDatabase(): DatabaseSync {
   const database = new DatabaseSync(":memory:");
   database.exec(readFileSync("migrations/0015_create_free_reservations.sql", "utf8"));
+  database.exec(readFileSync("migrations/0016_create_free_reservation_checkins.sql", "utf8"));
   return database;
 }
 
@@ -140,6 +98,7 @@ describe("handleReservationsAdminApi", () => {
     database.close();
     Object.assign(env, { DB: originalDb, RESEND_API_KEY: originalApiKey });
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("refuse l'accès sans authentification et ne met pas la réponse en cache", async () => {
@@ -152,7 +111,7 @@ describe("handleReservationsAdminApi", () => {
   });
 
   it("calcule les statistiques sur les actives et exclut les annulées", async () => {
-    insertReservation(database, {
+    const activeId = insertReservation(database, {
       email: "une@example.test",
       partySize: 2,
       interests: ["harmonie-sucy"],
@@ -160,12 +119,30 @@ describe("handleReservationsAdminApi", () => {
       newsletter: true,
       consentAt: "2026-10-15T10:00:00.000Z",
     });
-    insertReservation(database, {
+    const cancelledId = insertReservation(database, {
       email: "deux@example.test",
       partySize: 3,
       interests: ["harmonie-sucy", "villecresnes"],
       status: "cancelled",
     });
+    database
+      .prepare(
+        `INSERT INTO free_reservation_checkins (event_slug, reservation_id, delta, op_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run("rencontre-harmonies-2026", activeId, 2, "stats-active-op");
+    database
+      .prepare(
+        `INSERT INTO free_reservation_checkins (event_slug, reservation_id, delta, op_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run("rencontre-harmonies-2026", cancelledId, 1, "stats-cancelled-op");
+    database
+      .prepare(
+        `INSERT INTO free_reservation_checkins (event_slug, reservation_id, delta, op_id)
+         VALUES (?, NULL, ?, ?)`
+      )
+      .run("rencontre-harmonies-2026", 3, "stats-walkin-op");
     const response = await handleReservationsAdminApi(
       adminRequest("?eventSlug=rencontre-harmonies-2026")
     );
@@ -178,6 +155,9 @@ describe("handleReservationsAdminApi", () => {
       places: 2,
       newsletterOptIns: 1,
       cancelled: 1,
+      checkedIn: 3,
+      reservationsArrived: 2,
+      walkIns: 3,
     });
     expect(body.stats.byInterest).toMatchObject({
       "harmonie-sucy": { reservations: 1, places: 2 },
@@ -189,6 +169,12 @@ describe("handleReservationsAdminApi", () => {
       ville: { reservations: 0, places: 0 },
     });
     expect(body.reservations).toHaveLength(2);
+    expect(body.reservations).toContainEqual(
+      expect.objectContaining({ id: activeId, checkedIn: 2 })
+    );
+    expect(body.reservations).toContainEqual(
+      expect.objectContaining({ id: cancelledId, checkedIn: 1 })
+    );
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
 
@@ -306,12 +292,22 @@ describe("handleReservationsAdminApi", () => {
   });
 
   it("exporte les participants avec BOM, séparateur français, tri et protection contre les formules", async () => {
-    insertReservation(database, { lastName: "Éclair", firstName: "Zoe", email: "e@example.test" });
+    const checkedInId = insertReservation(database, {
+      lastName: "Éclair",
+      firstName: "Zoe",
+      email: "e@example.test",
+    });
     insertReservation(database, {
       lastName: "=Formule",
       firstName: "Alice",
       email: "f@example.test",
     });
+    database
+      .prepare(
+        `INSERT INTO free_reservation_checkins (event_slug, reservation_id, delta, op_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run("rencontre-harmonies-2026", checkedInId, 2, "export-attendees-op");
     insertReservation(database, {
       lastName: "Abeille",
       firstName: "Élodie",
@@ -325,6 +321,7 @@ describe("handleReservationsAdminApi", () => {
     const text = Buffer.from(bytes.slice(3)).toString("utf8");
     expect(text).toContain("Nom;Prénom;Places;Présent");
     expect(text).toContain("'=Formule");
+    expect(text).toContain("Éclair;Zoe;2;2");
     expect(text.indexOf("Abeille")).toBeLessThan(text.indexOf("Éclair"));
     expect(response.headers.get("Content-Disposition")).toContain("attachment; filename=");
     expect(response.headers.get("Cache-Control")).toBe("no-store");
@@ -356,6 +353,8 @@ describe("handleReservationsAdminApi", () => {
   });
 
   it("anonymise en simulation puis réellement, conserve les opt-ins et libère l'index unique", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-15T15:00:00.000Z"));
     const firstId = insertReservation(database, {
       lastName: "À anonymiser",
       email: "meme@example.test",
@@ -435,6 +434,50 @@ describe("handleReservationsAdminApi", () => {
       )
       .get("consentement@example.test");
     expect(optedIn).toEqual({ newsletter_opt_in: 1, newsletter_consent_at: "2026-10-15" });
+  });
+
+  it("laisse vide la colonne Présent quand personne n'a été pointée", async () => {
+    insertReservation(database, { lastName: "Sans", firstName: "Pointage" });
+    const response = await handleReservationsAdminApi(
+      adminRequest("?action=export&type=attendees&eventSlug=rencontre-harmonies-2026")
+    );
+    expect(await response.text()).toContain("Sans;Pointage;2;");
+  });
+
+  it("refuse l'anonymisation avant le lendemain de l'événement, y compris en simulation", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-14T17:00:00.000Z"));
+    insertReservation(database, { email: "a-conserver@example.test" });
+
+    for (const dryRun of ["", "&dryRun=1"]) {
+      const response = await handleReservationsAdminApi(
+        adminRequest(`?action=anonymize&eventSlug=rencontre-harmonies-2026${dryRun}`, "POST")
+      );
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: "L'anonymisation n'est possible qu'à partir du lendemain de l'événement.",
+      });
+    }
+  });
+
+  it("empêche la suppression d'une réservation déjà pointée", async () => {
+    const id = insertReservation(database);
+    database
+      .prepare(
+        `INSERT INTO free_reservation_checkins (event_slug, reservation_id, delta, op_id)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run("rencontre-harmonies-2026", id, 1, "delete-guard-op");
+
+    const response = await handleReservationsAdminApi(adminRequest(`?id=${id}`, "DELETE"));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error:
+        "Cette réservation a déjà été pointée à l'entrée : annulez-la plutôt que de la supprimer.",
+    });
+    expect(database.prepare("SELECT id FROM free_reservations WHERE id = ?").get(id)).toEqual({
+      id,
+    });
   });
 
   it("applique l'index unique partiel et laisse réutiliser une adresse après anonymisation", () => {

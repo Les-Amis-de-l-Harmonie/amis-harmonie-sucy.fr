@@ -353,6 +353,16 @@ export interface FreeReservation {
   updated_at: string;
 }
 
+export interface FreeReservationCheckin {
+  id: number;
+  event_slug: string;
+  reservation_id: number | null;
+  delta: number;
+  op_id: string;
+  operator: string | null;
+  created_at: string;
+}
+
 // Les types PlanningEvent / PlanningAvailability / PlanningStatus / PlanningInput
 // ont été supprimés : la table `events` est désormais la source unique, et les
 // présences sont modélisées par `EventPresence` (statut à deux valeurs, sans

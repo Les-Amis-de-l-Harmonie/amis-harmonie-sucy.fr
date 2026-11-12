@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Ban,
   CheckCircle2,
+  DoorOpen,
   Download,
   FileSpreadsheet,
   Loader2,
@@ -20,6 +21,8 @@ import {
   ShieldCheck,
   Ticket,
   Trash2,
+  UserCheck,
+  UserPlus,
   Users,
   XCircle,
 } from "lucide-react";
@@ -57,6 +60,7 @@ import {
 } from "@/app/components/ui/table";
 import { FREE_EVENTS, getFreeEvent } from "@/lib/free-events";
 import type { FreeEventConfig, FreeEventOption } from "@/lib/free-events";
+import { CHECKIN_PAGE, getCheckinState } from "@/lib/free-events/checkins";
 import { cn } from "@/lib/utils";
 import { ReservationFormDialog } from "./ReservationFormDialog";
 import {
@@ -178,11 +182,16 @@ function StatTile({
   icon,
   label,
   value,
+  total,
+  hint,
   tone = "default",
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
+  /** Affiché après la valeur : « 37 / 273 ». */
+  total?: number;
+  hint?: string;
   tone?: "default" | "muted";
 }) {
   return (
@@ -200,11 +209,47 @@ function StatTile({
         <div className="min-w-0">
           <p className="text-2xl font-bold leading-none tabular-nums text-foreground sm:text-3xl">
             {value}
+            {total !== undefined && (
+              <span className="text-base font-semibold text-muted-foreground"> / {total}</span>
+            )}
           </p>
           <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{label}</p>
+          {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/** Personnes arrivées sur une réservation, avec les mêmes couleurs que l'écran d'accueil. */
+function PresenceBadge({ reservation: r }: { reservation: AdminReservation }) {
+  const state = getCheckinState(r.checkedIn, r.partySize);
+  if (state === "none") {
+    return (
+      <span className="text-muted-foreground" aria-label="Personne n'est arrivé">
+        —
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold tabular-nums",
+        state === "partial" && "bg-warning/20 text-warning",
+        state === "complete" && "bg-success/15 text-success",
+        state === "over" && "bg-primary/25 text-foreground ring-1 ring-primary"
+      )}
+      title={
+        state === "over"
+          ? `${r.checkedIn - r.partySize} de plus que les places réservées`
+          : state === "complete"
+            ? "Tout le monde est arrivé"
+            : "Arrivée partielle"
+      }
+    >
+      {r.checkedIn}/{r.partySize}
+      {state === "over" && <span>(+{r.checkedIn - r.partySize})</span>}
+    </span>
   );
 }
 
@@ -656,6 +701,7 @@ export function ReservationsAdminClient() {
   }
 
   const printHref = `/admin/reservations/impression?eventSlug=${encodeURIComponent(eventSlug)}`;
+  const checkinHref = `${CHECKIN_PAGE}?eventSlug=${encodeURIComponent(eventSlug)}`;
   const hasAnyReservation = (data?.reservations.length ?? 0) > 0;
 
   return (
@@ -692,6 +738,10 @@ export function ReservationsAdminClient() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:shrink-0">
+          <a href={checkinHref} className={cn(buttonVariants(), "h-10 sm:h-9")}>
+            <DoorOpen className="mr-2 h-4 w-4" aria-hidden="true" />
+            Mode accueil
+          </a>
           <a href={printHref} className={cn(buttonVariants({ variant: "outline" }), "h-10 sm:h-9")}>
             <Printer className="mr-2 h-4 w-4" aria-hidden="true" />
             Imprimer la liste d'entrée
@@ -823,6 +873,25 @@ export function ReservationsAdminClient() {
                 Les chiffres comptent les réservations actives (hors annulées).
                 {refreshing && " Mise à jour…"}
               </p>
+              <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <StatTile
+                  icon={<UserCheck className="h-5 w-5" />}
+                  label="Personnes arrivées"
+                  value={stats.checkedIn}
+                  total={stats.places}
+                  hint={`${stats.reservationsArrived} réservation${stats.reservationsArrived > 1 ? "s" : ""} sur ${stats.reservations}`}
+                />
+                <StatTile
+                  icon={<UserPlus className="h-5 w-5" />}
+                  label="Sans réservation"
+                  value={stats.walkIns}
+                  hint="Comptées à l'entrée"
+                />
+                <p className="col-span-2 self-center text-xs text-muted-foreground">
+                  Chiffres du pointage à l'entrée (« Mode accueil »), y compris les personnes
+                  arrivées avec une réservation annulée.
+                </p>
+              </div>
             </section>
 
             {/* Répartitions */}
@@ -972,6 +1041,7 @@ export function ReservationsAdminClient() {
                             <TableHead>Prénom</TableHead>
                             <TableHead>E-mail</TableHead>
                             <TableHead className="text-right">Places</TableHead>
+                            <TableHead>Présents</TableHead>
                             <TableHead>Newsletter</TableHead>
                             <TableHead>Origine</TableHead>
                             <TableHead>Confirmation</TableHead>
@@ -1002,6 +1072,9 @@ export function ReservationsAdminClient() {
                               </TableCell>
                               <TableCell className="text-right font-semibold tabular-nums">
                                 {r.partySize}
+                              </TableCell>
+                              <TableCell>
+                                <PresenceBadge reservation={r} />
                               </TableCell>
                               <TableCell>
                                 {r.newsletterOptIn ? (
@@ -1070,6 +1143,11 @@ export function ReservationsAdminClient() {
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           {r.status === "cancelled" && <Badge variant="muted">Annulée</Badge>}
+                          {r.checkedIn > 0 && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                              Présents <PresenceBadge reservation={r} />
+                            </span>
+                          )}
                           {getConfirmationState(r) === "sent" && (
                             <Badge variant="success">Confirmation envoyée</Badge>
                           )}

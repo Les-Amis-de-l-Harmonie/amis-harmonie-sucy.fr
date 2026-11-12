@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FreeEventConfig } from "./rencontre-harmonies-2026";
+import { CHECKIN_MAX_COUNT, OP_ID_PATTERN, WALK_IN_MAX_DELTA } from "./checkins";
 
 function emailSchema() {
   return z
@@ -131,6 +132,46 @@ export const adminReservationPatchSchema = z.object({
   status: z.enum(["active", "cancelled"], { message: "Statut invalide." }).optional(),
   newsletterOptIn: z.boolean({ message: "Choisissez oui ou non pour la newsletter." }).optional(),
 });
+
+const checkinCommonSchema = {
+  eventSlug: z.string({ message: "Indiquez un événement." }).min(1, "Indiquez un événement."),
+  opId: z
+    .string({ message: "Identifiant d'opération invalide." })
+    .regex(OP_ID_PATTERN, "Identifiant d'opération invalide."),
+};
+
+export const checkinRequestSchema = z.discriminatedUnion("kind", [
+  z.object({
+    ...checkinCommonSchema,
+    kind: z.literal("reservation"),
+    reservationId: z
+      .number({ message: "Identifiant de réservation invalide." })
+      .int("Identifiant de réservation invalide.")
+      .positive("Identifiant de réservation invalide."),
+    from: z
+      .number({ message: `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.` })
+      .int(`Indiquez un nombre entier entre 0 et ${CHECKIN_MAX_COUNT}.`)
+      .min(0, `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.`)
+      .max(CHECKIN_MAX_COUNT, `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.`),
+    to: z
+      .number({ message: `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.` })
+      .int(`Indiquez un nombre entier entre 0 et ${CHECKIN_MAX_COUNT}.`)
+      .min(0, `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.`)
+      .max(CHECKIN_MAX_COUNT, `Indiquez un nombre entre 0 et ${CHECKIN_MAX_COUNT}.`),
+  }),
+  z.object({
+    ...checkinCommonSchema,
+    kind: z.literal("walk-in"),
+    delta: z
+      .number({
+        message: `Indiquez une variation entre -${WALK_IN_MAX_DELTA} et ${WALK_IN_MAX_DELTA}.`,
+      })
+      .int(`Indiquez une variation entière entre -${WALK_IN_MAX_DELTA} et ${WALK_IN_MAX_DELTA}.`)
+      .min(-WALK_IN_MAX_DELTA, `La variation ne peut pas dépasser ${WALK_IN_MAX_DELTA}.`)
+      .max(WALK_IN_MAX_DELTA, `La variation ne peut pas dépasser ${WALK_IN_MAX_DELTA}.`)
+      .refine((delta) => delta !== 0, "La variation doit être différente de zéro."),
+  }),
+]);
 
 export function validationFields(error: z.ZodError): Record<string, string> {
   const fields: Record<string, string> = {};

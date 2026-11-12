@@ -330,8 +330,8 @@ for schema-altering SQL.**
 5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
 Migrations are **append-only** — never edit one that has already been applied. Guard
-with `IF NOT EXISTS` / `IF EXISTS`. Current state: 14 migrations, latest
-`0014_add_primary_flag_to_harmonie_instruments.sql`.
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 16 migrations, latest
+`0016_create_free_reservation_checkins.sql`.
 
 > **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
 > use it to confirm that a table or column exists.** See §6.
@@ -366,7 +366,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **29 test files on disk, 28 executed, 196 tests passing** —
+Current baseline: **41 test files on disk, 40 executed, 290 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

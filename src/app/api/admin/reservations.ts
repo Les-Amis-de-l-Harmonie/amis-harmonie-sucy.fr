@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import type { FreeReservation } from "@/db/types";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 import { getFreeEvent } from "@/lib/free-events";
+import { isEventOver } from "@/lib/free-events/rencontre-harmonies-2026";
 import { buildConfirmationEmail } from "@/lib/free-events/emails";
 import {
   adminReservationPatchSchema,
@@ -29,6 +30,7 @@ interface AdminReservation {
   createdAt: string;
   updatedAt: string;
   anonymizedAt: string | null;
+  checkedIn: number;
 }
 
 function noStore(response: Response): Response {
@@ -73,7 +75,7 @@ function parseInterests(value: string): string[] {
   }
 }
 
-function toAdminReservation(row: ReservationRow): AdminReservation {
+function toAdminReservation(row: ReservationRow, checkedIn = 0): AdminReservation {
   return {
     id: row.id,
     lastName: row.last_name,
@@ -90,6 +92,7 @@ function toAdminReservation(row: ReservationRow): AdminReservation {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     anonymizedAt: row.anonymized_at,
+    checkedIn,
   };
 }
 
@@ -142,7 +145,7 @@ function statsIncrement(
 async function getReservations(
   event: NonNullable<ReturnType<typeof getFreeEvent>>
 ): Promise<Response> {
-  const [allResult, activeResult] = await Promise.all([
+  const [allResult, activeResult, checkinResult] = await Promise.all([
     env.DB.prepare(
       "SELECT * FROM free_reservations WHERE event_slug = ? ORDER BY created_at DESC, id DESC"
     )
@@ -151,7 +154,19 @@ async function getReservations(
     env.DB.prepare("SELECT * FROM free_reservations WHERE event_slug = ? AND status = 'active'")
       .bind(event.slug)
       .all<ReservationRow>(),
+    env.DB.prepare(
+      `SELECT reservation_id, SUM(delta) AS checked_in
+       FROM free_reservation_checkins WHERE event_slug = ? GROUP BY reservation_id`
+    )
+      .bind(event.slug)
+      .all<{ reservation_id: number | null; checked_in: number }>(),
   ]);
+  const checkedInByReservation = new Map<number, number>();
+  let walkIns = 0;
+  for (const row of checkinResult.results) {
+    if (row.reservation_id === null) walkIns = row.checked_in;
+    else checkedInByReservation.set(row.reservation_id, row.checked_in);
+  }
   const active = activeResult.results;
   const byInterest: Record<string, { reservations: number; places: number }> = {};
   const bySource: Record<string, { reservations: number; places: number }> = {
@@ -177,10 +192,22 @@ async function getReservations(
     confirmationErrors: active.filter(
       (row) => row.confirmation_error !== null && row.anonymized_at === null
     ).length,
+    checkedIn: allResult.results
+      .filter((row) => row.anonymized_at === null)
+      .reduce((sum, row) => sum + (checkedInByReservation.get(row.id) ?? 0), 0),
+    reservationsArrived: allResult.results.filter(
+      (row) => row.anonymized_at === null && (checkedInByReservation.get(row.id) ?? 0) > 0
+    ).length,
+    walkIns,
     byInterest,
     bySource,
   };
-  return jsonResponse({ stats, reservations: allResult.results.map(toAdminReservation) });
+  return jsonResponse({
+    stats,
+    reservations: allResult.results.map((row) =>
+      toAdminReservation(row, checkedInByReservation.get(row.id) ?? 0)
+    ),
+  });
 }
 
 async function createReservation(request: Request): Promise<Response> {
@@ -409,15 +436,29 @@ async function exportReservations(url: URL): Promise<Response> {
 
   if (type === "attendees") {
     const result = await env.DB.prepare(
-      "SELECT last_name, first_name, party_size FROM free_reservations WHERE event_slug = ? AND status = 'active' AND anonymized_at IS NULL"
+      `SELECT last_name, first_name, party_size,
+        (SELECT COALESCE(SUM(delta), 0) FROM free_reservation_checkins
+         WHERE reservation_id = free_reservations.id) AS checked_in
+       FROM free_reservations
+       WHERE event_slug = ? AND status = 'active' AND anonymized_at IS NULL`
     )
       .bind(event.slug)
-      .all<{ last_name: string | null; first_name: string | null; party_size: number }>();
+      .all<{
+        last_name: string | null;
+        first_name: string | null;
+        party_size: number;
+        checked_in: number;
+      }>();
     const rows = sortByNames(result.results);
     return csvResponse(
       [
         ["Nom", "Prénom", "Places", "Présent"],
-        ...rows.map((row) => [row.last_name, row.first_name, row.party_size, ""]),
+        ...rows.map((row) => [
+          row.last_name,
+          row.first_name,
+          row.party_size,
+          row.checked_in > 0 ? row.checked_in : "",
+        ]),
       ],
       ";",
       `reservations-${event.slug}-participants.csv`,
@@ -479,6 +520,12 @@ async function anonymizeReservations(url: URL): Promise<Response> {
   const eventSlug = url.searchParams.get("eventSlug");
   const event = eventSlug ? getFreeEvent(eventSlug) : undefined;
   if (!event) return jsonResponse({ error: "Événement introuvable." }, 404);
+  if (!isEventOver(event)) {
+    return jsonResponse(
+      { error: "L'anonymisation n'est possible qu'à partir du lendemain de l'événement." },
+      400
+    );
+  }
   const eligible = `event_slug = ? AND anonymized_at IS NULL AND
     (newsletter_opt_in = 0 OR unsubscribed_at IS NOT NULL)`;
   const result = await env.DB.prepare(
@@ -524,10 +571,28 @@ export async function handleReservationsAdminApi(request: Request): Promise<Resp
       const id = Number(url.searchParams.get("id"));
       if (!Number.isInteger(id) || id <= 0)
         return jsonResponse({ error: "Identifiant invalide." }, 400);
-      const result = await env.DB.prepare("DELETE FROM free_reservations WHERE id = ?")
+      const result = await env.DB.prepare(
+        `DELETE FROM free_reservations WHERE id = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM free_reservation_checkins
+           WHERE free_reservation_checkins.reservation_id = free_reservations.id
+         )`
+      )
         .bind(id)
         .run();
-      if (!result.meta.changes) return jsonResponse({ error: "Réservation introuvable." }, 404);
+      if (!result.meta.changes) {
+        const reservation = await env.DB.prepare("SELECT id FROM free_reservations WHERE id = ?")
+          .bind(id)
+          .first<{ id: number }>();
+        if (!reservation) return jsonResponse({ error: "Réservation introuvable." }, 404);
+        return jsonResponse(
+          {
+            error:
+              "Cette réservation a déjà été pointée à l'entrée : annulez-la plutôt que de la supprimer.",
+          },
+          409
+        );
+      }
       return jsonResponse({ success: true });
     }
     return jsonResponse({ error: "Méthode non autorisée." }, 405);

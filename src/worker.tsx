@@ -26,6 +26,7 @@ import { handleGuestbookSubmission } from "@/app/api/guestbook";
 import { handleReservationSubmission } from "@/app/api/reservations";
 import { handleReservationStatsApi } from "@/app/api/reservations-stats";
 import { handleReservationsAdminApi } from "@/app/api/admin/reservations";
+import { handleReservationCheckinsApi } from "@/app/api/admin/reservation-checkins";
 import {
   handleMagicLinkRequest,
   handleMagicLinkVerify,
@@ -81,6 +82,7 @@ import {
   AdminPresencePage,
   AdminReservationsPage,
   AdminReservationsPrintPage,
+  AdminReservationsCheckinPage,
 } from "@/app/admin/pages";
 import { MusicianLoginClient } from "@/app/musician/MusicianLogin";
 import { MusicianLayout } from "@/app/musician/MusicianLayout";
@@ -227,6 +229,9 @@ const app = defineApp([
   route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
   route("/api/admin/reservations", ({ request }: { request: Request }) =>
     handleReservationsAdminApi(request)
+  ),
+  route("/api/admin/reservations/checkins", ({ request }: { request: Request }) =>
+    handleReservationCheckinsApi(request)
   ),
   route("/api/admin/gallery", ({ request }: { request: Request }) => handleGalleryApi(request)),
   route("/api/admin/upload", async ({ request }: { request: Request }) => {
@@ -494,6 +499,12 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminReservationsPrintPage email={auth.email} role={auth.role} />;
+    }),
+
+    route("/admin/reservations/accueil", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminReservationsCheckinPage email={auth.email} role={auth.role} />;
     }),
 
     route("/musician/login", () => <MusicianLoginClient />),

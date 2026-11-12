@@ -46,6 +46,8 @@ export interface FreeEventConfig {
     phoneHref: string;
     email: string;
   };
+  /** Capacité de la salle pour la jauge du pointage à l'entrée ; null = pas de jauge. */
+  venueCapacity: number | null;
   joinTitle: string;
   joinText: string;
   form: {
@@ -94,8 +96,7 @@ export const RENCONTRE_HARMONIES_2026: FreeEventConfig = {
     postalCode: "94370",
     city: "Sucy-en-Brie",
   },
-  parking:
-    "parking des Fontaines (gratuit) ; parking Montaleau (payant)",
+  parking: "parking des Fontaines (gratuit) ; parking Montaleau (payant)",
   reservationInfo:
     "gratuite, elle nous aide à préparer l'accueil. Sans réservation, vous serez accueillis dans la limite des places disponibles.",
   contact: {
@@ -103,6 +104,7 @@ export const RENCONTRE_HARMONIES_2026: FreeEventConfig = {
     phoneHref: "tel:+33783511741",
     email: "contact@amis-harmonie-sucy.fr",
   },
+  venueCapacity: 513,
   joinTitle: "Vous jouez d'un instrument ?",
   joinText:
     "L'Harmonie Municipale de Sucy-en-Brie répète le vendredi soir et accueille volontiers de nouveaux musiciens, quel que soit leur âge. Venez nous en parler à l'issue du concert !",
@@ -148,4 +150,10 @@ export function formatSuccessMessage(event: FreeEventConfig, partySize: number):
 
 export function isEventClosed(event: FreeEventConfig, now: Date = new Date()): boolean {
   return now.getTime() >= new Date(event.closesAt).getTime();
+}
+
+/** L'anonymisation est autorisée 24 heures après le début de l'événement. */
+export function isEventOver(event: FreeEventConfig, now: Date = new Date()): boolean {
+  const endOfRetentionWindow = new Date(event.startsAt).getTime() + 24 * 60 * 60 * 1000;
+  return now.getTime() >= endOfRetentionWindow;
 }

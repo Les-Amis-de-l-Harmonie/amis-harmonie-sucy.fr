@@ -23,6 +23,8 @@ export interface AdminReservation {
   createdAt: string;
   updatedAt: string;
   anonymizedAt: string | null;
+  /** Personnes pointées à l'entrée (somme du journal `free_reservation_checkins`). */
+  checkedIn: number;
 }
 
 export interface BreakdownEntry {
@@ -36,6 +38,12 @@ export interface ReservationStats {
   newsletterOptIns: number;
   cancelled: number;
   confirmationErrors: number;
+  /** Personnes pointées sur des réservations (actives ou annulées). */
+  checkedIn: number;
+  /** Réservations avec au moins une personne pointée. */
+  reservationsArrived: number;
+  /** Entrées sans réservation. */
+  walkIns: number;
   byInterest: Record<string, BreakdownEntry>;
   bySource: Record<string, BreakdownEntry>;
 }

@@ -25,6 +25,7 @@ function make(partial: Partial<AdminReservation> & { id: number }): AdminReserva
     createdAt: "2026-10-20 10:00:00",
     updatedAt: "2026-10-20 10:00:00",
     anonymizedAt: null,
+    checkedIn: 0,
     ...partial,
   };
 }
