@@ -87,6 +87,9 @@ describe("handleReservationSubmission", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Date figée avant la clôture des réservations, pour que les tests ne dépendent pas du jour.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-01T12:00:00+01:00"));
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database), RESEND_API_KEY: "test-key" });
     fetchMock = vi
@@ -194,7 +197,6 @@ describe("handleReservationSubmission", () => {
   });
 
   it("refuse les réservations après la clôture", async () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-15T12:00:00+01:00"));
     const response = await handleReservationSubmission(request(validReservation()));
     expect(response.status).toBe(410);
