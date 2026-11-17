@@ -54,8 +54,8 @@ export function BirthdaysModule({ loading, birthdays }: BirthdaysModuleProps) {
       ) : (
         <div className="mt-2 flex-1 space-y-2 overflow-y-auto pr-1">
           {birthdays.map((b, i) => {
-            const day = b.date_of_birth.slice(8, 10);
-            const month = MONTH_NAMES[Number(b.date_of_birth.slice(5, 7)) - 1];
+            const day = b.birthday.slice(3, 5);
+            const month = MONTH_NAMES[Number(b.birthday.slice(0, 2)) - 1];
             const name = [b.first_name, b.last_name].filter(Boolean).join(" ") || "Musicien";
             return (
               <div key={i} className="flex items-center gap-3 rounded-lg bg-muted/50 px-3 py-2">

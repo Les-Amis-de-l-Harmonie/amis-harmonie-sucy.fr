@@ -23,7 +23,7 @@ export interface UpcomingEvent {
 export interface Birthday {
   first_name: string | null;
   last_name: string | null;
-  date_of_birth: string;
+  birthday: string;
   avatar: string | null;
   days_until: number;
 }

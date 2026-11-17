@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { verifySession } from "./auth";
+import { resolveMusicianIdentity } from "./auth";
 import { logger } from "@/lib/logger";
 import {
   MUSICIAN_PRESENCE_MEMBER_QUERY,
@@ -291,7 +291,8 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
 }
 
 export async function handleMusicianPresenceApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) return jsonResponse({ error: "Non autorisé" }, 401);
 
   try {

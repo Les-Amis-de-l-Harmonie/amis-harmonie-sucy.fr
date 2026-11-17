@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { verifySession } from "./auth";
+import { resolveMusicianIdentity } from "./auth";
 import type {
   MusicianProfile,
   MusicianInstrument,
@@ -65,7 +65,8 @@ async function isMusicianMember(userId: number): Promise<boolean> {
 }
 
 export async function handleMusicianProfileApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -248,7 +249,8 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
 }
 
 export async function handleMusicianAvatarApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -318,7 +320,8 @@ export async function handleMusicianAvatarApi(request: Request): Promise<Respons
 }
 
 export async function handleMusicianIdeasApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -652,7 +655,8 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
 }
 
 export async function handleMusicianInsuranceApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -776,7 +780,8 @@ export async function handleMusicianInsuranceApi(request: Request): Promise<Resp
 }
 
 export async function handleMusicianBirthdaysApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -809,7 +814,7 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
 
     const results = await env.DB.prepare(
       `
-      SELECT p.first_name, p.last_name, p.date_of_birth, p.avatar
+      SELECT p.first_name, p.last_name, p.date_of_birth, p.avatar, p.image_consent
       FROM musician_profiles p
       JOIN users u ON p.user_id = u.id
       WHERE u.is_active = 1
@@ -822,6 +827,7 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       last_name: string | null;
       date_of_birth: string;
       avatar: string | null;
+      image_consent: number | null;
     }>();
 
     const seen = new Set<string>();
@@ -838,7 +844,13 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
           occurrence = birthdayOccurrence(birthday.date_of_birth, currentYear + 1);
         }
         const daysUntil = Math.round((occurrence - today) / (24 * 60 * 60 * 1000));
-        return { ...birthday, days_until: daysUntil };
+        return {
+          first_name: birthday.first_name,
+          last_name: birthday.last_name,
+          birthday: birthday.date_of_birth.slice(5, 10),
+          avatar: birthday.image_consent === 1 ? birthday.avatar : null,
+          days_until: daysUntil,
+        };
       })
       .filter((birthday) => birthday.days_until >= 0 && birthday.days_until <= 29)
       .sort((a, b) => a.days_until - b.days_until);
@@ -856,7 +868,8 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
 }
 
 export async function handleMusicianPlanningCheckApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -933,7 +946,8 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
 }
 
 export async function handleMusicianTrombinoscopeApi(request: Request): Promise<Response> {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -978,6 +992,7 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
 
     const musicians = (results.results || []).map((m) => ({
       ...m,
+      avatar: m.image_consent === 1 ? m.avatar : null,
       instruments: m.instruments ? m.instruments.split(", ") : [],
     }));
 

@@ -3,10 +3,10 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "cloudflare:workers";
 import { handleMusicianIdeasApi } from "../musician";
-import { verifySession } from "../auth";
+import { resolveMusicianIdentity } from "../auth";
 
 vi.mock("../auth", () => ({
-  verifySession: vi.fn(),
+  resolveMusicianIdentity: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -100,6 +100,16 @@ function createDatabase(): DatabaseSync {
   return database;
 }
 
+const caller = {
+  id: 1,
+  email: "musicien@example.fr",
+  role: "MUSICIAN" as const,
+  is_active: 1,
+  last_login: null,
+  created_at: "2026-01-01",
+  sessionId: "session-id",
+};
+
 describe("handleMusicianIdeasApi avec count=unread", () => {
   let database: DatabaseSync;
 
@@ -107,15 +117,7 @@ describe("handleMusicianIdeasApi avec count=unread", () => {
     vi.clearAllMocks();
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database) });
-    vi.mocked(verifySession).mockResolvedValue({
-      id: 1,
-      email: "musicien@example.fr",
-      role: "MUSICIAN",
-      is_active: 1,
-      last_login: null,
-      created_at: "2026-01-01",
-      sessionId: "session-id",
-    });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
   });
 
   afterEach(() => {
@@ -169,15 +171,7 @@ describe("handleMusicianIdeasApi avec PATCH", () => {
     vi.clearAllMocks();
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database) });
-    vi.mocked(verifySession).mockResolvedValue({
-      id: 1,
-      email: "musicien@example.fr",
-      role: "MUSICIAN",
-      is_active: 1,
-      last_login: null,
-      created_at: "2026-01-01",
-      sessionId: "session-id",
-    });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
   });
 
   afterEach(() => {

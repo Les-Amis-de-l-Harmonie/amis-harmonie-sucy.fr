@@ -254,6 +254,12 @@ only; `musicianAuthMiddleware` returns `email`, `userId`, `firstName`, `lastName
 `avatar`. Inside API handlers use `checkAdminAuth` from `src/app/api/admin-crud.ts`,
 which returns either a `401` JSON `Response` or `null`.
 
+Musician-side handlers get the user from `resolveMusicianIdentity(request)` in
+`src/app/api/auth.ts`, never from `verifySession` directly (a test enforces this for
+`musician.ts` and `musician-presence.ts`). Use `effective` for every data access and never
+read a target user id from the query or body: the planned parent accounts will make
+`effective` a linked child.
+
 Auth failures: redirect for pages, `401` JSON for APIs.
 
 ### Logging
@@ -357,6 +363,10 @@ with `IF NOT EXISTS` / `IF EXISTS`. Current state: 16 migrations, latest
    does not exist.
 7. **`no-explicit-any` is an ESLint warning, not an error.** A clean lint run does not
    prove the codebase is free of `any`.
+8. **Never rebuild the `users` table** (create/copy/drop/rename, as `0002` did to change
+   the `role` CHECK). With foreign keys enforced, dropping `users` cascade-deletes
+   profiles, sessions, presences, ideas and instruments (reproduced with `node:sqlite`;
+   `defer_foreign_keys` does not help). Add columns or tables instead.
 
 ---
 
@@ -366,7 +376,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **41 test files on disk, 40 executed, 290 tests passing** —
+Current baseline: **43 test files on disk, 42 executed, 296 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

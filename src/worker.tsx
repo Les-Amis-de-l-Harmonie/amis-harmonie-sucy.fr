@@ -32,10 +32,9 @@ import {
   handleMagicLinkVerify,
   handleMagicLinkVerifyGet,
   handleLogout,
+  resolveMusicianIdentity,
   verifySession,
 } from "@/app/api/auth";
-import { handleUserCheckRequest } from "@/app/api/check-user";
-import { handleDiagnoseAuthRequest } from "@/app/api/diagnose-auth";
 import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
@@ -108,7 +107,8 @@ async function adminAuthMiddleware({ request }: { request: Request }) {
 }
 
 async function musicianAuthMiddleware({ request }: { request: Request }) {
-  const user = await verifySession(request, "musician");
+  const identity = await resolveMusicianIdentity(request);
+  const user = identity?.effective;
   if (!user) {
     const url = new URL(request.url);
     return Response.redirect(new URL("/musician/login", url.origin).toString());
@@ -213,11 +213,6 @@ const app = defineApp([
       return handleMagicLinkRequest(request, "musician");
     },
   }),
-
-  route("/api/check-user", ({ request }: { request: Request }) => handleUserCheckRequest(request)),
-  route("/api/diagnose-auth", ({ request }: { request: Request }) =>
-    handleDiagnoseAuthRequest(request)
-  ),
 
   route("/api/admin/events", ({ request }: { request: Request }) => handleEventsApi(request)),
   route("/api/admin/videos", ({ request }: { request: Request }) => handleVideosApi(request)),

@@ -61,7 +61,7 @@ function createBirthday(): Birthday {
   return {
     first_name: "Alice",
     last_name: "Martin",
-    date_of_birth: "1991-01-15",
+    birthday: "01-15",
     avatar: null,
     days_until: 0,
   };

@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { env } from "cloudflare:workers";
 import { handleMusicianPresenceApi } from "../musician-presence";
-import { verifySession } from "../auth";
+import { resolveMusicianIdentity } from "../auth";
 import { invalidateCache } from "@/lib/cache";
 import { MUSICIAN_PRESENCE_MEMBER_QUERY } from "@/lib/presence";
 
 vi.mock("../auth", () => ({
-  verifySession: vi.fn(),
+  resolveMusicianIdentity: vi.fn(),
 }));
 
 vi.mock("@/lib/cache", () => ({
@@ -210,7 +210,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse l'accès sans session", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(null);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce(null);
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence")
@@ -220,7 +220,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("retourne les réponses et un roster sans jamais exposer les commentaires des autres", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence")
@@ -289,7 +289,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
     fakeDb.pastEvent = true;
 
     const response = await handleMusicianPresenceApi(
@@ -313,7 +313,10 @@ describe("handleMusicianPresenceApi", () => {
         title: `Répétition ${index + 1}`,
       }));
       Object.assign(env, { DB: db });
-      vi.mocked(verifySession).mockResolvedValueOnce(caller);
+      vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+        actor: caller,
+        effective: caller,
+      });
 
       const response = await handleMusicianPresenceApi(
         new Request("https://test.local/api/musician/presence")
@@ -327,7 +330,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("rejette la valeur de statut peut-être", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -340,7 +343,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse une réponse pour un événement passé", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
     fakeDb.pastEvent = true;
 
     const response = await handleMusicianPresenceApi(
@@ -354,7 +357,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("enregistre une réponse sans invalider le cache", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -370,7 +373,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("efface une réponse avec un statut nul de façon idempotente", async () => {
-    vi.mocked(verifySession).mockResolvedValue(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
 
     const firstResponse = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -394,7 +397,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse une réponse pour un musicien non éligible", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
     fakeDb.callerEligible = false;
 
     const response = await handleMusicianPresenceApi(
@@ -411,7 +414,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse un commentaire de plus de 1000 caractères", async () => {
-    vi.mocked(verifySession).mockResolvedValueOnce(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -427,7 +430,7 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("déplace status_changed_at lors d'un changement de statut mais pas lors d'une édition du commentaire", async () => {
-    vi.mocked(verifySession).mockResolvedValue(caller);
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
 
     await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {

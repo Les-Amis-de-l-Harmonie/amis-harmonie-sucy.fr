@@ -455,6 +455,24 @@ export async function verifySession(
   };
 }
 
+export interface MusicianIdentity {
+  actor: AuthenticatedUser;
+  effective: AuthenticatedUser;
+}
+
+/**
+ * Résout l'identité du musicien connecté et la cible effective de ses opérations.
+ * La future fonctionnalité « comptes parents » pourra faire pointer `effective` vers un enfant
+ * lié, après validation du lien à chaque requête. Les handlers doivent utiliser `effective` pour
+ * toutes les données et ne jamais lire un identifiant utilisateur cible dans la requête.
+ */
+export async function resolveMusicianIdentity(request: Request): Promise<MusicianIdentity | null> {
+  const actor = await verifySession(request, "musician");
+  if (!actor) return null;
+
+  return { actor, effective: actor };
+}
+
 export async function requireAdminAuth(request: Request): Promise<Response | AuthenticatedUser> {
   const user = await verifySession(request, "admin");
 
