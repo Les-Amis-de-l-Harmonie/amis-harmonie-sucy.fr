@@ -276,6 +276,13 @@ When delegated, portal wording switches to the third person through `useActingLa
 hard-coding « mon / votre ». Presence answers expose `answeredBy` (never an admin's name on
 the portal); an unchanged status re-saved by an admin keeps the original `updated_by`.
 
+Image consent (migration 0018): never read `musician_profiles.image_consent` directly — use
+`EFFECTIVE_IMAGE_CONSENT_SQL` from `src/lib/image-consent.ts` (a « non » from a still-linked
+guardian wins, otherwise one « oui » is enough, otherwise the legacy profile value). For a
+linked child, parents answer in `guardian_image_consents`; admins record paper answers via
+`/api/admin/guardians?action=image-consent`. Parental authorizations per event live in
+`event_authorizations` (`/api/musician/authorizations`, `/api/admin/authorizations`).
+
 Auth failures: redirect for pages, `401` JSON for APIs.
 
 ### Logging
@@ -352,8 +359,8 @@ for schema-altering SQL.**
 5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
 Migrations are **append-only** — never edit one that has already been applied. Guard
-with `IF NOT EXISTS` / `IF EXISTS`. Current state: 17 migrations, latest
-`0017_add_guardian_links.sql`.
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 18 migrations, latest
+`0018_add_consents_and_authorizations.sql`.
 
 > **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
 > use it to confirm that a table or column exists.** See §6.
@@ -392,7 +399,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **65 test files on disk, 64 executed, 510 tests passing** —
+Current baseline: **74 test files on disk, 73 executed, 604 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

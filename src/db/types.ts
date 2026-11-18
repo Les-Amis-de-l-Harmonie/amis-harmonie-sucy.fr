@@ -13,7 +13,34 @@ export interface Event {
   presence_required: number;
   address: string | null;
   response_deadline: string | null;
+  /** 0018 : l'événement demande une autorisation parentale aux musiciens reliés. */
+  parental_authorization_required: number;
+  /** 0018 : précisions données aux parents (transport, horaires…). */
+  authorization_details: string | null;
   created_at: string;
+}
+
+/** 0018 : réponse d'un responsable relié sur le droit à l'image d'un enfant. */
+export interface GuardianImageConsent {
+  id: number;
+  child_user_id: number;
+  guardian_user_id: number;
+  consent: number;
+  /** Admin qui a saisi une réponse papier au nom du responsable ; null si donnée en ligne. */
+  recorded_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 0018 : autorisation de sortie d'un enfant pour un événement. */
+export interface EventAuthorization {
+  id: number;
+  event_id: number;
+  child_user_id: number;
+  guardian_user_id: number | null;
+  recorded_by: number | null;
+  details_snapshot: string | null;
+  authorized_at: string;
 }
 
 export interface Video {

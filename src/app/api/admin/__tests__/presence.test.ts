@@ -42,12 +42,16 @@ interface FakeDbFixture {
     title: string;
     date: string;
     response_deadline: string | null;
+    parentalAuthorizationRequired: number;
+    authorizationDetails: string | null;
   }>;
   pastGridEvents: Array<{
     id: number;
     title: string;
     date: string;
     response_deadline: string | null;
+    parentalAuthorizationRequired: number;
+    authorizationDetails: string | null;
   }>;
   answers: Array<{
     eventId: number;
@@ -215,6 +219,8 @@ const event: Event = {
   presence_required: 1,
   address: null,
   response_deadline: "2026-09-01",
+  parental_authorization_required: 0,
+  authorization_details: null,
   created_at: "2026-01-01 00:00:00",
 };
 
@@ -266,12 +272,16 @@ const fixture: FakeDbFixture = {
       title: event.title,
       date: event.date,
       response_deadline: event.response_deadline,
+      parentalAuthorizationRequired: 0,
+      authorizationDetails: null,
     },
     {
       id: 43,
       title: "Concert d'hiver",
       date: "2026-12-15",
       response_deadline: null,
+      parentalAuthorizationRequired: 0,
+      authorizationDetails: null,
     },
   ],
   pastGridEvents: [
@@ -280,18 +290,24 @@ const fixture: FakeDbFixture = {
       title: event.title,
       date: event.date,
       response_deadline: event.response_deadline,
+      parentalAuthorizationRequired: 0,
+      authorizationDetails: null,
     },
     {
       id: 43,
       title: "Concert d'hiver",
       date: "2026-12-15",
       response_deadline: null,
+      parentalAuthorizationRequired: 0,
+      authorizationDetails: null,
     },
     {
       id: 44,
       title: "Concert passé",
       date: "2026-08-01",
       response_deadline: "2026-07-30",
+      parentalAuthorizationRequired: 0,
+      authorizationDetails: null,
     },
   ],
   answers: [

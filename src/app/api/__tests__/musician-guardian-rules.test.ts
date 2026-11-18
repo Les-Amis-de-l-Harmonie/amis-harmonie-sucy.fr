@@ -95,7 +95,22 @@ function createDatabase(): DatabaseSync {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
-    CREATE TABLE guardian_links (id INTEGER PRIMARY KEY, guardian_user_id INTEGER, child_user_id INTEGER);
+    CREATE TABLE guardian_links (
+      id INTEGER PRIMARY KEY,
+      guardian_user_id INTEGER,
+      child_user_id INTEGER,
+      relation TEXT
+    );
+    CREATE TABLE guardian_image_consents (
+      id INTEGER PRIMARY KEY,
+      child_user_id INTEGER NOT NULL,
+      guardian_user_id INTEGER NOT NULL,
+      consent INTEGER NOT NULL,
+      recorded_by INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(child_user_id, guardian_user_id)
+    );
     CREATE TABLE musician_instruments (
       id INTEGER PRIMARY KEY,
       user_id INTEGER NOT NULL,
@@ -121,8 +136,11 @@ function createDatabase(): DatabaseSync {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     INSERT INTO musician_profiles (user_id, first_name, last_name, phone, image_consent)
-      VALUES (8, 'Enfant', 'Géré', '0600000000', 1), (20, 'Parent', 'Test', '0611111111', 0);
-    INSERT INTO guardian_links (guardian_user_id, child_user_id) VALUES (7, 8);
+      VALUES (7, 'Aurélie', 'Parent', '0622222222', 0),
+             (8, 'Enfant', 'Géré', '0600000000', 1),
+             (20, 'Parent', 'Test', '0611111111', 0);
+    INSERT INTO guardian_links (guardian_user_id, child_user_id, relation)
+      VALUES (7, 8, 'mère');
     INSERT INTO musician_instruments (user_id, instrument_name) VALUES (20, 'Trompette');
     INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (20, 'Trompette');
   `);
@@ -172,9 +190,12 @@ describe("règles de profil des comptes responsables", () => {
     ).toEqual({
       image_consent: 1,
     });
+    expect(
+      database.prepare("SELECT count(*) AS count FROM guardian_image_consents WHERE child_user_id = 8").get()
+    ).toEqual({ count: 0 });
   });
 
-  it("permet au parent délégué de modifier le consentement de l'enfant", async () => {
+  it("enregistre la réponse du parent délégué sans modifier le profil legacy", async () => {
     setIdentity(managed, actor, true);
 
     const response = await handleMusicianProfileApi(
@@ -189,8 +210,60 @@ describe("règles de profil des comptes responsables", () => {
     expect(
       database.prepare("SELECT image_consent FROM musician_profiles WHERE user_id = 8").get()
     ).toEqual({
-      image_consent: 0,
+      image_consent: 1,
     });
+    expect(
+      database
+        .prepare(
+          "SELECT child_user_id, guardian_user_id, consent, recorded_by FROM guardian_image_consents"
+        )
+        .get()
+    ).toEqual({
+      child_user_id: 8,
+      guardian_user_id: 7,
+      consent: 0,
+      recorded_by: null,
+    });
+
+    const getResponse = await handleMusicianProfileApi(
+      new Request("https://test.local/api/musician/profile")
+    );
+    const profile = (await getResponse.json()) as {
+      imageConsentDetail: {
+        linked: boolean;
+        effective: number | null;
+        mine: number | null;
+        guardians: Array<{ name: string; relation: string | null; consent: number | null; isYou: boolean }>;
+      };
+    };
+    expect(profile.imageConsentDetail).toEqual({
+      linked: true,
+      effective: 0,
+      mine: 0,
+      guardians: [{ name: "Aurélie", relation: "mère", consent: 0, isYou: true }],
+    });
+  });
+
+  it("ne change pas la réponse du parent quand le PUT reçoit null", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent) VALUES (8, 7, 1)"
+      )
+      .run();
+    setIdentity(managed, actor, true);
+
+    const response = await handleMusicianProfileApi(
+      new Request("https://test.local/api/musician/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_consent: null }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(
+      database.prepare("SELECT consent FROM guardian_image_consents WHERE child_user_id = 8").get()
+    ).toEqual({ consent: 1 });
   });
 
   it("limite le profil Moi d'un responsable à son nom et son téléphone", async () => {

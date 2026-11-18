@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarisePresence, type PresenceRow } from "../presence";
+import { getParisDate, summarisePresence, type PresenceRow } from "../presence";
 
 function row(
   userId: number,
@@ -56,4 +56,11 @@ describe("summarisePresence", () => {
     expect(summary.members[0]?.primaryInstrument).toBe("Clarinette");
   });
 
+});
+
+describe("getParisDate", () => {
+  it("utilise la date civile de Paris et non celle d'UTC", () => {
+    expect(getParisDate(new Date("2026-11-18T23:30:00.000Z"))).toBe("2026-11-19");
+    expect(getParisDate(new Date("2026-11-18T00:30:00.000Z"))).toBe("2026-11-18");
+  });
 });

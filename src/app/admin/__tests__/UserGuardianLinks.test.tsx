@@ -52,6 +52,8 @@ function mockGuardiansApi(options: {
   children?: GuardianLinkEntry[];
   onGet?: (count: number) => Response;
   onWrite?: (call: Call) => Response;
+  /** Valeur effective du droit à l'image relue après une saisie (GET /api/admin/users?id=). */
+  effectiveConsent?: number | null;
 }) {
   const calls: Call[] = [];
   let getCount = 0;
@@ -62,6 +64,9 @@ function mockGuardiansApi(options: {
       const body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
       const call = { url, method, body };
       calls.push(call);
+      if (method === "GET" && url.startsWith("/api/admin/users")) {
+        return jsonResponse({ image_consent: options.effectiveConsent ?? null });
+      }
       if (method === "GET") {
         getCount += 1;
         if (options.onGet) return options.onGet(getCount);
@@ -188,6 +193,122 @@ describe("UserGuardianLinks", () => {
 
       expect(screen.queryByTestId("guardian-links")).toBeNull();
       expect(fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("droit à l'image des responsables", () => {
+    const answered = [
+      entry({ linkId: 11, userId: 20, imageConsent: 1, imageConsentRecordedByAdmin: false }),
+      entry({
+        linkId: 12,
+        userId: 21,
+        firstName: "Paul",
+        lastName: "Dupont",
+        email: "paul@example.com",
+        relation: "père",
+        imageConsent: 0,
+        imageConsentRecordedByAdmin: true,
+      }),
+      entry({
+        linkId: 13,
+        userId: 22,
+        firstName: "Rita",
+        lastName: "Dupont",
+        email: "rita@example.com",
+        relation: "tante",
+        imageConsent: null,
+      }),
+    ];
+
+    function rowOf(name: string): HTMLElement {
+      return screen.getByText(name, { exact: false }).closest("li") as HTMLElement;
+    }
+
+    it("montre la réponse de chaque responsable : oui, non, pas de réponse, saisi par un admin", async () => {
+      mockGuardiansApi({ guardians: answered });
+      renderLinks({ user: account({ image_consent: 0 }) });
+
+      await screen.findByText("Marie Dupont");
+      expect(within(rowOf("Marie Dupont")).getByText("Oui")).toBeInTheDocument();
+      expect(within(rowOf("Marie Dupont")).queryByText("saisi par un admin")).toBeNull();
+      expect(within(rowOf("Paul Dupont")).getByText("Non")).toBeInTheDocument();
+      expect(within(rowOf("Paul Dupont")).getByText("saisi par un admin")).toBeInTheDocument();
+      expect(within(rowOf("Rita Dupont")).getByText("Pas de réponse")).toBeInTheDocument();
+      expect(screen.getByTestId("image-consent-summary")).toHaveTextContent(
+        "Droit à l'image appliqué : refusé"
+      );
+    });
+
+    it("n'affiche pas ces réponses dans la fiche d'un responsable", async () => {
+      mockGuardiansApi({ children: [entry({ linkId: 31, userId: 1, kind: "member" })] });
+      renderLinks({ user: account({ id: 20, kind: "guardian" }) });
+
+      await screen.findByText("Marie Dupont");
+      expect(screen.queryByText("Droit à l'image :")).toBeNull();
+      expect(screen.queryByTestId("image-consent-summary")).toBeNull();
+    });
+
+    it("laisse un super-administrateur saisir une réponse papier, puis relit la valeur effective", async () => {
+      const user = userEvent.setup();
+      const api = mockGuardiansApi({ guardians: answered, effectiveConsent: 0 });
+      const { onLinksChanged } = renderLinks({ user: account({ image_consent: 1 }) });
+
+      await user.click(
+        await screen.findByRole("button", { name: "Saisir la réponse de Rita Dupont" })
+      );
+      expect(screen.getByText(/Réponse reçue sur papier de Rita Dupont/)).toBeInTheDocument();
+      // Rien à effacer tant qu'il n'y a pas de réponse.
+      expect(screen.queryByRole("button", { name: "Effacer la réponse" })).toBeNull();
+      await user.click(screen.getByRole("button", { name: "N'autorise pas" }));
+
+      await waitFor(() => expect(onLinksChanged).toHaveBeenCalled());
+      expect(api.writes()).toEqual([
+        {
+          url: "/api/admin/guardians?action=image-consent",
+          method: "POST",
+          body: { childUserId: 1, guardianUserId: 22, consent: 0 },
+        },
+      ]);
+      expect(onLinksChanged.mock.calls[0][0]).toMatchObject({ imageConsent: 0 });
+    });
+
+    it("permet d'effacer une réponse déjà saisie", async () => {
+      const user = userEvent.setup();
+      const api = mockGuardiansApi({ guardians: answered });
+      renderLinks();
+
+      await user.click(
+        await screen.findByRole("button", { name: "Saisir la réponse de Paul Dupont" })
+      );
+      await user.click(screen.getByRole("button", { name: "Effacer la réponse" }));
+
+      await waitFor(() => expect(api.writes()).toHaveLength(1));
+      expect(api.writes()[0].body).toEqual({ childUserId: 1, guardianUserId: 21, consent: null });
+    });
+
+    it("affiche l'erreur de l'API si la saisie échoue", async () => {
+      const user = userEvent.setup();
+      mockGuardiansApi({
+        guardians: answered,
+        onWrite: () => jsonResponse({ error: "Ce responsable n'est plus relié." }, 409),
+      });
+      renderLinks();
+
+      await user.click(
+        await screen.findByRole("button", { name: "Saisir la réponse de Rita Dupont" })
+      );
+      await user.click(screen.getByRole("button", { name: "Autorise" }));
+
+      expect(await screen.findByText("Ce responsable n'est plus relié.")).toBeInTheDocument();
+    });
+
+    it("n'offre pas la saisie à un administrateur, qui voit quand même les réponses", async () => {
+      mockGuardiansApi({ guardians: answered });
+      renderLinks({ canManageAccounts: false });
+
+      await screen.findByText("Marie Dupont");
+      expect(within(rowOf("Marie Dupont")).getByText("Oui")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Saisir la réponse/ })).toBeNull();
     });
   });
 

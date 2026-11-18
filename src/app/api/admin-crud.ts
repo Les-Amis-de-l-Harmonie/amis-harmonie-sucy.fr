@@ -15,6 +15,8 @@ export interface EventInput {
   presence_required?: number;
   address?: string | null;
   response_deadline?: string | null;
+  parental_authorization_required?: number;
+  authorization_details?: string | null;
 }
 
 export interface PublicationInput {

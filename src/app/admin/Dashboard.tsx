@@ -12,6 +12,7 @@ import {
   UserCheck,
   BarChart3,
 } from "lucide-react";
+import { EFFECTIVE_IMAGE_CONSENT_SQL } from "@/lib/image-consent";
 import { logger } from "@/lib/logger";
 import { AttentionCard } from "./AttentionCard";
 import { buildFamiliesModel, countAttention, type AttentionCounts } from "./families";
@@ -26,6 +27,7 @@ interface AttentionUserRow {
   first_name: string | null;
   last_name: string | null;
   date_of_birth: string | null;
+  image_consent: number | null;
 }
 
 interface AttentionLinkRow {
@@ -41,7 +43,8 @@ async function getAttentionCounts(): Promise<AttentionCounts | null> {
     const [users, links] = await Promise.all([
       env.DB.prepare(
         `SELECT u.id, u.email, u.role, u.kind, u.is_active,
-                p.first_name, p.last_name, p.date_of_birth
+                p.first_name, p.last_name, p.date_of_birth,
+                ${EFFECTIVE_IMAGE_CONSENT_SQL} AS image_consent
          FROM users u LEFT JOIN musician_profiles p ON p.user_id = u.id`
       ).all<AttentionUserRow>(),
       env.DB.prepare(
@@ -49,6 +52,7 @@ async function getAttentionCounts(): Promise<AttentionCounts | null> {
          FROM guardian_links`
       ).all<AttentionLinkRow>(),
     ]);
+    // Valeur effective du droit à l'image : même fragment que les autres lectures.
     return countAttention(buildFamiliesModel(users.results ?? [], links.results ?? []).attention);
   } catch (error) {
     // Le tableau de bord ne doit pas tomber pour un compteur.

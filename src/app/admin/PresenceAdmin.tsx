@@ -11,6 +11,9 @@ import {
   Loader2,
   MessageSquare,
   Minus,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
   Table2,
   UserRound,
   Users,
@@ -35,6 +38,17 @@ import { formatDateFrench, formatDateShort, isEventPast } from "@/lib/dates";
 import { groupMembersByPupitre } from "@/lib/presence-groups";
 import { cn } from "@/lib/utils";
 import {
+  AuthorizationIcon,
+  AuthorizationPanel,
+  AuthorizationsList,
+  getAuthorization,
+} from "./PresenceAuthorizations";
+import {
+  countAuthorizations,
+  describeAuthorization,
+  type PresenceAuthorization,
+} from "./presence-authorization";
+import {
   formatAnsweredByLong,
   formatAnsweredByShort,
   type PresenceAnsweredBy,
@@ -49,6 +63,9 @@ interface PresenceGridEvent {
   title: string;
   date: string;
   response_deadline: string | null;
+  /** L'événement demande une autorisation parentale (absent avec une API plus ancienne). */
+  parentalAuthorizationRequired?: boolean;
+  authorizationDetails?: string | null;
 }
 
 interface PresenceGridAnswer {
@@ -58,6 +75,8 @@ interface PresenceGridAnswer {
   /** Absent quand le musicien a répondu lui-même (ou avec une API plus ancienne). */
   answeredBy?: PresenceAnsweredBy | null;
   answeredAt?: string | null;
+  /** Présente seulement pour un musicien concerné par une autorisation parentale. */
+  authorization?: PresenceAuthorization | null;
 }
 
 interface PresenceGridMember {
@@ -67,6 +86,7 @@ interface PresenceGridMember {
   instruments: string[];
   primaryInstrument: string | null;
   answers: Record<string, PresenceGridAnswer>;
+  authorizations?: Record<string, PresenceAuthorization | null | undefined>;
 }
 
 interface PresenceGridData {
@@ -177,7 +197,7 @@ function GridStatusGlyph({ status, className }: { status: PresenceStatus; classN
   );
 }
 
-function GridLegend() {
+function GridLegend({ showAuthorizations }: { showAuthorizations: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
@@ -208,6 +228,22 @@ function GridLegend() {
         <UserRound className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
         Réponse saisie par un parent ou un admin
       </span>
+      {showAuthorizations && (
+        <>
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+            Autorisation parentale reçue
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldQuestion className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            manquante
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <ShieldAlert className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+            donnée sur un texte antérieur
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -223,18 +259,28 @@ function EditPresenceDialog({
   error,
   onClose,
   onSubmit,
+  onAuthorizationChange,
 }: {
   target: GridEditTarget | null;
   submitting: PresenceStatus | "none" | null;
   error: string | null;
   onClose: () => void;
   onSubmit: (status: PresenceStatus) => void;
+  onAuthorizationChange: (
+    member: PresenceGridMember,
+    event: PresenceGridEvent,
+    authorization: PresenceAuthorization
+  ) => void;
 }) {
   const open = target !== null;
   const currentAnswer = target ? (target.member.answers[String(target.event.id)] ?? null) : null;
   const currentStatus = currentAnswer?.status ?? null;
   const comment = currentAnswer?.comment ?? null;
   const isPast = target ? isEventPast(target.event.date) : false;
+  const authorization =
+    target && target.event.parentalAuthorizationRequired
+      ? getAuthorization(target.member, target.event.id)
+      : null;
 
   // Réinitialisé à chaque nouvelle cible (le parent recrée l'objet `target` à chaque
   // ouverture, même pour la même case) : une confirmation donnée ne doit pas être
@@ -365,12 +411,53 @@ function EditPresenceDialog({
                     {error}
                   </p>
                 )}
+
+                {authorization && (
+                  <AuthorizationPanel
+                    key={`${target.member.userId}-${target.event.id}`}
+                    event={target.event}
+                    member={target.member}
+                    authorization={authorization}
+                    onChanged={(next) => onAuthorizationChange(target.member, target.event, next)}
+                  />
+                )}
               </>
             )}
           </>
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AuthorizationHeaderButton({
+  event,
+  members,
+  onOpen,
+}: {
+  event: PresenceGridEvent;
+  members: PresenceGridMember[];
+  onOpen: (event: PresenceGridEvent) => void;
+}) {
+  const counts = countAuthorizations(members.map((member) => getAuthorization(member, event.id)));
+  if (counts.concerned === 0) return null;
+  const complete = counts.missing === 0;
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(event)}
+      title={`Autorisations parentales : ${counts.authorized} sur ${counts.concerned} reçues. Ouvrir la liste à imprimer.`}
+      aria-label={`Autorisations parentales ${event.title} : ${counts.authorized} sur ${counts.concerned}. Ouvrir la liste.`}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full border px-1.5 text-[10px] sm:text-xs font-medium tabular-nums hover:bg-muted transition-colors",
+        complete
+          ? "border-green-300 text-green-700 dark:border-green-800 dark:text-green-400"
+          : "border-amber-300 text-amber-700 dark:border-amber-800 dark:text-amber-400"
+      )}
+    >
+      <ShieldCheck className="w-3 h-3" aria-hidden="true" />
+      {counts.authorized}/{counts.concerned}
+    </button>
   );
 }
 
@@ -381,6 +468,7 @@ function PresenceGrid({
   includePast,
   onToggleIncludePast,
   onEdit,
+  onOpenAuthorizations,
 }: {
   data: PresenceGridData | null;
   loading: boolean;
@@ -388,6 +476,7 @@ function PresenceGrid({
   includePast: boolean;
   onToggleIncludePast: (value: boolean) => void;
   onEdit: (member: PresenceGridMember, event: PresenceGridEvent) => void;
+  onOpenAuthorizations: (event: PresenceGridEvent) => void;
 }) {
   const groups = useMemo(() => (data ? groupMembersByPupitre(data.members) : []), [data]);
   const isInitialLoad = loading && !data;
@@ -427,7 +516,11 @@ function PresenceGrid({
             </Label>
           </div>
         </div>
-        {data && data.events.length > 0 && <GridLegend />}
+        {data && data.events.length > 0 && (
+          <GridLegend
+            showAuthorizations={data.events.some((e) => e.parentalAuthorizationRequired)}
+          />
+        )}
       </CardHeader>
       <CardContent className="p-0">
         {isInitialLoad ? (
@@ -526,6 +619,13 @@ function PresenceGrid({
                             >
                               {pct}&nbsp;%
                             </span>
+                            {event.parentalAuthorizationRequired && (
+                              <AuthorizationHeaderButton
+                                event={event}
+                                members={data.members}
+                                onOpen={onOpenAuthorizations}
+                              />
+                            )}
                           </div>
                         </th>
                       );
@@ -606,16 +706,34 @@ function PresenceGrid({
                             const answeredByLong = answeredBy
                               ? formatAnsweredByLong(answeredBy, answer?.answeredAt)
                               : null;
+                            const authorization = event.parentalAuthorizationRequired
+                              ? getAuthorization(member, event.id)
+                              : null;
+                            const authorizationLong = authorization
+                              ? describeAuthorization(authorization)
+                              : null;
+                            const tooltip =
+                              [
+                                answeredByLong,
+                                authorizationLong &&
+                                  `Autorisation parentale : ${authorizationLong}`,
+                              ]
+                                .filter(Boolean)
+                                .join(" — ") || undefined;
                             return (
                               <td key={event.id} className="p-0.5 sm:p-1 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => onEdit(member, event)}
-                                  title={answeredByLong ?? undefined}
+                                  title={tooltip}
                                   aria-label={`${formatMemberName(member)} — ${event.title} : ${
                                     CELL_LABELS[statusKey(status)]
                                   }${isLate ? ", modifié après la date limite" : ""}${
                                     answeredByLong ? `. ${answeredByLong}` : ""
+                                  }${
+                                    authorizationLong
+                                      ? `. Autorisation parentale : ${authorizationLong}`
+                                      : ""
                                   }. Modifier.`}
                                   className="w-full min-h-11 flex flex-col items-center justify-center rounded-md py-0.5 hover:bg-muted transition-colors"
                                 >
@@ -628,6 +746,12 @@ function PresenceGrid({
                                       <Clock
                                         className="absolute -top-1 -right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-600 dark:text-amber-400 bg-card rounded-full ring-1 ring-card"
                                         aria-hidden="true"
+                                      />
+                                    )}
+                                    {authorization && (
+                                      <AuthorizationIcon
+                                        authorization={authorization}
+                                        className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-card rounded-full ring-1 ring-card"
                                       />
                                     )}
                                     {answeredBy && (
@@ -673,6 +797,8 @@ export function PresenceAdminClient() {
   const [editTarget, setEditTarget] = useState<GridEditTarget | null>(null);
   const [editSubmitting, setEditSubmitting] = useState<PresenceStatus | "none" | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+  // Liste imprimable des autorisations parentales : remplace le tableau tant qu'elle est ouverte.
+  const [authorizationListEventId, setAuthorizationListEventId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -751,6 +877,8 @@ export function PresenceAdminClient() {
                       status: resolvedStatus,
                       comment: resolvedComment,
                       changedAfterDeadline,
+                      // L'autorisation parentale n'est pas touchée par un changement de présence.
+                      authorization: member.answers[String(eventId)]?.authorization,
                       // La réponse vient d'être saisie ici : elle est « par un administrateur »
                       // jusqu'au prochain chargement, qui donnera le nom exact.
                       answeredBy:
@@ -779,6 +907,53 @@ export function PresenceAdminClient() {
     }
   };
 
+  const changeAuthorization = (
+    member: PresenceGridMember,
+    event: PresenceGridEvent,
+    authorization: PresenceAuthorization
+  ) => {
+    setGridData((previous) => {
+      if (!previous) return previous;
+      return {
+        ...previous,
+        members: previous.members.map((candidate) => {
+          if (candidate.userId !== member.userId) return candidate;
+          const key = String(event.id);
+          const current = candidate.answers[key];
+          return {
+            ...candidate,
+            answers: {
+              ...candidate.answers,
+              [key]: {
+                status: current?.status ?? null,
+                comment: current?.comment ?? null,
+                changedAfterDeadline: current?.changedAfterDeadline ?? false,
+                answeredBy: current?.answeredBy,
+                answeredAt: current?.answeredAt,
+                authorization,
+              },
+            },
+          };
+        }),
+      };
+    });
+  };
+
+  const authorizationEvent =
+    authorizationListEventId !== null
+      ? (gridData?.events.find((event) => event.id === authorizationListEventId) ?? null)
+      : null;
+
+  if (authorizationEvent && gridData) {
+    return (
+      <AuthorizationsList
+        event={authorizationEvent}
+        members={gridData.members}
+        onBack={() => setAuthorizationListEventId(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -798,6 +973,7 @@ export function PresenceAdminClient() {
           setEditError(null);
           setEditTarget({ member, event });
         }}
+        onOpenAuthorizations={(event) => setAuthorizationListEventId(event.id)}
       />
 
       <EditPresenceDialog
@@ -810,6 +986,7 @@ export function PresenceAdminClient() {
           setEditError(null);
         }}
         onSubmit={(status) => void submitEdit(status)}
+        onAuthorizationChange={changeAuthorization}
       />
     </div>
   );

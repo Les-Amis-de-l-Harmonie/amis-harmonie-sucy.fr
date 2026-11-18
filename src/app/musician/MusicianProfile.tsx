@@ -55,6 +55,7 @@ function calculateAge(dateOfBirth: string | null | undefined): number | null {
  */
 function MusicianProfileContent() {
   const labels = useActingLabels();
+  const { delegated } = useMusicianSession();
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,6 +85,12 @@ function MusicianProfileContent() {
         data.harmonieInstruments,
         data.primaryHarmonieInstrument ?? null
       );
+      // Un responsable qui agit pour un enfant relié répond pour lui-même : les boutons
+      // reflètent SA réponse (`mine`), jamais la valeur effective calculée à partir de
+      // toutes les réponses — sinon un simple « Enregistrer » la recopierait à sa place.
+      if (delegated && data.imageConsentDetail?.linked) {
+        data.image_consent = data.imageConsentDetail.mine ?? undefined;
+      }
       setProfile(data);
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -91,7 +98,7 @@ function MusicianProfileContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [delegated]);
 
   useEffect(() => {
     fetchProfile();
@@ -107,9 +114,17 @@ function MusicianProfileContent() {
     setProfile((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const consentDetail = profile.imageConsentDetail;
+  const consentAnsweredByAnotherParent =
+    delegated && consentDetail?.linked === true && consentDetail.effective != null;
   const errors = useMemo(
-    () => validateProfile(profile, fieldErrors, { imageConsentLocked: profile.imageConsentLocked }),
-    [profile, fieldErrors]
+    () =>
+      validateProfile(profile, fieldErrors, {
+        // Pas de réponse à exiger si le musicien ne peut pas répondre lui-même, ni si
+        // un autre responsable a déjà répondu pour lui.
+        imageConsentLocked: profile.imageConsentLocked || consentAnsweredByAnotherParent,
+      }),
+    [profile, fieldErrors, consentAnsweredByAnotherParent]
   );
   const sectionCompletion = useMemo(() => getSectionCompletion(profile, errors), [profile, errors]);
   const completedCount = useMemo(
@@ -145,8 +160,13 @@ function MusicianProfileContent() {
 
     setSaving(true);
     try {
+      const { imageConsentDetail: _imageConsentDetail, ...profileFields } = profile;
       const payload = {
-        ...profile,
+        ...profileFields,
+        // `null` = « pas de changement » côté serveur pour un responsable sans réponse.
+        ...(delegated && consentDetail?.linked
+          ? { image_consent: profile.image_consent ?? null }
+          : {}),
         primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
           profile.harmonieInstruments || [],
           profile.primaryHarmonieInstrument
@@ -357,6 +377,8 @@ function MusicianProfileContent() {
           profile={profile}
           onProfileChange={handleProfileChange}
           locked={profile.imageConsentLocked === true}
+          detail={consentDetail}
+          actingForName={delegated ? (labels.name ?? "ce musicien") : null}
         />
 
         <div className="flex items-center justify-end">{saveButton}</div>

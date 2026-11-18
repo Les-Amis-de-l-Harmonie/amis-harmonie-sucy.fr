@@ -280,6 +280,7 @@ describe("handleMusicianPresenceApi", () => {
         };
         roster: Array<Record<string, unknown>>;
         counts: Record<string, number>;
+        authorization: unknown;
       }>;
     };
 
@@ -299,10 +300,12 @@ describe("handleMusicianPresenceApi", () => {
       "location",
       "address",
       "response_deadline",
-      "response",
-      "roster",
-      "counts",
-    ]);
+        "response",
+        "roster",
+        "counts",
+        "authorization",
+      ]);
+    expect(event.authorization).toBeNull();
     expect(Object.keys(event.response)).toEqual(["status", "comment", "updated_at", "answeredBy"]);
     expect(event.response.answeredBy).toBeNull();
     expect(Object.keys(event.roster[0] ?? {})).toEqual([

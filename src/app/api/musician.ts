@@ -10,6 +10,7 @@ import type {
 } from "@/db/types";
 
 import { logger } from "@/lib/logger";
+import { EFFECTIVE_IMAGE_CONSENT_SQL, type ImageConsentValue } from "@/lib/image-consent";
 import { resolvePrimaryFromRows, validateHarmonieInstruments } from "@/lib/instruments";
 
 interface ProfileWithInstruments extends MusicianProfile {
@@ -54,6 +55,13 @@ interface HarmonieInstrumentRow {
   is_primary: number;
 }
 
+interface ImageConsentGuardianRow {
+  name: string;
+  relation: string | null;
+  consent: ImageConsentValue;
+  isYou: number;
+}
+
 async function isMusicianMember(userId: number): Promise<boolean> {
   const profile = await env.DB.prepare(
     "SELECT adhesion_2026_2027 FROM musician_profiles WHERE user_id = ?"
@@ -76,7 +84,16 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
 
   try {
     if (request.method === "GET") {
-      let profile = await env.DB.prepare("SELECT * FROM musician_profiles WHERE user_id = ?")
+      const profileSelect =
+        `SELECT p.id, p.user_id, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
+                p.address_line1, p.address_line2, p.postal_code, p.city, p.harmonie_start_date,
+                p.is_conservatory_student, p.music_theory_level, p.emergency_contact_last_name,
+                p.emergency_contact_first_name, p.emergency_contact_email,
+                p.emergency_contact_phone, ${EFFECTIVE_IMAGE_CONSENT_SQL} AS image_consent,
+                p.adhesion_2026_2027, p.updated_at, p.created_at
+         FROM musician_profiles p
+         WHERE p.user_id = ?`;
+      let profile = await env.DB.prepare(profileSelect)
         .bind(user.id)
         .first<MusicianProfile>();
 
@@ -84,15 +101,36 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         await env.DB.prepare("INSERT INTO musician_profiles (user_id) VALUES (?)")
           .bind(user.id)
           .run();
-
-        profile = { user_id: user.id } as MusicianProfile;
+        profile = await env.DB.prepare(profileSelect).bind(user.id).first<MusicianProfile>();
       }
+      if (!profile) throw new Error("Impossible de créer le profil du musicien.");
 
       const guardianLink = await env.DB.prepare(
         "SELECT 1 AS linked FROM guardian_links WHERE child_user_id = ? LIMIT 1"
       )
         .bind(user.id)
         .first<{ linked: number }>();
+
+      const imageConsentGuardians = guardianLink
+        ? await env.DB.prepare(
+            `SELECT COALESCE(NULLIF(TRIM(gp.first_name), ''), 'Responsable') AS name,
+                    gl.relation AS relation, gic.consent AS consent,
+                    CASE WHEN gl.guardian_user_id = ? THEN 1 ELSE 0 END AS isYou
+             FROM guardian_links gl
+             LEFT JOIN musician_profiles gp ON gp.user_id = gl.guardian_user_id
+             LEFT JOIN guardian_image_consents gic
+               ON gic.child_user_id = gl.child_user_id
+              AND gic.guardian_user_id = gl.guardian_user_id
+             WHERE gl.child_user_id = ?
+             ORDER BY gp.first_name, gl.guardian_user_id`
+          )
+            .bind(identity.delegated ? identity.actor.id : 0, user.id)
+            .all<ImageConsentGuardianRow>()
+        : { results: [] as ImageConsentGuardianRow[] };
+      const consentGuardians = imageConsentGuardians.results || [];
+      const mine = identity.delegated
+        ? (consentGuardians.find((guardian) => guardian.isYou === 1)?.consent ?? null)
+        : null;
 
       const instruments = await env.DB.prepare(
         "SELECT * FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
@@ -127,9 +165,20 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         JSON.stringify({
           ...profile,
           is_conservatory_student: isFreshProfile ? null : profile.is_conservatory_student,
-          image_consent: isFreshProfile ? null : profile.image_consent,
+          image_consent: profile.image_consent ?? null,
           email: user.kind === "managed" ? null : user.email,
           imageConsentLocked: !!guardianLink && !identity.delegated,
+          imageConsentDetail: {
+            linked: !!guardianLink,
+            effective: profile.image_consent ?? null,
+            mine,
+            guardians: consentGuardians.map((guardian) => ({
+              name: guardian.name,
+              relation: guardian.relation,
+              consent: guardian.consent,
+              isYou: guardian.isYou === 1,
+            })),
+          },
           instruments: instruments.results || [],
           harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
           primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
@@ -205,11 +254,32 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
           data.emergency_contact_first_name || null,
           data.emergency_contact_email || null,
           data.emergency_contact_phone || null,
-          imageConsentLocked ? 1 : 0,
+          imageConsentLocked || identity.delegated ? 1 : 0,
           data.image_consent ? 1 : 0,
           user.id
         )
         .run();
+
+      if (identity.delegated && data.image_consent !== undefined && data.image_consent !== null) {
+        await env.DB.prepare(
+          `INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent, recorded_by)
+           SELECT ?, ?, ?, NULL
+           WHERE EXISTS (
+             SELECT 1 FROM guardian_links
+             WHERE child_user_id = ? AND guardian_user_id = ?
+           )
+           ON CONFLICT(child_user_id, guardian_user_id) DO UPDATE SET
+             consent = excluded.consent, recorded_by = NULL, updated_at = datetime('now')`
+        )
+          .bind(
+            user.id,
+            identity.actor.id,
+            data.image_consent ? 1 : 0,
+            user.id,
+            identity.actor.id
+          )
+          .run();
+      }
 
       // Save harmonie instruments
       if (harmonieData !== null) {
@@ -873,7 +943,8 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
 
     const results = await env.DB.prepare(
       `
-      SELECT p.first_name, p.last_name, p.date_of_birth, p.avatar, p.image_consent
+      SELECT p.first_name, p.last_name, p.date_of_birth, p.avatar,
+             ${EFFECTIVE_IMAGE_CONSENT_SQL} AS image_consent
       FROM musician_profiles p
       JOIN users u ON p.user_id = u.id
       WHERE u.is_active = 1
@@ -1045,18 +1116,18 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
       `
       SELECT
         u.id as user_id,
-        mp.first_name,
-        mp.last_name,
-        mp.avatar,
-        mp.harmonie_start_date,
-        mp.image_consent,
+        p.first_name,
+        p.last_name,
+        p.avatar,
+        p.harmonie_start_date,
+        ${EFFECTIVE_IMAGE_CONSENT_SQL} AS image_consent,
         GROUP_CONCAT(hi.instrument_name, ', ') as instruments
       FROM users u
-      INNER JOIN musician_profiles mp ON mp.user_id = u.id
+      INNER JOIN musician_profiles p ON p.user_id = u.id
       LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
       WHERE u.role = 'MUSICIAN' AND u.is_active = 1 AND u.kind <> 'guardian'
       GROUP BY u.id
-      ORDER BY mp.last_name ASC, mp.first_name ASC
+      ORDER BY p.last_name ASC, p.first_name ASC
       `
     ).all<{
       user_id: number;

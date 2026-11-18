@@ -59,6 +59,7 @@ import {
   Globe,
   Lock,
   ClipboardList,
+  ShieldCheck,
 } from "lucide-react";
 import { Calendar } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/empty-state";
@@ -79,6 +80,8 @@ const emptyEvent = {
   reservation_link: "",
   is_public: 1,
   presence_required: 0,
+  parental_authorization_required: 0,
+  authorization_details: "",
   address: "",
   response_deadline: "",
 };
@@ -537,6 +540,12 @@ export function EventsAdminClient() {
                               Présence
                             </span>
                           )}
+                          {event.parental_authorization_required === 1 && (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400">
+                              <ShieldCheck className="w-3 h-3" />
+                              Autorisation
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -551,7 +560,12 @@ export function EventsAdminClient() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(event)}
+                          aria-label={`Modifier ${event.title}`}
+                        >
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button
@@ -562,7 +576,12 @@ export function EventsAdminClient() {
                         >
                           <Copy className="w-4 h-4 text-blue-500" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(event)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(event)}
+                          aria-label={`Supprimer ${event.title}`}
+                        >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </TableCell>
@@ -721,6 +740,48 @@ export function EventsAdminClient() {
                     <p className="text-xs text-muted-foreground">
                       Par défaut trois semaines avant la prestation. Une réponse modifiée après
                       cette date est signalée.
+                    </p>
+                  </div>
+                )}
+
+                <div className="border-t border-border pt-3 flex items-start justify-between gap-4">
+                  <div>
+                    <Label htmlFor="parental_authorization_required">
+                      Autorisation parentale demandée
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Les parents reliés à un musicien depuis l'admin doivent autoriser sa
+                      participation. Indépendant de la réponse de présence.
+                    </p>
+                  </div>
+                  <Switch
+                    id="parental_authorization_required"
+                    checked={!!editingEvent.parental_authorization_required}
+                    onCheckedChange={(checked) =>
+                      setEditingEvent({
+                        ...editingEvent,
+                        parental_authorization_required: checked ? 1 : 0,
+                      })
+                    }
+                  />
+                </div>
+
+                {!!editingEvent.parental_authorization_required && (
+                  <div className="border-t border-border pt-3 grid gap-2">
+                    <Label htmlFor="authorization_details">Informations pour les parents</Label>
+                    <Textarea
+                      id="authorization_details"
+                      value={editingEvent.authorization_details || ""}
+                      onChange={(e) =>
+                        setEditingEvent({ ...editingEvent, authorization_details: e.target.value })
+                      }
+                      rows={4}
+                      placeholder="Transport, horaires de rendez-vous et de retour, tenue, repas…"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Montré aux parents avec la demande d'autorisation. Si vous modifiez ce texte
+                      après des autorisations, elles apparaîtront comme données « sur un texte
+                      antérieur ».
                     </p>
                   </div>
                 )}

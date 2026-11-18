@@ -2,6 +2,27 @@ import type { InsuranceInstrument, MusicianProfile, PresenceStatus } from "@/db/
 
 export type { IdeaPreview } from "@/db/types";
 
+/** Réponse d'un responsable légal au droit à l'image (prénom seulement). */
+export interface ImageConsentGuardian {
+  name: string;
+  relation: string | null;
+  /** `1` oui, `0` non, `null` pas encore répondu. */
+  consent: 0 | 1 | null;
+  isYou: boolean;
+}
+
+/**
+ * Droit à l'image d'un musicien relié à un ou plusieurs responsables : la valeur
+ * effective découle de leurs réponses (un non l'emporte, un oui suffit).
+ */
+export interface ImageConsentDetail {
+  linked: boolean;
+  effective: 0 | 1 | null;
+  /** Réponse de la personne qui agit, quand elle agit pour l'enfant. */
+  mine: 0 | 1 | null;
+  guardians: ImageConsentGuardian[];
+}
+
 export interface ProfileWithExtras extends Partial<MusicianProfile> {
   harmonieInstruments?: string[];
   /** Renvoyé par `/api/musician/profile` (voir `src/app/api/musician.ts`) — nécessaire
@@ -11,6 +32,8 @@ export interface ProfileWithExtras extends Partial<MusicianProfile> {
   email?: string | null;
   /** Droit à l'image décidé par un responsable légal (lecture seule pour le musicien). */
   imageConsentLocked?: boolean;
+  /** Absent des anciennes réponses de l'API : toujours le traiter comme facultatif. */
+  imageConsentDetail?: ImageConsentDetail;
   adhesion_2026_2027?: number;
   insurance_complete?: boolean;
   insuranceInstruments?: InsuranceInstrument[];
@@ -60,6 +83,26 @@ export interface PresenceAnsweredBy {
   byYou: boolean;
 }
 
+export interface PresenceAuthorizedBy {
+  name: string | null;
+  relation: string | null;
+  byYou: boolean;
+  byAssociation: boolean;
+  paper: boolean;
+}
+
+/** Autorisation parentale demandée pour une sortie (`null`/absent : rien à autoriser). */
+export interface PresenceAuthorization {
+  details: string | null;
+  status: "authorized" | "missing";
+  authorizedBy: PresenceAuthorizedBy | null;
+  authorizedAt: string | null;
+  /** Les détails ont changé depuis l'autorisation donnée. */
+  outdated: boolean;
+  /** Un responsable qui agit pour l'enfant peut autoriser ou retirer (événement à venir). */
+  canAuthorize: boolean;
+}
+
 export interface PresenceEvent {
   id: number;
   title: string;
@@ -79,6 +122,7 @@ export interface PresenceEvent {
     answeredBy?: PresenceAnsweredBy | null;
   };
   roster: PresenceRosterEntry[];
+  authorization?: PresenceAuthorization | null;
   counts: {
     present: number;
     absent: number;

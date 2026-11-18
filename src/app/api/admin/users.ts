@@ -12,6 +12,10 @@ import { checkAdminAuth } from "@/app/api/admin-crud";
 
 import { logger } from "@/lib/logger";
 import { resolvePrimaryFromRows, validateHarmonieInstruments } from "@/lib/instruments";
+import {
+  EFFECTIVE_IMAGE_CONSENT_SQL,
+  IMAGE_CONSENT_MANAGED_SQL,
+} from "@/lib/image-consent";
 interface UserInstrument {
   instrument_name: string;
   start_date?: string | null;
@@ -57,7 +61,8 @@ export interface UserWithProfile {
   emergency_contact_first_name?: string;
   emergency_contact_email?: string;
   emergency_contact_phone?: string;
-  image_consent?: number;
+  image_consent?: number | null;
+  image_consent_managed?: boolean;
   adhesion_2026_2027?: number;
   instruments?: UserInstrument[];
   harmonieInstruments?: string[];
@@ -69,6 +74,10 @@ export interface UserWithProfile {
   /** `true` creates a managed account with a generated internal address; never provide that address. */
   noEmail?: boolean;
 }
+
+type UserWithProfileRow = Omit<UserWithProfile, "image_consent_managed"> & {
+  image_consent_managed: number;
+};
 
 const userProfileSelect = `
   SELECT u.id,
@@ -84,7 +93,10 @@ const userProfileSelect = `
          p.address_line1, p.address_line2, p.postal_code, p.city,
          p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
          p.emergency_contact_last_name, p.emergency_contact_first_name,
-         p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
+          p.emergency_contact_email, p.emergency_contact_phone,
+          ${EFFECTIVE_IMAGE_CONSENT_SQL} AS image_consent,
+          ${IMAGE_CONSENT_MANAGED_SQL} AS image_consent_managed,
+          p.adhesion_2026_2027
   FROM users u LEFT JOIN musician_profiles p ON u.id = p.user_id`;
 
 export async function handleUsersApi(request: Request): Promise<Response> {
@@ -130,7 +142,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       if (id) {
         const user = await env.DB.prepare(`${userProfileSelect} WHERE u.id = ?`)
           .bind(id)
-          .first<UserWithProfile>();
+          .first<UserWithProfileRow>();
         if (!user) {
           return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), {
             status: 404,
@@ -156,6 +168,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             ...user,
             kind: user.kind ?? "member",
             email: user.kind === "managed" ? null : user.email,
+            image_consent_managed: user.image_consent_managed === 1,
             instruments: instruments.results || [],
             harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
             primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
@@ -167,7 +180,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       }
       const users = await env.DB.prepare(
         `${userProfileSelect} ORDER BY u.created_at DESC`
-      ).all<UserWithProfile>();
+      ).all<UserWithProfileRow>();
 
       const allInstruments = await env.DB.prepare(
         "SELECT user_id, instrument_name, start_date, level FROM musician_instruments ORDER BY sort_order ASC"
@@ -202,6 +215,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           ...u,
           kind: u.kind ?? "member",
           email: u.kind === "managed" ? null : u.email,
+          image_consent_managed: u.image_consent_managed === 1,
           instruments: instrumentsByUser.get(u.id as number) || [],
           harmonieInstruments: (harmonieByUser.get(u.id as number) || []).map(
             (instrument) => instrument.instrument_name
@@ -363,10 +377,18 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       }
       const data = (await request.json()) as UserWithProfile;
       const currentUser = await env.DB.prepare(
-        "SELECT kind, role, is_active FROM users WHERE id = ?"
+        `SELECT kind, role, is_active,
+                EXISTS (SELECT 1 FROM guardian_links gl WHERE gl.child_user_id = users.id)
+                  AS imageConsentManaged
+         FROM users WHERE id = ?`
       )
         .bind(id)
-        .first<{ kind: string; role: string; is_active: number }>();
+        .first<{
+          kind: string;
+          role: string;
+          is_active: number;
+          imageConsentManaged: number;
+        }>();
       if (!currentUser) {
         return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), {
           status: 404,
@@ -450,7 +472,9 @@ export async function handleUsersApi(request: Request): Promise<Response> {
               address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
               harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
               emergency_contact_last_name = ?, emergency_contact_first_name = ?,
-              emergency_contact_email = ?, emergency_contact_phone = ?, image_consent = ?, adhesion_2026_2027 = ?,
+              emergency_contact_email = ?, emergency_contact_phone = ?,
+              image_consent = CASE WHEN ? = 1 THEN image_consent ELSE ? END,
+              adhesion_2026_2027 = ?,
               updated_at = CURRENT_TIMESTAMP
           WHERE user_id = ?
         `
@@ -472,6 +496,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_first_name || null,
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
+            currentUser.imageConsentManaged,
             data.image_consent == null ? null : data.image_consent ? 1 : 0,
             data.adhesion_2026_2027 ? 1 : 0,
             id
@@ -505,7 +530,13 @@ export async function handleUsersApi(request: Request): Promise<Response> {
             data.emergency_contact_first_name || null,
             data.emergency_contact_email || null,
             data.emergency_contact_phone || null,
-            data.image_consent == null ? null : data.image_consent ? 1 : 0,
+            currentUser.imageConsentManaged
+              ? null
+              : data.image_consent == null
+                ? null
+                : data.image_consent
+                  ? 1
+                  : 0,
             data.adhesion_2026_2027 ? 1 : 0
           )
           .run();

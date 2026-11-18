@@ -21,6 +21,8 @@ interface LinkRow {
   kind: string;
   relation: string | null;
   isActive: number;
+  imageConsent: number | null;
+  imageConsentRecordedBy: number | null;
 }
 
 interface AllGuardianLinksRow {
@@ -164,10 +166,13 @@ async function getGuardians(userId: number): Promise<Response> {
   const guardians = await env.DB.prepare(
     `SELECT gl.id AS linkId, u.id AS userId, p.first_name AS firstName, p.last_name AS lastName,
             CASE WHEN u.kind = 'managed' THEN NULL ELSE u.email END AS email,
-            u.kind, gl.relation, u.is_active AS isActive
+            u.kind, gl.relation, u.is_active AS isActive,
+            gic.consent AS imageConsent, gic.recorded_by AS imageConsentRecordedBy
      FROM guardian_links gl
      JOIN users u ON u.id = gl.guardian_user_id
      LEFT JOIN musician_profiles p ON p.user_id = u.id
+     LEFT JOIN guardian_image_consents gic
+       ON gic.child_user_id = gl.child_user_id AND gic.guardian_user_id = gl.guardian_user_id
      WHERE gl.child_user_id = ?
      ORDER BY p.first_name, p.last_name, u.id`
   )
@@ -191,12 +196,54 @@ async function getGuardians(userId: number): Promise<Response> {
     guardians: (guardians.results ?? []).map((link) => ({
       ...link,
       isActive: link.isActive === 1,
+      imageConsent: link.imageConsent === 0 || link.imageConsent === 1 ? link.imageConsent : null,
+      imageConsentRecordedByAdmin: link.imageConsentRecordedBy !== null,
     })),
     children: (children.results ?? []).map((link) => ({
       ...link,
       isActive: link.isActive === 1,
     })),
   });
+}
+
+async function setImageConsent(
+  data: Record<string, unknown>,
+  adminId: number
+): Promise<Response> {
+  const childUserId = parseId(data.childUserId);
+  const guardianUserId = parseId(data.guardianUserId);
+  const consent = data.consent;
+  if (childUserId === null || guardianUserId === null) {
+    return json({ error: "Les identifiants du musicien et du responsable sont invalides." }, 400);
+  }
+  if (consent !== null && consent !== 0 && consent !== 1) {
+    return json({ error: "La réponse au droit à l'image doit être 0, 1 ou null." }, 400);
+  }
+
+  const link = await env.DB.prepare(
+    "SELECT id FROM guardian_links WHERE child_user_id = ? AND guardian_user_id = ?"
+  )
+    .bind(childUserId, guardianUserId)
+    .first<{ id: number }>();
+  if (!link) return json({ error: "Ce responsable n'est pas lié à ce musicien." }, 409);
+
+  if (consent === null) {
+    await env.DB.prepare(
+      "DELETE FROM guardian_image_consents WHERE child_user_id = ? AND guardian_user_id = ?"
+    )
+      .bind(childUserId, guardianUserId)
+      .run();
+  } else {
+    await env.DB.prepare(
+      `INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent, recorded_by)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(child_user_id, guardian_user_id) DO UPDATE SET
+         consent = excluded.consent, recorded_by = excluded.recorded_by, updated_at = datetime('now')`
+    )
+      .bind(childUserId, guardianUserId, consent, adminId)
+      .run();
+  }
+  return json({ success: true });
 }
 
 async function getAllGuardianLinks(): Promise<Response> {
@@ -413,7 +460,10 @@ export async function handleGuardiansApi(request: Request): Promise<Response> {
 
     if (request.method === "POST") {
       const elevatedAction =
-        action === "create-guardian" || action === "handover" || action === "give-access";
+        action === "create-guardian" ||
+        action === "handover" ||
+        action === "give-access" ||
+        action === "image-consent";
       if (elevatedAction && !isSuperAdmin(actor.role)) {
         return json({ error: "Cette action est réservée aux super-administrateurs." }, 403);
       }
@@ -427,6 +477,7 @@ export async function handleGuardiansApi(request: Request): Promise<Response> {
         return json({ error: "Le corps de la requête doit être un objet JSON." }, 400);
       }
       const input = data as Record<string, unknown>;
+      if (action === "image-consent") return await setImageConsent(input, actor.id);
       if (action === "create-guardian") return await createGuardian(input, actor.id);
       if (action === "handover") return await handover(input, actor.id);
       if (action === "give-access") return await giveAccess(input);

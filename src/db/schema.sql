@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS events (
   response_deadline TEXT
     CHECK (response_deadline IS NULL
            OR response_deadline GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  parental_authorization_required INTEGER NOT NULL DEFAULT 0, -- 0018
+  authorization_details TEXT -- 0018
 );
 
 CREATE TABLE IF NOT EXISTS videos (
@@ -289,3 +291,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_free_reservation_checkins_op_id
 
 CREATE INDEX IF NOT EXISTS idx_free_reservation_checkins_event_reservation
   ON free_reservation_checkins(event_slug, reservation_id);
+
+-- 0018 : droit à l'image par responsable et autorisations de sortie
+CREATE TABLE IF NOT EXISTS guardian_image_consents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  child_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  guardian_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  consent INTEGER NOT NULL CHECK (consent IN (0, 1)),
+  recorded_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (child_user_id, guardian_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS event_authorizations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  child_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  guardian_user_id INTEGER,
+  recorded_by INTEGER,
+  details_snapshot TEXT,
+  authorized_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (event_id, child_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_authorizations_child ON event_authorizations(child_user_id);

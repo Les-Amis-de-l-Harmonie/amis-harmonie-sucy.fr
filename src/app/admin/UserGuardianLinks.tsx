@@ -16,8 +16,10 @@ import {
 import {
   entryName,
   errorMessage,
+  fetchEffectiveImageConsent,
   fetchGuardianLinks,
   joinNames,
+  recordImageConsent,
   removeGuardianLink,
   type GuardianLinkEntry,
   type GuardianLinksData,
@@ -38,6 +40,8 @@ import {
 export interface LinkedNames {
   guardians: string | null;
   children: string | null;
+  /** Valeur effective du droit à l'image relue après une saisie (absente si inconnue). */
+  imageConsent?: number | null;
 }
 
 interface UserGuardianLinksProps {
@@ -72,39 +76,145 @@ function ErrorBanner({ message }: { message: string | null }) {
 interface LinkRowProps {
   entry: GuardianLinkEntry;
   onRemove: (entry: GuardianLinkEntry) => void;
+  /** Affiche la réponse « droit à l'image » (fiche d'un musicien, pas d'un responsable). */
+  showConsent?: boolean;
+  /** Seul un super-administrateur peut saisir une réponse papier. */
+  canRecordConsent?: boolean;
+  consentBusy?: boolean;
+  onRecordConsent?: (entry: GuardianLinkEntry, consent: 0 | 1 | null) => Promise<boolean>;
 }
 
-function LinkRow({ entry, onRemove }: LinkRowProps) {
-  const name = entryName(entry);
+function ConsentBadge({ entry }: { entry: GuardianLinkEntry }) {
+  const consent = entry.imageConsent ?? null;
+  const tone =
+    consent === 1
+      ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+      : consent === 0
+        ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+        : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
   return (
-    <li className="flex items-center justify-between gap-3 px-3 py-2.5">
-      <div className="min-w-0 text-sm">
-        <p className="font-medium truncate">
-          {name}
-          {entry.relation && (
-            <span className="font-normal text-muted-foreground"> · {entry.relation}</span>
-          )}
-          {!entry.isActive && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
-              Compte inactif
-            </span>
-          )}
-        </p>
-        <p className="text-xs text-muted-foreground truncate">
-          {entry.email ?? "Pas d'e-mail (compte géré)"}
-        </p>
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => onRemove(entry)}
-        aria-label={`Retirer ${name}`}
-        className="shrink-0 text-muted-foreground hover:text-destructive"
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}
       >
-        <Unlink className="w-4 h-4 mr-1.5" />
-        Retirer
-      </Button>
+        {consent === 1 ? "Oui" : consent === 0 ? "Non" : "Pas de réponse"}
+      </span>
+      {consent !== null && entry.imageConsentRecordedByAdmin && (
+        <span className="text-xs text-muted-foreground">saisi par un admin</span>
+      )}
+    </span>
+  );
+}
+
+function LinkRow({
+  entry,
+  onRemove,
+  showConsent,
+  canRecordConsent,
+  consentBusy,
+  onRecordConsent,
+}: LinkRowProps) {
+  const name = entryName(entry);
+  const [editing, setEditing] = useState(false);
+  const hasAnswer = entry.imageConsent === 0 || entry.imageConsent === 1;
+  // Le panneau se referme une fois la réponse enregistrée ; en cas d'erreur il reste ouvert.
+  const record = async (consent: 0 | 1 | null) => {
+    if (await onRecordConsent?.(entry, consent)) setEditing(false);
+  };
+  return (
+    <li className="px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 text-sm">
+          <p className="font-medium truncate">
+            {name}
+            {entry.relation && (
+              <span className="font-normal text-muted-foreground"> · {entry.relation}</span>
+            )}
+            {!entry.isActive && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-200">
+                Compte inactif
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {entry.email ?? "Pas d'e-mail (compte géré)"}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(entry)}
+          aria-label={`Retirer ${name}`}
+          className="shrink-0 text-muted-foreground hover:text-destructive"
+        >
+          <Unlink className="w-4 h-4 mr-1.5" />
+          Retirer
+        </Button>
+      </div>
+      {showConsent && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+          <span className="text-muted-foreground">Droit à l'image :</span>
+          <ConsentBadge entry={entry} />
+          {canRecordConsent && !editing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setEditing(true)}
+              aria-label={`Saisir la réponse de ${name}`}
+            >
+              Saisir sa réponse
+            </Button>
+          )}
+        </div>
+      )}
+      {showConsent && canRecordConsent && editing && (
+        <div className="mt-2 rounded-md border border-border bg-muted/30 p-2.5 space-y-2">
+          <p className="text-xs text-muted-foreground">Réponse reçue sur papier de {name} :</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={consentBusy}
+              onClick={() => void record(1)}
+            >
+              Autorise
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={consentBusy}
+              onClick={() => void record(0)}
+            >
+              N'autorise pas
+            </Button>
+            {hasAnswer && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={consentBusy}
+                onClick={() => void record(null)}
+              >
+                Effacer la réponse
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={consentBusy}
+              onClick={() => setEditing(false)}
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
@@ -126,6 +236,7 @@ export function UserGuardianLinks({
   const [removing, setRemoving] = useState<GuardianLinkEntry | null>(null);
   const [removeBusy, setRemoveBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [consentBusy, setConsentBusy] = useState(false);
 
   const refresh = useCallback(async (): Promise<GuardianLinksData | null> => {
     if (!userId || user.role !== "MUSICIAN") return null;
@@ -165,9 +276,40 @@ export function UserGuardianLinks({
     setPanel(null);
     setActionError(null);
     const next = await refresh();
-    if (next) {
-      onLinksChanged({ guardians: joinNames(next.guardians), children: joinNames(next.children) });
+    // Un lien ajouté ou retiré, ou une réponse saisie, change la valeur effective du droit à l'image.
+    let imageConsent: number | null | undefined;
+    if (userId) {
+      const fresh = await fetchEffectiveImageConsent(userId);
+      if (fresh.ok) imageConsent = fresh.data.image_consent ?? null;
     }
+    if (next) {
+      onLinksChanged({
+        guardians: joinNames(next.guardians),
+        children: joinNames(next.children),
+        imageConsent,
+      });
+    }
+  };
+
+  const saveImageConsent = async (
+    entry: GuardianLinkEntry,
+    consent: 0 | 1 | null
+  ): Promise<boolean> => {
+    if (!userId) return false;
+    setConsentBusy(true);
+    setActionError(null);
+    const result = await recordImageConsent({
+      childUserId: userId,
+      guardianUserId: entry.userId,
+      consent,
+    });
+    setConsentBusy(false);
+    if (!result.ok) {
+      setActionError(errorMessage(result));
+      return false;
+    }
+    await afterChange();
+    return true;
   };
 
   const confirmRemoval = async () => {
@@ -232,9 +374,31 @@ export function UserGuardianLinks({
         ) : (
           <ul className="rounded-lg border border-border divide-y divide-border">
             {entries.map((entry) => (
-              <LinkRow key={entry.linkId} entry={entry} onRemove={setRemoving} />
+              <LinkRow
+                key={entry.linkId}
+                entry={entry}
+                onRemove={setRemoving}
+                showConsent={!isGuardianView}
+                canRecordConsent={canManageAccounts}
+                consentBusy={consentBusy}
+                onRecordConsent={saveImageConsent}
+              />
             ))}
           </ul>
+        )}
+
+        {!isGuardianView && entries.length > 0 && (
+          <p className="text-xs text-muted-foreground" data-testid="image-consent-summary">
+            Droit à l'image appliqué :{" "}
+            <span className="font-medium text-foreground">
+              {user.image_consent === 1
+                ? "autorisé"
+                : user.image_consent === 0
+                  ? "refusé"
+                  : "pas de réponse"}
+            </span>
+            . Un refus d'un responsable l'emporte ; sinon, un seul accord suffit.
+          </p>
         )}
 
         {isManagedWithoutGuardian && (

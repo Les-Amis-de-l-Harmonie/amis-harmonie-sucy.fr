@@ -19,6 +19,7 @@ function account(overrides: Partial<UserWithProfile>): UserWithProfile {
     kind: "member",
     is_active: 1,
     date_of_birth: "1990-01-01",
+    image_consent: 1,
     ...overrides,
   };
 }
@@ -39,6 +40,7 @@ const users: UserWithProfile[] = [
     first_name: "Hugo",
     last_name: "Leroy",
     date_of_birth: `${thisYear - 15}-01-01`,
+    image_consent: null,
     emergency_contact_first_name: "Tante",
     emergency_contact_last_name: "Leroy",
     emergency_contact_phone: "06 99 99 99 99",
@@ -140,16 +142,16 @@ describe("FamiliesAdminClient", () => {
     expect(screen.getByText("Lucas Martin")).toBeInTheDocument();
   });
 
-  it("montre les quatre listes « À vérifier » avec des liens vers les fiches", async () => {
+  it("montre les cinq listes « À vérifier » avec des liens vers les fiches", async () => {
     const user = userEvent.setup();
     mockApi();
     render(<FamiliesAdminClient />);
     await screen.findByText("2 familles");
 
     // Le compteur de l'onglet : Tom (mineur sans responsable), Anna (sans date),
-    // Camille (majeure reliée), Noé n'est pas concerné (il a un responsable).
+    // Camille (majeure reliée), Hugo (droit à l'image sans réponse).
     const tab = screen.getByRole("tab", { name: /À vérifier/ });
-    expect(tab).toHaveTextContent("3");
+    expect(tab).toHaveTextContent("4");
     await user.click(tab);
 
     const minors = screen.getByTestId("attention-minors");
@@ -167,6 +169,10 @@ describe("FamiliesAdminClient", () => {
     const adults = screen.getByTestId("attention-adults");
     expect(within(adults).getByText("Camille Bernard")).toBeInTheDocument();
     expect(within(adults).getByText("Responsable : Lucas Martin")).toBeInTheDocument();
+    const consent = screen.getByTestId("attention-image-consent");
+    expect(within(consent).getByText("Hugo Leroy")).toBeInTheDocument();
+    expect(within(consent).getByText("Responsable : Nathalie Leroy")).toBeInTheDocument();
+    expect(within(consent).queryByText("Noé Leroy")).toBeNull();
   });
 
   it("ouvre directement « À vérifier » avec ?vue=a-verifier (lien du tableau de bord)", async () => {

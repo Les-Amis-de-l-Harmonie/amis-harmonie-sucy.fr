@@ -154,7 +154,7 @@ describe("API des responsables légaux", () => {
     expect(await unauthorized.json()).toMatchObject({ error: expect.any(String) });
   });
 
-  it.each(["create-guardian", "handover", "give-access"])(
+  it.each(["create-guardian", "handover", "give-access", "image-consent"])(
     "réserve l'action %s aux super-administrateurs",
     async (action) => {
       const response = await send(`action=${action}`, "POST", {}, "admin");
@@ -183,6 +183,84 @@ describe("API des responsables légaux", () => {
         },
       ],
     });
+  });
+
+  it("expose les réponses du droit à l'image de chaque responsable relié", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+      )
+      .run(4, 3, "mère");
+    database
+      .prepare(
+        "INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent) VALUES (?, ?, ?)"
+      )
+      .run(3, 4, 0);
+
+    const response = await send("userId=3");
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      guardians: [
+        {
+          userId: 4,
+          relation: "mère",
+          imageConsent: 0,
+          imageConsentRecordedByAdmin: false,
+        },
+      ],
+    });
+  });
+
+  it("réserve la saisie papier aux super-admins, exige un lien et permet de supprimer la réponse", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+      )
+      .run(4, 3, "mère");
+
+    const denied = await send(
+      "action=image-consent",
+      "POST",
+      { childUserId: 3, guardianUserId: 4, consent: 1 },
+      "admin"
+    );
+    expect(denied.status).toBe(403);
+
+    const unlinked = await send("action=image-consent", "POST", {
+      childUserId: 3,
+      guardianUserId: 6,
+      consent: 1,
+    });
+    expect(unlinked.status).toBe(409);
+
+    const recorded = await send("action=image-consent", "POST", {
+      childUserId: 3,
+      guardianUserId: 4,
+      consent: 1,
+    });
+    expect(recorded.status).toBe(200);
+    expect(await recorded.json()).toEqual({ success: true });
+    expect(
+      row<{ consent: number; recorded_by: number }>(
+        "SELECT consent, recorded_by FROM guardian_image_consents WHERE child_user_id = 3 AND guardian_user_id = 4"
+      )
+    ).toEqual({ consent: 1, recorded_by: 1 });
+    expect(await (await send("userId=3")).json()).toMatchObject({
+      guardians: [{ userId: 4, imageConsent: 1, imageConsentRecordedByAdmin: true }],
+    });
+
+    const removed = await send("action=image-consent", "POST", {
+      childUserId: 3,
+      guardianUserId: 4,
+      consent: null,
+    });
+    expect(removed.status).toBe(200);
+    expect(
+      row<{ count: number }>(
+        "SELECT count(*) AS count FROM guardian_image_consents WHERE child_user_id = 3 AND guardian_user_id = 4"
+      )
+    ).toEqual({ count: 0 });
   });
 
   it("refuse les identifiants non entiers et le lien vers un compte absent", async () => {
@@ -447,6 +525,53 @@ describe("protection des comptes dans l'API utilisateurs", () => {
       guardian_names: "Prénom4 Nom4",
       children_names: null,
     });
+  });
+
+  it("renvoie le droit à l'image effectif et indique quand les responsables le gèrent", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+      )
+      .run(4, 3, "mère");
+    database
+      .prepare("UPDATE musician_profiles SET image_consent = 1 WHERE user_id = 3")
+      .run();
+    database
+      .prepare(
+        "INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent) VALUES (3, 4, 0)"
+      )
+      .run();
+
+    const response = await handleUsersApi(request("users?id=3"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      image_consent: 0,
+      image_consent_managed: true,
+    });
+  });
+
+  it("ignore le droit à l'image envoyé par l'admin pour un musicien relié", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+      )
+      .run(4, 3, "mère");
+    database
+      .prepare("UPDATE musician_profiles SET image_consent = 1 WHERE user_id = 3")
+      .run();
+
+    const response = await handleUsersApi(
+      request("users?id=3", "PUT", {
+        email: "enfant@test.fr",
+        role: "MUSICIAN",
+        image_consent: 0,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(row<{ image_consent: number }>("SELECT image_consent FROM musician_profiles WHERE user_id = 3"))
+      .toEqual({ image_consent: 1 });
   });
 
   it("n'accepte pas de changer le kind en PUT", async () => {

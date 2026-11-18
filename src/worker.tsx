@@ -49,6 +49,7 @@ import { handleOutingSettingsApi } from "@/app/api/admin/outing-settings";
 import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
 import { handleInsuranceApi } from "@/app/api/admin/insurance";
 import { handleAdminPresenceApi } from "@/app/api/admin/presence";
+import { handleAdminAuthorizationsApi } from "@/app/api/admin/authorizations";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
@@ -59,6 +60,7 @@ import {
   handleMusicianTrombinoscopeApi,
 } from "@/app/api/musician";
 import { handleMusicianPresenceApi } from "@/app/api/musician-presence";
+import { handleMusicianAuthorizationsApi } from "@/app/api/musician-authorizations";
 import { handleMusicianActingApi } from "@/app/api/musician-acting";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
@@ -259,6 +261,9 @@ const app = defineApp([
   route("/api/admin/presence", ({ request }: { request: Request }) =>
     handleAdminPresenceApi(request)
   ),
+  route("/api/admin/authorizations", ({ request }: { request: Request }) =>
+    handleAdminAuthorizationsApi(request)
+  ),
 
   route("/api/admin/analytics", ({ request }: { request: Request }) =>
     handleAdminAnalyticsApi(request)
@@ -290,6 +295,9 @@ const app = defineApp([
   ),
   route("/api/musician/presence", ({ request }: { request: Request }) =>
     handleMusicianPresenceApi(request)
+  ),
+  route("/api/musician/authorizations", ({ request }: { request: Request }) =>
+    handleMusicianAuthorizationsApi(request)
   ),
 
   // Public API for info settings (read-only, returns only active settings)

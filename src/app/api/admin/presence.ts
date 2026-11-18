@@ -16,6 +16,8 @@ interface PresenceGridEvent {
   title: string;
   date: string;
   response_deadline: string | null;
+  parentalAuthorizationRequired: number;
+  authorizationDetails: string | null;
 }
 
 interface PresenceAnswerRow {
@@ -30,6 +32,34 @@ interface PresenceAnswerRow {
   updaterFirstName: string | null;
   updaterLastName: string | null;
   updaterRelation: string | null;
+}
+
+interface GridAuthorizationRow {
+  eventId: number;
+  childUserId: number;
+  guardianUserId: number | null;
+  recordedBy: number | null;
+  guardianRole: UserRole | null;
+  guardianFirstName: string | null;
+  guardianLastName: string | null;
+  guardianRelation: string | null;
+  recorderRole: UserRole | null;
+  recorderFirstName: string | null;
+  recorderLastName: string | null;
+  detailsSnapshot: string | null;
+  authorizedAt: string;
+}
+
+interface GridAuthorization {
+  status: "authorized" | "missing";
+  authorizedBy: {
+    name: string | null;
+    relation: string | null;
+    kind: "parent" | "admin" | "deleted" | "noProfile";
+    paper: boolean;
+  } | null;
+  authorizedAt: string | null;
+  outdated: boolean;
 }
 
 interface PersistedPresenceRow {
@@ -72,7 +102,9 @@ async function readGrid(request: Request): Promise<Response> {
   const includePast = new URL(request.url).searchParams.get("includePast") === "1";
   const dateCondition = includePast ? "date >= date('now', '-12 months')" : "date >= date('now')";
   const events = await env.DB.prepare(
-    `SELECT id, title, date, response_deadline
+    `SELECT id, title, date, response_deadline,
+            parental_authorization_required AS parentalAuthorizationRequired,
+            authorization_details AS authorizationDetails
      FROM events
      WHERE presence_required = 1 AND ${dateCondition}
      ORDER BY date ASC`
@@ -86,6 +118,9 @@ async function readGrid(request: Request): Promise<Response> {
   const members = summarisePresence(memberRows.results || []).members;
 
   const eventIds = eventRows.map((event) => event.id);
+  const authorizationEventIds = eventRows
+    .filter((event) => event.parentalAuthorizationRequired === 1)
+    .map((event) => event.id);
   const answers = new Map<number, Map<number, PresenceAnswerRow>>();
   if (eventIds.length > 0) {
     const answerRows = await env.DB.prepare(
@@ -114,8 +149,58 @@ async function readGrid(request: Request): Promise<Response> {
     }
   }
 
+  const linkedChildren = new Set<number>();
+  const authorizations = new Map<string, GridAuthorizationRow>();
+  if (authorizationEventIds.length > 0 && members.length > 0) {
+    const linkedRows = await env.DB.prepare(
+      `SELECT DISTINCT child_user_id AS childUserId
+       FROM guardian_links
+       WHERE child_user_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+    )
+      .bind(JSON.stringify(members.map((member) => member.userId)))
+      .all<{ childUserId: number }>();
+    for (const row of linkedRows.results || []) linkedChildren.add(row.childUserId);
+
+    if (linkedChildren.size > 0) {
+      const authorizationRows = await env.DB.prepare(
+        `SELECT ea.event_id AS eventId, ea.child_user_id AS childUserId,
+                ea.guardian_user_id AS guardianUserId, ea.recorded_by AS recordedBy,
+                guardian.role AS guardianRole, guardianProfile.first_name AS guardianFirstName,
+                guardianProfile.last_name AS guardianLastName, guardianLink.relation AS guardianRelation,
+                recorder.role AS recorderRole, recorderProfile.first_name AS recorderFirstName,
+                recorderProfile.last_name AS recorderLastName,
+                ea.details_snapshot AS detailsSnapshot, ea.authorized_at AS authorizedAt
+         FROM event_authorizations ea
+         LEFT JOIN users guardian ON guardian.id = ea.guardian_user_id
+         LEFT JOIN musician_profiles guardianProfile ON guardianProfile.user_id = guardian.id
+         LEFT JOIN guardian_links guardianLink
+           ON guardianLink.guardian_user_id = ea.guardian_user_id
+          AND guardianLink.child_user_id = ea.child_user_id
+         LEFT JOIN users recorder ON recorder.id = ea.recorded_by
+         LEFT JOIN musician_profiles recorderProfile ON recorderProfile.user_id = recorder.id
+         WHERE ea.event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')
+           AND ea.child_user_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+      )
+        .bind(
+          JSON.stringify(authorizationEventIds),
+          JSON.stringify(Array.from(linkedChildren))
+        )
+        .all<GridAuthorizationRow>();
+      for (const row of authorizationRows.results || []) {
+        authorizations.set(`${row.eventId}:${row.childUserId}`, row);
+      }
+    }
+  }
+
   return jsonResponse({
-    events: eventRows,
+    events: eventRows.map((event) => ({
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      response_deadline: event.response_deadline,
+      parentalAuthorizationRequired: event.parentalAuthorizationRequired === 1,
+      authorizationDetails: event.authorizationDetails,
+    })),
     members: members.map((member) => {
       const memberAnswers: Record<
         string,
@@ -134,7 +219,19 @@ async function readGrid(request: Request): Promise<Response> {
       > = {};
       for (const event of eventRows) {
         const answer = answers.get(event.id)?.get(member.userId);
-        memberAnswers[String(event.id)] = {
+        const memberAnswer: {
+          status: "present" | "absent" | null;
+          comment: string | null;
+          changedAfterDeadline: boolean;
+          answeredBy: {
+            name: string | null;
+            relation: string | null;
+            isAdmin: boolean;
+            kind: "parent" | "admin" | "deleted" | "noProfile";
+          } | null;
+          answeredAt: string | null;
+          authorization?: GridAuthorization;
+        } = {
           status: answer?.status ?? null,
           comment: answer?.comment ?? null,
           changedAfterDeadline: answer
@@ -143,6 +240,11 @@ async function readGrid(request: Request): Promise<Response> {
           answeredBy: answer ? getAnsweredBy(answer, member.userId) : null,
           answeredAt: answer?.updatedAt ?? null,
         };
+        if (event.parentalAuthorizationRequired === 1 && linkedChildren.has(member.userId)) {
+          const authorization = authorizations.get(`${event.id}:${member.userId}`) ?? null;
+          memberAnswer.authorization = formatGridAuthorization(event, authorization);
+        }
+        memberAnswers[String(event.id)] = memberAnswer;
       }
       return {
         userId: member.userId,
@@ -154,6 +256,47 @@ async function readGrid(request: Request): Promise<Response> {
       };
     }),
   });
+}
+
+function formatGridAuthorization(
+  event: PresenceGridEvent,
+  authorization: GridAuthorizationRow | null
+): GridAuthorization {
+  if (!authorization) {
+    return { status: "missing", authorizedBy: null, authorizedAt: null, outdated: false };
+  }
+  const paper = authorization.recordedBy !== null || authorization.guardianUserId === null;
+  const hasGuardian = authorization.guardianUserId !== null;
+  const authorRole = hasGuardian ? authorization.guardianRole : authorization.recorderRole;
+  const authorIsAdmin = authorRole !== null && isAdmin(authorRole);
+  const firstName = hasGuardian ? authorization.guardianFirstName : authorization.recorderFirstName;
+  const lastName = hasGuardian ? authorization.guardianLastName : authorization.recorderLastName;
+  const name = [firstName, lastName]
+    .map((part) => part?.trim() ?? "")
+    .filter((part) => part.length > 0)
+    .join(" ");
+  const kind =
+    hasGuardian
+      ? "parent"
+      : authorRole === null
+      ? "deleted"
+      : !name
+        ? "noProfile"
+        : authorIsAdmin
+          ? "admin"
+          : "parent";
+
+  return {
+    status: "authorized",
+    authorizedBy: {
+      name: name || null,
+      relation: hasGuardian ? authorization.guardianRelation : null,
+      kind,
+      paper,
+    },
+    authorizedAt: authorization.authorizedAt,
+    outdated: authorization.detailsSnapshot !== event.authorizationDetails,
+  };
 }
 
 function getAnsweredBy(

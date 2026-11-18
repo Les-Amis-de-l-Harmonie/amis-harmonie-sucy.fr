@@ -18,6 +18,8 @@ interface Row {
   first_name: string;
   last_name: string;
   date_of_birth: string | null;
+  /** Valeur effective, déjà calculée en SQL par EFFECTIVE_IMAGE_CONSENT_SQL. */
+  image_consent: number | null;
 }
 
 interface LinkRow {
@@ -37,6 +39,7 @@ function user(id: number, overrides: Partial<Row> = {}): Row {
     first_name: `Prénom${id}`,
     last_name: `Nom${id}`,
     date_of_birth: "1990-01-01",
+    image_consent: 1,
     ...overrides,
   };
 }
@@ -47,9 +50,12 @@ function stubDatabase(users: Row[], links: LinkRow[], failUsers = false) {
       return {
         first: async () => ({ count: 0 }),
         all: async () => {
-          if (sql.includes("FROM guardian_links")) return { results: links };
-          if (failUsers) throw new Error("no such table");
-          return { results: users };
+          // La requête des comptes contient le fragment du droit à l'image (qui lit guardian_links).
+          if (sql.includes("FROM users u")) {
+            if (failUsers) throw new Error("no such table");
+            return { results: users };
+          }
+          return { results: links };
         },
       };
     },
@@ -65,6 +71,7 @@ describe("AttentionCard", () => {
           missingBirthDate: 0,
           managedWithoutGuardian: 1,
           adultsStillLinked: 3,
+          pendingImageConsent: 4,
         }}
       />
     );
@@ -80,6 +87,9 @@ describe("AttentionCard", () => {
     expect(
       within(card).getByText("Majeurs encore reliés à un responsable").nextElementSibling
     ).toHaveTextContent("3");
+    expect(
+      within(card).getByText("Droits à l'image en attente").nextElementSibling
+    ).toHaveTextContent("4");
   });
 
   it("dit « Rien à signaler » quand tout est en ordre", () => {
@@ -90,6 +100,7 @@ describe("AttentionCard", () => {
           missingBirthDate: 0,
           managedWithoutGuardian: 0,
           adultsStillLinked: 0,
+          pendingImageConsent: 0,
         }}
       />
     );
@@ -117,11 +128,14 @@ describe("AdminDashboard — carte « À vérifier »", () => {
     stubDatabase(
       [
         user(1, { kind: "guardian" }),
-        user(2, { date_of_birth: `${thisYear - 12}-01-01` }), // mineur relié : rien à signaler
+        user(2, { date_of_birth: `${thisYear - 12}-01-01`, image_consent: null }), // relié, sans réponse
         user(3, { date_of_birth: `${thisYear - 9}-01-01` }), // mineur sans responsable
         user(4, { date_of_birth: null }), // sans date
         user(5, { kind: "managed", date_of_birth: `${thisYear - 7}-01-01` }), // géré sans responsable
-        user(6, { date_of_birth: `${thisYear - 21}-01-01` }), // majeur encore relié
+        user(6, {
+          date_of_birth: `${thisYear - 21}-01-01`,
+          image_consent: 1,
+        }), // majeur encore relié, droit à l'image renseigné par un responsable
         user(7, { role: "ADMIN", date_of_birth: null }), // admin : ignoré
         user(8, { is_active: 0, date_of_birth: `${thisYear - 5}-01-01` }), // inactif : ignoré
       ],
@@ -139,6 +153,7 @@ describe("AdminDashboard — carte « À vérifier »", () => {
     expect(count("Dates de naissance manquantes")).toBe("1");
     expect(count("Comptes gérés sans responsable")).toBe("1");
     expect(count("Majeurs encore reliés à un responsable")).toBe("1");
+    expect(count("Droits à l'image en attente")).toBe("1"); // 2 seulement
   });
 
   it("garde le tableau de bord quand les compteurs ne peuvent pas être calculés", async () => {

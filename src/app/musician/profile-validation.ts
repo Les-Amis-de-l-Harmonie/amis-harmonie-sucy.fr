@@ -1,4 +1,5 @@
 import type { MusicianProfile } from "@/db/types";
+import type { ImageConsentDetail } from "./musician-types";
 import type { Instrument } from "@/app/components/shared/InstrumentEditor";
 import { resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
 
@@ -10,6 +11,7 @@ export interface ProfileWithInstruments extends Partial<MusicianProfile> {
   email?: string | null;
   /** Le droit à l'image est décidé par un responsable légal : lecture seule. */
   imageConsentLocked?: boolean;
+  imageConsentDetail?: ImageConsentDetail;
 }
 
 /** Regex de validation en temps réel (un caractère par champ, jamais un format global). */

@@ -3,13 +3,14 @@ import { resolveMusicianIdentity } from "./auth";
 import { isAdmin, type UserRole } from "@/db/types";
 import { logger } from "@/lib/logger";
 import {
+  getParisDate,
   MUSICIAN_PRESENCE_MEMBER_QUERY,
   PRESENCE_UPSERT_SQL,
   summarisePresence,
   type PresenceRow,
 } from "@/lib/presence";
 
-interface PresenceEventRow {
+export interface PresenceEventRow {
   id: number;
   title: string;
   date: string;
@@ -17,6 +18,8 @@ interface PresenceEventRow {
   location: string | null;
   address: string | null;
   response_deadline: string | null;
+  parental_authorization_required: number;
+  authorization_details: string | null;
 }
 
 interface OwnPresenceRow {
@@ -47,6 +50,31 @@ interface OwnPresenceAnswerRow {
   updaterRole: UserRole | null;
   updaterFirstName: string | null;
   updaterRelation: string | null;
+}
+
+export interface EventAuthorizationRow {
+  eventId: number;
+  guardianUserId: number | null;
+  recordedBy: number | null;
+  guardianFirstName: string | null;
+  relation: string | null;
+  detailsSnapshot: string | null;
+  authorizedAt: string;
+}
+
+export interface PortalAuthorization {
+  details: string | null;
+  status: "authorized" | "missing";
+  authorizedBy: {
+    name: string | null;
+    relation: string | null;
+    byYou: boolean;
+    byAssociation: boolean;
+    paper: boolean;
+  } | null;
+  authorizedAt: string | null;
+  outdated: boolean;
+  canAuthorize: boolean;
 }
 
 interface PresenceRosterEntry {
@@ -86,6 +114,7 @@ interface MusicianPresenceEvent {
     noAnswer: number;
     totalMembers: number;
   };
+  authorization: PortalAuthorization | null;
 }
 
 interface PresenceRequestBody {
@@ -150,8 +179,15 @@ async function readPresenceEvent(
     status: member.status,
   }));
 
+  const authorization = await readPortalAuthorization(event, userId, actorId, delegated);
+  const {
+    parental_authorization_required: _authorizationRequired,
+    authorization_details: _authorizationDetails,
+    ...eventInfo
+  } = event;
+
   return {
-    ...event,
+    ...eventInfo,
     response: {
       status: ownPresence?.status ?? null,
       comment: ownPresence?.comment ?? null,
@@ -165,6 +201,7 @@ async function readPresenceEvent(
       noAnswer: summary.noAnswer,
       totalMembers: summary.totalMembers,
     },
+    authorization,
   };
 }
 
@@ -202,6 +239,12 @@ async function readPresenceEvents(
   const eventIds = events.map((event) => event.id);
   let answerRows: PresenceAnswerRow[] = [];
   let ownAnswerRows: OwnPresenceAnswerRow[] = [];
+  let authorizationRows: EventAuthorizationRow[] = [];
+  const linked =
+    events.some((event) => event.parental_authorization_required === 1) &&
+    !!(await env.DB.prepare("SELECT 1 AS linked FROM guardian_links WHERE child_user_id = ? LIMIT 1")
+      .bind(userId)
+      .first<{ linked: number }>());
   if (eventIds.length > 0) {
     const answers = await env.DB.prepare(
       `SELECT ep.event_id AS eventId, ep.user_id AS userId, ep.status, ep.comment,
@@ -229,9 +272,29 @@ async function readPresenceEvents(
       .bind(userId, JSON.stringify(eventIds))
       .all<OwnPresenceAnswerRow>();
     ownAnswerRows = ownAnswers.results || [];
+
+    if (linked) {
+      const authorizations = await env.DB.prepare(
+        `SELECT ea.event_id AS eventId, ea.guardian_user_id AS guardianUserId,
+                ea.recorded_by AS recordedBy, guardianProfile.first_name AS guardianFirstName,
+                guardianLink.relation AS relation, ea.details_snapshot AS detailsSnapshot,
+                ea.authorized_at AS authorizedAt
+         FROM event_authorizations ea
+         LEFT JOIN musician_profiles guardianProfile ON guardianProfile.user_id = ea.guardian_user_id
+         LEFT JOIN guardian_links guardianLink
+           ON guardianLink.guardian_user_id = ea.guardian_user_id
+          AND guardianLink.child_user_id = ea.child_user_id
+         WHERE ea.child_user_id = ?
+           AND ea.event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+      )
+        .bind(userId, JSON.stringify(eventIds))
+        .all<EventAuthorizationRow>();
+      authorizationRows = authorizations.results || [];
+    }
   }
   const answersByEvent = indexPresenceAnswers(answerRows);
   const ownAnswersByEvent = new Map(ownAnswerRows.map((answer) => [answer.eventId, answer]));
+  const authorizationByEvent = new Map(authorizationRows.map((authorization) => [authorization.eventId, authorization]));
 
   return events.map((event) => {
     const eventAnswers = answersByEvent.get(event.id);
@@ -248,8 +311,21 @@ async function readPresenceEvents(
     });
     const ownPresence = ownAnswersByEvent.get(event.id);
 
+    const authorization = formatPortalAuthorization(
+      event,
+      authorizationByEvent.get(event.id) ?? null,
+      linked,
+      actorId,
+      delegated
+    );
+    const {
+      parental_authorization_required: _authorizationRequired,
+      authorization_details: _authorizationDetails,
+      ...eventInfo
+    } = event;
+
     return {
-      ...event,
+      ...eventInfo,
       response: {
         status: ownPresence?.status ?? null,
         comment: ownPresence?.comment ?? null,
@@ -263,8 +339,74 @@ async function readPresenceEvents(
         noAnswer: roster.filter((member) => member.status === null).length,
         totalMembers: roster.length,
       },
+      authorization,
     };
   });
+}
+
+async function readPortalAuthorization(
+  event: PresenceEventRow,
+  childUserId: number,
+  actorId: number,
+  delegated: boolean
+): Promise<PortalAuthorization | null> {
+  if (event.parental_authorization_required !== 1) return null;
+  const linked = await env.DB.prepare(
+    "SELECT 1 AS linked FROM guardian_links WHERE child_user_id = ? LIMIT 1"
+  )
+    .bind(childUserId)
+    .first<{ linked: number }>();
+  if (!linked) return null;
+
+  const authorization = await env.DB.prepare(
+    `SELECT ea.event_id AS eventId, ea.guardian_user_id AS guardianUserId,
+            ea.recorded_by AS recordedBy, guardianProfile.first_name AS guardianFirstName,
+            guardianLink.relation AS relation, ea.details_snapshot AS detailsSnapshot,
+            ea.authorized_at AS authorizedAt
+     FROM event_authorizations ea
+     LEFT JOIN musician_profiles guardianProfile ON guardianProfile.user_id = ea.guardian_user_id
+     LEFT JOIN guardian_links guardianLink
+       ON guardianLink.guardian_user_id = ea.guardian_user_id
+      AND guardianLink.child_user_id = ea.child_user_id
+     WHERE ea.event_id = ? AND ea.child_user_id = ?`
+  )
+    .bind(event.id, childUserId)
+    .first<EventAuthorizationRow>();
+
+  return formatPortalAuthorization(event, authorization, true, actorId, delegated);
+}
+
+export function formatPortalAuthorization(
+  event: PresenceEventRow,
+  authorization: EventAuthorizationRow | null,
+  linked: boolean,
+  actorId: number,
+  delegated: boolean
+): PortalAuthorization | null {
+  if (event.parental_authorization_required !== 1 || !linked) return null;
+  const hasGuardian = authorization !== null && authorization.guardianUserId !== null;
+  const byAssociation = authorization !== null && !hasGuardian;
+  const paper =
+    authorization !== null &&
+    (authorization.recordedBy !== null || authorization.guardianUserId === null);
+  return {
+    details: event.authorization_details,
+    status: authorization ? "authorized" : "missing",
+    authorizedBy: authorization
+      ? {
+          name: hasGuardian ? authorization.guardianFirstName : null,
+          relation: hasGuardian ? authorization.relation : null,
+          byYou: hasGuardian && delegated && authorization.guardianUserId === actorId,
+          byAssociation,
+          paper,
+        }
+      : null,
+    authorizedAt: authorization?.authorizedAt ?? null,
+    outdated: authorization
+      ? authorization.detailsSnapshot !== event.authorization_details
+      : false,
+    canAuthorize: delegated && event.date >= getParisDate(),
+  };
 }
 
 function getAnsweredBy(
@@ -299,7 +441,8 @@ async function handleGet(
   const includePast = new URL(request.url).searchParams.get("includePast") === "1";
   const dateCondition = includePast ? "date >= date('now', '-12 months')" : "date >= date('now')";
   const events = await env.DB.prepare(
-    `SELECT id, title, date, time, location, address, response_deadline
+    `SELECT id, title, date, time, location, address, response_deadline,
+            parental_authorization_required, authorization_details
      FROM events
      WHERE presence_required = 1 AND ${dateCondition}
      ORDER BY date ASC`
@@ -340,7 +483,8 @@ async function handlePost(
     return jsonResponse({ error: "Le commentaire ne peut pas dépasser 1000 caractères." }, 400);
   }
   const event = await env.DB.prepare(
-    `SELECT id, title, date, time, location, address, response_deadline
+    `SELECT id, title, date, time, location, address, response_deadline,
+            parental_authorization_required, authorization_details
      FROM events
      WHERE id = ? AND presence_required = 1 AND date >= date('now')`
   )

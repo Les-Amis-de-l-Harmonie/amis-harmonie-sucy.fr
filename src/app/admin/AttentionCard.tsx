@@ -8,6 +8,7 @@ const LINES: { key: keyof AttentionCounts; label: string }[] = [
   { key: "missingBirthDate", label: "Dates de naissance manquantes" },
   { key: "managedWithoutGuardian", label: "Comptes gérés sans responsable" },
   { key: "adultsStillLinked", label: "Majeurs encore reliés à un responsable" },
+  { key: "pendingImageConsent", label: "Droits à l'image en attente" },
 ];
 
 /** Carte « À vérifier » du tableau de bord : les compteurs de la page Familles. */

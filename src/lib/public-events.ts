@@ -37,13 +37,20 @@ export const PUBLIC_EVENTS_API_QUERY =
   "details_link, reservation_link, created_at " +
   "FROM events WHERE is_public = 1 ORDER BY date ASC";
 
+// Les pages publiques conservaient historiquement SELECT * et donc ces colonnes
+// préexistantes. La liste explicite empêche les nouvelles consignes parentales de
+// devenir publiques lors de futures migrations.
+const PUBLIC_PAGE_EVENT_COLUMNS =
+  "id, title, image, location, description, date, time, price, is_past, " +
+  "details_link, reservation_link, created_at, is_public, presence_required, address, response_deadline";
+
 /** Événements affichés sur la page d'accueil. */
 export const PUBLIC_EVENTS_HOME_QUERY =
-  "SELECT * FROM events WHERE is_public = 1 ORDER BY date ASC";
+  `SELECT ${PUBLIC_PAGE_EVENT_COLUMNS} FROM events WHERE is_public = 1 ORDER BY date ASC`;
 
 /** Événements à venir proposés à la réservation sur la page billetterie. */
 export const PUBLIC_EVENTS_BILLETTERIE_QUERY =
-  "SELECT * FROM events WHERE date >= ? AND reservation_link IS NOT NULL " +
+  `SELECT ${PUBLIC_PAGE_EVENT_COLUMNS} FROM events WHERE date >= ? AND reservation_link IS NOT NULL ` +
   "AND is_public = 1 ORDER BY date ASC";
 
 /** Événements publics à venir référencés dans le plan du site. */
@@ -61,7 +68,12 @@ export const PUBLIC_EVENTS_SITEMAP_QUERY =
  */
 export type PublicEventRow = Omit<
   Event,
-  "is_public" | "presence_required" | "address" | "response_deadline"
+  | "is_public"
+  | "presence_required"
+  | "address"
+  | "response_deadline"
+  | "parental_authorization_required"
+  | "authorization_details"
 > & { is_past: number | null };
 
 /** Toutes les requêtes de lecture publique, pour les tests de non-régression. */

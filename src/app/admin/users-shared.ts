@@ -35,7 +35,10 @@ export interface UserWithProfile {
   emergency_contact_first_name?: string | null;
   emergency_contact_email?: string | null;
   emergency_contact_phone?: string | null;
+  /** Valeur effective : pour un enfant relié, elle vient des réponses de ses responsables. */
   image_consent?: number | null;
+  /** Vrai quand le droit à l'image d'un musicien relié est géré par ses responsables. */
+  image_consent_managed?: boolean;
   adhesion_2026_2027?: number | null;
   instruments?: { instrument_name: string; start_date?: string | null; level?: string | null }[];
   harmonieInstruments?: string[];

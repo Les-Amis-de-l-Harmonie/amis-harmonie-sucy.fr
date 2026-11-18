@@ -64,6 +64,20 @@ function createDatabase(): DatabaseSync {
       user_id INTEGER NOT NULL,
       instrument_name TEXT NOT NULL
     );
+    CREATE TABLE guardian_links (
+      id INTEGER PRIMARY KEY,
+      guardian_user_id INTEGER NOT NULL,
+      child_user_id INTEGER NOT NULL,
+      relation TEXT
+    );
+    CREATE TABLE guardian_image_consents (
+      id INTEGER PRIMARY KEY,
+      child_user_id INTEGER NOT NULL,
+      guardian_user_id INTEGER NOT NULL,
+      consent INTEGER NOT NULL,
+      recorded_by INTEGER,
+      UNIQUE(child_user_id, guardian_user_id)
+    );
     INSERT INTO users (id, role, kind, is_active) VALUES
       (1, 'MUSICIAN', 'member', 1),
       (2, 'MUSICIAN', 'member', 1),
@@ -130,6 +144,14 @@ function createDatabase(): DatabaseSync {
     null
   );
   database
+    .prepare("INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (6, 2, 'mère')")
+    .run();
+  database
+    .prepare(
+      "INSERT INTO guardian_image_consents (child_user_id, guardian_user_id, consent) VALUES (2, 6, 0)"
+    )
+    .run();
+  database
     .prepare("INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (2, 'Flûte')")
     .run();
   database
@@ -170,7 +192,7 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
     Object.assign(env, { DB: originalDb });
   });
 
-  it("ne renvoie que le mois et le jour des anniversaires et masque les photos sans accord", async () => {
+  it("un non parental masque l'avatar des anniversaires malgré le oui historique", async () => {
     const response = await handleMusicianBirthdaysApi(
       new Request("https://test.local/api/musician/birthdays")
     );
@@ -190,13 +212,13 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
           "avatar,birthday,days_until,first_name,last_name"
       )
     ).toBe(true);
-    expect(byLastName.get("Accordé")?.avatar).toBe("/images/r2/consenti.webp");
+    expect(byLastName.get("Accordé")?.avatar).toBeNull();
     expect(byLastName.get("Refusé")?.avatar).toBeNull();
     expect(byLastName.get("Inconnu")?.avatar).toBeNull();
     expect(byLastName.has("Exclu")).toBe(false);
   });
 
-  it("ne renvoie les photos du trombinoscope qu'avec un consentement explicite", async () => {
+  it("un non parental masque du trombinoscope une photo autorisée par la valeur historique", async () => {
     const response = await handleMusicianTrombinoscopeApi(
       new Request("https://test.local/api/musician/trombinoscope")
     );
@@ -213,7 +235,8 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
     expect(body.musicians).toHaveLength(4);
     expect(byUserId.get(1)?.avatar).toBeNull();
     expect(byUserId.get(1)?.image_consent).toBeNull();
-    expect(byUserId.get(2)?.avatar).toBe("/images/r2/consenti.webp");
+    expect(byUserId.get(2)?.image_consent).toBe(0);
+    expect(byUserId.get(2)?.avatar).toBeNull();
     expect(byUserId.get(3)?.avatar).toBeNull();
     expect(byUserId.get(4)?.avatar).toBeNull();
     expect(byUserId.has(6)).toBe(false);

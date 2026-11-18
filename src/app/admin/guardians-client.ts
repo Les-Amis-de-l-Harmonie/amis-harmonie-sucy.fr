@@ -10,6 +10,10 @@ export interface GuardianLinkEntry {
   kind: UserKind;
   relation: string | null;
   isActive: boolean;
+  /** Réponse de ce responsable sur le droit à l'image de l'enfant (0 = refus, 1 = accord). */
+  imageConsent?: 0 | 1 | null;
+  /** Vrai si la réponse a été saisie par un admin (papier) et non par le responsable. */
+  imageConsentRecordedByAdmin?: boolean;
 }
 
 export interface GuardianLinksData {
@@ -102,6 +106,22 @@ export function giveAccess(input: { childUserId: number; email: string }) {
   return postJson<{ success?: boolean; userId?: number }>("give-access", input);
 }
 
+/** Saisie papier de la réponse d'un responsable ; `null` efface sa réponse. SUPER_ADMIN. */
+export function recordImageConsent(input: {
+  childUserId: number;
+  guardianUserId: number;
+  consent: 0 | 1 | null;
+}) {
+  return postJson<{ success?: boolean }>("image-consent", input);
+}
+
+/** Valeur effective du droit à l'image d'un compte, relue après une saisie. */
+export function fetchEffectiveImageConsent(userId: number) {
+  return request<{ image_consent?: number | null; image_consent_managed?: boolean }>(
+    `/api/admin/users?id=${userId}`
+  );
+}
+
 export function removeGuardianLink(linkId: number) {
   return request<{ success?: boolean }>(`/api/admin/guardians?id=${linkId}`, {
     method: "DELETE",
@@ -115,4 +135,21 @@ export function entryName(entry: Pick<GuardianLinkEntry, "firstName" | "lastName
 export function joinNames(entries: GuardianLinkEntry[]): string | null {
   const names = entries.map(entryName);
   return names.length > 0 ? names.join(", ") : null;
+}
+
+/**
+ * Saisie papier d'une autorisation parentale (responsable facultatif, mais relié s'il est donné)
+ * ou retrait (`authorize: false`). ADMIN.
+ */
+export function postAuthorization(input: {
+  eventId: number;
+  childUserId: number;
+  authorize: boolean;
+  guardianUserId?: number;
+}) {
+  return request<{ success?: boolean }>("/api/admin/authorizations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
 }

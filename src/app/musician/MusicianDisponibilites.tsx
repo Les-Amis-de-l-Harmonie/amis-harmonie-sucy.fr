@@ -10,6 +10,7 @@ import type { PresenceStatus } from "@/db/types";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
+import { needsAuthorizationAttention, showsAuthorizationCard } from "./authorization-helpers";
 import { PresenceCard } from "./PresenceCard";
 import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
@@ -138,8 +139,10 @@ function MusicianDisponibilitesContent() {
     (event) => event.response.status === null && !isEventPast(event.date)
   ).length;
   const visibleEvents = (events ?? []).filter(
-    (event) => event.response.status === null || event.id === openEventId
+    (event) =>
+      event.response.status === null || event.id === openEventId || showsAuthorizationCard(event)
   );
+  const authorizationsPending = (events ?? []).filter(needsAuthorizationAttention).length;
   // Le même critère que `unansweredCount` sépare la liste en deux : la file "à répondre"
   // (jamais de prestation passée, par construction) et une zone de consultation à part
   // pour ce que le bouton "Prestations passées" a révélé.
@@ -158,6 +161,11 @@ function MusicianDisponibilitesContent() {
                 : labels.pageAllAnswered
               : labels.pageIndicateEach}
           </p>
+          {authorizationsPending > 0 && (
+            <p className="mt-0.5 text-sm font-medium text-warning">
+              {labels.pageAuthorizationsPending(authorizationsPending)}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

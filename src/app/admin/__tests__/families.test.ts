@@ -22,6 +22,7 @@ function account(overrides: Partial<UserWithProfile> = {}): UserWithProfile {
     first_name: "Prénom",
     last_name: "Nom",
     date_of_birth: "1990-01-01",
+    image_consent: 1,
     ...overrides,
   };
 }
@@ -49,6 +50,8 @@ const hugo = account({
   first_name: "Hugo",
   last_name: "Leroy",
   date_of_birth: "2010-05-10",
+  // Ni lui ni ses responsables n'ont répondu.
+  image_consent: null,
   emergency_contact_first_name: "Tante",
   emergency_contact_last_name: "Leroy",
   emergency_contact_phone: "06 99 99 99 99",
@@ -220,6 +223,25 @@ describe("buildFamiliesModel — à vérifier", () => {
     });
   });
 
+  it("liste les enfants reliés dont le droit à l'image effectif est vide", () => {
+    expect(attention.pendingImageConsent).toHaveLength(1);
+    expect(attention.pendingImageConsent[0]).toMatchObject({
+      name: "Hugo Leroy",
+      guardianNames: "Nathalie Leroy",
+    });
+  });
+
+  it("ignore le droit à l'image vide d'un musicien non relié, adulte ou non", () => {
+    const loose = account({ id: 130, first_name: "Seul", last_name: "Libre", image_consent: null });
+    const model = buildFamiliesModel([...users, loose], links, NOW);
+    expect(model.attention.pendingImageConsent.map((m) => m.name)).toEqual(["Hugo Leroy"]);
+  });
+
+  it("n'attend plus de réponse une fois la valeur effective renseignée", () => {
+    const answered = users.map((u) => (u.id === 8 ? { ...u, image_consent: 0 } : u));
+    expect(buildFamiliesModel(answered, links, NOW).attention.pendingImageConsent).toEqual([]);
+  });
+
   it("compte chaque liste et le total", () => {
     const counts = countAttention(attention);
     expect(counts).toEqual({
@@ -227,8 +249,9 @@ describe("buildFamiliesModel — à vérifier", () => {
       missingBirthDate: 2,
       managedWithoutGuardian: 1,
       adultsStillLinked: 1,
+      pendingImageConsent: 1,
     });
-    expect(totalAttention(counts)).toBe(5);
+    expect(totalAttention(counts)).toBe(6);
   });
 
   it("ne signale plus un mineur dès qu'un responsable est lié", () => {

@@ -1,4 +1,5 @@
 import { useMusicianSession } from "./MusicianSession";
+import type { ImageConsentDetail, PresenceAuthorizedBy } from "./musician-types";
 
 /**
  * Textes du portail qui parlent à la première personne (« Mes prestations »,
@@ -44,6 +45,22 @@ export interface ActingLabels {
   myIdeasHeading: string;
   publicWallIntro: string;
   ideaResponseTitle: string;
+  consentAllow: string;
+  consentDeny: string;
+  consentYourAnswer: string;
+  consentOthersTitle: string;
+  consentStatusTitle: string;
+  consentStatus: (effective: ImageConsentDetail["effective"]) => string;
+  consentRule: string;
+  pageAuthorizationsPending: (count: number) => string;
+  authTitle: string;
+  authAuthorize: string;
+  authWithdrawMine: string;
+  authWithdrawOther: string;
+  authMissing: string;
+  authWaitingParents: string;
+  authOutdated: string;
+  authAuthorizedBy: (by: PresenceAuthorizedBy | null, dateLabel: string | null) => string;
   journey: {
     editProfile: string;
     completeProfile: string;
@@ -53,6 +70,25 @@ export interface ActingLabels {
     allAnswersUpToDate: string;
     seePrestations: string;
   };
+}
+
+const CONSENT_RULE =
+  "Il suffit qu'un parent accepte ; si un parent refuse, la photo n'est pas utilisée.";
+const AUTH_OUTDATED =
+  "Les informations ont changé depuis l'autorisation : vérifiez-les et confirmez à nouveau.";
+
+function authAuthorizedBy(by: PresenceAuthorizedBy | null, dateLabel: string | null): string {
+  const date = dateLabel ? ` le ${dateLabel}` : "";
+  if (by?.byYou) return `Autorisé par vous${by.paper ? " (papier)" : ""}${date}`;
+  if (by?.byAssociation) {
+    return `Autorisé par l'association${by.paper ? " (papier)" : ""}${date}`;
+  }
+  const name = by?.name?.trim();
+  if (!name) {
+    return `${by?.paper ? "Autorisé par un responsable, sur papier" : "Autorisé"}${date}`;
+  }
+  const relation = by?.relation?.trim();
+  return `Autorisé par ${name}${relation ? ` (${relation})` : ""}${by?.paper ? ", sur papier" : ""}${date}`;
 }
 
 export function getActingLabels(
@@ -103,6 +139,28 @@ export function getActingLabels(
       publicWallIntro:
         "Soutenez vos idées préférées dès maintenant et participez à faire émerger les meilleures !",
       ideaResponseTitle: "Votre idée",
+      consentAllow: "J'autorise l'utilisation de mon image",
+      consentDeny: "Je n'autorise pas l'utilisation de mon image",
+      consentYourAnswer: "Votre réponse",
+      consentOthersTitle: "Réponses de vos parents",
+      consentStatusTitle: "Situation actuelle",
+      consentStatus: (effective) =>
+        effective === 1
+          ? "Droit à l'image accordé."
+          : effective === 0
+            ? "Droit à l'image refusé : votre photo n'est pas utilisée."
+            : "Aucune réponse pour le moment.",
+      consentRule: CONSENT_RULE,
+      pageAuthorizationsPending: (count) =>
+        `${count} autorisation${count > 1 ? "s" : ""} parentale${count > 1 ? "s" : ""} en attente`,
+      authTitle: "Autorisation parentale",
+      authAuthorize: "J'autorise à participer",
+      authWithdrawMine: "Retirer mon autorisation",
+      authWithdrawOther: "Retirer l'autorisation",
+      authMissing: "Autorisation manquante",
+      authWaitingParents: "En attente de l'autorisation de vos parents",
+      authOutdated: AUTH_OUTDATED,
+      authAuthorizedBy,
       journey: {
         editProfile: "Modifier mon profil",
         completeProfile: "Compléter mon profil",
@@ -157,6 +215,28 @@ export function getActingLabels(
     myIdeasHeading: `Idées soumises par ${subject}`,
     publicWallIntro: "Les idées partagées par les musiciens de l'harmonie.",
     ideaResponseTitle: `Idée de ${subject}`,
+    consentAllow: `J'autorise l'utilisation de l'image de ${name}`,
+    consentDeny: `Je n'autorise pas l'utilisation de l'image de ${name}`,
+    consentYourAnswer: "Votre réponse",
+    consentOthersTitle: "Réponses des autres parents",
+    consentStatusTitle: "Situation actuelle",
+    consentStatus: (effective) =>
+      effective === 1
+        ? `Droit à l'image accordé pour ${name}.`
+        : effective === 0
+          ? `Droit à l'image refusé : la photo de ${name} n'est pas utilisée.`
+          : `Aucune réponse pour le moment pour ${name}.`,
+    consentRule: CONSENT_RULE,
+    pageAuthorizationsPending: (count) =>
+      `${count} autorisation${count > 1 ? "s" : ""} parentale${count > 1 ? "s" : ""} à donner pour ${name}`,
+    authTitle: "Autorisation parentale",
+    authAuthorize: `J'autorise ${name} à participer`,
+    authWithdrawMine: "Retirer mon autorisation",
+    authWithdrawOther: "Retirer l'autorisation",
+    authMissing: "Autorisation manquante",
+    authWaitingParents: "En attente de l'autorisation de vos parents",
+    authOutdated: AUTH_OUTDATED,
+    authAuthorizedBy,
     journey: {
       editProfile: "Modifier le profil",
       completeProfile: "Compléter le profil",

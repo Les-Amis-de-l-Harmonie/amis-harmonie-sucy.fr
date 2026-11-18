@@ -308,10 +308,14 @@ describe("resolveMusicianIdentity", () => {
   });
 
   it("n'utilise plus verifySession directement dans les handlers musiciens", () => {
-    const musicianApi = readFileSync(join(apiRootPath(), "musician.ts"), "utf8");
-    const presenceApi = readFileSync(join(apiRootPath(), "musician-presence.ts"), "utf8");
-    expect(musicianApi).not.toContain("verifySession(");
-    expect(presenceApi).not.toContain("verifySession(");
+    const musicianModules = readdirSync(apiRootPath())
+      .filter((name) => /^musician.*\.ts$/.test(name))
+      .sort();
+    expect(musicianModules).toContain("musician-authorizations.ts");
+    const offenders = musicianModules.filter((name) =>
+      readFileSync(join(apiRootPath(), name), "utf8").includes("verifySession(")
+    );
+    expect(offenders).toEqual([]);
   });
 });
 

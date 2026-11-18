@@ -20,6 +20,7 @@ import type { PresenceStatus } from "@/db/types";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
+import { AuthorizationBlock } from "./AuthorizationBlock";
 import { getDeadlineTone } from "./presence-deadline";
 import type { PresenceAnsweredBy, PresenceEvent } from "./musician-types";
 import { StatusPill } from "./StatusPill";
@@ -117,7 +118,13 @@ export function PresenceCard({ event, onUpdate, onStatusChanged }: PresenceCardP
         // être ré-enregistré en silence à la prochaine réponse.
         setComment(data.event.response.comment ?? "");
         setConfirmingClear(false);
-        onUpdate(data.event);
+        // La réponse de présence n'embarque pas forcément l'autorisation : on garde
+        // celle de la carte plutôt que de la faire disparaître jusqu'au prochain chargement.
+        onUpdate(
+          "authorization" in data.event
+            ? data.event
+            : { ...data.event, authorization: event.authorization }
+        );
         setSaveState("saved");
         setLastSavedAction(action);
         if (status !== newStatus) onStatusChanged(event.id, newStatus);
@@ -130,7 +137,7 @@ export function PresenceCard({ event, onUpdate, onStatusChanged }: PresenceCardP
         setPendingAction(null);
       }
     },
-    [comment, event.id, onStatusChanged, onUpdate]
+    [comment, event.authorization, event.id, onStatusChanged, onUpdate]
   );
 
   const answeredByLine = answered ? formatAnsweredBy(event.response.answeredBy) : null;
@@ -264,6 +271,13 @@ export function PresenceCard({ event, onUpdate, onStatusChanged }: PresenceCardP
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col pt-0">
+        {event.authorization && (
+          <AuthorizationBlock
+            eventId={event.id}
+            authorization={event.authorization}
+            onAuthorizationChange={(authorization) => onUpdate({ ...event, authorization })}
+          />
+        )}
         {statusActions}
 
         {/* Action rare et corrective : délibérément discrète (texte muted, pas de

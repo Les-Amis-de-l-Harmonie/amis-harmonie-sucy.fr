@@ -25,7 +25,13 @@ function account(overrides: Partial<UserWithProfile> = {}): UserWithProfile {
 }
 
 const users: UserWithProfile[] = [
-  account({ id: 1, guardian_names: "Marie Dupont", date_of_birth: "1990-03-02" }),
+  account({
+    id: 1,
+    guardian_names: "Marie Dupont",
+    date_of_birth: "1990-03-02",
+    image_consent: 1,
+    image_consent_managed: true,
+  }),
   account({
     id: 2,
     email: "marie@example.com",
@@ -203,6 +209,55 @@ describe("UsersAdminClient", () => {
       await screen.findByText("Tom Petit");
 
       expect(screen.queryByRole("dialog")).toBeNull();
+    });
+  });
+
+  describe("droit à l'image d'un musicien relié", () => {
+    it("rend le champ en lecture seule, avec la valeur effective et l'explication", async () => {
+      const user = userEvent.setup();
+      mockApi();
+      render(
+        <UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />
+      );
+      await screen.findByText("Tom Petit");
+
+      await user.click(screen.getByRole("button", { name: "Modifier Léa Dupont" }));
+      const dialog = await screen.findByRole("dialog");
+
+      const note = within(dialog).getByTestId("image-consent-managed");
+      expect(within(note).getByText("Autorisé")).toBeTruthy();
+      expect(within(note).getByText(/Un refus d'un responsable\s+l'emporte/)).toBeTruthy();
+      expect(within(dialog).queryByLabelText("J'autorise l'utilisation de mon image")).toBeNull();
+      expect(
+        within(dialog).queryByLabelText("Je n'autorise pas l'utilisation de mon image")
+      ).toBeNull();
+    });
+
+    it("garde le choix modifiable pour un musicien sans responsable", async () => {
+      const user = userEvent.setup();
+      mockApi();
+      render(
+        <UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />
+      );
+      await screen.findByText("Tom Petit");
+
+      await user.click(screen.getByRole("button", { name: "Modifier Paul Durand" }));
+      const dialog = await screen.findByRole("dialog");
+
+      expect(within(dialog).queryByTestId("image-consent-managed")).toBeNull();
+      expect(within(dialog).getByLabelText("J'autorise l'utilisation de mon image")).toBeTruthy();
+    });
+
+    it("affiche aussi la valeur effective et la règle dans la fiche en lecture", async () => {
+      const user = userEvent.setup();
+      mockApi();
+      render(<UsersAdminClient currentUserRole="ADMIN" currentUserEmail="admin@example.com" />);
+      await screen.findByText("Tom Petit");
+
+      await user.click(screen.getByRole("button", { name: "Voir la fiche de Léa Dupont" }));
+      const dialog = await screen.findByRole("dialog");
+
+      expect(within(dialog).getByTestId("image-consent-managed")).toBeTruthy();
     });
   });
 

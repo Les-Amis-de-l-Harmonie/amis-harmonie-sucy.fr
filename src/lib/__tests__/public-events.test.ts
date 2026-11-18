@@ -36,6 +36,13 @@ describe("requêtes de lecture publique des événements", () => {
     expect(PUBLIC_EVENTS_API_QUERY.split("FROM events")[0]).not.toContain("is_public");
   });
 
+  it("ne transmet jamais les nouvelles consignes parentales aux surfaces publiques", () => {
+    for (const query of PUBLIC_EVENT_QUERIES) {
+      expect(query).not.toContain("parental_authorization_required");
+      expect(query).not.toContain("authorization_details");
+    }
+  });
+
   it("conserve la forme historique de la réponse publique", () => {
     // `is_past` est une colonne héritée et inutilisée, mais « SELECT * » la
     // renvoyait avant la migration : la retirer casserait les consommateurs

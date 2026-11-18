@@ -156,6 +156,20 @@ export function hasChangedAfterDeadline(
   );
 }
 
+/** Date civile actuelle en Europe/Paris, pour les règles d'échéance liées aux événements. */
+export function getParisDate(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("fr-CA", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return `${year}-${month}-${day}`;
+}
+
 export function summarisePresence(rows: PresenceRow[]): PresenceSummary {
   const memberAccumulators = new Map<number, PresenceMemberAccumulator>();
 

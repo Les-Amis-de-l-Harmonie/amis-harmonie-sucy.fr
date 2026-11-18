@@ -55,6 +55,8 @@ export interface AttentionLists {
   managedWithoutGuardian: FamilyMember[];
   /** 18 ans ou plus, mais un responsable est encore lié. */
   adultsStillLinked: (FamilyMember & { guardianNames: string })[];
+  /** Enfant relié dont la valeur effective du droit à l'image est encore vide. */
+  pendingImageConsent: (FamilyMember & { guardianNames: string })[];
 }
 
 export interface AttentionCounts {
@@ -62,6 +64,7 @@ export interface AttentionCounts {
   missingBirthDate: number;
   managedWithoutGuardian: number;
   adultsStillLinked: number;
+  pendingImageConsent: number;
 }
 
 export interface PrintRow {
@@ -213,6 +216,7 @@ export function buildFamiliesModel(
     missingBirthDate: [],
     managedWithoutGuardian: [],
     adultsStillLinked: [],
+    pendingImageConsent: [],
   };
   for (const user of byId.values()) {
     if (user.is_active === 0) continue;
@@ -229,6 +233,10 @@ export function buildFamiliesModel(
           .map((link) => memberOf(link.guardianUserId)?.name)
           .filter((name): name is string => !!name)
           .join(", ");
+        // `image_consent` est la valeur effective renvoyée par l'API : vide = personne n'a répondu.
+        if (user.image_consent === null || user.image_consent === undefined) {
+          attention.pendingImageConsent.push({ ...member, guardianNames });
+        }
         if (isAdultWithLinkedGuardian({ ...user, guardian_names: guardianNames }, now)) {
           attention.adultsStillLinked.push({ ...member, guardianNames });
         }
@@ -286,6 +294,7 @@ export function countAttention(attention: AttentionLists): AttentionCounts {
     missingBirthDate: attention.missingBirthDate.length,
     managedWithoutGuardian: attention.managedWithoutGuardian.length,
     adultsStillLinked: attention.adultsStillLinked.length,
+    pendingImageConsent: attention.pendingImageConsent.length,
   };
 }
 
@@ -294,7 +303,8 @@ export function totalAttention(counts: AttentionCounts): number {
     counts.minorsWithoutGuardian +
     counts.missingBirthDate +
     counts.managedWithoutGuardian +
-    counts.adultsStillLinked
+    counts.adultsStillLinked +
+    counts.pendingImageConsent
   );
 }
 

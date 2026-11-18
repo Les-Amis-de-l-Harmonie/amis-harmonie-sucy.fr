@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarX,
+  Camera,
   CheckCircle2,
   Mail,
   Phone,
@@ -32,6 +33,7 @@ import {
   type GuardianLink,
   type PrintRow,
 } from "./families";
+import { PRINT_PAGE_CSS } from "./print-styles";
 import { matchesUserSearch, type UserWithProfile } from "./users-shared";
 
 type View = "familles" | "a-verifier" | "mineurs";
@@ -343,7 +345,7 @@ function AttentionSection({ title, hint, icon, members, detail, testId }: Attent
 
 function AttentionView({ attention }: { attention: AttentionLists }) {
   return (
-    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+    <div className="gap-4 xl:columns-2 [&>*]:mb-4 [&>*]:break-inside-avoid">
       <AttentionSection
         testId="attention-minors"
         title="Mineurs sans responsable"
@@ -371,6 +373,14 @@ function AttentionView({ attention }: { attention: AttentionLists }) {
         hint="Ont 18 ans ou plus : retirer le responsable ou lui donner un accès personnel."
         icon={<AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />}
         members={attention.adultsStillLinked}
+        detail={(member) => (member.guardianNames ? `Responsable : ${member.guardianNames}` : "")}
+      />
+      <AttentionSection
+        testId="attention-image-consent"
+        title="Droit à l'image en attente"
+        hint="Musicien relié à un responsable : ni lui ni ses responsables n'ont répondu."
+        icon={<Camera className="h-4 w-4 text-amber-600" aria-hidden="true" />}
+        members={attention.pendingImageConsent}
         detail={(member) => (member.guardianNames ? `Responsable : ${member.guardianNames}` : "")}
       />
     </div>
@@ -470,10 +480,6 @@ function PrintTable({ rows }: { rows: PrintRow[] }) {
     </table>
   );
 }
-
-// Le fond gris de la page (thème) ne doit pas sortir sur le papier, et la feuille est en A4.
-const PRINT_PAGE_CSS =
-  "@page { size: A4 portrait; margin: 12mm; } @media print { html, body, html.dark, html.dark body { background: #fff !important; } }";
 
 function MinorsView({ rows }: { rows: PrintRow[] }) {
   return (

@@ -54,6 +54,7 @@ import { Pagination } from "@/app/components/ui/pagination";
 import { compareInstruments, resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
 import { cn } from "@/lib/utils";
 import { AccountTypePicker } from "./AccountTypePicker";
+import { ImageConsentBadge, ManagedImageConsentNote } from "./ImageConsentManaged";
 import { ManagedAccountNotice } from "./ManagedAccountNotice";
 import { UserGuardianLinks, type LinkedNames } from "./UserGuardianLinks";
 import {
@@ -207,7 +208,16 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const handleLinksChanged = (names: LinkedNames) => {
     void fetchData();
     const apply = (prev: Partial<UserWithProfile> | null) =>
-      prev ? { ...prev, guardian_names: names.guardians, children_names: names.children } : prev;
+      prev
+        ? {
+            ...prev,
+            guardian_names: names.guardians,
+            children_names: names.children,
+            // Relié : le droit à l'image dépend des responsables ; sinon il redevient modifiable.
+            image_consent_managed: !!names.guardians,
+            ...(names.imageConsent !== undefined ? { image_consent: names.imageConsent } : {}),
+          }
+        : prev;
     setEditing(apply);
     setViewing(apply);
   };
@@ -1309,30 +1319,34 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                             de chaque personne photographiée.
                           </p>
                         </div>
-                        <div className="flex flex-col gap-2 pt-2">
-                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-                            <input
-                              type="radio"
-                              name="image_consent"
-                              checked={editing.image_consent === 1}
-                              onChange={() => setEditing({ ...editing, image_consent: 1 })}
-                              className="w-4 h-4 text-primary"
-                            />
-                            <span className="text-sm">J'autorise l'utilisation de mon image</span>
-                          </label>
-                          <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
-                            <input
-                              type="radio"
-                              name="image_consent"
-                              checked={editing.image_consent === 0}
-                              onChange={() => setEditing({ ...editing, image_consent: 0 })}
-                              className="w-4 h-4 text-primary"
-                            />
-                            <span className="text-sm">
-                              Je n'autorise pas l'utilisation de mon image
-                            </span>
-                          </label>
-                        </div>
+                        {editing.image_consent_managed ? (
+                          <ManagedImageConsentNote value={editing.image_consent} />
+                        ) : (
+                          <div className="flex flex-col gap-2 pt-2">
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                              <input
+                                type="radio"
+                                name="image_consent"
+                                checked={editing.image_consent === 1}
+                                onChange={() => setEditing({ ...editing, image_consent: 1 })}
+                                className="w-4 h-4 text-primary"
+                              />
+                              <span className="text-sm">J'autorise l'utilisation de mon image</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-muted/30 rounded">
+                              <input
+                                type="radio"
+                                name="image_consent"
+                                checked={editing.image_consent === 0}
+                                onChange={() => setEditing({ ...editing, image_consent: 0 })}
+                                className="w-4 h-4 text-primary"
+                              />
+                              <span className="text-sm">
+                                Je n'autorise pas l'utilisation de mon image
+                              </span>
+                            </label>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1659,23 +1673,13 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     </div>
                     <div className="grid gap-2 mt-4">
                       <Label className="text-muted-foreground">Droit à l'image</Label>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            viewing.image_consent === 1
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : viewing.image_consent === 0
-                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
-                          }`}
-                        >
-                          {viewing.image_consent === 1
-                            ? "Autorisé"
-                            : viewing.image_consent === 0
-                              ? "Non autorisé"
-                              : "Non renseigné"}
-                        </span>
-                      </div>
+                      {viewing.image_consent_managed ? (
+                        <ManagedImageConsentNote value={viewing.image_consent} />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <ImageConsentBadge value={viewing.image_consent} />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="border-t border-border pt-4">

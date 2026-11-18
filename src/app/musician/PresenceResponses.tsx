@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronDown, Lock, X } from "lucide-react";
+import { ChevronDown, Lock, ShieldCheck, X } from "lucide-react";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
+import { summarizeAuthorization } from "./authorization-helpers";
 import { PresenceCard, type PresenceCardProps } from "./PresenceCard";
 import { getCellVisual } from "./presence-matrix-helpers";
 import type { PresenceEvent } from "./musician-types";
@@ -51,6 +52,8 @@ export function PresenceResponses({
         {events.map((event) => {
           const isPast = isEventPast(event.date);
           const visual = getCellVisual(event.response.status);
+          const authorizationSummary =
+            event.authorization && !isPast ? summarizeAuthorization(event.authorization) : null;
           const action = isPast ? "Consulter" : event.response.status ? "Modifier" : "Répondre";
           const expanded = openEventId === event.id;
           const triggerId = `response-trigger-${event.id}`;
@@ -87,6 +90,17 @@ export function PresenceResponses({
                     {visual.label}
                     {isPast && <span className="text-muted-foreground">· Réponses closes</span>}
                   </span>
+                  {authorizationSummary && (
+                    <span
+                      className={cn(
+                        "flex items-center gap-1.5 text-xs font-medium",
+                        authorizationSummary.tone === "ok" ? "text-success" : "text-warning"
+                      )}
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      {authorizationSummary.label}
+                    </span>
+                  )}
                 </span>
                 <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
                   {action}
