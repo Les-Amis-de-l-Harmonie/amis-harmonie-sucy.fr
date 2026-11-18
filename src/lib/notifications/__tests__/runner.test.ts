@@ -21,7 +21,9 @@ let childTwoId: number;
 
 function createD1Database(db: DatabaseSync) {
   return {
-    batch(statements: Array<{ run(): Promise<{ meta: { changes: number; last_row_id: number } }> }>) {
+    batch(
+      statements: Array<{ run(): Promise<{ meta: { changes: number; last_row_id: number } }> }>
+    ) {
       return Promise.all(statements.map((statement) => statement.run()));
     },
     prepare(sql: string) {
@@ -69,7 +71,9 @@ function setMode(mode: string, testRecipient: string | null = null) {
 }
 
 function countRows(table: string): number {
-  return Number((database.prepare(`SELECT count(*) AS count FROM ${table}`).get() as { count: number }).count);
+  return Number(
+    (database.prepare(`SELECT count(*) AS count FROM ${table}`).get() as { count: number }).count
+  );
 }
 
 beforeEach(() => {
@@ -93,28 +97,50 @@ beforeEach(() => {
     "Interne"
   );
   database
-    .prepare("INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)")
+    .prepare(
+      "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+    )
     .run(parentId, childOneId, "mère");
   database
-    .prepare("INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)")
+    .prepare(
+      "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+    )
     .run(parentId, childTwoId, "mère");
   database
-    .prepare("INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)")
+    .prepare(
+      "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+    )
     .run(inactiveGuardianId, childOneId, "père");
   database
-    .prepare("INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)")
+    .prepare(
+      "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation) VALUES (?, ?, ?)"
+    )
     .run(reservedGuardianId, childTwoId, "tuteur");
   database.exec(`
-    INSERT INTO events (title, date, time, response_deadline, presence_required)
-      VALUES ('Concert du 10 juin', '2099-06-10', '20:00', '2099-06-10', 1);
-    INSERT INTO events (title, date, time, response_deadline, presence_required)
-      VALUES ('Sortie du 6 juin', '2099-06-06', '09:30', '2099-06-06', 1);
+    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+      VALUES ('Concert du 10 juin', '2099-06-10', '20:00', 'Salle des fêtes', '2099-06-10', 1);
+    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+      VALUES ('Sortie du 6 juin', '2099-06-06', '09:30', 'Parc municipal', '2099-06-06', 1);
+    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+      VALUES ('Répétition du 20 juin', '2099-06-20', '14:00:00', 'Salle de répétition', '2099-06-18', 1);
+    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+      VALUES ('Date déjà répondue', '2099-06-22', '18:00', 'École de musique', '2099-06-22', 1);
+    INSERT INTO events (title, date, presence_required)
+      VALUES ('Date passée', '2099-06-04', 1);
+    INSERT INTO events (title, date, presence_required)
+      VALUES ('Sans réponse obligatoire', '2099-06-24', 0);
   `);
+  const answeredEvent = database
+    .prepare("SELECT id FROM events WHERE title = 'Date déjà répondue'")
+    .get() as { id: number };
+  database
+    .prepare("INSERT INTO event_presences (event_id, user_id, status) VALUES (?, ?, 'present')")
+    .run(answeredEvent.id, childOneId);
   void directId;
   Object.assign(env, { DB: createD1Database(database), RESEND_API_KEY: "test-resend-key" });
-  fetchMock = vi.fn().mockResolvedValue(
-    new Response(JSON.stringify({ id: "resend-id" }), { status: 200 })
-  );
+  fetchMock = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify({ id: "resend-id" }), { status: 200 }));
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -131,7 +157,12 @@ describe("exécution sûre des rappels de présence", () => {
     database.prepare("DELETE FROM notification_settings WHERE id = 1").run();
     const store = createNotificationStore(env.DB);
 
-    const result = await runScheduledPresenceReminders({ db: store, today: TODAY, now: NOW, send: sender });
+    const result = await runScheduledPresenceReminders({
+      db: store,
+      today: TODAY,
+      now: NOW,
+      send: sender,
+    });
 
     expect(result.mode).toBe("off");
     expect(fetchMock).not.toHaveBeenCalled();
@@ -238,23 +269,65 @@ describe("exécution sûre des rappels de présence", () => {
     }
   });
 
+  it("ne crée aucun claim pour les dates seulement informatives", async () => {
+    setMode("on");
+    const result = await runScheduledPresenceReminders({
+      db: createNotificationStore(env.DB),
+      today: TODAY,
+      now: NOW,
+      send: vi.fn(async () => ({ ok: true as const, id: "sent" })),
+    });
+    const informationalEvents = database
+      .prepare(
+        "SELECT id FROM events WHERE title IN ('Répétition du 20 juin', 'Date déjà répondue')"
+      )
+      .all() as Array<{ id: number }>;
+
+    expect(result.sent).toBe(2);
+    expect(countRows("notification_log")).toBe(4);
+    for (const event of informationalEvents) {
+      expect(
+        database
+          .prepare("SELECT count(*) AS count FROM notification_log WHERE event_id = ?")
+          .get(event.id)
+      ).toEqual({ count: 0 });
+    }
+  });
+
   it("un parent de deux enfants reçoit un message avec les deux paliers et deux clés", async () => {
     const preview = await previewPresenceReminders(createNotificationStore(env.DB), TODAY);
     const parentItem = preview.items.find((item) => item.recipientEmail === "parent@example.test");
 
     expect(parentItem).toBeDefined();
-    expect(preview.items.filter((item) => item.recipientEmail === "parent@example.test")).toHaveLength(1);
+    expect(
+      preview.items.filter((item) => item.recipientEmail === "parent@example.test")
+    ).toHaveLength(1);
     expect(parentItem?.subjectNames).toEqual(["Jules", "Emilie"]);
     expect(parentItem?.stages).toEqual([7, 2]);
-    expect(parentItem?.text).toContain("Jules et Emilie");
+    expect(parentItem?.text).toContain("Pour Jules");
+    expect(parentItem?.text).toContain("Pour Emilie");
     expect(parentItem?.eventTitle).toContain("Concert du 10 juin");
     expect(parentItem?.eventTitle).toContain("Sortie du 6 juin");
-    expect(preview.items.some((item) => item.recipientEmail === "inactif@example.test")).toBe(false);
+    expect(parentItem?.text).toContain("Autres dates sans réponse");
+    expect(parentItem?.text).toContain("Répétition du 20 juin");
+    expect(parentItem?.text).toContain("Salle de répétition");
+    expect(parentItem?.text).toContain("Date déjà répondue");
+    expect(parentItem?.text).not.toContain("Date passée");
+    expect(parentItem?.text).not.toContain("Sans réponse obligatoire");
+    expect(parentItem?.text.match(/« Répétition du 20 juin »/g)).toHaveLength(2);
+    expect(parentItem?.otherEventsCount).toBe(3);
+    expect(parentItem?.html).toContain("Autres dates sans réponse");
+    expect(parentItem?.text.match(/« Concert du 10 juin »/g)).toHaveLength(2);
+    expect(preview.items.some((item) => item.recipientEmail === "inactif@example.test")).toBe(
+      false
+    );
     expect(
       preview.items.some((item) => item.recipientEmail.includes("@interne.amis-harmonie-sucy.fr"))
     ).toBe(false);
     expect(
-      preview.items.some((item) => item.recipientEmail === "sans-email+un@interne.amis-harmonie-sucy.fr")
+      preview.items.some(
+        (item) => item.recipientEmail === "sans-email+un@interne.amis-harmonie-sucy.fr"
+      )
     ).toBe(false);
     expect(countRows("notification_log")).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
@@ -267,6 +340,27 @@ describe("exécution sûre des rappels de présence", () => {
     expect(direct?.stage).toBe(7);
     expect(direct?.stages).toEqual([7, 2]);
     expect(countRows("notification_log")).toBe(0);
+  });
+
+  it("place le destinataire musicien dans sa propre section et liste les dates sans réponse", async () => {
+    const preview = await previewPresenceReminders(createNotificationStore(env.DB), TODAY);
+    const direct = preview.items.find((item) => item.recipientEmail === "musicien@example.test");
+
+    expect(direct?.text).toContain("Pour vous");
+    expect(direct?.text).toContain("Répétition du 20 juin");
+    expect(direct?.otherEventsCount).toBe(2);
+    expect(direct?.html).toContain("Répétition du 20 juin");
+    expect(countRows("notification_log")).toBe(0);
+  });
+
+  it("exclut les dates d'un musicien inactif dans la requête groupée", async () => {
+    const inactiveUserId = addUser("inactif-musicien@example.test", "member", "Inactif", 0);
+    const store = createNotificationStore(env.DB);
+
+    const events = await store.getUnansweredUpcomingEvents([inactiveUserId, childOneId], TODAY);
+
+    expect(events.some((event) => event.subjectUserId === inactiveUserId)).toBe(false);
+    expect(events.some((event) => event.subjectUserId === childOneId)).toBe(true);
   });
 
   it("ne crée jamais de notification directe pour un enfant géré", async () => {

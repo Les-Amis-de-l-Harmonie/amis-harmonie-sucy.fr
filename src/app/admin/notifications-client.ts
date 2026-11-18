@@ -40,6 +40,8 @@ export interface PreviewItem {
   subjectNames: string[];
   subject: string;
   text: string;
+  /** E-mail mis en forme (HTML complet), tel que le destinataire le verrait. */
+  html?: string;
   alreadySent: boolean;
 }
 

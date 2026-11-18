@@ -533,6 +533,57 @@ describe("NotificationsAdminClient", () => {
       expect(screen.queryByText(/Aucune réponse n'a été donnée/)).toBeNull();
     });
 
+    it("n'offre pas « Voir l'e-mail » quand l'aperçu n'a pas de HTML", async () => {
+      const user = userEvent.setup();
+      mockApi({ preview: previewFixture });
+      await renderPage();
+      await user.click(screen.getByRole("button", { name: /Voir qui recevrait/ }));
+      await screen.findByTestId("preview");
+
+      expect(screen.queryByRole("button", { name: /Voir l'e-mail pour/ })).toBeNull();
+    });
+
+    it("montre l'e-mail mis en forme dans un cadre isolé, en largeur ordinateur puis téléphone", async () => {
+      const user = userEvent.setup();
+      const html = "<html><body><h1>Bonjour Nathalie,</h1><script>alert(1)</script></body></html>";
+      const calls = mockApi({
+        preview: {
+          ...previewFixture,
+          items: [{ ...previewFixture.items[0], html }, previewFixture.items[1]],
+        },
+      });
+      await renderPage();
+      await user.click(screen.getByRole("button", { name: /Voir qui recevrait/ }));
+      await screen.findByTestId("preview");
+
+      // Seul l'e-mail qui a du HTML propose l'aperçu.
+      expect(screen.getAllByRole("button", { name: /Voir l'e-mail pour/ })).toHaveLength(1);
+      await user.click(
+        screen.getByRole("button", { name: "Voir l'e-mail pour nathalie@example.com" })
+      );
+
+      const dialog = await screen.findByRole("dialog");
+      expect(
+        within(dialog).getByText(/Rien n'est envoyé en regardant cet aperçu/)
+      ).toBeInTheDocument();
+      const frame = within(dialog).getByTitle("Aperçu de l'e-mail");
+      // Cadre totalement isolé : pas de scripts, pas de liens actifs, pas d'accès à l'admin.
+      expect(frame.getAttribute("sandbox")).toBe("");
+      expect(frame.getAttribute("srcdoc")).toBe(html);
+      expect(frame.style.width).toBe("640px");
+
+      await user.click(within(dialog).getByRole("button", { name: "Téléphone" }));
+      expect(frame.style.width).toBe("375px");
+      expect(within(dialog).getByRole("button", { name: "Téléphone" })).toHaveAttribute(
+        "aria-pressed",
+        "true"
+      );
+      await user.click(within(dialog).getByRole("button", { name: "Ordinateur" }));
+      expect(frame.style.width).toBe("640px");
+      // Regarder l'aperçu n'écrit rien.
+      expect(writes(calls)).toHaveLength(0);
+    });
+
     it("dit quand il n'y a rien à envoyer", async () => {
       const user = userEvent.setup();
       mockApi();

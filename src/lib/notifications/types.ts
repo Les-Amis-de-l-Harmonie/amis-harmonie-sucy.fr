@@ -1,4 +1,5 @@
 import type { NotificationMode } from "@/db/types";
+import type { ReminderEmailModel } from "./email-model";
 
 export type ReminderStage = 7 | 2;
 
@@ -8,6 +9,7 @@ export interface ReminderTarget {
   eventTitle: string;
   eventDate: string;
   eventTime: string | null;
+  eventLocation: string | null;
   responseDeadline: string | null;
   stage: ReminderStage;
   recipientUserId: number;
@@ -36,6 +38,18 @@ export interface ReminderClaim {
   eventTitle: string;
   eventDate: string;
   eventTime: string | null;
+  eventLocation: string | null;
+  responseDeadline: string | null;
+}
+
+/** Une date à venir sans réponse pour un sujet, sans palier ni claim associé. */
+export interface ReminderOtherEvent {
+  subjectUserId: number;
+  eventId: number;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string | null;
+  eventLocation: string | null;
   responseDeadline: string | null;
 }
 
@@ -54,6 +68,10 @@ export interface PlannedReminder {
   subject: string;
   text: string;
   html: string;
+  emailModel: ReminderEmailModel;
+  otherEventsBySubject: ReminderOtherEvent[];
+  otherEventsCount: number;
+  today: string;
 }
 
 export interface ReminderPreviewItem {
@@ -66,6 +84,8 @@ export interface ReminderPreviewItem {
   subjectNames: string[];
   subject: string;
   text: string;
+  html: string;
+  otherEventsCount: number;
   alreadySent: boolean;
 }
 

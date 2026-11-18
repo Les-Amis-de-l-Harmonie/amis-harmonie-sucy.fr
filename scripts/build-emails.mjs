@@ -8,10 +8,13 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import mjml2html from "mjml";
 
-const emailsDir = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../src/lib/free-events/emails"
-);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/** Dossiers contenant des modèles MJML, compilés chacun à côté de sa source. */
+const emailsDirs = [
+  path.join(root, "src/lib/free-events/emails"),
+  path.join(root, "src/lib/notifications/emails"),
+];
 
 const HEADER =
   "// Fichier généré, ne pas modifier : npm run emails:build\n" + "// Source : ./%SOURCE%\n";
@@ -32,17 +35,21 @@ function constantName(file) {
     .toUpperCase()}_HTML`;
 }
 
-const files = (await readdir(emailsDir)).filter((file) => file.endsWith(".mjml")).sort();
+for (const emailsDir of emailsDirs) {
+  const files = (await readdir(emailsDir)).filter((file) => file.endsWith(".mjml")).sort();
 
-for (const file of files) {
-  const source = await readFile(path.join(emailsDir, file), "utf8");
-  const html = await compileMjml(source);
-  const output =
-    HEADER.replace("%SOURCE%", file) +
-    `export const ${constantName(file)} = ${JSON.stringify(html)};\n`;
-  // Pas de suffixe `.html.ts` : l'import `./x.html` serait pris pour un module texte
-  // par le plugin Cloudflare de Vite et le serveur de dev ne démarrerait plus.
-  const target = path.join(emailsDir, `${path.basename(file, ".mjml")}-html.ts`);
-  await writeFile(target, output, "utf8");
-  process.stdout.write(`${file} → ${path.basename(target)} (${html.length} octets)\n`);
+  for (const file of files) {
+    const source = await readFile(path.join(emailsDir, file), "utf8");
+    const html = await compileMjml(source);
+    const output =
+      HEADER.replace("%SOURCE%", file) +
+      `export const ${constantName(file)} = ${JSON.stringify(html)};\n`;
+    // Pas de suffixe `.html.ts` : l'import `./x.html` serait pris pour un module texte
+    // par le plugin Cloudflare de Vite et le serveur de dev ne démarrerait plus.
+    const target = path.join(emailsDir, `${path.basename(file, ".mjml")}-html.ts`);
+    await writeFile(target, output, "utf8");
+    process.stdout.write(
+      `${path.relative(root, path.join(emailsDir, file))} → ${path.basename(target)} (${html.length} octets)\n`
+    );
+  }
 }

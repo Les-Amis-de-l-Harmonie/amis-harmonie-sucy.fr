@@ -1,13 +1,14 @@
 import type { NotificationSettings } from "@/db/types";
 import { MUSICIAN_PRESENCE_MEMBER_QUERY, type PresenceRow } from "@/lib/presence";
 import { dueReminderStages } from "./planning";
-import type { ReminderClaim, ReminderTarget } from "./types";
+import type { ReminderClaim, ReminderOtherEvent, ReminderTarget } from "./types";
 
 interface EventReminderRow {
   id: number;
   title: string;
   date: string;
   time: string | null;
+  location: string | null;
   response_deadline: string | null;
 }
 
@@ -47,6 +48,10 @@ export interface NotificationStore {
   getSettings(): Promise<NotificationSettings | null>;
   writeLastRun(at: string, summary: string): Promise<void>;
   getReminderTargets(today: string): Promise<ReminderTarget[]>;
+  getUnansweredUpcomingEvents(
+    subjectUserIds: number[],
+    today: string
+  ): Promise<ReminderOtherEvent[]>;
   getExistingKeys(keys: string[]): Promise<ExistingNotificationKey[]>;
   reserveClaims(claims: ReminderClaim[]): Promise<Set<string>>;
   markSent(keys: string[]): Promise<void>;
@@ -69,7 +74,9 @@ export interface NotificationD1Database {
 export function createNotificationStore(db: NotificationD1Database): NotificationStore {
   return {
     async getSettings() {
-      return db.prepare("SELECT * FROM notification_settings WHERE id = 1").first<NotificationSettings>();
+      return db
+        .prepare("SELECT * FROM notification_settings WHERE id = 1")
+        .first<NotificationSettings>();
     },
 
     async writeLastRun(at, summary) {
@@ -88,7 +95,7 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
     async getReminderTargets(today) {
       const events = await db
         .prepare(
-          `SELECT id, title, date, time, response_deadline
+          `SELECT id, title, date, time, location, response_deadline
            FROM events
            WHERE presence_required = 1 AND date >= ?
            ORDER BY date ASC, id ASC`
@@ -103,7 +110,10 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
 
         // L'effectif est celui du portail, et non celui de la grille admin (qui inclut
         // les ADMIN instrumentistes et pourrait doubler un compte MUSICIAN parallèle).
-        const rows = await db.prepare(MUSICIAN_PRESENCE_MEMBER_QUERY).bind(event.id).all<PresenceRow>();
+        const rows = await db
+          .prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
+          .bind(event.id)
+          .all<PresenceRow>();
         const unanswered = new Map<number, PresenceRow>();
         for (const member of rows.results ?? []) {
           if (member.status === null && !unanswered.has(member.userId)) {
@@ -124,7 +134,9 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
           )
           .bind(JSON.stringify(childIds))
           .all<ReminderUserRow>();
-        const accountById = new Map((accounts.results ?? []).map((account) => [account.userId, account]));
+        const accountById = new Map(
+          (accounts.results ?? []).map((account) => [account.userId, account])
+        );
 
         const guardians = await db
           .prepare(
@@ -155,6 +167,7 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
                 eventTitle: event.title,
                 eventDate: event.date,
                 eventTime: event.time,
+                eventLocation: event.location,
                 responseDeadline: event.response_deadline,
                 stage,
                 recipientUserId: childUserId,
@@ -172,6 +185,7 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
                 eventTitle: event.title,
                 eventDate: event.date,
                 eventTime: event.time,
+                eventLocation: event.location,
                 responseDeadline: event.response_deadline,
                 stage,
                 recipientUserId: guardian.guardianUserId,
@@ -186,6 +200,33 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
         }
       }
       return targets;
+    },
+
+    async getUnansweredUpcomingEvents(subjectUserIds, today) {
+      const ids = Array.from(new Set(subjectUserIds));
+      if (ids.length === 0) return [];
+      const rows = await db
+        .prepare(
+          `SELECT subjects.value AS subjectUserId,
+                  e.id AS eventId, e.title AS eventTitle, e.date AS eventDate,
+                  e.time AS eventTime, e.location AS eventLocation,
+                  e.response_deadline AS responseDeadline
+           FROM json_each(?) AS subjects
+           JOIN users u ON u.id = subjects.value
+                 AND u.is_active = 1 AND u.kind <> 'guardian' AND u.role = 'MUSICIAN'
+           JOIN events e ON e.presence_required = 1 AND e.date >= ?
+                 -- Date limite déjà dépassée : plus de rappel possible, on ne la liste pas.
+                 AND COALESCE(e.response_deadline, e.date) >= ?
+           WHERE subjects.type = 'integer'
+             AND NOT EXISTS (
+               SELECT 1 FROM event_presences ep
+               WHERE ep.event_id = e.id AND ep.user_id = u.id
+             )
+           ORDER BY e.date ASC, e.id ASC, subjects.value ASC`
+        )
+        .bind(JSON.stringify(ids), today, today)
+        .all<ReminderOtherEvent>();
+      return rows.results ?? [];
     },
 
     async getExistingKeys(keys) {
@@ -282,8 +323,10 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
       return new Map(
         (rows.results ?? []).map((row) => [
           row.userId,
-          [row.firstName, row.lastName].map((part) => part?.trim() ?? "").filter(Boolean).join(" ") ||
-            "Compte supprimé",
+          [row.firstName, row.lastName]
+            .map((part) => part?.trim() ?? "")
+            .filter(Boolean)
+            .join(" ") || "Compte supprimé",
         ])
       );
     },

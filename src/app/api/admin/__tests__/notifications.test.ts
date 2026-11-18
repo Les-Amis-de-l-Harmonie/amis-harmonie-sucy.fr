@@ -7,6 +7,10 @@ import { handleAdminNotificationsApi } from "../notifications";
 import { createD1Database } from "@/app/api/__tests__/d1-adapter";
 
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
+vi.mock("@/lib/presence", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/presence")>()),
+  getParisDate: () => "2099-06-05",
+}));
 
 const originalDb = env.DB;
 const originalApiKey = env.RESEND_API_KEY;
@@ -49,7 +53,8 @@ beforeEach(() => {
   const migrations = readdirSync("migrations")
     .filter((name) => /^\d{4}_.+\.sql$/.test(name))
     .sort();
-  for (const migration of migrations) database.exec(readFileSync(`migrations/${migration}`, "utf8"));
+  for (const migration of migrations)
+    database.exec(readFileSync(`migrations/${migration}`, "utf8"));
   Object.assign(env, { DB: createD1Database(database), RESEND_API_KEY: "test-resend-key" });
 
   const superAdmin = addUser("super@example.test", "SUPER_ADMIN");
@@ -59,15 +64,13 @@ beforeEach(() => {
     ["super-session", superAdmin],
     ["admin-session", admin],
   ] as const) {
-    database.prepare("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)").run(
-      sessionId,
-      userId,
-      "2099-01-01T00:00:00.000Z"
-    );
+    database
+      .prepare("INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)")
+      .run(sessionId, userId, "2099-01-01T00:00:00.000Z");
   }
-  fetchMock = vi.fn().mockResolvedValue(
-    new Response(JSON.stringify({ id: "resend-id" }), { status: 200 })
-  );
+  fetchMock = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify({ id: "resend-id" }), { status: 200 }));
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -93,10 +96,36 @@ describe("API de réglage des e-mails automatiques", () => {
     expect(body).toMatchObject({ items: [], capped: false });
     expect(body.today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(database.prepare("SELECT last_run_at, last_run_summary FROM notification_settings").get()).toEqual({
+    expect(
+      database.prepare("SELECT last_run_at, last_run_summary FROM notification_settings").get()
+    ).toEqual({
       last_run_at: null,
       last_run_summary: null,
     });
+    expect(database.prepare("SELECT count(*) AS count FROM notification_log").get()).toEqual({
+      count: 0,
+    });
+  });
+
+  it("ajoute le HTML rendu et le nombre d'autres dates sans réponse à chaque aperçu", async () => {
+    addUser("musicien@example.test", "MUSICIAN");
+    database.exec(`
+      INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+        VALUES ('Concert', '2099-06-10', '20:00', 'Salle des fêtes', '2099-06-10', 1);
+      INSERT INTO events (title, date, time, location, response_deadline, presence_required)
+        VALUES ('Répétition', '2099-06-20', '14:00', 'Salle de répétition', '2099-06-18', 1);
+    `);
+
+    const response = await handleAdminNotificationsApi(request("?action=preview"));
+    const body = (await response.json()) as {
+      items: Array<{ html: string; text: string; otherEventsCount: number }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.items).toHaveLength(1);
+    expect(body.items[0]?.html).toContain("Répétition");
+    expect(body.items[0]?.text).toContain("Autres dates sans réponse");
+    expect(body.items[0]?.otherEventsCount).toBe(1);
     expect(database.prepare("SELECT count(*) AS count FROM notification_log").get()).toEqual({
       count: 0,
     });
@@ -113,7 +142,11 @@ describe("API de réglage des e-mails automatiques", () => {
     );
     expect(invalidMode.status).toBe(400);
 
-    for (const testRecipient of [null, "not-an-email", "sans-email+test@interne.amis-harmonie-sucy.fr"]) {
+    for (const testRecipient of [
+      null,
+      "not-an-email",
+      "sans-email+test@interne.amis-harmonie-sucy.fr",
+    ]) {
       const invalidTest = await handleAdminNotificationsApi(
         request("", "PUT", { presenceRemindersMode: "test", testRecipient }, "super")
       );

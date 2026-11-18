@@ -7,6 +7,7 @@ import {
   isValidEmailAddress,
   reminderWithClaims,
   toPreviewItem,
+  withOtherEvents,
 } from "./planning";
 import { effectiveNotificationSettings } from "./settings";
 import type {
@@ -70,6 +71,16 @@ function formatStageSummary(stages: ReminderStage[]): string {
   return [...new Set(stages)].sort((a, b) => b - a).join(" et ");
 }
 
+async function planReminders(db: NotificationStore, today: string) {
+  const targets = await db.getReminderTargets(today);
+  const groups = groupReminderTargets(targets, today);
+  const subjectIds = Array.from(
+    new Set(groups.flatMap((group) => group.claims.flatMap((claim) => claim.subjectUserIds)))
+  );
+  const otherEvents = await db.getUnansweredUpcomingEvents(subjectIds, today);
+  return groups.map((group) => withOtherEvents(group, otherEvents, today));
+}
+
 export async function sendTestReminder({
   db,
   today,
@@ -77,10 +88,15 @@ export async function sendTestReminder({
   send,
 }: SendTestReminderInput): Promise<SendTestReminderResult> {
   if (!isValidEmailAddress(testRecipient)) {
-    return { ok: false, sentTo: testRecipient, itemCount: 0, capped: false, error: "invalid_test_recipient" };
+    return {
+      ok: false,
+      sentTo: testRecipient,
+      itemCount: 0,
+      capped: false,
+      error: "invalid_test_recipient",
+    };
   }
-  const targets = await db.getReminderTargets(today);
-  const groups = skippedReservedRecipients(groupReminderTargets(targets));
+  const groups = skippedReservedRecipients(await planReminders(db, today));
   const capped = groups.length > MAX_EMAILS_PER_RUN;
   const digestItems = groups.slice(0, MAX_EMAILS_PER_RUN);
   const digest = buildTestDigest(digestItems, today);
@@ -99,8 +115,7 @@ export async function previewPresenceReminders(
   db: NotificationStore,
   today: string
 ): Promise<ReminderPreview> {
-  const targets = await db.getReminderTargets(today);
-  const groups = skippedReservedRecipients(groupReminderTargets(targets));
+  const groups = skippedReservedRecipients(await planReminders(db, today));
   const capped = groups.length > MAX_EMAILS_PER_RUN;
   const visibleGroups = groups.slice(0, MAX_EMAILS_PER_RUN);
   const existing = await db.getExistingKeys(
@@ -112,7 +127,8 @@ export async function previewPresenceReminders(
     items: visibleGroups.map((group) =>
       toPreviewItem(
         group,
-        group.claims.length > 0 && group.claims.every((claim) => statusByKey.get(claim.dedupeKey) === "sent")
+        group.claims.length > 0 &&
+          group.claims.every((claim) => statusByKey.get(claim.dedupeKey) === "sent")
       )
     ),
     capped,
@@ -156,9 +172,10 @@ export async function runPresenceReminders({
         ? `Essai envoyé à ${result.sentTo} ; ${result.itemCount} rappel(s) simulé(s)${result.capped ? " (plafond de 30 atteint)" : ""}.`
         : `Essai non envoyé (${result.error ?? "erreur d'envoi"}).`;
     } else {
-      const targets = await db.getReminderTargets(today);
-      const groups = groupReminderTargets(targets);
-      const sendableCount = groups.filter((group) => isValidEmailAddress(group.recipientEmail)).length;
+      const groups = await planReminders(db, today);
+      const sendableCount = groups.filter((group) =>
+        isValidEmailAddress(group.recipientEmail)
+      ).length;
       planned = sendableCount;
       capped = sendableCount > MAX_EMAILS_PER_RUN;
       let attempted = 0;

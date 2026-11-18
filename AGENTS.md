@@ -292,6 +292,16 @@ automatic e-mail that bypasses this setting** — the association president deci
 anything is sent (admin page `/admin/emails`). Sends reserve a `notification_log.dedupe_key`
 before calling Resend. Locally, trigger the cron with
 `curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=0+9+*+*+*"` (no Resend key locally).
+Each reminder lists the triggering dates and, below, every other upcoming unanswered date
+(listed only, never claimed).
+
+HTML e-mails are MJML templates (`src/lib/free-events/emails/*.mjml`,
+`src/lib/notifications/emails/*.mjml`) compiled by `npm run emails:build` into committed
+`*-html.ts` modules (the Worker cannot run mjml; a test checks they are in sync). Fill the
+`{{placeholders}}` with escaped values only. Never run Prettier on `.mjml` (it rewrites
+`{{x}}` into `{{ x }}`); generated modules and `.mjml` are in `.prettierignore`. E-mail images
+are absolute `https://amis-harmonie-sucy.fr/images/emails/...` URLs; PNGs there must be
+force-added (`git add -f`, `.gitignore` ignores `*.png`).
 
 Auth failures: redirect for pages, `401` JSON for APIs.
 
@@ -409,7 +419,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **79 test files on disk, 78 executed, 663 tests passing** —
+Current baseline: **80 test files on disk, 79 executed, 686 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

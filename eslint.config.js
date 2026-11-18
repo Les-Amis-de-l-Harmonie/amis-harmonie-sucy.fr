@@ -118,7 +118,7 @@ export default [
       "*.config.ts",
       "public/",
       ".husky/",
-      "src/lib/free-events/emails/*.html.ts",
+      "src/lib/**/emails/*-html.ts",
     ],
   },
   prettier,
