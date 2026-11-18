@@ -45,7 +45,9 @@ describe("describeAuthorizedBy", () => {
   it("indique une saisie papier d'un admin, avec ou sans nom", () => {
     expect(
       describeAuthorizedBy(
-        authorized({ authorizedBy: { name: "Mario Rossi", relation: null, kind: "admin", paper: true } })
+        authorized({
+          authorizedBy: { name: "Mario Rossi", relation: null, kind: "admin", paper: true },
+        })
       )
     ).toBe("saisie papier par un admin");
     expect(
@@ -78,7 +80,9 @@ describe("describeAuthorizedBy", () => {
     ).toBe("par un compte supprimé");
     expect(
       describeAuthorizedBy(
-        authorized({ authorizedBy: { name: null, relation: null, kind: "noProfile", paper: false } })
+        authorized({
+          authorizedBy: { name: null, relation: null, kind: "noProfile", paper: false },
+        })
       )
     ).toBe("par un responsable");
     expect(describeAuthorizedBy(missing)).toBeNull();

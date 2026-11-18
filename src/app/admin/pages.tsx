@@ -10,6 +10,7 @@ import { GalleryAdminClient } from "./GalleryAdmin";
 import { IdeasAdminClient } from "./IdeasAdmin";
 import { OutingSettingsClient } from "./OutingSettingsAdmin";
 import { InfoSettingsClient } from "./InfoSettingsAdmin";
+import { NotificationsAdminClient } from "./NotificationsAdmin";
 import { InsuranceAdminClient } from "./InsuranceAdmin";
 import { PresenceAdminClient } from "./PresenceAdmin";
 import { FamiliesAdminClient } from "./FamiliesAdmin";
@@ -131,6 +132,14 @@ export function AdminFamiliesPage({ email, role }: AdminPageProps) {
   return (
     <AdminLayout email={email} role={role}>
       <FamiliesAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminNotificationsPage({ email, role }: AdminPageProps) {
+  return (
+    <AdminLayout email={email} role={role}>
+      <NotificationsAdminClient />
     </AdminLayout>
   );
 }

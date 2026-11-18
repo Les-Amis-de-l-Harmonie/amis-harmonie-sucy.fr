@@ -9,6 +9,10 @@
 
   "routes": [{ "pattern": "amis-harmonie-sucy.fr", "custom_domain": true }],
 
+  "triggers": {
+    "crons": ["0 9 * * *"],
+  },
+
   "assets": {
     "binding": "ASSETS",
     "directory": "public",

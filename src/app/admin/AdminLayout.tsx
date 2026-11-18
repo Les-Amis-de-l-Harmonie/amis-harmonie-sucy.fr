@@ -21,6 +21,7 @@ import {
   Globe,
   ClipboardList,
   UsersRound,
+  BellRing,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import type { UserRole } from "@/db/types";
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/admin/presence", label: "Présences", icon: ClipboardList },
   { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
+  { href: "/admin/emails", label: "Rappels e-mail", icon: BellRing },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
   { href: "/admin/familles", label: "Familles", icon: UsersRound },
 ];

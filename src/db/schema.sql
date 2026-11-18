@@ -316,3 +316,31 @@ CREATE TABLE IF NOT EXISTS event_authorizations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_event_authorizations_child ON event_authorizations(child_user_id);
+
+-- 0019 : e-mails automatiques (désactivés par défaut) et journal anti-doublon
+CREATE TABLE IF NOT EXISTS notification_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  presence_reminders_mode TEXT NOT NULL DEFAULT 'off', -- 'off' | 'test' | 'on', inconnu = off
+  test_recipient TEXT,
+  last_run_at TEXT,
+  last_run_summary TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_by INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS notification_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dedupe_key TEXT NOT NULL UNIQUE,
+  kind TEXT NOT NULL,
+  event_id INTEGER,
+  stage INTEGER,
+  recipient_user_id INTEGER,
+  recipient_email TEXT NOT NULL,
+  subject_user_ids TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  error TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  sent_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_log_created ON notification_log(created_at);

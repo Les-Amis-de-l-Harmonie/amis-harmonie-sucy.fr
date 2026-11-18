@@ -283,6 +283,16 @@ linked child, parents answer in `guardian_image_consents`; admins record paper a
 `/api/admin/guardians?action=image-consent`. Parental authorizations per event live in
 `event_authorizations` (`/api/musician/authorizations`, `/api/admin/authorizations`).
 
+Automatic e-mails (migration 0019): the Worker default export in `src/worker.tsx` also has a
+`scheduled` handler (cron `0 9 * * *` in `wrangler.jsonc`) that only awaits
+`runScheduledTick` from `src/lib/notifications/scheduled.ts`. Presence reminders are gated by
+`notification_settings.presence_reminders_mode` (`off` by default; a missing row, an unknown
+value, a read error or `test` without a valid test address all mean `off`). **Never add an
+automatic e-mail that bypasses this setting** — the association president decides when
+anything is sent (admin page `/admin/emails`). Sends reserve a `notification_log.dedupe_key`
+before calling Resend. Locally, trigger the cron with
+`curl "http://localhost:5173/cdn-cgi/handler/scheduled?cron=0+9+*+*+*"` (no Resend key locally).
+
 Auth failures: redirect for pages, `401` JSON for APIs.
 
 ### Logging
@@ -359,8 +369,8 @@ for schema-altering SQL.**
 5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
 Migrations are **append-only** — never edit one that has already been applied. Guard
-with `IF NOT EXISTS` / `IF EXISTS`. Current state: 18 migrations, latest
-`0018_add_consents_and_authorizations.sql`.
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 19 migrations, latest
+`0019_add_notification_settings.sql`.
 
 > **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
 > use it to confirm that a table or column exists.** See §6.
@@ -399,7 +409,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **74 test files on disk, 73 executed, 604 tests passing** —
+Current baseline: **79 test files on disk, 78 executed, 663 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

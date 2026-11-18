@@ -426,3 +426,27 @@ export interface FreeReservationCheckin {
 // présences sont modélisées par `EventPresence` (statut à deux valeurs, sans
 // « peut-être »). Les tables planning_events / planning_availability subsistent
 // en base ; leur suppression fera l'objet d'une migration ultérieure séparée.
+
+/**
+ * 0019 : mode des rappels de présence par e-mail. Colonne sans CHECK : toute valeur
+ * inconnue, comme une ligne absente, doit être lue comme "off" (rien n'est envoyé).
+ */
+export const NOTIFICATION_MODES = ["off", "test", "on"] as const;
+export type NotificationMode = (typeof NOTIFICATION_MODES)[number];
+
+export function toNotificationMode(value: unknown): NotificationMode {
+  return typeof value === "string" && (NOTIFICATION_MODES as readonly string[]).includes(value)
+    ? (value as NotificationMode)
+    : "off";
+}
+
+/** 0019 : réglage unique des e-mails automatiques (id = 1). */
+export interface NotificationSettings {
+  id: number;
+  presence_reminders_mode: string;
+  test_recipient: string | null;
+  last_run_at: string | null;
+  last_run_summary: string | null;
+  updated_at: string;
+  updated_by: number | null;
+}

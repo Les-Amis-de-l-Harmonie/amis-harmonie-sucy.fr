@@ -50,6 +50,7 @@ import { handleInfoSettingsApi } from "@/app/api/admin/info-settings";
 import { handleInsuranceApi } from "@/app/api/admin/insurance";
 import { handleAdminPresenceApi } from "@/app/api/admin/presence";
 import { handleAdminAuthorizationsApi } from "@/app/api/admin/authorizations";
+import { handleAdminNotificationsApi } from "@/app/api/admin/notifications";
 import {
   handleMusicianProfileApi,
   handleMusicianAvatarApi,
@@ -84,6 +85,7 @@ import {
   AdminInsurancePage,
   AdminPresencePage,
   AdminFamiliesPage,
+  AdminNotificationsPage,
   AdminReservationsPage,
   AdminReservationsPrintPage,
   AdminReservationsCheckinPage,
@@ -98,6 +100,7 @@ import { MusicianTrombinoscopeClient } from "@/app/musician/MusicianTrombinoscop
 import { MusicianDisponibilites } from "@/app/musician/MusicianDisponibilites";
 import { getCachedResponse, cacheResponse, shouldCachePath } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { runScheduledTick } from "@/lib/notifications/scheduled";
 
 import { logger } from "@/lib/logger";
 export type AppContext = {};
@@ -263,6 +266,9 @@ const app = defineApp([
   ),
   route("/api/admin/authorizations", ({ request }: { request: Request }) =>
     handleAdminAuthorizationsApi(request)
+  ),
+  route("/api/admin/notifications", ({ request }: { request: Request }) =>
+    handleAdminNotificationsApi(request)
   ),
 
   route("/api/admin/analytics", ({ request }: { request: Request }) =>
@@ -511,6 +517,12 @@ const app = defineApp([
       return <AdminFamiliesPage email={auth.email} role={auth.role} />;
     }),
 
+    route("/admin/emails", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminNotificationsPage email={auth.email} role={auth.role} />;
+    }),
+
     route("/admin/reservations", async ({ request }: { request: Request }) => {
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
@@ -684,5 +696,16 @@ export default {
     }
 
     return response;
+  },
+  async scheduled(
+    _controller: { scheduledTime: number; cron: string; noRetry(): void },
+    environment: Env,
+    _ctx: ExecutionContext
+  ): Promise<void> {
+    try {
+      await runScheduledTick(environment.DB);
+    } catch (error) {
+      logger.error("Échec de la tâche programmée des rappels de présence :", error);
+    }
   },
 };
