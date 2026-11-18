@@ -12,6 +12,8 @@ interface MyIdeasTabProps {
   onEdit: (idea: IdeaWithLikes) => void;
   onDelete: (idea: IdeaWithLikes) => void;
   onViewResponse: (idea: IdeaWithLikes) => void;
+  /** Responsable qui agit pour un enfant : lecture seule. */
+  readOnly?: boolean;
 }
 
 export function MyIdeasTab({
@@ -20,18 +22,25 @@ export function MyIdeasTab({
   onEdit,
   onDelete,
   onViewResponse,
+  readOnly = false,
 }: MyIdeasTabProps) {
   if (ideas.length === 0) {
     return (
       <EmptyState
         icon={<Lightbulb className="h-12 w-12" />}
-        title="Vous n'avez pas encore soumis d'idée"
-        description="Partagez vos idées pour faire évoluer l'association ou enrichir la vie de l'harmonie."
+        title={readOnly ? "Aucune idée soumise" : "Vous n'avez pas encore soumis d'idée"}
+        description={
+          readOnly
+            ? "Ce musicien n'a pas encore soumis d'idée."
+            : "Partagez vos idées pour faire évoluer l'association ou enrichir la vie de l'harmonie."
+        }
         action={
-          <Button type="button" onClick={onOpenComposer} className="gap-2">
-            <Send className="h-4 w-4" />
-            Soumettre une idée
-          </Button>
+          readOnly ? undefined : (
+            <Button type="button" onClick={onOpenComposer} className="gap-2">
+              <Send className="h-4 w-4" />
+              Soumettre une idée
+            </Button>
+          )
         }
       />
     );
@@ -48,6 +57,7 @@ export function MyIdeasTab({
           onEdit={onEdit}
           onDelete={onDelete}
           onViewResponse={onViewResponse}
+          readOnly={readOnly}
         />
       ))}
     </div>

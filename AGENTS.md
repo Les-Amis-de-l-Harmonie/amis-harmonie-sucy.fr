@@ -268,6 +268,9 @@ every musician list, filter `u.kind <> 'guardian'`) or `managed` (musician witho
 reserved address `sans-email+…@interne.amis-harmonie-sucy.fr`, never displayed or emailed,
 refused by `verifySession`). `kind` has no SQL CHECK on purpose; validate with
 `isUserKind` from `src/db/types.ts`. Admin API: `src/app/api/admin/guardians.ts`.
+Portal UI reads the acting state from `useMusicianSession()` (`src/app/musician/MusicianSession.tsx`,
+provided by `MusicianLayout`; it throws outside the provider). A guardian on « Moi » must not
+call the musician data APIs (they return 403): pages render `ChooseMusicianState` instead.
 
 Auth failures: redirect for pages, `401` JSON for APIs.
 
@@ -385,7 +388,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **50 test files on disk, 49 executed, 355 tests passing** —
+Current baseline: **58 test files on disk, 57 executed, 437 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

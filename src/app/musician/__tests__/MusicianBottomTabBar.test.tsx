@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MusicianBottomTabBar } from "../MusicianBottomTabBar";
 import { MUSICIAN_NAV_ITEMS } from "../musician-nav-items";
+import { SELF, withSession } from "./session-fixtures";
 
 describe("Navigation mobile du musicien", () => {
   it("déplace Accueil à la place de Profil sans doublon", () => {
@@ -23,7 +24,10 @@ describe("Navigation mobile du musicien", () => {
   it("garde le profil accessible et actif dans Plus sans activer Accueil", async () => {
     const user = userEvent.setup();
     render(
-      <MusicianBottomTabBar pathname="/musician/profile" firstName="Jean" lastName="Dupont" />
+      withSession(
+        { profiles: [SELF] },
+        <MusicianBottomTabBar pathname="/musician/profile" firstName="Jean" lastName="Dupont" />
+      )
     );
 
     expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");

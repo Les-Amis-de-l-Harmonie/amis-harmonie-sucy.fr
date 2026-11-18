@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MusicianDisponibilites } from "../MusicianDisponibilites";
+import { SELF, withSession } from "./session-fixtures";
 
 function createEvent(overrides: Record<string, unknown> = {}) {
   return {
@@ -69,7 +70,7 @@ describe("MusicianDisponibilites", () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     expect(await screen.findByText("À répondre")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Présent" })).toHaveAttribute(
@@ -83,7 +84,7 @@ describe("MusicianDisponibilites", () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock.mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     expect(
       await screen.findByRole("region", { name: "Qui vient à quelle date" })
@@ -105,7 +106,7 @@ describe("MusicianDisponibilites", () => {
     );
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: "Absent" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -150,7 +151,7 @@ describe("MusicianDisponibilites", () => {
       .mockResolvedValueOnce(jsonResponse({ success: true, event: present }))
       .mockResolvedValueOnce(jsonResponse({ success: true, event: absent }));
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     const responses = await screen.findByRole("region", { name: "Mes réponses" });
     expect(responses).toHaveClass("md:hidden");
     expect(within(responses).getByText("Sans réponse")).toBeInTheDocument();
@@ -198,7 +199,7 @@ describe("MusicianDisponibilites", () => {
       ])
     );
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     const responses = await screen.findByRole("region", { name: "Mes réponses" });
     expect(within(responses).getByText(/Réponses closes/)).toBeInTheDocument();
     await user.click(within(responses).getByRole("button", { name: /^Consulter :/ }));
@@ -213,7 +214,7 @@ describe("MusicianDisponibilites", () => {
   it("ne propose pas la liste personnelle sans identifiant de session", async () => {
     useMobileViewport();
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ events: [createEvent()] }));
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await screen.findByRole("table");
     expect(screen.queryByRole("region", { name: "Mes réponses" })).not.toBeInTheDocument();
   });
@@ -231,7 +232,7 @@ describe("MusicianDisponibilites", () => {
       ])
     );
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     const responses = await screen.findByRole("region", { name: "Mes réponses" });
     const first = within(responses).getByRole("button", { name: /^Répondre :/ });
     const second = within(responses).getByRole("button", { name: /^Modifier :/ });
@@ -270,7 +271,7 @@ describe("MusicianDisponibilites", () => {
         new Response(JSON.stringify({ error: "Erreur serveur" }), { status: 500 })
       );
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: /^Répondre :/ }));
     await user.click(screen.getByRole("button", { name: "Présent" }));
     expect(await screen.findByText("Erreur serveur")).toBeInTheDocument();
@@ -305,7 +306,7 @@ describe("MusicianDisponibilites", () => {
       })
     );
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     expect(await screen.findByText("Camille Bernard")).toBeInTheDocument();
     expect(screen.queryByText("SENTINEL_UI")).not.toBeInTheDocument();
@@ -317,7 +318,7 @@ describe("MusicianDisponibilites", () => {
       jsonResponse({ events: [createEvent({ response_deadline: null })] })
     );
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     expect(await screen.findByText("Pas de date limite fixée")).toBeInTheDocument();
   });
@@ -357,7 +358,7 @@ describe("MusicianDisponibilites", () => {
     });
     fetchMock.mockResolvedValueOnce(jsonResponse({ events: [answeredEvent, pendingEvent] }));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     expect(
       await screen.findByRole("heading", { name: "Cérémonie du 11 novembre" })
@@ -387,7 +388,7 @@ describe("MusicianDisponibilites", () => {
     fetchMock.mockResolvedValueOnce(presenceResponse([answeredEvent], 2));
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     await screen.findByRole("table");
     expect(screen.queryByRole("heading", { name: "Concert de rentrée" })).not.toBeInTheDocument();
@@ -462,7 +463,7 @@ describe("MusicianDisponibilites", () => {
     });
     fetchMock.mockResolvedValueOnce(presenceResponse([event], 999));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     const table = await screen.findByRole("table");
     const groups = Array.from(table.querySelectorAll("tbody"));
@@ -526,7 +527,7 @@ describe("MusicianDisponibilites", () => {
       .mockResolvedValueOnce(presenceResponse([pastEvent], 2));
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await screen.findByRole("table");
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe("/api/musician/presence");
 
@@ -563,7 +564,7 @@ describe("MusicianDisponibilites", () => {
     });
     fetchMock.mockResolvedValueOnce(presenceResponse([event], 2));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     const table = await screen.findByRole("table");
     await waitFor(() => expect(within(table).getByText("Vous")).toBeInTheDocument());
@@ -596,7 +597,7 @@ describe("MusicianDisponibilites", () => {
     });
     fetchMock.mockResolvedValueOnce(jsonResponse({ events: [event] }));
 
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
     const table = await screen.findByRole("table");
     expect(within(table).getByText("Sans réponse")).toBeInTheDocument();
@@ -659,7 +660,7 @@ describe("effacement d'une réponse", () => {
       .mockResolvedValueOnce(jsonResponse({ success: true, event: clearedEvent(event) }));
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: /modifier votre réponse/i }));
     await user.click(screen.getByRole("button", { name: "Effacer ma réponse" }));
 
@@ -686,7 +687,7 @@ describe("effacement d'une réponse", () => {
       .mockResolvedValueOnce(jsonResponse({ success: true, event: clearedEvent(event) }));
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: /modifier votre réponse/i }));
     await user.click(screen.getByRole("button", { name: "Effacer ma réponse" }));
 
@@ -764,7 +765,7 @@ describe("disparition des cartes après une réponse", () => {
       .mockResolvedValueOnce(jsonResponse({ success: true, event: savedEvent(event) }));
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: "Présent" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -781,7 +782,7 @@ describe("disparition des cartes après une réponse", () => {
       );
 
     const user = userEvent.setup();
-    render(<MusicianDisponibilites />);
+    render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
     await user.click(await screen.findByRole("button", { name: "Présent" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));

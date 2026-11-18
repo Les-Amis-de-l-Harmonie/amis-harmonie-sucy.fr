@@ -27,6 +27,8 @@ import { HarmonieSection } from "./HarmonieSection";
 import { InstrumentPracticeSection } from "./InstrumentPracticeSection";
 import { EmergencyContactSection } from "./EmergencyContactSection";
 import { ImageConsentSection } from "./ImageConsentSection";
+import { GuardianCoordinates } from "./GuardianCoordinates";
+import { useMusicianSession } from "./MusicianSession";
 
 interface MusicianProfileClientProps {
   userId: number;
@@ -50,7 +52,9 @@ function calculateAge(dateOfBirth: string | null | undefined): number | null {
  * sauvegarde : la validation vit dans `profile-validation.ts`, chaque
  * section dans son propre fichier.
  */
-export function MusicianProfileClient({ userId: _userId }: MusicianProfileClientProps) {
+function MusicianProfileContent() {
+  const { delegated, effective } = useMusicianSession();
+  const actingForName = delegated ? effective?.firstName : null;
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -103,7 +107,10 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
     setProfile((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const errors = useMemo(() => validateProfile(profile, fieldErrors), [profile, fieldErrors]);
+  const errors = useMemo(
+    () => validateProfile(profile, fieldErrors, { imageConsentLocked: profile.imageConsentLocked }),
+    [profile, fieldErrors]
+  );
   const sectionCompletion = useMemo(() => getSectionCompletion(profile, errors), [profile, errors]);
   const completedCount = useMemo(
     () => Object.values(sectionCompletion).filter(Boolean).length,
@@ -209,9 +216,13 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
       <div className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:top-0 sm:mx-0 sm:rounded-xl sm:border sm:px-6">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">Mon Profil</h1>
+            <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">
+              {actingForName ? `Profil de ${actingForName}` : "Mon Profil"}
+            </h1>
             <p className="hidden text-sm text-muted-foreground sm:block">
-              Gérez vos informations personnelles
+              {actingForName
+                ? `Gérez les informations de ${actingForName}`
+                : "Gérez vos informations personnelles"}
             </p>
           </div>
           {saveButton}
@@ -347,10 +358,21 @@ export function MusicianProfileClient({ userId: _userId }: MusicianProfileClient
           title={emergencyContactTitle}
         />
 
-        <ImageConsentSection profile={profile} onProfileChange={handleProfileChange} />
+        <ImageConsentSection
+          profile={profile}
+          onProfileChange={handleProfileChange}
+          locked={profile.imageConsentLocked === true}
+        />
 
         <div className="flex items-center justify-end">{saveButton}</div>
       </div>
     </div>
   );
+}
+
+export function MusicianProfileClient({ userId: _userId }: MusicianProfileClientProps) {
+  const { needsMusicianChoice } = useMusicianSession();
+  // Responsable sur « Moi » : seules les coordonnées existent (le reste répond 403).
+  if (needsMusicianChoice) return <GuardianCoordinates />;
+  return <MusicianProfileContent />;
 }

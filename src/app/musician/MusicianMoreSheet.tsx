@@ -65,7 +65,7 @@ export function MusicianMoreSheet({
       {/* aria-describedby={undefined} : ce panneau n'a pas de description,
           seulement un titre (sr-only ci-dessous) — sans ça Radix émet un
           avertissement console "Missing Description" à chaque ouverture. */}
-      <SheetContent side="bottom" aria-describedby={undefined}>
+      <SheetContent side="bottom" aria-describedby={undefined} className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="sr-only">Plus de sections</SheetTitle>
           <MusicianUserSummary

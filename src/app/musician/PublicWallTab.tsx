@@ -25,6 +25,8 @@ interface PublicWallTabProps {
   onLike: (idea: IdeaWithLikes) => void;
   onViewResponse: (idea: IdeaWithLikes) => void;
   onViewLikers: (idea: IdeaWithLikes) => void;
+  /** Responsable qui agit pour un enfant : « j'aime » désactivé. */
+  readOnly?: boolean;
 }
 
 export function PublicWallTab({
@@ -44,6 +46,7 @@ export function PublicWallTab({
   onLike,
   onViewResponse,
   onViewLikers,
+  readOnly = false,
 }: PublicWallTabProps) {
   const filteredIdeas = useMemo(
     () => filterAndSortIdeas(ideas, searchQuery, categoryFilter, sortBy),
@@ -89,6 +92,7 @@ export function PublicWallTab({
                 onToggleExpanded={onToggleExpanded}
                 onViewResponse={onViewResponse}
                 onViewLikers={onViewLikers}
+                readOnly={readOnly}
               />
             ))}
           </div>

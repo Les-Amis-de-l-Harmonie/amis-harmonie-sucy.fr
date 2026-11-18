@@ -12,6 +12,8 @@ import { BirthdaysModule } from "./BirthdaysModule";
 import { VideoModule } from "./VideoModule";
 import { OutingModule } from "./OutingModule";
 import { VideoModal } from "./VideoModal";
+import { ChooseMusicianState } from "./ChooseMusicianState";
+import { useMusicianSession } from "./MusicianSession";
 
 interface MusicianHomeClientProps {
   userId: number;
@@ -59,7 +61,7 @@ const infoCardVariants = {
  * (voir `musician-nav-items.ts`), et le profil est représenté par sa
  * première étape dans `JourneyModule`.
  */
-export function MusicianHomeClient({
+function MusicianHomeContent({
   userId: _userId,
   firstName,
   lastName: _lastName,
@@ -175,4 +177,26 @@ export function MusicianHomeClient({
       </motion.div>
     </div>
   );
+}
+
+/**
+ * Responsable sur son propre compte : l'accueil n'a ni présences, ni idées, ni
+ * anniversaires à montrer (ces API répondent 403). On salue la personne et on
+ * lui propose de choisir un musicien, sans lancer aucune requête.
+ */
+function GuardianHome({ firstName }: { firstName: string }) {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground">
+        {firstName ? `Bonjour, ${firstName} !` : "Bonjour !"}
+      </h1>
+      <ChooseMusicianState />
+    </div>
+  );
+}
+
+export function MusicianHomeClient(props: MusicianHomeClientProps) {
+  const { needsMusicianChoice } = useMusicianSession();
+  if (needsMusicianChoice) return <GuardianHome firstName={props.firstName} />;
+  return <MusicianHomeContent {...props} />;
 }

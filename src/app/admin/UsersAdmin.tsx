@@ -42,6 +42,8 @@ import {
   Users,
   Check,
   Star,
+  UserRoundCog,
+  X,
 } from "lucide-react";
 import { AvatarUploader } from "@/app/components/shared/AvatarUploader";
 import { InstrumentEditor } from "@/app/components/shared/InstrumentEditor";
@@ -51,102 +53,30 @@ import { isSuperAdmin, HARMONIE_INSTRUMENTS } from "@/db/types";
 import { Pagination } from "@/app/components/ui/pagination";
 import { compareInstruments, resolveDeclaredPrimaryInstrument } from "@/lib/instruments";
 import { cn } from "@/lib/utils";
+import { AccountTypePicker } from "./AccountTypePicker";
+import { ManagedAccountNotice } from "./ManagedAccountNotice";
+import { UserGuardianLinks, type LinkedNames } from "./UserGuardianLinks";
+import {
+  buildUsersCsv,
+  formatParisDateTime,
+  getAccountKind,
+  getFullName,
+  getKindLabel,
+  isAdultWithLinkedGuardian,
+  isMusicianAccount,
+  isProfileComplete,
+  matchesUserSearch,
+  type UserWithProfile,
+} from "./users-shared";
 
-function lastSundayOfMonthUTC(year: number, monthIndex0: number) {
-  const d = new Date(Date.UTC(year, monthIndex0 + 1, 0));
-  const dow = d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() - dow);
-  return d;
-}
-
-function parisOffsetMinutes(utc: Date) {
-  const year = utc.getUTCFullYear();
-  const dstStart = lastSundayOfMonthUTC(year, 2);
-  dstStart.setUTCHours(1, 0, 0, 0);
-  const dstEnd = lastSundayOfMonthUTC(year, 9);
-  dstEnd.setUTCHours(1, 0, 0, 0);
-  return utc >= dstStart && utc < dstEnd ? 120 : 60;
-}
-
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
-}
-
-function formatParisDateTime(input: string | number | Date) {
-  // Force UTC interpretation by adding 'Z' if no timezone specified
-  let utc: Date;
-  if (input instanceof Date) {
-    utc = input;
-  } else if (typeof input === "string" && !input.match(/[TZ]/)) {
-    // SQLite format: '2026-02-26 22:29:00' -> treat as UTC
-    utc = new Date(input.replace(" ", "T") + "Z");
-  } else {
-    utc = new Date(input);
-  }
-  const offsetMin = parisOffsetMinutes(utc);
-  const paris = new Date(utc.getTime() + offsetMin * 60_000);
-
-  const dd = pad2(paris.getUTCDate());
-  const mm = pad2(paris.getUTCMonth() + 1);
-  const yyyy = paris.getUTCFullYear();
-  const hh = pad2(paris.getUTCHours());
-  const min = pad2(paris.getUTCMinutes());
-
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-}
-
-const isProfileComplete = (user: UserWithProfile): boolean => {
-  const requiredFields = [
-    user.first_name,
-    user.last_name,
-    user.date_of_birth,
-    user.phone,
-    user.address_line1,
-    user.postal_code,
-    user.city,
-    user.harmonie_start_date,
-    user.emergency_contact_first_name,
-    user.emergency_contact_last_name,
-    user.emergency_contact_phone,
-  ];
-  const allTextFieldsFilled = requiredFields.every(
-    (field) => field && field.toString().trim() !== ""
-  );
-  const hasConservatoryChoice =
-    user.is_conservatory_student === 0 || user.is_conservatory_student === 1;
-  const hasImageConsentChoice = user.image_consent === 0 || user.image_consent === 1;
-  return allTextFieldsFilled && hasConservatoryChoice && hasImageConsentChoice;
+const NEW_USER: Partial<UserWithProfile> = {
+  email: "",
+  role: "MUSICIAN",
+  kind: "member",
+  is_active: 1,
 };
 
-interface UserWithProfile {
-  id?: number;
-  email: string;
-  role: UserRole;
-  is_active?: number;
-  last_login?: string | null;
-  created_at?: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  avatar?: string | null;
-  date_of_birth?: string | null;
-  phone?: string | null;
-  address_line1?: string | null;
-  address_line2?: string | null;
-  postal_code?: string | null;
-  city?: string | null;
-  harmonie_start_date?: string | null;
-  is_conservatory_student?: number | null;
-  music_theory_level?: string | null;
-  emergency_contact_last_name?: string | null;
-  emergency_contact_first_name?: string | null;
-  emergency_contact_email?: string | null;
-  emergency_contact_phone?: string | null;
-  image_consent?: number | null;
-  adhesion_2026_2027?: number | null;
-  instruments?: { instrument_name: string; start_date?: string | null; level?: string | null }[];
-  harmonieInstruments?: string[];
-  primaryHarmonieInstrument?: string | null;
-}
+type RoleFilter = "all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN" | "GUARDIAN" | "MANAGED";
 
 interface UsersAdminClientProps {
   currentUserRole: UserRole;
@@ -157,9 +87,9 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const isCurrentUserSuperAdmin = isSuperAdmin(currentUserRole);
   const isCurrentUserAdmin = currentUserRole === "ADMIN";
-  const canEditUser = (userEmail: string) => {
+  const canEditUser = (userEmail: string | null) => {
     if (isCurrentUserSuperAdmin) return true;
-    if (isCurrentUserAdmin) return userEmail === currentUserEmail;
+    if (isCurrentUserAdmin) return userEmail !== null && userEmail === currentUserEmail;
     return false;
   };
   const [loading, setLoading] = useState(true);
@@ -169,9 +99,10 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const [viewing, setViewing] = useState<Partial<UserWithProfile> | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState<"all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN">("all");
+  const [filterRole, setFilterRole] = useState<RoleFilter>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("active");
   const [filterAdhesion, setFilterAdhesion] = useState<"all" | "adherent" | "non_adherent">("all");
   const [filterProfile, setFilterProfile] = useState<"all" | "complete" | "incomplete">("all");
@@ -188,9 +119,14 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const fetchData = async () => {
     try {
       const response = await fetch("/api/admin/users");
-      if (response.ok) setUsers((await response.json()) as UserWithProfile[]);
+      if (!response.ok) {
+        setNotice("La liste des utilisateurs n'a pas pu être actualisée. Rechargez la page.");
+        return;
+      }
+      setUsers((await response.json()) as UserWithProfile[]);
     } catch (err) {
       console.error("Error:", err);
+      setNotice("La liste des utilisateurs n'a pas pu être actualisée. Rechargez la page.");
     } finally {
       setLoading(false);
     }
@@ -206,13 +142,25 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     setError(null);
     try {
       const isNew = !editing.id;
-      const payload = {
+      const accountKind = getAccountKind(editing);
+      const payload: Partial<UserWithProfile> = {
         ...editing,
         primaryHarmonieInstrument: resolveDeclaredPrimaryInstrument(
           editing.harmonieInstruments || [],
           editing.primaryHarmonieInstrument
         ),
       };
+      if (isNew && accountKind === "managed") {
+        // Musicien sans e-mail : le serveur génère l'adresse interne.
+        payload.kind = "member";
+        payload.noEmail = true;
+        payload.role = "MUSICIAN";
+        delete payload.email;
+      } else if (isNew && accountKind === "guardian") {
+        payload.kind = "guardian";
+        payload.noEmail = false;
+        payload.role = "MUSICIAN";
+      }
       const response = await fetch(
         isNew ? "/api/admin/users" : `/api/admin/users?id=${editing.id}`,
         {
@@ -226,6 +174,15 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
         fetchData();
         setDialogOpen(false);
         setEditing(null);
+        if (isNew && accountKind === "managed") {
+          setNotice(
+            "Compte créé. Ouvrez sa fiche pour indiquer ses responsables : sans eux, personne ne peut ouvrir son espace."
+          );
+        } else if (isNew && accountKind === "guardian") {
+          setNotice(
+            "Responsable créé. Pour le relier à un musicien, ouvrez la fiche du musicien et utilisez « Lier un compte existant »."
+          );
+        }
       } else {
         setError(data.error || "Une erreur est survenue");
       }
@@ -236,6 +193,25 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       setSaving(false);
     }
   };
+  /** Un lien responsable / enfant a changé : on recharge la liste et on rafraîchit la fiche ouverte. */
+  const handleLinksChanged = (names: LinkedNames) => {
+    void fetchData();
+    const apply = (prev: Partial<UserWithProfile> | null) =>
+      prev ? { ...prev, guardian_names: names.guardians, children_names: names.children } : prev;
+    setEditing(apply);
+    setViewing(apply);
+  };
+
+  /** Transfert d'adresse ou accès personnel : le compte a changé de nature, on ferme la fiche. */
+  const handleAccountChanged = (message: string) => {
+    setDialogOpen(false);
+    setViewDialogOpen(false);
+    setEditing(null);
+    setViewing(null);
+    setNotice(message);
+    void fetchData();
+  };
+
   const handleSort = (
     field: "name" | "email" | "role" | "city" | "status" | "adhesion" | "profile" | "last_login"
   ) => {
@@ -263,7 +239,13 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   const filteredUsers = useMemo(() => {
     let result = [...users];
 
-    if (filterRole !== "all") {
+    if (filterRole === "GUARDIAN") {
+      result = result.filter((u) => getAccountKind(u) === "guardian");
+    } else if (filterRole === "MANAGED") {
+      result = result.filter((u) => getAccountKind(u) === "managed");
+    } else if (filterRole === "MUSICIAN") {
+      result = result.filter((u) => isMusicianAccount(u));
+    } else if (filterRole !== "all") {
       result = result.filter((u) => u.role === filterRole);
     }
 
@@ -273,21 +255,28 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
       );
     }
 
+    // Les responsables légaux n'ont ni adhésion, ni profil musicien, ni droit à l'image.
     if (filterAdhesion !== "all") {
-      result = result.filter((u) =>
-        filterAdhesion === "adherent" ? u.adhesion_2026_2027 === 1 : u.adhesion_2026_2027 !== 1
+      result = result.filter(
+        (u) =>
+          getAccountKind(u) !== "guardian" &&
+          (filterAdhesion === "adherent" ? u.adhesion_2026_2027 === 1 : u.adhesion_2026_2027 !== 1)
       );
     }
 
     if (filterProfile !== "all") {
-      result = result.filter((u) =>
-        filterProfile === "complete" ? isProfileComplete(u) : !isProfileComplete(u)
+      result = result.filter(
+        (u) =>
+          getAccountKind(u) !== "guardian" &&
+          (filterProfile === "complete" ? isProfileComplete(u) : !isProfileComplete(u))
       );
     }
 
     if (filterImageConsent !== "all") {
       result = result.filter((u) => {
-        if (u.role === "SUPER_ADMIN" || u.role === "ADMIN") return false;
+        if (u.role === "SUPER_ADMIN" || u.role === "ADMIN" || getAccountKind(u) === "guardian") {
+          return false;
+        }
         if (filterImageConsent === "authorized") return u.image_consent === 1;
         if (filterImageConsent === "refused") return u.image_consent === 0;
         if (filterImageConsent === "not_set") return u.image_consent == null;
@@ -296,14 +285,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     }
 
     if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter(
-        (u) =>
-          u.email?.toLowerCase().includes(q) ||
-          u.first_name?.toLowerCase().includes(q) ||
-          u.last_name?.toLowerCase().includes(q) ||
-          `${u.first_name} ${u.last_name}`.toLowerCase().includes(q)
-      );
+      result = result.filter((u) => matchesUserSearch(u, search));
     }
 
     result.sort((a, b) => {
@@ -364,7 +346,34 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
     setCurrentPage(1);
   }, [search, filterRole, filterStatus, filterAdhesion, filterProfile, filterImageConsent]);
 
-  const getRoleBadge = (role: UserRole) => {
+  const getRoleBadge = (user: UserWithProfile) => {
+    const role = user.role;
+    const kind = getAccountKind(user);
+    if (kind === "guardian") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+          <Users className="w-3 h-3" />
+          Responsable
+        </span>
+      );
+    }
+    if (kind === "managed") {
+      return (
+        <span className="inline-flex flex-wrap items-center gap-1">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            <Music className="w-3 h-3" />
+            Musicien
+          </span>
+          <span
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            title="Pas de connexion : ses responsables agissent pour lui"
+          >
+            <UserRoundCog className="w-3 h-3" />
+            Géré
+          </span>
+        </span>
+      );
+    }
     if (role === "SUPER_ADMIN") {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
@@ -420,65 +429,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   };
 
   const exportCSV = () => {
-    const headers = [
-      "ID",
-      "Email",
-      "Rôle",
-      "Statut",
-      "Prénom",
-      "Nom",
-      "Date de naissance",
-      "Téléphone",
-      "Adresse",
-      "Code postal",
-      "Ville",
-      "Date d'entrée Harmonie",
-      "Élève conservatoire",
-      "Niveau solfège",
-      "Contact urgence - Prénom",
-      "Contact urgence - Nom",
-      "Contact urgence - Email",
-      "Contact urgence - Téléphone",
-      "Droit à l'image",
-      "Adhésion 2026-2027",
-      "Instruments personnels",
-      "Instruments Harmonie",
-      "Dernière connexion",
-      "Date de création",
-    ];
-
-    const rows = filteredUsers.map((user) => [
-      user.id ?? "",
-      user.email,
-      user.role,
-      user.is_active === 1 ? "Actif" : "Inactif",
-      user.first_name ?? "",
-      user.last_name ?? "",
-      user.date_of_birth ?? "",
-      user.phone ?? "",
-      user.address_line1
-        ? `${user.address_line1}${user.address_line2 ? `, ${user.address_line2}` : ""}`
-        : "",
-      user.postal_code ?? "",
-      user.city ?? "",
-      user.harmonie_start_date ?? "",
-      user.is_conservatory_student === 1 ? "Oui" : user.is_conservatory_student === 0 ? "Non" : "",
-      user.music_theory_level ?? "",
-      user.emergency_contact_first_name ?? "",
-      user.emergency_contact_last_name ?? "",
-      user.emergency_contact_email ?? "",
-      user.emergency_contact_phone ?? "",
-      user.image_consent === 1 ? "Autorisé" : user.image_consent === 0 ? "Refusé" : "Non renseigné",
-      user.adhesion_2026_2027 === 1 ? "Oui" : user.adhesion_2026_2027 === 0 ? "Non" : "",
-      user.instruments?.map((i) => i.instrument_name).join("; ") ?? "",
-      user.harmonieInstruments?.join("; ") ?? "",
-      user.last_login ? formatParisDateTime(user.last_login) : "",
-      user.created_at ? formatParisDateTime(user.created_at) : "",
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"))
-      .join("\n");
+    const csvContent = buildUsersCsv(filteredUsers);
 
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -490,6 +441,12 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
+  const editingKind = editing ? getAccountKind(editing) : "member";
+  // Un responsable légal n'a ni adresse postale, ni instruments, ni adhésion : seulement ses coordonnées.
+  const showMusicianFields = !!editing && editing.role === "MUSICIAN" && editingKind !== "guardian";
+  const viewingKind = viewing ? getAccountKind(viewing) : "member";
+  const viewingIsMusician = !!viewing && viewing.role === "MUSICIAN" && viewingKind !== "guardian";
+
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
@@ -500,13 +457,30 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
             Exporter CSV
           </Button>
           {isCurrentUserSuperAdmin && (
-            <Button onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}>
+            <Button onClick={() => openEditDialog(NEW_USER)}>
               <Plus className="w-4 h-4 mr-2" />
               Nouvel utilisateur
             </Button>
           )}
         </div>
       </div>
+
+      {notice && (
+        <div
+          role="status"
+          className="mb-4 flex items-start justify-between gap-3 rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-700 dark:bg-green-900/20 dark:text-green-200"
+        >
+          <p>{notice}</p>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            aria-label="Fermer le message"
+            className="shrink-0 rounded p-0.5 hover:bg-green-100 dark:hover:bg-green-900/40 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px]">
@@ -518,11 +492,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
             className="pl-9"
           />
         </div>
-        <Select
-          value={filterRole}
-          onValueChange={(v) => setFilterRole(v as "all" | "SUPER_ADMIN" | "ADMIN" | "MUSICIAN")}
-        >
-          <SelectTrigger className="w-[140px]">
+        <Select value={filterRole} onValueChange={(v) => setFilterRole(v as RoleFilter)}>
+          <SelectTrigger className="w-[170px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -530,6 +501,8 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
             <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
             <SelectItem value="ADMIN">Admin</SelectItem>
             <SelectItem value="MUSICIAN">Musicien</SelectItem>
+            <SelectItem value="GUARDIAN">Responsable légal</SelectItem>
+            <SelectItem value="MANAGED">Musicien géré</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -602,9 +575,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
               }
               action={
                 users.length === 0 && isCurrentUserSuperAdmin ? (
-                  <Button
-                    onClick={() => openEditDialog({ email: "", role: "MUSICIAN", is_active: 1 })}
-                  >
+                  <Button onClick={() => openEditDialog(NEW_USER)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Nouvel utilisateur
                   </Button>
@@ -695,9 +666,27 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium min-w-[11rem]">
                       {getDisplayName(user) || (
                         <span className="text-muted-foreground italic">Non renseigné</span>
+                      )}
+                      {user.guardian_names && (
+                        <span className="block text-xs font-normal text-muted-foreground">
+                          Responsable : {user.guardian_names}
+                        </span>
+                      )}
+                      {user.children_names && (
+                        <span className="block text-xs font-normal text-muted-foreground">
+                          Responsable de {user.children_names}
+                        </span>
+                      )}
+                      {isAdultWithLinkedGuardian(user) && (
+                        <span
+                          className="mt-1 inline-block rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium leading-snug text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                          title="Ce musicien a 18 ans ou plus mais un responsable légal est encore lié à son compte."
+                        >
+                          Majeur, responsable encore lié
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -705,10 +694,12 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                         className="hover:underline text-left"
                         onClick={() => openViewDialog(user)}
                       >
-                        {user.email}
+                        {user.email ?? (
+                          <span className="text-muted-foreground italic">Pas d'e-mail</span>
+                        )}
                       </button>
                     </TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>{getRoleBadge(user)}</TableCell>
                     <TableCell>
                       {user.is_active !== 0 ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -721,7 +712,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                      {!isMusicianAccount(user) ? (
                         ""
                       ) : user.adhesion_2026_2027 === 1 ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -734,7 +725,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                      {!isMusicianAccount(user) ? (
                         ""
                       ) : isProfileComplete(user) ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -747,7 +738,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.role === "SUPER_ADMIN" || user.role === "ADMIN" ? (
+                      {!isMusicianAccount(user) ? (
                         ""
                       ) : user.image_consent === 1 ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -766,12 +757,22 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     <TableCell className="text-muted-foreground text-sm">
                       {user.last_login ? formatParisDateTime(user.last_login) : "-"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => openViewDialog(user)}>
+                    <TableCell className="sticky right-0 bg-card text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openViewDialog(user)}
+                        aria-label={`Voir la fiche de ${getDisplayName(user) ?? user.email ?? "ce compte"}`}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      {canEditUser(user.email || "") && (
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
+                      {canEditUser(user.email) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(user)}
+                          aria-label={`Modifier ${getDisplayName(user) ?? user.email ?? "ce compte"}`}
+                        >
                           <Pencil className="w-4 h-4" />
                         </Button>
                       )}
@@ -817,51 +818,97 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 onError={setError}
               />
 
+              {!editing.id && (
+                <AccountTypePicker
+                  value={getAccountKind(editing)}
+                  onChange={(kind) =>
+                    setEditing({
+                      ...editing,
+                      kind: kind === "guardian" ? "guardian" : "member",
+                      noEmail: kind === "managed",
+                      role: kind === "member" ? editing.role : "MUSICIAN",
+                    })
+                  }
+                />
+              )}
+
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={editing.email || ""}
-                    onChange={(e) => setEditing({ ...editing, email: e.target.value })}
-                    placeholder="email@example.com"
-                    disabled={
-                      isCurrentUserAdmin &&
-                      !isCurrentUserSuperAdmin &&
-                      editing.email === currentUserEmail
-                    }
-                    className={
-                      isCurrentUserAdmin &&
-                      !isCurrentUserSuperAdmin &&
-                      editing.email === currentUserEmail
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Rôle *</Label>
-                  <select
-                    value={editing.role || "MUSICIAN"}
-                    onChange={(e) => setEditing({ ...editing, role: e.target.value as UserRole })}
-                    className={`flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                      isCurrentUserAdmin &&
-                      !isCurrentUserSuperAdmin &&
-                      editing.email === currentUserEmail
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={
-                      isCurrentUserAdmin &&
-                      !isCurrentUserSuperAdmin &&
-                      editing.email === currentUserEmail
-                    }
-                  >
-                    <option value="MUSICIAN">Musicien</option>
-                    <option value="ADMIN">Administrateur</option>
-                    <option value="SUPER_ADMIN">Super Admin</option>
-                  </select>
-                </div>
+                {editingKind === "managed" ? (
+                  editing.id ? (
+                    <ManagedAccountNotice
+                      userId={editing.id}
+                      name={getFullName(editing) || "Ce musicien"}
+                      guardianNames={editing.guardian_names}
+                      canGiveAccess={isCurrentUserSuperAdmin}
+                      inEditForm
+                      onGiven={handleAccountChanged}
+                    />
+                  ) : (
+                    <p className="col-span-2 rounded-lg border border-dashed border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                      Pas d'adresse e-mail : ce musicien ne se connecte pas. Ses responsables
+                      agiront à sa place. Vous pourrez les indiquer après l'enregistrement, depuis
+                      sa fiche.
+                    </p>
+                  )
+                ) : (
+                  <div className="grid gap-2">
+                    <Label htmlFor="user-edit-email">Email *</Label>
+                    <Input
+                      id="user-edit-email"
+                      type="email"
+                      value={editing.email || ""}
+                      onChange={(e) => setEditing({ ...editing, email: e.target.value })}
+                      placeholder="email@example.com"
+                      disabled={
+                        isCurrentUserAdmin &&
+                        !isCurrentUserSuperAdmin &&
+                        editing.email === currentUserEmail
+                      }
+                      className={
+                        isCurrentUserAdmin &&
+                        !isCurrentUserSuperAdmin &&
+                        editing.email === currentUserEmail
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }
+                    />
+                  </div>
+                )}
+                {editingKind !== "member" ? (
+                  // À la création, le type est déjà choisi dans le sélecteur du haut.
+                  editing.id && (
+                    <div className="grid content-start gap-2">
+                      <Label>Type de compte</Label>
+                      <p className="flex h-10 items-center text-sm font-medium">
+                        {getKindLabel(editingKind)}
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <div className="grid gap-2">
+                    <Label>Rôle *</Label>
+                    <select
+                      value={editing.role || "MUSICIAN"}
+                      onChange={(e) => setEditing({ ...editing, role: e.target.value as UserRole })}
+                      className={`flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        isCurrentUserAdmin &&
+                        !isCurrentUserSuperAdmin &&
+                        editing.email === currentUserEmail
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={
+                        isCurrentUserAdmin &&
+                        !isCurrentUserSuperAdmin &&
+                        editing.email === currentUserEmail
+                      }
+                    >
+                      <option value="MUSICIAN">Musicien</option>
+                      <option value="ADMIN">Administrateur</option>
+                      <option value="SUPER_ADMIN">Super Admin</option>
+                    </select>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label>Statut du compte</Label>
                   <div className="flex items-center gap-4 h-10">
@@ -900,11 +947,22 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       <span className="text-sm">Inactif</span>
                     </label>
                   </div>
-                  <p className="text-xs text-muted-foreground whitespace-nowrap">
+                  <p className="text-xs text-muted-foreground">
                     Un compte inactif ne pourra plus se connecter à son espace.
                   </p>
                 </div>
               </div>
+
+              {editing.id && (
+                <UserGuardianLinks
+                  user={editing}
+                  users={users}
+                  canManageAccounts={isCurrentUserSuperAdmin}
+                  inEditForm
+                  onLinksChanged={handleLinksChanged}
+                  onAccountChanged={handleAccountChanged}
+                />
+              )}
 
               <div className="border-t border-border pt-4">
                 <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
@@ -926,7 +984,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     />
                   </div>
                 </div>
-                {editing.role === "MUSICIAN" && (
+                {showMusicianFields && (
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div className="grid gap-2">
                       <Label>Date de naissance</Label>
@@ -947,7 +1005,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     </div>
                   </div>
                 )}
-                {editing.role !== "MUSICIAN" && (
+                {!showMusicianFields && (
                   <div className="grid grid-cols-1 gap-4 mt-4">
                     <div className="grid gap-2">
                       <Label>Téléphone</Label>
@@ -962,7 +1020,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 )}
               </div>
 
-              {editing.role === "MUSICIAN" && (
+              {showMusicianFields && (
                 <>
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>
@@ -1391,7 +1449,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
               onClick={handleSave}
               disabled={
                 saving ||
-                !editing?.email ||
+                (editingKind !== "managed" && !editing?.email) ||
                 // La règle suit les instruments déclarés, jamais le rôle : le chef
                 // d'orchestre est un ADMIN qui joue, et il fait partie de l'effectif de
                 // référence (voir src/lib/presence.ts). Le conditionner à MUSICIAN
@@ -1441,7 +1499,11 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
               <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label className="text-muted-foreground">Email</Label>
-                  <p className="text-sm font-medium">{viewing.email || "-"}</p>
+                  <p className="text-sm font-medium">
+                    {viewing.email ?? (
+                      <span className="text-muted-foreground italic">Pas d'e-mail</span>
+                    )}
+                  </p>
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-muted-foreground">Rôle</Label>
@@ -1450,7 +1512,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                       ? "Super Admin"
                       : viewing.role === "ADMIN"
                         ? "Administrateur"
-                        : "Musicien"}
+                        : getKindLabel(viewingKind)}
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -1460,6 +1522,28 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                   </p>
                 </div>
               </div>
+
+              {viewingKind === "managed" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <ManagedAccountNotice
+                    userId={viewing.id}
+                    name={getFullName(viewing) || "Ce musicien"}
+                    guardianNames={viewing.guardian_names}
+                    canGiveAccess={isCurrentUserSuperAdmin}
+                    onGiven={handleAccountChanged}
+                  />
+                </div>
+              )}
+
+              {viewing.id && (
+                <UserGuardianLinks
+                  user={viewing}
+                  users={users}
+                  canManageAccounts={isCurrentUserSuperAdmin}
+                  onLinksChanged={handleLinksChanged}
+                  onAccountChanged={handleAccountChanged}
+                />
+              )}
 
               <div className="border-t border-border pt-4">
                 <h3 className="font-medium text-foreground mb-4">Informations personnelles</h3>
@@ -1472,7 +1556,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                     <Label className="text-muted-foreground">Nom</Label>
                     <p className="text-sm font-medium">{viewing.last_name || "-"}</p>
                   </div>
-                  {viewing.role === "MUSICIAN" && (
+                  {viewingIsMusician && (
                     <div className="grid gap-2">
                       <Label className="text-muted-foreground">Date de naissance</Label>
                       <p className="text-sm font-medium">
@@ -1489,7 +1573,7 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
                 </div>
               </div>
 
-              {viewing.role === "MUSICIAN" && (
+              {viewingIsMusician && (
                 <>
                   <div className="border-t border-border pt-4">
                     <h3 className="font-medium text-foreground mb-4">Adresse postale</h3>

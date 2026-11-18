@@ -15,6 +15,7 @@ import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
 import type { IdeaCategory, IdeaWithLikes } from "@/db/types";
 import { CATEGORY_LABELS } from "./idea-filters";
+import { delegatedIdeasMessage } from "./idea-delegation";
 
 interface IdeaComposerDialogProps {
   open: boolean;
@@ -22,6 +23,10 @@ interface IdeaComposerDialogProps {
   idea?: IdeaWithLikes | null;
   onOpenChange: (open: boolean) => void;
   onSubmitted: () => void;
+  /** Un responsable agit pour un enfant : on ne peut ni créer ni modifier. */
+  readOnly?: boolean;
+  /** Prénom du musicien pour qui l'on agit, pour le message d'explication. */
+  actingForName?: string | null;
 }
 
 interface IdeaFormData {
@@ -53,6 +58,8 @@ export function IdeaComposerDialog({
   idea = null,
   onOpenChange,
   onSubmitted,
+  readOnly = false,
+  actingForName = null,
 }: IdeaComposerDialogProps) {
   const isEditing = idea !== null;
   const [submitting, setSubmitting] = useState(false);
@@ -88,7 +95,7 @@ export function IdeaComposerDialog({
   }
 
   async function handleSubmit() {
-    if (!validateForm()) return;
+    if (readOnly || !validateForm()) return;
     setSubmitting(true);
     try {
       const url = idea ? `/api/musician/ideas?id=${idea.id}` : "/api/musician/ideas";
@@ -158,6 +165,14 @@ export function IdeaComposerDialog({
           </div>
         ) : (
           <div className="space-y-6">
+            {readOnly && (
+              <div
+                role="note"
+                className="rounded-md border border-border bg-muted/50 p-4 text-sm text-muted-foreground"
+              >
+                {delegatedIdeasMessage(actingForName)}
+              </div>
+            )}
             {errors.submit && (
               <div
                 role="alert"
@@ -293,7 +308,12 @@ export function IdeaComposerDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Annuler
               </Button>
-              <Button type="button" onClick={handleSubmit} disabled={submitting} size="lg">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting || readOnly}
+                size="lg"
+              >
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

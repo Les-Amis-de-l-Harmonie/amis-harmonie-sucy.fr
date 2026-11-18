@@ -8,7 +8,9 @@ export interface ProfileWithExtras extends Partial<MusicianProfile> {
    * pour réutiliser `validateProfile`/`getSectionCompletion` de `profile-validation.ts`
    * dans le parcours de complétion de l'accueil (`profile-journey.ts`). */
   primaryHarmonieInstrument?: string | null;
-  email?: string;
+  email?: string | null;
+  /** Droit à l'image décidé par un responsable légal (lecture seule pour le musicien). */
+  imageConsentLocked?: boolean;
   adhesion_2026_2027?: number;
   insurance_complete?: boolean;
   insuranceInstruments?: InsuranceInstrument[];

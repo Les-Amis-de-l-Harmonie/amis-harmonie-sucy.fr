@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Send, Users } from "lucide-react";
+import { Info, Send, Users } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import { ListSkeleton } from "@/app/components/ui/skeleton";
@@ -13,10 +13,15 @@ import { IdeaResponseDialog } from "./IdeaResponseDialog";
 import { MyIdeasTab } from "./MyIdeasTab";
 import { PublicWallTab } from "./PublicWallTab";
 import type { IdeaFilterCategory, IdeaSortOption } from "./idea-filters";
+import { delegatedIdeasMessage } from "./idea-delegation";
+import { MusicianChoiceGate } from "./ChooseMusicianState";
+import { useMusicianSession } from "./MusicianSession";
 
 type IdeaTab = "my-ideas" | "public-wall";
 
-export function MusicianIdeeClient() {
+function MusicianIdeeContent() {
+  const { delegated, effective } = useMusicianSession();
+  const actingForName = effective?.firstName ?? null;
   const [myIdeas, setMyIdeas] = useState<IdeaWithLikes[]>([]);
   const [publicIdeas, setPublicIdeas] = useState<IdeaWithLikes[]>([]);
   const [activeTab, setActiveTab] = useState<IdeaTab>("public-wall");
@@ -74,7 +79,7 @@ export function MusicianIdeeClient() {
   }, [fetchIdeas]);
 
   const handleDelete = useCallback(async () => {
-    if (!ideaToDelete) return;
+    if (!ideaToDelete || delegated) return;
     setDeleting(true);
     try {
       const response = await fetch(`/api/musician/ideas?id=${ideaToDelete.id}`, {
@@ -97,40 +102,46 @@ export function MusicianIdeeClient() {
       setDeleteDialogOpen(false);
       setIdeaToDelete(null);
     }
-  }, [fetchIdeas, ideaToDelete]);
+  }, [delegated, fetchIdeas, ideaToDelete]);
 
-  const handleLike = useCallback(async (idea: IdeaWithLikes) => {
-    setLikingId(idea.id);
-    try {
-      const action = idea.user_has_liked ? "unlike" : "like";
-      const response = await fetch(`/api/musician/ideas?id=${idea.id}&action=${action}`, {
-        method: "PUT",
-      });
-      if (!response.ok) {
-        throw new Error("Impossible de modifier ce like.");
-      }
-      const nextLiked = !idea.user_has_liked;
-      const updateIdea = (current: IdeaWithLikes[]) =>
-        current.map((currentIdea) =>
-          currentIdea.id === idea.id
-            ? {
-                ...currentIdea,
-                likes_count: idea.user_has_liked
-                  ? currentIdea.likes_count - 1
-                  : currentIdea.likes_count + 1,
-                user_has_liked: nextLiked,
-              }
-            : currentIdea
+  const handleLike = useCallback(
+    async (idea: IdeaWithLikes) => {
+      if (delegated) return;
+      setLikingId(idea.id);
+      try {
+        const action = idea.user_has_liked ? "unlike" : "like";
+        const response = await fetch(`/api/musician/ideas?id=${idea.id}&action=${action}`, {
+          method: "PUT",
+        });
+        if (!response.ok) {
+          throw new Error("Impossible de modifier ce like.");
+        }
+        const nextLiked = !idea.user_has_liked;
+        const updateIdea = (current: IdeaWithLikes[]) =>
+          current.map((currentIdea) =>
+            currentIdea.id === idea.id
+              ? {
+                  ...currentIdea,
+                  likes_count: idea.user_has_liked
+                    ? currentIdea.likes_count - 1
+                    : currentIdea.likes_count + 1,
+                  user_has_liked: nextLiked,
+                }
+              : currentIdea
+          );
+        setPublicIdeas(updateIdea);
+        setMyIdeas(updateIdea);
+      } catch (likeError) {
+        console.error("Error toggling like:", likeError);
+        setError(
+          likeError instanceof Error ? likeError.message : "Impossible de modifier ce like."
         );
-      setPublicIdeas(updateIdea);
-      setMyIdeas(updateIdea);
-    } catch (likeError) {
-      console.error("Error toggling like:", likeError);
-      setError(likeError instanceof Error ? likeError.message : "Impossible de modifier ce like.");
-    } finally {
-      setLikingId(null);
-    }
-  }, []);
+      } finally {
+        setLikingId(null);
+      }
+    },
+    [delegated]
+  );
 
   const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentTab: IdeaTab) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -142,11 +153,13 @@ export function MusicianIdeeClient() {
   };
 
   function openComposer() {
+    if (delegated) return;
     setEditingIdea(null);
     setComposerOpen(true);
   }
 
   function openEditor(idea: IdeaWithLikes) {
+    if (delegated) return;
     setEditingIdea(idea);
     setComposerOpen(true);
   }
@@ -172,11 +185,21 @@ export function MusicianIdeeClient() {
             Partagez-la avec nous !
           </p>
         </div>
-        <Button type="button" onClick={openComposer} className="gap-2">
+        <Button type="button" onClick={openComposer} disabled={delegated} className="gap-2">
           <Send className="h-4 w-4" />
           Soumettre une idée
         </Button>
       </div>
+
+      {delegated && (
+        <div
+          role="note"
+          className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground"
+        >
+          <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <p>{delegatedIdeasMessage(actingForName)}</p>
+        </div>
+      )}
 
       {error && (
         <div
@@ -243,6 +266,7 @@ export function MusicianIdeeClient() {
             setDeleteDialogOpen(true);
           }}
           onViewResponse={openResponse}
+          readOnly={delegated}
         />
       ) : (
         <PublicWallTab
@@ -272,6 +296,7 @@ export function MusicianIdeeClient() {
             setViewingLikers(idea);
             setLikersDialogOpen(true);
           }}
+          readOnly={delegated}
         />
       )}
 
@@ -280,6 +305,8 @@ export function MusicianIdeeClient() {
         idea={editingIdea}
         onOpenChange={setComposerOpen}
         onSubmitted={() => void fetchIdeas(false)}
+        readOnly={delegated}
+        actingForName={actingForName}
       />
       <IdeaResponseDialog
         open={responseDialogOpen}
@@ -297,7 +324,17 @@ export function MusicianIdeeClient() {
         deleting={deleting}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={() => void handleDelete()}
+        readOnly={delegated}
+        actingForName={actingForName}
       />
     </div>
+  );
+}
+
+export function MusicianIdeeClient() {
+  return (
+    <MusicianChoiceGate title="Boîte à idée">
+      <MusicianIdeeContent />
+    </MusicianChoiceGate>
   );
 }

@@ -4,6 +4,7 @@ import type { Video } from "@/db/types";
 import type { Birthday, ProfileWithExtras } from "../musician-types";
 import { MusicianHomeClient } from "../MusicianHome";
 import { buildProfileJourney, summarizeProfileCompletion } from "../profile-journey";
+import { SELF, withSession } from "./session-fixtures";
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -165,7 +166,12 @@ function mockHomeFetch({
 }
 
 function renderHome() {
-  render(<MusicianHomeClient userId={2} firstName="Lucas" lastName="Martin" />);
+  render(
+    withSession(
+      { profiles: [SELF], userId: 2 },
+      <MusicianHomeClient userId={2} firstName="Lucas" lastName="Martin" />
+    )
+  );
 }
 
 describe("parcours de l'accueil musicien", () => {

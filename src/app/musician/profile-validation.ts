@@ -6,7 +6,10 @@ export interface ProfileWithInstruments extends Partial<MusicianProfile> {
   instruments?: Instrument[];
   harmonieInstruments?: string[];
   primaryHarmonieInstrument?: string | null;
-  email?: string;
+  /** `null` pour un musicien géré sans adresse : on n'affiche alors aucun e-mail. */
+  email?: string | null;
+  /** Le droit à l'image est décidé par un responsable légal : lecture seule. */
+  imageConsentLocked?: boolean;
 }
 
 /** Regex de validation en temps réel (un caractère par champ, jamais un format global). */
@@ -112,7 +115,8 @@ const FORMAT_ERROR_SECTION: Record<string, string> = {
  */
 export function validateProfile(
   profile: ProfileWithInstruments,
-  fieldErrors: Record<string, string>
+  fieldErrors: Record<string, string>,
+  options: { imageConsentLocked?: boolean } = {}
 ): ProfileFieldError[] {
   const errors: ProfileFieldError[] = [];
 
@@ -169,7 +173,11 @@ export function validateProfile(
     });
   }
 
-  if (profile.image_consent === undefined || profile.image_consent === null) {
+  // Verrouillé : le musicien ne peut pas répondre, c'est son responsable qui le fait.
+  if (
+    !options.imageConsentLocked &&
+    (profile.image_consent === undefined || profile.image_consent === null)
+  ) {
     errors.push({
       field: "image_consent",
       sectionId: "image-consent",

@@ -1,17 +1,25 @@
+import { Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import type { ProfileWithInstruments } from "./profile-validation";
 
 interface ImageConsentSectionProps {
   profile: ProfileWithInstruments;
   onProfileChange: (patch: Partial<ProfileWithInstruments>) => void;
+  /** Lecture seule : le choix appartient au responsable légal (`imageConsentLocked`). */
+  locked?: boolean;
 }
 
-export function ImageConsentSection({ profile, onProfileChange }: ImageConsentSectionProps) {
+export function ImageConsentSection({
+  profile,
+  onProfileChange,
+  locked = false,
+}: ImageConsentSectionProps) {
   return (
     <Card id="image-consent">
       <CardHeader>
         <CardTitle>
-          Droit à l&apos;image <span className="text-destructive">*</span>
+          Droit à l&apos;image {!locked && <span className="text-destructive">*</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -65,22 +73,53 @@ export function ImageConsentSection({ profile, onProfileChange }: ImageConsentSe
           </p>
         </div>
 
+        {locked && (
+          <div
+            id="image-consent-locked"
+            role="note"
+            className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-4 text-sm text-foreground"
+          >
+            <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <p>
+              Ce choix revient à vos parents (ou responsables légaux) : ils peuvent le modifier
+              depuis leur compte.
+              {profile.image_consent === null || profile.image_consent === undefined
+                ? " Aucune réponse n'a encore été enregistrée."
+                : ""}
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2 pt-2">
-          <label className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-muted/30">
+          <label
+            className={cn(
+              "flex items-center gap-3 rounded p-2",
+              locked ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:bg-muted/30"
+            )}
+          >
             <input
               type="radio"
               name="image_consent"
               checked={profile.image_consent === 1}
+              disabled={locked}
+              aria-describedby={locked ? "image-consent-locked" : undefined}
               onChange={() => onProfileChange({ image_consent: 1 })}
               className="h-4 w-4 text-primary"
             />
             <span className="text-sm">J&apos;autorise l&apos;utilisation de mon image</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-muted/30">
+          <label
+            className={cn(
+              "flex items-center gap-3 rounded p-2",
+              locked ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:bg-muted/30"
+            )}
+          >
             <input
               type="radio"
               name="image_consent"
               checked={profile.image_consent === 0}
+              disabled={locked}
+              aria-describedby={locked ? "image-consent-locked" : undefined}
               onChange={() => onProfileChange({ image_consent: 0 })}
               className="h-4 w-4 text-primary"
             />

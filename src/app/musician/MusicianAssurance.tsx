@@ -1,5 +1,6 @@
 "use client";
 
+import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -171,7 +172,7 @@ interface InsuranceApiResponse {
   isMember: boolean;
 }
 
-export function MusicianAssuranceClient() {
+function MusicianAssuranceContent() {
   const [instruments, setInstruments] = useState<InstrumentForm[]>([
     { instrument_name: "", brand: "", model: "", serial_number: "" },
   ]);
@@ -435,5 +436,13 @@ export function MusicianAssuranceClient() {
         </>
       )}
     </div>
+  );
+}
+
+export function MusicianAssuranceClient() {
+  return (
+    <MusicianChoiceGate title="Assurance instrument">
+      <MusicianAssuranceContent />
+    </MusicianChoiceGate>
   );
 }

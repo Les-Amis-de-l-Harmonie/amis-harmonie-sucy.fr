@@ -1,5 +1,6 @@
 "use client";
 
+import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Check, History, Loader2, RefreshCw } from "lucide-react";
 import { Label } from "@/app/components/ui/label";
@@ -23,7 +24,7 @@ function focusResponseCard(card: HTMLDivElement | null) {
   card?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-export function MusicianDisponibilites() {
+function MusicianDisponibilitesContent() {
   const [events, setEvents] = useState<PresenceEvent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -298,5 +299,13 @@ export function MusicianDisponibilites() {
         )}
       </div>
     </div>
+  );
+}
+
+export function MusicianDisponibilites() {
+  return (
+    <MusicianChoiceGate title="Mes prestations">
+      <MusicianDisponibilitesContent />
+    </MusicianChoiceGate>
   );
 }

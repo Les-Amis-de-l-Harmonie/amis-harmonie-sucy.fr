@@ -37,7 +37,13 @@ export function summarizeProfileCompletion(
   profile: ProfileWithExtras | null
 ): ProfileCompletionSummary {
   const safeProfile = profile ?? {};
-  const errors = validateProfile(safeProfile, {});
+  const errors = validateProfile(
+    safeProfile,
+    {},
+    {
+      imageConsentLocked: safeProfile.imageConsentLocked,
+    }
+  );
   const requiredSections = PROFILE_SECTIONS.filter((section) => section.id !== "photo");
   const sectionsWithErrors = new Set(errors.map((error) => error.sectionId));
   const completedSections = requiredSections.filter(

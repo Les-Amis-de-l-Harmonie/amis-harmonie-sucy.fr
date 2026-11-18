@@ -31,7 +31,7 @@ import { formatDateShort } from "@/lib/dates";
 import { EmptyState } from "@/app/components/ui/empty-state";
 
 interface IdeaWithUser extends Idea {
-  user_email?: string;
+  user_email?: string | null;
   user_first_name?: string;
   user_last_name?: string;
 }

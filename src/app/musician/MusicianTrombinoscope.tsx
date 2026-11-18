@@ -1,5 +1,6 @@
 "use client";
 
+import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, User, Users, RefreshCw, X } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
@@ -186,7 +187,7 @@ function TrombinoscopeSkeleton() {
   );
 }
 
-export function MusicianTrombinoscopeClient() {
+function MusicianTrombinoscopeContent() {
   const [musicians, setMusicians] = useState<TrombinoscopeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -352,5 +353,13 @@ export function MusicianTrombinoscopeClient() {
         </div>
       )}
     </div>
+  );
+}
+
+export function MusicianTrombinoscopeClient() {
+  return (
+    <MusicianChoiceGate title="Trombinoscope">
+      <MusicianTrombinoscopeContent />
+    </MusicianChoiceGate>
   );
 }

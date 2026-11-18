@@ -3,6 +3,8 @@
 import { MusicianSidebar } from "@/app/musician/MusicianSidebar";
 import { MusicianMobileHeader } from "@/app/musician/MusicianMobileHeader";
 import { MusicianBottomTabBar } from "@/app/musician/MusicianBottomTabBar";
+import { DelegationBanner } from "@/app/musician/DelegationBanner";
+import { MusicianSessionProvider } from "@/app/musician/MusicianSession";
 import type { MusicianActorSummary, MusicianProfileOption } from "@/app/api/auth";
 
 interface MusicianLayoutProps {
@@ -11,6 +13,8 @@ interface MusicianLayoutProps {
   lastName: string;
   avatar?: string | null;
   pathname: string;
+  /** Identifiant du profil effectif (celui dont le nom et la photo sont affichés). */
+  userId: number;
   actor: MusicianActorSummary;
   delegated: boolean;
   profiles: MusicianProfileOption[];
@@ -37,35 +41,49 @@ export function MusicianLayout({
   lastName,
   avatar,
   pathname,
+  userId,
+  actor,
+  delegated,
+  profiles,
 }: MusicianLayoutProps) {
   return (
-    <div className="min-h-screen bg-background lg:flex">
-      <MusicianSidebar
-        pathname={pathname}
-        firstName={firstName}
-        lastName={lastName}
-        avatar={avatar}
-      />
+    <MusicianSessionProvider
+      userId={userId}
+      actor={actor}
+      delegated={delegated}
+      profiles={profiles}
+    >
+      <div className="min-h-screen bg-background lg:flex">
+        <MusicianSidebar
+          pathname={pathname}
+          firstName={firstName}
+          lastName={lastName}
+          avatar={avatar}
+        />
 
-      <MusicianMobileHeader pathname={pathname} />
+        <MusicianMobileHeader pathname={pathname} />
 
-      {/* pb-* : réserve la barre flottante (70px), ses marges et la
+        {/* pb-* : réserve la barre flottante (70px), ses marges et la
           zone de sécurité tactile (voir MusicianBottomTabBar) — sans
           cette marge, le bas de page repasserait sous la barre sur un
           appareil à encoche. max-w-6xl : plafond de largeur du contenu,
           repris à l'identique de l'ancien MusicianLayout (qui allait jusqu'à
           max-w-7xl en 2xl ; 6xl suffit ici et évite des lignes de formulaire
           ou des cartes de dashboard étirées à l'excès sur grand écran). */}
-      <main className="min-w-0 flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] pt-6 sm:px-6 lg:px-8 lg:pb-8">
-        <div className="mx-auto w-full max-w-6xl">{children}</div>
-      </main>
+        <main className="min-w-0 flex-1 px-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] pt-6 sm:px-6 lg:px-8 lg:pb-8">
+          <div className="mx-auto w-full max-w-6xl">
+            <DelegationBanner />
+            {children}
+          </div>
+        </main>
 
-      <MusicianBottomTabBar
-        pathname={pathname}
-        firstName={firstName}
-        lastName={lastName}
-        avatar={avatar}
-      />
-    </div>
+        <MusicianBottomTabBar
+          pathname={pathname}
+          firstName={firstName}
+          lastName={lastName}
+          avatar={avatar}
+        />
+      </div>
+    </MusicianSessionProvider>
   );
 }

@@ -20,6 +20,8 @@ type IdeaCardProps =
       onEdit: (idea: IdeaWithLikes) => void;
       onDelete: (idea: IdeaWithLikes) => void;
       onViewResponse: (idea: IdeaWithLikes) => void;
+      /** Modifier et supprimer sont désactivés (responsable qui agit pour un enfant). */
+      readOnly?: boolean;
     }
   | {
       mode: "public";
@@ -30,6 +32,8 @@ type IdeaCardProps =
       onToggleExpanded: (ideaId: number) => void;
       onViewResponse: (idea: IdeaWithLikes) => void;
       onViewLikers: (idea: IdeaWithLikes) => void;
+      /** « J'aime » est désactivé (responsable qui agit pour un enfant). */
+      readOnly?: boolean;
     };
 
 export function IdeaCard(props: IdeaCardProps) {
@@ -65,6 +69,7 @@ export function IdeaCard(props: IdeaCardProps) {
                 size="icon"
                 className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-9 sm:w-9"
                 onClick={() => props.onEdit(idea)}
+                disabled={props.readOnly}
                 aria-label="Modifier l'idée"
               >
                 <Pencil className="h-4 w-4" />
@@ -75,6 +80,7 @@ export function IdeaCard(props: IdeaCardProps) {
                 size="icon"
                 className="h-11 w-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-9 sm:w-9"
                 onClick={() => props.onDelete(idea)}
+                disabled={props.readOnly}
                 aria-label="Supprimer l'idée"
               >
                 <Trash2 className="h-4 w-4" />
@@ -172,7 +178,8 @@ export function IdeaCard(props: IdeaCardProps) {
               variant={idea.user_has_liked ? "destructive" : "outline"}
               size="sm"
               onClick={() => props.onLike(idea)}
-              disabled={props.liking}
+              disabled={props.liking || props.readOnly}
+              aria-label={idea.user_has_liked ? "Retirer mon j'aime" : "J'aime"}
               className="h-8 px-2"
             >
               {props.liking ? (

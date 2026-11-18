@@ -104,19 +104,23 @@ export function PersonalInfoSection({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={profile.email || ""}
-            disabled
-            className="cursor-not-allowed bg-muted"
-          />
-          <p className="text-xs text-muted-foreground">
-            L&apos;email ne peut pas être modifié. Contactez un administrateur en cas de changement.
-          </p>
-        </div>
+        {/* Musicien géré sans adresse (`email === null`) : ni champ ni mention. */}
+        {profile.email !== null && (
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={profile.email || ""}
+              disabled
+              className="cursor-not-allowed bg-muted"
+            />
+            <p className="text-xs text-muted-foreground">
+              L&apos;email ne peut pas être modifié. Contactez un administrateur en cas de
+              changement.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
