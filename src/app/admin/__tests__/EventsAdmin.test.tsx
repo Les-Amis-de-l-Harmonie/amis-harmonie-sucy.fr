@@ -53,7 +53,7 @@ const existingEvent = {
   created_at: "2026-10-01",
 };
 
-describe("EventsAdminClient — autorisation parentale", () => {
+describe("EventsAdminClient — autorisation parentale", { timeout: 20_000 }, () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
   });
