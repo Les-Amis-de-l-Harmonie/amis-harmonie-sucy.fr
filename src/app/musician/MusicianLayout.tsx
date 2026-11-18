@@ -3,6 +3,7 @@
 import { MusicianSidebar } from "@/app/musician/MusicianSidebar";
 import { MusicianMobileHeader } from "@/app/musician/MusicianMobileHeader";
 import { MusicianBottomTabBar } from "@/app/musician/MusicianBottomTabBar";
+import type { MusicianActorSummary, MusicianProfileOption } from "@/app/api/auth";
 
 interface MusicianLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,9 @@ interface MusicianLayoutProps {
   lastName: string;
   avatar?: string | null;
   pathname: string;
+  actor: MusicianActorSummary;
+  delegated: boolean;
+  profiles: MusicianProfileOption[];
 }
 
 /**

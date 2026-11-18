@@ -1,6 +1,13 @@
 import { env } from "cloudflare:workers";
 import { verifySession } from "@/app/api/auth";
-import { isAdmin, isSuperAdmin } from "@/db/types";
+import {
+  isAdmin,
+  isReservedEmail,
+  isSuperAdmin,
+  isUserKind,
+  MANAGED_EMAIL_DOMAIN,
+  type UserKind,
+} from "@/db/types";
 import { checkAdminAuth } from "@/app/api/admin-crud";
 
 import { logger } from "@/lib/logger";
@@ -30,8 +37,9 @@ interface HarmonieInstrumentRow {
 
 export interface UserWithProfile {
   id: number;
-  email: string;
+  email: string | null;
   role: string;
+  kind: UserKind;
   is_active?: number;
   first_name?: string;
   last_name?: string;
@@ -54,11 +62,35 @@ export interface UserWithProfile {
   instruments?: UserInstrument[];
   harmonieInstruments?: string[];
   primaryHarmonieInstrument?: string | null;
+  guardian_names?: string | null;
+  children_names?: string | null;
+  last_login?: string | null;
+  created_at?: string;
+  /** `true` creates a managed account with a generated internal address; never provide that address. */
+  noEmail?: boolean;
 }
+
+const userProfileSelect = `
+  SELECT u.id,
+         CASE WHEN u.kind = 'managed' THEN NULL ELSE u.email END AS email,
+         u.role, u.kind, u.is_active, u.last_login, u.created_at,
+         (SELECT GROUP_CONCAT(NULLIF(TRIM(COALESCE(gp.first_name, '') || ' ' || COALESCE(gp.last_name, '')), ''), ', ')
+          FROM guardian_links gl JOIN users gu ON gu.id = gl.guardian_user_id
+          LEFT JOIN musician_profiles gp ON gp.user_id = gu.id WHERE gl.child_user_id = u.id) AS guardian_names,
+         (SELECT GROUP_CONCAT(NULLIF(TRIM(COALESCE(cp.first_name, '') || ' ' || COALESCE(cp.last_name, '')), ''), ', ')
+          FROM guardian_links gl JOIN users cu ON cu.id = gl.child_user_id
+          LEFT JOIN musician_profiles cp ON cp.user_id = cu.id WHERE gl.guardian_user_id = u.id) AS children_names,
+         p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
+         p.address_line1, p.address_line2, p.postal_code, p.city,
+         p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
+         p.emergency_contact_last_name, p.emergency_contact_first_name,
+         p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
+  FROM users u LEFT JOIN musician_profiles p ON u.id = p.user_id`;
 
 export async function handleUsersApi(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
+  let actorIsSuperAdmin = false;
 
   if (request.method !== "GET") {
     const user = await verifySession(request, "admin");
@@ -68,6 +100,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         headers: { "Content-Type": "application/json" },
       });
     }
+    actorIsSuperAdmin = isSuperAdmin(user.role);
 
     if (request.method === "POST" && !isSuperAdmin(user.role)) {
       return new Response(JSON.stringify({ error: "Super admin required" }), {
@@ -95,20 +128,15 @@ export async function handleUsersApi(request: Request): Promise<Response> {
   try {
     if (request.method === "GET") {
       if (id) {
-        const user = await env.DB.prepare(
-          `
-          SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
-                 p.address_line1, p.address_line2, p.postal_code, p.city,
-                 p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
-                 p.emergency_contact_last_name, p.emergency_contact_first_name,
-                 p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
-          FROM users u
-          LEFT JOIN musician_profiles p ON u.id = p.user_id
-          WHERE u.id = ?
-        `
-        )
+        const user = await env.DB.prepare(`${userProfileSelect} WHERE u.id = ?`)
           .bind(id)
           .first<UserWithProfile>();
+        if (!user) {
+          return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
 
         const instruments = await env.DB.prepare(
           "SELECT instrument_name, start_date, level FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
@@ -126,6 +154,8 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         return new Response(
           JSON.stringify({
             ...user,
+            kind: user.kind ?? "member",
+            email: user.kind === "managed" ? null : user.email,
             instruments: instruments.results || [],
             harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
             primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
@@ -136,16 +166,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         );
       }
       const users = await env.DB.prepare(
-        `
-        SELECT u.*, p.first_name, p.last_name, p.avatar, p.date_of_birth, p.phone,
-               p.address_line1, p.address_line2, p.postal_code, p.city,
-               p.harmonie_start_date, p.is_conservatory_student, p.music_theory_level,
-               p.emergency_contact_last_name, p.emergency_contact_first_name,
-               p.emergency_contact_email, p.emergency_contact_phone, p.image_consent, p.adhesion_2026_2027
-        FROM users u
-        LEFT JOIN musician_profiles p ON u.id = p.user_id
-        ORDER BY u.created_at DESC
-      `
+        `${userProfileSelect} ORDER BY u.created_at DESC`
       ).all<UserWithProfile>();
 
       const allInstruments = await env.DB.prepare(
@@ -179,6 +200,8 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       const usersWithInstruments = (users.results || []).map((u) => {
         return {
           ...u,
+          kind: u.kind ?? "member",
+          email: u.kind === "managed" ? null : u.email,
           instruments: instrumentsByUser.get(u.id as number) || [],
           harmonieInstruments: (harmonieByUser.get(u.id as number) || []).map(
             (instrument) => instrument.instrument_name
@@ -196,6 +219,46 @@ export async function handleUsersApi(request: Request): Promise<Response> {
 
     if (request.method === "POST") {
       const data = (await request.json()) as UserWithProfile;
+      if (data.kind !== undefined && (!isUserKind(data.kind) || data.kind === "managed")) {
+        return new Response(
+          JSON.stringify({ error: "Le type de compte demandé n'est pas valide." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      if (data.noEmail === true && data.kind === "guardian") {
+        return new Response(
+          JSON.stringify({ error: "Un compte responsable doit disposer d'une adresse e-mail." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      const kind: UserKind = data.noEmail === true ? "managed" : (data.kind ?? "member");
+      const email =
+        kind === "managed"
+          ? `sans-email+${crypto.randomUUID()}@${MANAGED_EMAIL_DOMAIN}`
+          : typeof data.email === "string"
+            ? data.email.trim().toLowerCase()
+            : "";
+      if (!email) {
+        return new Response(JSON.stringify({ error: "L'adresse e-mail est obligatoire." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (kind !== "managed" && isReservedEmail(email)) {
+        return new Response(
+          JSON.stringify({ error: "Cette adresse e-mail est réservée aux comptes gérés." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
       const harmonieData = validateHarmonieInstruments(
         data.harmonieInstruments,
         data.primaryHarmonieInstrument
@@ -208,7 +271,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       }
 
       const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?")
-        .bind(data.email.toLowerCase().trim())
+        .bind(email)
         .first<UserIdRow>();
       if (existing) {
         return new Response(
@@ -221,9 +284,10 @@ export async function handleUsersApi(request: Request): Promise<Response> {
       }
 
       const statements = [
-        env.DB.prepare("INSERT INTO users (email, role, is_active) VALUES (?, ?, ?)").bind(
-          data.email.toLowerCase().trim(),
-          data.role || "MUSICIAN",
+        env.DB.prepare("INSERT INTO users (email, role, kind, is_active) VALUES (?, ?, ?, ?)").bind(
+          email,
+          kind === "member" ? data.role || "MUSICIAN" : "MUSICIAN",
+          kind,
           data.is_active !== 0 ? 1 : 0
         ),
         env.DB.prepare(
@@ -277,11 +341,7 @@ export async function handleUsersApi(request: Request): Promise<Response> {
           statements.push(
             env.DB.prepare(
               "INSERT INTO harmonie_instruments (user_id, instrument_name, is_primary) VALUES ((SELECT id FROM users WHERE email = ?), ?, ?)"
-            ).bind(
-              data.email.toLowerCase().trim(),
-              instrumentName,
-              instrumentName === harmonieData.primary ? 1 : 0
-            )
+            ).bind(email, instrumentName, instrumentName === harmonieData.primary ? 1 : 0)
           );
         }
       }
@@ -302,6 +362,45 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         });
       }
       const data = (await request.json()) as UserWithProfile;
+      const currentUser = await env.DB.prepare(
+        "SELECT kind, role, is_active FROM users WHERE id = ?"
+      )
+        .bind(id)
+        .first<{ kind: string; role: string; is_active: number }>();
+      if (!currentUser) {
+        return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const isManaged = currentUser.kind === "managed";
+      const role =
+        currentUser.kind !== "member"
+          ? "MUSICIAN"
+          : actorIsSuperAdmin
+            ? data.role
+            : currentUser.role;
+      const isActive = actorIsSuperAdmin ? (data.is_active !== 0 ? 1 : 0) : currentUser.is_active;
+      const email = isManaged
+        ? null
+        : typeof data.email === "string"
+          ? data.email.trim().toLowerCase()
+          : "";
+      if (!isManaged && !email) {
+        return new Response(JSON.stringify({ error: "L'adresse e-mail est obligatoire." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (!isManaged && isReservedEmail(email ?? "")) {
+        return new Response(
+          JSON.stringify({ error: "Cette adresse e-mail est réservée aux comptes gérés." }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
       const harmonieData = validateHarmonieInstruments(
         data.harmonieInstruments,
         data.primaryHarmonieInstrument
@@ -313,22 +412,30 @@ export async function handleUsersApi(request: Request): Promise<Response> {
         });
       }
 
-      const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
-        .bind(data.email.toLowerCase().trim(), id)
-        .first<UserIdRow>();
-      if (existing) {
-        return new Response(
-          JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+      if (!isManaged) {
+        const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+          .bind(email ?? "", id)
+          .first<UserIdRow>();
+        if (existing) {
+          return new Response(
+            JSON.stringify({ error: "Un autre utilisateur avec cet email existe déjà" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
       }
 
-      await env.DB.prepare("UPDATE users SET email = ?, role = ?, is_active = ? WHERE id = ?")
-        .bind(data.email.toLowerCase().trim(), data.role, data.is_active !== 0 ? 1 : 0, id)
-        .run();
+      if (isManaged) {
+        await env.DB.prepare("UPDATE users SET role = ?, is_active = ? WHERE id = ?")
+          .bind(role, isActive, id)
+          .run();
+      } else {
+        await env.DB.prepare("UPDATE users SET email = ?, role = ?, is_active = ? WHERE id = ?")
+          .bind(email ?? "", role, isActive, id)
+          .run();
+      }
 
       const existingProfile = await env.DB.prepare(
         "SELECT id FROM musician_profiles WHERE user_id = ?"

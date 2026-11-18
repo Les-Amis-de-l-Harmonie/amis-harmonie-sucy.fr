@@ -63,10 +63,12 @@ const caller = {
   id: 7,
   email: "musicien@example.fr",
   role: "MUSICIAN" as const,
+  kind: "member" as const,
   is_active: 1,
   created_at: "2026-01-01",
   last_login: null,
   sessionId: "session-id",
+  acting_user_id: null,
 };
 
 function createFakeDb(): FakeDb {
@@ -220,7 +222,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("retourne les réponses et un roster sans jamais exposer les commentaires des autres", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence")
@@ -289,7 +296,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
     fakeDb.pastEvent = true;
 
     const response = await handleMusicianPresenceApi(
@@ -316,6 +328,8 @@ describe("handleMusicianPresenceApi", () => {
       vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
         actor: caller,
         effective: caller,
+        delegated: false,
+        profiles: [],
       });
 
       const response = await handleMusicianPresenceApi(
@@ -330,7 +344,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("rejette la valeur de statut peut-être", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -343,7 +362,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse une réponse pour un événement passé", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
     fakeDb.pastEvent = true;
 
     const response = await handleMusicianPresenceApi(
@@ -357,7 +381,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("enregistre une réponse sans invalider le cache", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -373,7 +402,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("efface une réponse avec un statut nul de façon idempotente", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     const firstResponse = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -396,8 +430,35 @@ describe("handleMusicianPresenceApi", () => {
     ).toHaveLength(2);
   });
 
+  it("enregistre la présence de l'enfant avec l'identifiant du parent comme auteur", async () => {
+    const child = { ...caller, id: 8, kind: "managed" as const };
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: child,
+      delegated: true,
+      profiles: [],
+    });
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 12, status: "present", comment: "Réponse du parent" }),
+      })
+    );
+
+    const upsert = fakeDb.calls.find((call) => call.sql.includes("INSERT INTO event_presences"));
+    expect(response.status).toBe(200);
+    expect(upsert?.binds).toEqual([12, 8, "present", "Réponse du parent", 7]);
+    expect(upsert?.sql).toContain("updated_by");
+  });
+
   it("refuse une réponse pour un musicien non éligible", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
     fakeDb.callerEligible = false;
 
     const response = await handleMusicianPresenceApi(
@@ -414,7 +475,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("refuse un commentaire de plus de 1000 caractères", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     const response = await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {
@@ -430,7 +496,12 @@ describe("handleMusicianPresenceApi", () => {
   });
 
   it("déplace status_changed_at lors d'un changement de statut mais pas lors d'une édition du commentaire", async () => {
-    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
 
     await handleMusicianPresenceApi(
       new Request("https://test.local/api/musician/presence", {

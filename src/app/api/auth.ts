@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import type { User, AuthToken, Session, UserRole } from "@/db/types";
+import type { User, AuthToken, Session, UserKind, UserRole } from "@/db/types";
 import { isAdmin } from "@/db/types";
 import { invalidateCache } from "@/lib/cache";
 import { AUTH_CONFIG } from "@/lib/constants";
@@ -109,7 +109,7 @@ export async function handleMagicLinkRequest(
         }
       );
     }
-    if (context === "musician" && isAdmin(user.role)) {
+    if (context === "musician" && user.kind === "managed") {
       return new Response(
         JSON.stringify({
           success: true,
@@ -331,6 +331,12 @@ export async function handleMagicLinkVerify(
       );
     }
 
+    if (context === "musician" && user.kind === "managed") {
+      return Response.redirect(
+        new URL(`${loginPath}?error=account_inactive`, url.origin).toString()
+      );
+    }
+
     if (context === "admin" && !isAdmin(user.role)) {
       return Response.redirect(new URL(`${loginPath}?error=unauthorized`, url.origin).toString());
     }
@@ -401,6 +407,7 @@ export async function handleLogout(
 
 export interface AuthenticatedUser extends User {
   sessionId: string;
+  acting_user_id?: number | null;
 }
 
 export async function verifySession(
@@ -417,13 +424,14 @@ export async function verifySession(
   }
 
   const session = await env.DB.prepare(
-    "SELECT s.*, u.email, u.role, u.is_active, u.created_at as user_created_at, u.last_login FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
+    "SELECT s.*, u.email, u.role, u.kind, u.is_active, u.created_at as user_created_at, u.last_login FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.session_id = ?"
   )
     .bind(sessionId)
     .first<
       Session & {
         email: string;
         role: UserRole;
+        kind: UserKind;
         is_active: number;
         user_created_at: string;
         last_login: string | null;
@@ -444,33 +452,137 @@ export async function verifySession(
     return null;
   }
 
+  if (context === "musician" && session.kind === "managed") {
+    await env.DB.prepare("DELETE FROM sessions WHERE session_id = ?").bind(sessionId).run();
+    return null;
+  }
+
   return {
     id: session.user_id,
     email: session.email,
     role: session.role,
+    kind: session.kind,
     is_active: session.is_active,
     created_at: session.user_created_at,
     last_login: session.last_login,
     sessionId: session.session_id,
+    acting_user_id: session.acting_user_id ?? null,
   };
+}
+
+export interface MusicianProfileOption {
+  userId: number;
+  isSelf: boolean;
+  kind: UserKind;
+  firstName: string;
+  lastName: string;
+  avatar: string | null;
+}
+
+export interface MusicianActorSummary {
+  userId: number;
+  kind: UserKind;
+  firstName: string;
+  lastName: string;
+  avatar: string | null;
 }
 
 export interface MusicianIdentity {
   actor: AuthenticatedUser;
   effective: AuthenticatedUser;
+  delegated: boolean;
+  profiles: MusicianProfileOption[];
 }
 
-/**
- * Résout l'identité du musicien connecté et la cible effective de ses opérations.
- * La future fonctionnalité « comptes parents » pourra faire pointer `effective` vers un enfant
- * lié, après validation du lien à chaque requête. Les handlers doivent utiliser `effective` pour
- * toutes les données et ne jamais lire un identifiant utilisateur cible dans la requête.
- */
+interface MusicianProfileRow extends User {
+  first_name: string | null;
+  last_name: string | null;
+  avatar: string | null;
+}
+
+/** Résout à chaque requête l'acteur et les profils directement liés, sans délégation transitive. */
 export async function resolveMusicianIdentity(request: Request): Promise<MusicianIdentity | null> {
   const actor = await verifySession(request, "musician");
   if (!actor) return null;
 
-  return { actor, effective: actor };
+  const profileRows = await env.DB.prepare(
+    `SELECT u.id, u.email, u.role, u.kind, u.is_active, u.last_login, u.created_at,
+            mp.first_name, mp.last_name, mp.avatar
+     FROM users u
+     LEFT JOIN musician_profiles mp ON mp.user_id = u.id
+     WHERE u.id = ?
+        OR (u.is_active = 1 AND u.kind <> 'guardian' AND EXISTS (
+          SELECT 1 FROM guardian_links gl
+          WHERE gl.guardian_user_id = ? AND gl.child_user_id = u.id
+        ))
+     ORDER BY CASE WHEN u.id = ? THEN 0 ELSE 1 END, mp.first_name, u.id`
+  )
+    .bind(actor.id, actor.id, actor.id)
+    .all<MusicianProfileRow>();
+
+  const rows = profileRows.results || [];
+  const actorRow = rows.find((row) => row.id === actor.id);
+  const childRows = rows.filter((row) => row.id !== actor.id);
+  const profiles: MusicianProfileOption[] = [
+    {
+      userId: actor.id,
+      isSelf: true,
+      kind: actor.kind,
+      firstName: actorRow?.first_name || "",
+      lastName: actorRow?.last_name || "",
+      avatar: actorRow?.avatar ?? null,
+    },
+    ...childRows.map((row) => ({
+      userId: row.id,
+      isSelf: false,
+      kind: row.kind,
+      firstName: row.first_name || "",
+      lastName: row.last_name || "",
+      avatar: row.avatar,
+    })),
+  ];
+
+  let selectedChild: MusicianProfileRow | undefined;
+  if (actor.acting_user_id === actor.id) {
+    // L'identifiant de l'acteur représente la sélection explicite « Moi » d'un responsable.
+    return { actor, effective: actor, delegated: false, profiles };
+  }
+  if (actor.acting_user_id != null) {
+    selectedChild = childRows.find((row) => row.id === actor.acting_user_id);
+    if (!selectedChild) {
+      await env.DB.prepare("UPDATE sessions SET acting_user_id = NULL WHERE session_id = ?")
+        .bind(actor.sessionId)
+        .run();
+    }
+  }
+
+  if (selectedChild) {
+    return {
+      actor,
+      effective: {
+        ...selectedChild,
+        sessionId: actor.sessionId,
+        acting_user_id: actor.acting_user_id,
+      },
+      delegated: true,
+      profiles,
+    };
+  }
+
+  if (actor.kind === "guardian" && childRows[0]) {
+    return {
+      actor,
+      effective: {
+        ...childRows[0],
+        sessionId: actor.sessionId,
+        acting_user_id: actor.acting_user_id,
+      },
+      delegated: true,
+      profiles,
+    };
+  }
+
+  return { actor, effective: actor, delegated: false, profiles };
 }
 
 export async function requireAdminAuth(request: Request): Promise<Response | AuthenticatedUser> {

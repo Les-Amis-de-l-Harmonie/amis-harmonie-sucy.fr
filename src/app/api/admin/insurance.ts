@@ -8,7 +8,7 @@ import { logger } from "@/lib/logger";
 void invalidateCache;
 
 interface InsuranceInstrumentWithUser extends InsuranceInstrument {
-  email: string;
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
 }
@@ -24,7 +24,8 @@ export async function handleInsuranceApi(request: Request): Promise<Response> {
     if (request.method === "GET") {
       const instruments = await env.DB.prepare(
         `
-        SELECT ii.*, u.email, mp.first_name, mp.last_name
+        SELECT ii.*, CASE WHEN u.kind = 'managed' THEN NULL ELSE u.email END AS email,
+               mp.first_name, mp.last_name
         FROM insurance_instruments ii
         JOIN users u ON ii.user_id = u.id
         LEFT JOIN musician_profiles mp ON ii.user_id = mp.user_id

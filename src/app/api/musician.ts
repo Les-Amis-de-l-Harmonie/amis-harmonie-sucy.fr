@@ -16,7 +16,7 @@ interface ProfileWithInstruments extends MusicianProfile {
   instruments: MusicianInstrument[];
   harmonieInstruments: string[];
   primaryHarmonieInstrument?: string | null;
-  email: string;
+  email: string | null;
   insuranceInstruments: InsuranceInstrument[];
   insurance_complete: boolean;
 }
@@ -88,9 +88,11 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         profile = { user_id: user.id } as MusicianProfile;
       }
 
-      const userData = await env.DB.prepare("SELECT email FROM users WHERE id = ?")
+      const guardianLink = await env.DB.prepare(
+        "SELECT 1 AS linked FROM guardian_links WHERE child_user_id = ? LIMIT 1"
+      )
         .bind(user.id)
-        .first<{ email: string }>();
+        .first<{ linked: number }>();
 
       const instruments = await env.DB.prepare(
         "SELECT * FROM musician_instruments WHERE user_id = ? ORDER BY sort_order ASC"
@@ -126,7 +128,8 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
           ...profile,
           is_conservatory_student: isFreshProfile ? null : profile.is_conservatory_student,
           image_consent: isFreshProfile ? null : profile.image_consent,
-          email: userData?.email || "",
+          email: user.kind === "managed" ? null : user.email,
+          imageConsentLocked: !!guardianLink && !identity.delegated,
           instruments: instruments.results || [],
           harmonieInstruments: harmonieInstrumentRows.map((i) => i.instrument_name),
           primaryHarmonieInstrument: resolvePrimaryFromRows(harmonieInstrumentRows),
@@ -141,6 +144,20 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
 
     if (request.method === "PUT") {
       const data = (await request.json()) as Partial<ProfileWithInstruments>;
+      if (user.kind === "guardian" && !identity.delegated) {
+        await env.DB.prepare("INSERT OR IGNORE INTO musician_profiles (user_id) VALUES (?)")
+          .bind(user.id)
+          .run();
+        await env.DB.prepare(
+          "UPDATE musician_profiles SET first_name = ?, last_name = ?, phone = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?"
+        )
+          .bind(data.first_name || null, data.last_name || null, data.phone || null, user.id)
+          .run();
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       const harmonieData = validateHarmonieInstruments(
         data.harmonieInstruments,
         data.primaryHarmonieInstrument
@@ -152,6 +169,13 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
         });
       }
 
+      const guardianLink = await env.DB.prepare(
+        "SELECT 1 AS linked FROM guardian_links WHERE child_user_id = ? LIMIT 1"
+      )
+        .bind(user.id)
+        .first<{ linked: number }>();
+      const imageConsentLocked = !!guardianLink && !identity.delegated;
+
       await env.DB.prepare(
         `
         UPDATE musician_profiles 
@@ -159,7 +183,8 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
             address_line1 = ?, address_line2 = ?, postal_code = ?, city = ?,
             harmonie_start_date = ?, is_conservatory_student = ?, music_theory_level = ?,
             emergency_contact_last_name = ?, emergency_contact_first_name = ?,
-            emergency_contact_email = ?, emergency_contact_phone = ?, image_consent = ?,
+            emergency_contact_email = ?, emergency_contact_phone = ?,
+            image_consent = CASE WHEN ? = 1 THEN image_consent ELSE ? END,
             updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
       `
@@ -180,6 +205,7 @@ export async function handleMusicianProfileApi(request: Request): Promise<Respon
           data.emergency_contact_first_name || null,
           data.emergency_contact_email || null,
           data.emergency_contact_phone || null,
+          imageConsentLocked ? 1 : 0,
           data.image_consent ? 1 : 0,
           user.id
         )
@@ -257,6 +283,12 @@ export async function handleMusicianAvatarApi(request: Request): Promise<Respons
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(JSON.stringify({ error: "La photo est réservée aux musiciens." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   if (request.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -325,6 +357,18 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(JSON.stringify({ error: "Les idées sont réservées aux musiciens." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (identity.delegated && request.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Les idées restent personnelles." }), {
+      status: 403,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -406,7 +450,7 @@ export async function handleMusicianIdeasApi(request: Request): Promise<Response
 
         // Mark all returned ideas as read for this user
         const ideaIds = ideas.results?.map((idea) => idea.id) || [];
-        if (ideaIds.length > 0) {
+        if (ideaIds.length > 0 && !identity.delegated) {
           for (const ideaId of ideaIds) {
             await env.DB.prepare(
               "INSERT OR IGNORE INTO idea_reads (idea_id, user_id) VALUES (?, ?)"
@@ -663,6 +707,12 @@ export async function handleMusicianInsuranceApi(request: Request): Promise<Resp
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(JSON.stringify({ error: "L'assurance est réservée aux musiciens." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     if (request.method === "GET") {
@@ -788,6 +838,15 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(
+      JSON.stringify({ error: "Choisissez un musicien pour consulter cette page." }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 
   if (request.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -819,6 +878,7 @@ export async function handleMusicianBirthdaysApi(request: Request): Promise<Resp
       JOIN users u ON p.user_id = u.id
       WHERE u.is_active = 1
         AND u.role = 'MUSICIAN'
+        AND u.kind <> 'guardian'
         AND p.date_of_birth IS NOT NULL
       ORDER BY substr(p.date_of_birth, 6, 2), substr(p.date_of_birth, 9, 2)
       `
@@ -875,6 +935,15 @@ export async function handleMusicianPlanningCheckApi(request: Request): Promise<
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
+  }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(
+      JSON.stringify({ error: "Choisissez un musicien pour consulter cette page." }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   if (request.method !== "GET") {
@@ -954,6 +1023,15 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
       headers: { "Content-Type": "application/json" },
     });
   }
+  if (user.kind === "guardian" && !identity.delegated) {
+    return new Response(
+      JSON.stringify({ error: "Choisissez un musicien pour consulter cette page." }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 
   if (request.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -976,7 +1054,7 @@ export async function handleMusicianTrombinoscopeApi(request: Request): Promise<
       FROM users u
       INNER JOIN musician_profiles mp ON mp.user_id = u.id
       LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
-      WHERE u.role = 'MUSICIAN' AND u.is_active = 1
+      WHERE u.role = 'MUSICIAN' AND u.is_active = 1 AND u.kind <> 'guardian'
       GROUP BY u.id
       ORDER BY mp.last_name ASC, mp.first_name ASC
       `

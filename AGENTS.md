@@ -256,9 +256,18 @@ which returns either a `401` JSON `Response` or `null`.
 
 Musician-side handlers get the user from `resolveMusicianIdentity(request)` in
 `src/app/api/auth.ts`, never from `verifySession` directly (a test enforces this for
-`musician.ts` and `musician-presence.ts`). Use `effective` for every data access and never
-read a target user id from the query or body: the planned parent accounts will make
-`effective` a linked child.
+`musician.ts` and `musician-presence.ts`). It returns `{ actor, effective, delegated,
+profiles }`: a guardian (parent) can act for a linked child, so use `effective` for every
+data access, `actor` for audit fields (`event_presences.updated_by`), and never read a
+target user id from the query or body. Only `POST /api/musician/acting` writes
+`sessions.acting_user_id` (a test enforces it).
+
+Parent accounts (migration 0017): `guardian_links` joins a guardian to a child;
+`users.kind` is `member` (default), `guardian` (parent who does not play — excluded from
+every musician list, filter `u.kind <> 'guardian'`) or `managed` (musician without login,
+reserved address `sans-email+…@interne.amis-harmonie-sucy.fr`, never displayed or emailed,
+refused by `verifySession`). `kind` has no SQL CHECK on purpose; validate with
+`isUserKind` from `src/db/types.ts`. Admin API: `src/app/api/admin/guardians.ts`.
 
 Auth failures: redirect for pages, `401` JSON for APIs.
 
@@ -336,8 +345,8 @@ for schema-altering SQL.**
 5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
 Migrations are **append-only** — never edit one that has already been applied. Guard
-with `IF NOT EXISTS` / `IF EXISTS`. Current state: 16 migrations, latest
-`0016_create_free_reservation_checkins.sql`.
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 17 migrations, latest
+`0017_add_guardian_links.sql`.
 
 > **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
 > use it to confirm that a table or column exists.** See §6.
@@ -376,7 +385,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **43 test files on disk, 42 executed, 296 tests passing** —
+Current baseline: **50 test files on disk, 49 executed, 355 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

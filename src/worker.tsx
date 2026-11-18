@@ -38,6 +38,7 @@ import {
 import { handleIdeasApi } from "@/app/api/admin/ideas";
 import { handleGalleryApi } from "@/app/api/admin/gallery";
 import { handleUsersApi } from "@/app/api/admin/users";
+import { handleGuardiansApi } from "@/app/api/admin/guardians";
 import { handleGuestbookApi } from "@/app/api/admin/guestbook";
 import { handleContactApi } from "@/app/api/admin/contact";
 import { handlePublicationsApi } from "@/app/api/admin/publications";
@@ -58,6 +59,7 @@ import {
   handleMusicianTrombinoscopeApi,
 } from "@/app/api/musician";
 import { handleMusicianPresenceApi } from "@/app/api/musician-presence";
+import { handleMusicianActingApi } from "@/app/api/musician-acting";
 import { handleAdminAnalyticsApi } from "@/app/api/admin-analytics";
 import { handleImageUpload } from "@/app/api/upload";
 import { handleImageServing } from "@/app/api/images";
@@ -113,17 +115,23 @@ async function musicianAuthMiddleware({ request }: { request: Request }) {
     const url = new URL(request.url);
     return Response.redirect(new URL("/musician/login", url.origin).toString());
   }
-  const profile = await env.DB.prepare(
-    "SELECT first_name, last_name, avatar FROM musician_profiles WHERE user_id = ?"
-  )
-    .bind(user.id)
-    .first<{ first_name: string | null; last_name: string | null; avatar: string | null }>();
+  const effectiveProfile = identity.profiles.find((profile) => profile.userId === user.id);
+  const actorProfile = identity.profiles.find((profile) => profile.isSelf);
   return {
     email: user.email,
     userId: user.id,
-    firstName: profile?.first_name || "",
-    lastName: profile?.last_name || "",
-    avatar: profile?.avatar || null,
+    firstName: effectiveProfile?.firstName || "",
+    lastName: effectiveProfile?.lastName || "",
+    avatar: effectiveProfile?.avatar || null,
+    actor: {
+      userId: identity.actor.id,
+      kind: identity.actor.kind,
+      firstName: actorProfile?.firstName || "",
+      lastName: actorProfile?.lastName || "",
+      avatar: actorProfile?.avatar || null,
+    },
+    delegated: identity.delegated,
+    profiles: identity.profiles,
   };
 }
 
@@ -222,6 +230,7 @@ const app = defineApp([
   route("/api/admin/guestbook", ({ request }: { request: Request }) => handleGuestbookApi(request)),
   route("/api/admin/contact", ({ request }: { request: Request }) => handleContactApi(request)),
   route("/api/admin/users", ({ request }: { request: Request }) => handleUsersApi(request)),
+  route("/api/admin/guardians", ({ request }: { request: Request }) => handleGuardiansApi(request)),
   route("/api/admin/reservations", ({ request }: { request: Request }) =>
     handleReservationsAdminApi(request)
   ),
@@ -256,6 +265,9 @@ const app = defineApp([
 
   route("/api/musician/profile", ({ request }: { request: Request }) =>
     handleMusicianProfileApi(request)
+  ),
+  route("/api/musician/acting", ({ request }: { request: Request }) =>
+    handleMusicianActingApi(request)
   ),
   route("/api/musician/avatar", ({ request }: { request: Request }) =>
     handleMusicianAvatarApi(request)
@@ -523,6 +535,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianHomeClient
             userId={auth.userId}
@@ -543,6 +558,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianProfileClient userId={auth.userId} />
         </MusicianLayout>
@@ -559,6 +577,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianIdeeClient />
         </MusicianLayout>
@@ -575,6 +596,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianAssuranceClient />
         </MusicianLayout>
@@ -591,6 +615,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianTrombinoscopeClient />
         </MusicianLayout>
@@ -607,6 +634,9 @@ const app = defineApp([
           firstName={auth.firstName}
           lastName={auth.lastName}
           avatar={auth.avatar}
+          actor={auth.actor}
+          delegated={auth.delegated}
+          profiles={auth.profiles}
         >
           <MusicianDisponibilites />
         </MusicianLayout>

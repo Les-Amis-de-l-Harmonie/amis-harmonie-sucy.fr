@@ -233,7 +233,7 @@ async function handleGet(request: Request, userId: number): Promise<Response> {
   return jsonResponse({ currentUserId: userId, events: eventStates });
 }
 
-async function handlePost(request: Request, userId: number): Promise<Response> {
+async function handlePost(request: Request, userId: number, actorId: number): Promise<Response> {
   if (request.method !== "POST") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   }
@@ -283,7 +283,9 @@ async function handlePost(request: Request, userId: number): Promise<Response> {
       .bind(event.id, userId)
       .run();
   } else {
-    await env.DB.prepare(PRESENCE_UPSERT_SQL).bind(event.id, userId, body.status, comment).run();
+    await env.DB.prepare(PRESENCE_UPSERT_SQL)
+      .bind(event.id, userId, body.status, comment, actorId)
+      .run();
   }
 
   const updatedEvent = await readPresenceEvent(event, userId);
@@ -294,10 +296,13 @@ export async function handleMusicianPresenceApi(request: Request): Promise<Respo
   const identity = await resolveMusicianIdentity(request);
   const user = identity?.effective;
   if (!user) return jsonResponse({ error: "Non autorisé" }, 401);
+  if (user.kind === "guardian" && !identity.delegated) {
+    return jsonResponse({ error: "Les présences sont réservées aux musiciens." }, 403);
+  }
 
   try {
     if (request.method === "GET") return await handleGet(request, user.id);
-    if (request.method === "POST") return await handlePost(request, user.id);
+    if (request.method === "POST") return await handlePost(request, user.id, identity.actor.id);
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   } catch (error) {
     logger.error("Erreur de l'API des présences musicien :", error);

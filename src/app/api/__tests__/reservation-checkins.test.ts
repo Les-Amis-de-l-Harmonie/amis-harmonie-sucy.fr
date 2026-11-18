@@ -102,6 +102,7 @@ describe("handleReservationCheckinsApi", () => {
       id: 1,
       email: "admin@example.test",
       role: "ADMIN",
+      kind: "member",
       is_active: 1,
       last_login: null,
       created_at: "2026-01-01",

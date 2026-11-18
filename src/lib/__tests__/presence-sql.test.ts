@@ -15,7 +15,8 @@ describe("PRESENCE_MEMBER_QUERY", () => {
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT NOT NULL UNIQUE,
-        role TEXT NOT NULL CHECK(role IN ('SUPER_ADMIN', 'ADMIN', 'MUSICIAN')),
+      role TEXT NOT NULL CHECK(role IN ('SUPER_ADMIN', 'ADMIN', 'MUSICIAN')),
+        kind TEXT NOT NULL DEFAULT 'member',
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -92,6 +93,7 @@ describe("PRESENCE_MEMBER_QUERY", () => {
       [10, "carole-admin@exemple.fr", "ADMIN", 1, "Carole", "Admin", 1],
       [16, "carole-musicienne@exemple.fr", "MUSICIAN", 1, "Carole", "Musicienne", 1],
       [18, "superadmin@exemple.fr", "SUPER_ADMIN", 1, "Super", "Admin", 1],
+      [19, "responsable@exemple.fr", "MUSICIAN", 1, "Responsable", "Exclu", 1],
     ] as const;
 
     for (const [id, email, role, isActive, firstName, lastName, adhesion] of fixtures) {
@@ -108,6 +110,8 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     insertInstrument.run(10, "Percussions");
     insertInstrument.run(16, "Saxophone alto");
     insertInstrument.run(18, "Clarinette");
+    insertInstrument.run(19, "Cor");
+    database.prepare("UPDATE users SET kind = 'guardian' WHERE id = 19").run();
     database
       .prepare(
         "UPDATE harmonie_instruments SET is_primary = 1 WHERE user_id = 2 AND instrument_name = ?"
@@ -156,6 +160,8 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     expect(rows.some((row) => row.userId === 6)).toBe(true);
     // Administrateur sans instrument : hors effectif.
     expect(rows.some((row) => row.userId === 7)).toBe(false);
+    // Un compte responsable reste hors effectif, même avec un instrument.
+    expect(rows.some((row) => row.userId === 19)).toBe(false);
 
     expect(summarisePresence(rows).totalMembers).toBe(8);
 
@@ -178,6 +184,7 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     );
     expect(musicianRows.some((row) => row.userId === 10)).toBe(false);
     expect(musicianRows.some((row) => row.userId === 18)).toBe(false);
+    expect(musicianRows.some((row) => row.userId === 19)).toBe(false);
 
     database.close();
   });
@@ -275,7 +282,6 @@ describe("PRESENCE_MEMBER_QUERY", () => {
     expect(rows.filter((row) => row.is_primary === 1).map((row) => row.id)).toEqual([10, 20]);
     database.close();
   });
-
 });
 
 describe("filtrage JSON des événements de présence", () => {

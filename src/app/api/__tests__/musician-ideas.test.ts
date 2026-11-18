@@ -70,7 +70,8 @@ function createDatabase(): DatabaseSync {
     );
     CREATE TABLE musician_profiles (
       user_id INTEGER PRIMARY KEY,
-      first_name TEXT
+      first_name TEXT,
+      last_name TEXT
     );
     CREATE TABLE idea_likes (
       id INTEGER PRIMARY KEY,
@@ -104,10 +105,12 @@ const caller = {
   id: 1,
   email: "musicien@example.fr",
   role: "MUSICIAN" as const,
+  kind: "member" as const,
   is_active: 1,
   last_login: null,
   created_at: "2026-01-01",
   sessionId: "session-id",
+  acting_user_id: null,
 };
 
 describe("handleMusicianIdeasApi avec count=unread", () => {
@@ -117,7 +120,12 @@ describe("handleMusicianIdeasApi avec count=unread", () => {
     vi.clearAllMocks();
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database) });
-    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
   });
 
   afterEach(() => {
@@ -162,6 +170,47 @@ describe("handleMusicianIdeasApi avec count=unread", () => {
       .all();
     expect(after).toEqual(before);
   });
+
+  it("ne marque pas les idées publiques comme lues pendant une délégation", async () => {
+    const before = database
+      .prepare("SELECT idea_id, user_id FROM idea_reads ORDER BY idea_id")
+      .all();
+    const child = { ...caller, id: 2, kind: "managed" as const };
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: child,
+      delegated: true,
+      profiles: [],
+    });
+
+    const response = await handleMusicianIdeasApi(
+      new Request("https://test.local/api/musician/ideas?view=public")
+    );
+
+    expect(response.status).toBe(200);
+    expect(
+      database.prepare("SELECT idea_id, user_id FROM idea_reads ORDER BY idea_id").all()
+    ).toEqual(before);
+  });
+
+  it.each(["POST", "PATCH", "PUT", "DELETE"])(
+    "refuse %s pendant une délégation",
+    async (method) => {
+      const child = { ...caller, id: 2, kind: "managed" as const };
+      vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+        actor: caller,
+        effective: child,
+        delegated: true,
+        profiles: [],
+      });
+
+      const response = await handleMusicianIdeasApi(
+        new Request("https://test.local/api/musician/ideas?id=1&action=like", { method })
+      );
+
+      expect(response.status).toBe(403);
+    }
+  );
 });
 
 describe("handleMusicianIdeasApi avec PATCH", () => {
@@ -171,7 +220,12 @@ describe("handleMusicianIdeasApi avec PATCH", () => {
     vi.clearAllMocks();
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database) });
-    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
   });
 
   afterEach(() => {

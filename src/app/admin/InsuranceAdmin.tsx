@@ -44,7 +44,8 @@ interface InsuranceWithUser {
   serial_number: string;
   created_at: string;
   updated_at: string;
-  email: string;
+  /** `null` pour un musicien sans connexion (compte géré par ses responsables). */
+  email: string | null;
   first_name: string | null;
   last_name: string | null;
 }
@@ -55,7 +56,7 @@ function getMusicianName(item: InsuranceWithUser): string {
   if (item.first_name && item.last_name) {
     return `${item.first_name} ${item.last_name}`;
   }
-  return item.email;
+  return item.email ?? item.first_name ?? item.last_name ?? "Musicien";
 }
 
 export function InsuranceAdminClient() {
@@ -170,7 +171,7 @@ export function InsuranceAdminClient() {
     const headers = ["Musicien", "Email", "Instrument", "Marque", "Modèle", "N° de série", "Date"];
     const rows = filteredItems.map((item) => [
       getMusicianName(item),
-      item.email,
+      item.email ?? "",
       item.instrument_name,
       item.brand,
       item.model,
@@ -287,7 +288,7 @@ export function InsuranceAdminClient() {
                   {paginatedItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{getMusicianName(item)}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.email ?? "—"}</TableCell>
                       <TableCell>{item.instrument_name}</TableCell>
                       <TableCell>{item.brand}</TableCell>
                       <TableCell>{item.model}</TableCell>

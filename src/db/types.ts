@@ -55,12 +55,42 @@ export interface ContactSubmission {
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "MUSICIAN";
 
+/**
+ * Type de compte (colonne `users.kind`, migration 0017, sans CHECK en base) :
+ * - `member` : compte normal (musicien ou admin) ;
+ * - `guardian` : responsable légal qui ne joue pas, exclu des listes de musiciens ;
+ * - `managed` : musicien sans connexion, géré par ses responsables (adresse réservée).
+ */
+export const USER_KINDS = ["member", "guardian", "managed"] as const;
+export type UserKind = (typeof USER_KINDS)[number];
+
+export function isUserKind(value: unknown): value is UserKind {
+  return typeof value === "string" && (USER_KINDS as readonly string[]).includes(value);
+}
+
+/** Domaine des adresses réservées aux comptes gérés : jamais saisi, affiché ni envoyé. */
+export const MANAGED_EMAIL_DOMAIN = "interne.amis-harmonie-sucy.fr";
+
+export function isReservedEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith(`@${MANAGED_EMAIL_DOMAIN}`);
+}
+
 export interface User {
   id: number;
   email: string;
   role: UserRole;
+  kind: UserKind;
   is_active: number;
   last_login: string | null;
+  created_at: string;
+}
+
+export interface GuardianLink {
+  id: number;
+  guardian_user_id: number;
+  child_user_id: number;
+  relation: string | null;
+  created_by: number | null;
   created_at: string;
 }
 
@@ -120,6 +150,7 @@ export interface Session {
   id: number;
   session_id: string;
   user_id: number;
+  acting_user_id: number | null;
   expires_at: string;
   created_at: string;
 }

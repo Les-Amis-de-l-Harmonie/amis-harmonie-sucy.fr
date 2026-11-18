@@ -9,6 +9,7 @@ interface PresenceRecord {
   status_changed_at: string;
   created_at: string;
   updated_at: string;
+  updated_by: number | null;
 }
 
 describe("PRESENCE_UPSERT_SQL", () => {
@@ -23,6 +24,7 @@ describe("PRESENCE_UPSERT_SQL", () => {
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         status TEXT NOT NULL CHECK(status IN ('present', 'absent')),
         comment TEXT,
+        updated_by INTEGER,
         status_changed_at TEXT NOT NULL DEFAULT (datetime('now')),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -36,11 +38,11 @@ describe("PRESENCE_UPSERT_SQL", () => {
     const readPresence = () =>
       database
         .prepare(
-          "SELECT status, comment, status_changed_at, created_at, updated_at FROM event_presences"
+          "SELECT status, comment, status_changed_at, created_at, updated_at, updated_by FROM event_presences"
         )
         .get() as unknown as PresenceRecord;
 
-    upsert.run(12, 7, "present", "Premier commentaire");
+    upsert.run(12, 7, "present", "Premier commentaire", 7);
     const inserted = readPresence();
     const insertedStatusChangedAt = inserted.status_changed_at;
     const insertedCreatedAt = inserted.created_at;
@@ -49,7 +51,7 @@ describe("PRESENCE_UPSERT_SQL", () => {
     database
       .prepare("UPDATE event_presences SET updated_at = ? WHERE event_id = ? AND user_id = ?")
       .run("2000-01-01 00:00:00", 12, 7);
-    upsert.run(12, 7, "present", "Commentaire modifié");
+    upsert.run(12, 7, "present", "Commentaire modifié", 7);
     const sameStatus = readPresence();
 
     expect(sameStatus.status_changed_at).toBe(insertedStatusChangedAt);
@@ -63,7 +65,7 @@ describe("PRESENCE_UPSERT_SQL", () => {
       )
       .run("2000-01-02 00:00:00", 12, 7);
     const statusChangedBeforeFlip = readPresence().status_changed_at;
-    upsert.run(12, 7, "absent", "Statut modifié");
+    upsert.run(12, 7, "absent", "Statut modifié", 7);
     const flippedStatus = readPresence();
 
     expect(flippedStatus.status_changed_at).not.toBe(statusChangedBeforeFlip);
@@ -86,6 +88,7 @@ describe("PRESENCE_UPSERT_SQL", () => {
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         status TEXT NOT NULL CHECK(status IN ('present', 'absent')),
         comment TEXT,
+        updated_by INTEGER,
         status_changed_at TEXT NOT NULL DEFAULT (datetime('now')),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -98,14 +101,14 @@ describe("PRESENCE_UPSERT_SQL", () => {
     const readPresence = () =>
       database
         .prepare(
-          "SELECT status, comment, status_changed_at, created_at, updated_at FROM event_presences"
+          "SELECT status, comment, status_changed_at, created_at, updated_at, updated_by FROM event_presences"
         )
         .get() as unknown as PresenceRecord;
 
     // Le musicien répond absent en expliquant pourquoi.
     database
       .prepare(PRESENCE_UPSERT_SQL)
-      .run(12, 7, "absent", "Je suis en congés cette semaine-là.");
+      .run(12, 7, "absent", "Je suis en congés cette semaine-là.", 7);
     const createdAt = readPresence().created_at;
 
     // Horodatage sentinelle : `datetime('now')` a une résolution d'une seconde, deux
@@ -117,20 +120,21 @@ describe("PRESENCE_UPSERT_SQL", () => {
       .run("2000-01-02 00:00:00", 12, 7);
 
     // L'administrateur corrige la case depuis la grille : statut seul, aucun commentaire.
-    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "present", null);
+    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "present", null, 99);
     const afterAdmin = readPresence();
 
     expect(afterAdmin.status).toBe("present");
     expect(afterAdmin.comment).toBe("Je suis en congés cette semaine-là.");
     expect(afterAdmin.status_changed_at).not.toBe("2000-01-02 00:00:00");
     expect(afterAdmin.created_at).toBe(createdAt);
+    expect(afterAdmin.updated_by).toBe(99);
 
     // Un administrateur qui fournit un commentaire le remplace bien.
-    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "present", "Confirmé par téléphone");
+    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "present", "Confirmé par téléphone", 99);
     expect(readPresence().comment).toBe("Confirmé par téléphone");
 
     // Sur une première insertion, l'absence de commentaire reste NULL.
-    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 99, "absent", null);
+    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 99, "absent", null, 99);
     const nouveau = database
       .prepare("SELECT comment FROM event_presences WHERE user_id = 99")
       .get() as unknown as { comment: string | null };

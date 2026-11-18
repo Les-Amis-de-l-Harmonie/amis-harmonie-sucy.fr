@@ -20,7 +20,8 @@ export async function handleIdeasApi(request: Request): Promise<Response> {
     if (request.method === "GET") {
       const ideas = await env.DB.prepare(
         `
-        SELECT i.*, u.email as user_email, mp.first_name as user_first_name, mp.last_name as user_last_name
+        SELECT i.*, CASE WHEN u.kind = 'managed' THEN NULL ELSE u.email END AS user_email,
+               mp.first_name as user_first_name, mp.last_name as user_last_name
         FROM ideas i
         LEFT JOIN users u ON i.user_id = u.id
         LEFT JOIN musician_profiles mp ON i.user_id = mp.user_id

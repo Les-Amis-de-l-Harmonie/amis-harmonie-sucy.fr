@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL CHECK(role IN ('SUPER_ADMIN', 'ADMIN', 'MUSICIAN')),
   is_active INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  kind TEXT NOT NULL DEFAULT 'member' -- 'member' | 'guardian' | 'managed' (0017, validé en TS)
 );
 
 CREATE TABLE IF NOT EXISTS musician_profiles (
@@ -153,8 +154,22 @@ CREATE TABLE IF NOT EXISTS sessions (
   session_id TEXT NOT NULL UNIQUE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   expires_at TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  acting_user_id INTEGER -- 0017 : musicien pour lequel un responsable agit
 );
+
+CREATE TABLE IF NOT EXISTS guardian_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guardian_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  child_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  relation TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (guardian_user_id <> child_user_id),
+  UNIQUE (guardian_user_id, child_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_guardian_links_child ON guardian_links(child_user_id);
 
 CREATE TABLE IF NOT EXISTS gallery_images (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -223,6 +238,7 @@ CREATE TABLE IF NOT EXISTS event_presences (
   status_changed_at TEXT NOT NULL DEFAULT (datetime('now')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_by INTEGER, -- 0017 : compte qui a donné la réponse
   UNIQUE(event_id, user_id)
 );
 

@@ -16,6 +16,7 @@ JOIN musician_profiles mp ON mp.user_id = u.id
 LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
 LEFT JOIN event_presences ep ON ep.user_id = u.id AND ep.event_id = ?
 WHERE u.is_active = 1
+  AND u.kind <> 'guardian'
   AND (
     u.role = 'MUSICIAN'
     OR EXISTS (SELECT 1 FROM harmonie_instruments h WHERE h.user_id = u.id)
@@ -37,6 +38,7 @@ JOIN musician_profiles mp ON mp.user_id = u.id
 LEFT JOIN harmonie_instruments hi ON hi.user_id = u.id
 LEFT JOIN event_presences ep ON ep.user_id = u.id AND ep.event_id = ?
 WHERE u.is_active = 1
+  AND u.kind <> 'guardian'
   AND u.role = 'MUSICIAN'`;
 
 // Les deux variantes d'enregistrement d'une réponse sont placées côte à côte :
@@ -52,11 +54,12 @@ WHERE u.is_active = 1
  * C'est correct ici, car un musicien soumet toujours son commentaire en même temps
  * que son statut — vider le champ signifie donc bien « supprimer mon commentaire ».
  */
-export const PRESENCE_UPSERT_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, status_changed_at, created_at, updated_at)
-VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+export const PRESENCE_UPSERT_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, updated_by, status_changed_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
 ON CONFLICT(event_id, user_id) DO UPDATE SET
   status = excluded.status,
   comment = excluded.comment,
+  updated_by = excluded.updated_by,
   updated_at = datetime('now'),
   status_changed_at = CASE
     WHEN excluded.status <> event_presences.status THEN datetime('now')
@@ -75,11 +78,12 @@ ON CONFLICT(event_id, user_id) DO UPDATE SET
  * Conséquence assumée : un administrateur ne peut pas vider un commentaire. Aucune
  * interface ne le propose, et préserver est le sens sûr.
  */
-export const PRESENCE_UPSERT_ADMIN_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, status_changed_at, created_at, updated_at)
-VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+export const PRESENCE_UPSERT_ADMIN_SQL = `INSERT INTO event_presences (event_id, user_id, status, comment, updated_by, status_changed_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
 ON CONFLICT(event_id, user_id) DO UPDATE SET
   status = excluded.status,
   comment = COALESCE(excluded.comment, event_presences.comment),
+  updated_by = excluded.updated_by,
   updated_at = datetime('now'),
   status_changed_at = CASE
     WHEN excluded.status <> event_presences.status THEN datetime('now')

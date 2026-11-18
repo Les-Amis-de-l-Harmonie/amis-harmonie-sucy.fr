@@ -48,6 +48,7 @@ function createDatabase(): DatabaseSync {
     CREATE TABLE users (
       id INTEGER PRIMARY KEY,
       role TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'member',
       is_active INTEGER NOT NULL
     );
     CREATE TABLE musician_profiles (
@@ -63,12 +64,13 @@ function createDatabase(): DatabaseSync {
       user_id INTEGER NOT NULL,
       instrument_name TEXT NOT NULL
     );
-    INSERT INTO users (id, role, is_active) VALUES
-      (1, 'MUSICIAN', 1),
-      (2, 'MUSICIAN', 1),
-      (3, 'MUSICIAN', 1),
-      (4, 'MUSICIAN', 1),
-      (5, 'MUSICIAN', 0);
+    INSERT INTO users (id, role, kind, is_active) VALUES
+      (1, 'MUSICIAN', 'member', 1),
+      (2, 'MUSICIAN', 'member', 1),
+      (3, 'MUSICIAN', 'member', 1),
+      (4, 'MUSICIAN', 'member', 1),
+      (5, 'MUSICIAN', 'member', 0),
+      (6, 'MUSICIAN', 'guardian', 1);
   `);
   const insertProfile = database.prepare(
     "INSERT INTO musician_profiles (user_id, first_name, last_name, date_of_birth, avatar, image_consent, harmonie_start_date) VALUES (?, ?, ?, ?, ?, ?, ?)"
@@ -118,8 +120,20 @@ function createDatabase(): DatabaseSync {
     1,
     null
   );
+  insertProfile.run(
+    6,
+    "Responsable",
+    "Exclu",
+    `1995-${birthMonthDay}`,
+    "/images/r2/responsable.webp",
+    1,
+    null
+  );
   database
     .prepare("INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (2, 'Flûte')")
+    .run();
+  database
+    .prepare("INSERT INTO harmonie_instruments (user_id, instrument_name) VALUES (6, 'Cor')")
     .run();
   return database;
 }
@@ -128,10 +142,12 @@ const caller = {
   id: 1,
   email: "musicien@example.fr",
   role: "MUSICIAN" as const,
+  kind: "member" as const,
   is_active: 1,
   created_at: "2026-01-01",
   last_login: null,
   sessionId: "session-id",
+  acting_user_id: null,
 };
 const originalDb = env.DB;
 let database: DatabaseSync;
@@ -141,7 +157,12 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
     vi.clearAllMocks();
     database = createDatabase();
     Object.assign(env, { DB: createD1Database(database) });
-    vi.mocked(resolveMusicianIdentity).mockResolvedValue({ actor: caller, effective: caller });
+    vi.mocked(resolveMusicianIdentity).mockResolvedValue({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
   });
 
   afterEach(() => {
@@ -172,6 +193,7 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
     expect(byLastName.get("Accordé")?.avatar).toBe("/images/r2/consenti.webp");
     expect(byLastName.get("Refusé")?.avatar).toBeNull();
     expect(byLastName.get("Inconnu")?.avatar).toBeNull();
+    expect(byLastName.has("Exclu")).toBe(false);
   });
 
   it("ne renvoie les photos du trombinoscope qu'avec un consentement explicite", async () => {
@@ -194,5 +216,6 @@ describe("confidentialité des photos et anniversaires musiciens", () => {
     expect(byUserId.get(2)?.avatar).toBe("/images/r2/consenti.webp");
     expect(byUserId.get(3)?.avatar).toBeNull();
     expect(byUserId.get(4)?.avatar).toBeNull();
+    expect(byUserId.has(6)).toBe(false);
   });
 });

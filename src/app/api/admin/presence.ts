@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { Event } from "@/db/types";
-import { checkAdminAuth } from "@/app/api/admin-crud";
+import { isAdmin } from "@/db/types";
+import { verifySession } from "@/app/api/auth";
 import {
   hasChangedAfterDeadline,
   PRESENCE_MEMBER_QUERY,
@@ -133,7 +134,7 @@ async function readGrid(request: Request): Promise<Response> {
   });
 }
 
-async function handlePost(request: Request): Promise<Response> {
+async function handlePost(request: Request, adminId: number): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -172,7 +173,7 @@ async function handlePost(request: Request): Promise<Response> {
       .run();
   } else {
     await env.DB.prepare(PRESENCE_UPSERT_ADMIN_SQL)
-      .bind(event.id, body.userId, body.status, comment)
+      .bind(event.id, body.userId, body.status, comment, adminId)
       .run();
     const persisted = await env.DB.prepare(
       "SELECT status, comment, status_changed_at AS statusChangedAt FROM event_presences WHERE event_id = ? AND user_id = ?"
@@ -197,15 +198,15 @@ async function handlePost(request: Request): Promise<Response> {
 }
 
 export async function handleAdminPresenceApi(request: Request): Promise<Response> {
-  const authError = await checkAdminAuth(request);
-  if (authError) return authError;
+  const admin = await verifySession(request, "admin");
+  if (!admin || !isAdmin(admin.role)) return jsonResponse({ error: "Non autorisé" }, 401);
 
   if (request.method !== "GET" && request.method !== "POST") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   }
 
   try {
-    if (request.method === "POST") return await handlePost(request);
+    if (request.method === "POST") return await handlePost(request, admin.id);
 
     const searchParams = new URL(request.url).searchParams;
     if (searchParams.get("grid") === "1") return await readGrid(request);

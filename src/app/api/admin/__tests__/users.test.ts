@@ -19,7 +19,6 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
-
 describe("handleUsersApi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -41,7 +40,7 @@ describe("handleUsersApi", () => {
     applyMockEnv(mockDb);
     vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
     mockDb.queueAll(
-      { results: [{ id: 1, email: "a@test.fr", role: "MUSICIAN" }] },
+      { results: [{ id: 1, email: "a@test.fr", role: "MUSICIAN", kind: "member" }] },
       { results: [{ user_id: 1, instrument_name: "Clarinette", start_date: null, level: null }] },
       { results: [{ user_id: 1, instrument_name: "Flute" }] }
     );
@@ -54,6 +53,7 @@ describe("handleUsersApi", () => {
         id: 1,
         email: "a@test.fr",
         role: "MUSICIAN",
+        kind: "member",
         instruments: [{ instrument_name: "Clarinette", start_date: null, level: null }],
         harmonieInstruments: ["Flute"],
         primaryHarmonieInstrument: "Flute",
@@ -77,6 +77,7 @@ describe("handleUsersApi", () => {
     expect(await response.json()).toEqual({
       id: 2,
       email: "u@test.fr",
+      kind: "member",
       instruments: [{ instrument_name: "Trompette", start_date: "2024-01-01", level: "2" }],
       harmonieInstruments: ["Cor"],
       primaryHarmonieInstrument: "Cor",
@@ -103,6 +104,8 @@ describe("handleUsersApi", () => {
       id: 1,
       email: "admin@test.fr",
       role: "ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
@@ -128,6 +131,8 @@ describe("handleUsersApi", () => {
       id: 99,
       email: "super@test.fr",
       role: "SUPER_ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
@@ -154,6 +159,41 @@ describe("handleUsersApi", () => {
     expect(mockDb.batch).toHaveBeenCalledTimes(1);
   });
 
+  it("crée un compte géré avec noEmail sans renvoyer son adresse réservée", async () => {
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
+    vi.mocked(verifySession).mockResolvedValueOnce({
+      id: 99,
+      email: "super@test.fr",
+      role: "SUPER_ADMIN",
+      kind: "member",
+      acting_user_id: null,
+      is_active: 1,
+      created_at: "2026-01-01",
+      last_login: null,
+      sessionId: "s-managed-create",
+    });
+    mockDb.queueFirst(null);
+    mockDb.batch.mockResolvedValueOnce([{ meta: { last_row_id: 44 } }]);
+
+    const response = await handleUsersApi(
+      new Request("https://test.local/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noEmail: true, first_name: "Enfant", last_name: "Géré" }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const responseBody = await response.text();
+    expect(responseBody).toBe(JSON.stringify({ success: true, id: 44 }));
+    const insert = mockDb.calls.find((call) => call.sql.includes("INSERT INTO users"));
+    expect(insert?.binds[1]).toBe("MUSICIAN");
+    expect(insert?.binds[2]).toBe("managed");
+    expect(insert?.binds[0]).toMatch(/^sans-email\+.+@interne\.amis-harmonie-sucy\.fr$/);
+    expect(responseBody).not.toContain("interne.amis-harmonie-sucy.fr");
+  });
+
   it("résout l'utilisateur par email pour les instruments d'harmonie créés en batch", async () => {
     const mockDb = createMockDb();
     applyMockEnv(mockDb);
@@ -161,6 +201,8 @@ describe("handleUsersApi", () => {
       id: 99,
       email: "super@test.fr",
       role: "SUPER_ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
@@ -198,6 +240,8 @@ describe("handleUsersApi", () => {
       id: 1,
       email: "admin@test.fr",
       role: "ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
@@ -225,12 +269,14 @@ describe("handleUsersApi", () => {
       id: 2,
       email: "admin@test.fr",
       role: "ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
       sessionId: "s4",
     });
-    mockDb.queueFirst(null, { id: 1 });
+    mockDb.queueFirst({ kind: "member", role: "ADMIN", is_active: 1 }, null, { id: 1 });
     mockDb.queueRun(
       { meta: { last_row_id: 1 } },
       { meta: { last_row_id: 1 } },
@@ -258,17 +304,65 @@ describe("handleUsersApi", () => {
     );
   });
 
+  it("met à jour le profil d'un compte géré sans exiger ni vérifier son adresse e-mail", async () => {
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
+    vi.mocked(verifySession).mockResolvedValueOnce({
+      id: 99,
+      email: "super@test.fr",
+      role: "SUPER_ADMIN",
+      kind: "member",
+      acting_user_id: null,
+      is_active: 1,
+      created_at: "2026-01-01",
+      last_login: null,
+      sessionId: "s-managed-update",
+    });
+    mockDb.queueFirst({ kind: "managed" }, { id: 8 });
+
+    const response = await handleUsersApi(
+      new Request("https://test.local/api/admin/users?id=8", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: "Lila",
+          role: "MUSICIAN",
+          is_active: 1,
+          kind: "member",
+        }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true });
+    expect(
+      mockDb.calls.some((call) =>
+        call.sql.includes("SELECT id FROM users WHERE email = ? AND id != ?")
+      )
+    ).toBe(false);
+    expect(
+      mockDb.calls.find((call) => call.sql.includes("UPDATE users SET role = ?"))?.binds
+    ).toEqual(["MUSICIAN", 1, "8"]);
+    expect(
+      mockDb.calls.find((call) => call.sql.includes("UPDATE musician_profiles"))?.binds[0]
+    ).toBe("Lila");
+  });
+
   it("exige un instrument principal pour plusieurs instruments d'harmonie", async () => {
-    applyMockEnv(createMockDb());
+    const mockDb = createMockDb();
+    applyMockEnv(mockDb);
     vi.mocked(verifySession).mockResolvedValueOnce({
       id: 2,
       email: "admin@test.fr",
       role: "ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,
       sessionId: "s-validation",
     });
+    mockDb.queueFirst({ kind: "member" });
 
     const response = await handleUsersApi(
       new Request("https://test.local/api/admin/users?id=2", {
@@ -294,6 +388,8 @@ describe("handleUsersApi", () => {
       id: 99,
       email: "super@test.fr",
       role: "SUPER_ADMIN",
+      kind: "member",
+      acting_user_id: null,
       is_active: 1,
       created_at: "2026-01-01",
       last_login: null,

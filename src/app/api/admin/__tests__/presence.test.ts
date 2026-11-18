@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Event } from "@/db/types";
 import { PRESENCE_MEMBER_QUERY, PRESENCE_UPSERT_ADMIN_SQL, type PresenceRow } from "@/lib/presence";
 import { handleAdminPresenceApi } from "../presence";
-import { checkAdminAuth } from "../../admin-crud";
+import { verifySession } from "../../auth";
 
-vi.mock("../../admin-crud", () => ({
-  checkAdminAuth: vi.fn(),
+vi.mock("../../auth", () => ({
+  verifySession: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -318,26 +318,36 @@ const fixture: FakeDbFixture = {
   ],
 };
 
+const admin = {
+  id: 99,
+  email: "admin@example.fr",
+  role: "ADMIN" as const,
+  kind: "member" as const,
+  is_active: 1,
+  last_login: null,
+  created_at: "2026-01-01",
+  sessionId: "session-admin",
+  acting_user_id: null,
+};
+
 describe("handleAdminPresenceApi", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("retourne le refus d'authentification pour un administrateur non connecté", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(
-      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
-    );
+    vi.mocked(verifySession).mockResolvedValueOnce(null);
 
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence")
     );
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ error: "Unauthorized" });
+    expect(await response.json()).toEqual({ error: "Non autorisé" });
   });
 
   it("refuse les méthodes autres que GET et POST", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
 
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence", { method: "PATCH" })
@@ -348,7 +358,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("exige explicitement le mode grille pour une requête GET", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
 
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence")
@@ -359,7 +369,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("retourne exactement le nouveau contrat après une réponse présente", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -381,7 +391,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("retourne un marqueur tardif à false quand la réponse précède l'échéance", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb({
       ...fixture,
       event: { ...event, response_deadline: "2026-09-10" },
@@ -405,7 +415,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("retourne un marqueur tardif à false quand l'événement n'a pas d'échéance", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb({
       ...fixture,
       event: { ...event, response_deadline: null },
@@ -429,7 +439,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("retourne exactement le nouveau contrat après une réponse absente", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -451,7 +461,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("supprime une réponse et retourne exactement le statut nul", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -477,7 +487,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("rend le nettoyage d'une réponse déjà absente idempotent", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -499,7 +509,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("préserve le commentaire existant avec la variante d'upsert administrateur", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -519,7 +529,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("refuse un statut qui n'est pas présent, absent ou sans réponse", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence", {
         method: "POST",
@@ -533,7 +543,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("refuse un musicien hors de l'effectif de référence", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb(fixture);
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence", {
@@ -548,7 +558,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("refuse un événement qui ne nécessite pas de présence", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     applySqlDispatchingDb({ ...fixture, event: null });
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence", {
@@ -561,7 +571,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("refuse un commentaire de plus de 1000 caractères", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
 
     const response = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence", {
@@ -582,7 +592,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("retourne la grille avec le principal et un objet complet par cellule", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb(fixture);
 
     const response = await handleAdminPresenceApi(
@@ -629,7 +639,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb(fixture);
     const defaultResponse = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence?grid=1")
@@ -639,7 +649,7 @@ describe("handleAdminPresenceApi", () => {
     };
     expect(defaultBody.events.map((item) => item.title)).toContain("Concert d'hiver");
 
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const pastResponse = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence?grid=1&includePast=1")
     );
@@ -650,7 +660,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("utilise json_each avec un seul paramètre pour la liste des événements", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb(fixture);
 
     await handleAdminPresenceApi(
@@ -667,7 +677,7 @@ describe("handleAdminPresenceApi", () => {
   });
 
   it("n'interroge pas les réponses lorsqu'il n'y a aucun événement", async () => {
-    vi.mocked(checkAdminAuth).mockResolvedValueOnce(null);
+    vi.mocked(verifySession).mockResolvedValueOnce(admin);
     const db = applySqlDispatchingDb({ ...fixture, gridEvents: [], pastGridEvents: [] });
 
     const response = await handleAdminPresenceApi(
