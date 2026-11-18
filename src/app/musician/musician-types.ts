@@ -51,6 +51,15 @@ export interface PresenceRosterEntry {
   status: PresenceStatus | null;
 }
 
+export interface PresenceAnsweredBy {
+  /** Prénom seul, jamais le nom d'un administrateur (`null` quand `byAssociation`). */
+  name: string | null;
+  /** Lien de parenté (« mère »…), s'il est renseigné. */
+  relation: string | null;
+  byAssociation: boolean;
+  byYou: boolean;
+}
+
 export interface PresenceEvent {
   id: number;
   title: string;
@@ -63,6 +72,11 @@ export interface PresenceEvent {
     status: PresenceStatus | null;
     comment: string | null;
     updated_at: string | null;
+    /**
+     * Qui a donné cette réponse quand ce n'est pas le musicien lui-même (un parent,
+     * ou l'association). Absent des anciennes réponses : toujours le traiter comme facultatif.
+     */
+    answeredBy?: PresenceAnsweredBy | null;
   };
   roster: PresenceRosterEntry[];
   counts: {

@@ -13,6 +13,7 @@ import { VideoModule } from "./VideoModule";
 import { OutingModule } from "./OutingModule";
 import { VideoModal } from "./VideoModal";
 import { ChooseMusicianState } from "./ChooseMusicianState";
+import { useActingLabels } from "./acting-labels";
 import { useMusicianSession } from "./MusicianSession";
 
 interface MusicianHomeClientProps {
@@ -66,6 +67,7 @@ function MusicianHomeContent({
   firstName,
   lastName: _lastName,
 }: MusicianHomeClientProps) {
+  const labels = useActingLabels();
   const data = useMusicianDashboardData();
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const displayName = firstName || "Musicien";
@@ -97,7 +99,7 @@ function MusicianHomeContent({
       {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
 
       <motion.div initial="hidden" animate="visible" variants={headerVariants}>
-        <h1 className="text-2xl font-bold text-foreground">Bonjour, {displayName} !</h1>
+        <h1 className="text-2xl font-bold text-foreground">{labels.greeting(displayName)}</h1>
       </motion.div>
 
       {/* Cartouche éditoriale du bureau : garde sa place au-dessus du parcours

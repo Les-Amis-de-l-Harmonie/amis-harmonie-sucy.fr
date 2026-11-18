@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -135,6 +135,16 @@ export function UsersAdminClient({ currentUserRole, currentUserEmail }: UsersAdm
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Lien direct depuis la page « Familles » : /admin/users?user=ID ouvre la fiche.
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current || users.length === 0) return;
+    deepLinkHandled.current = true;
+    const requested = Number(new URLSearchParams(window.location.search).get("user"));
+    const target = Number.isInteger(requested) ? users.find((u) => u.id === requested) : undefined;
+    if (target) openViewDialog(target);
+  }, [users]);
 
   const handleSave = async () => {
     if (!editing) return;

@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { isMusicianPathActive } from "@/app/musician/isMusicianPathActive";
+import type { ActingLabels } from "@/app/musician/acting-labels";
 
 export interface MusicianNavItem {
   href: string;
@@ -17,6 +18,8 @@ export interface MusicianNavItem {
   label: string;
   /** Libellé court pour la barre d'onglets mobile ; retombe sur `label`. */
   tabLabel?: string;
+  /** Libellé à la première personne : remplacé par sa version à la 3e personne en délégation. */
+  actingLabel?: "navPrestations" | "navProfile";
   icon: LucideIcon;
   /**
    * `true` : l'item a son propre onglet dans la barre basse mobile.
@@ -53,6 +56,7 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
   {
     href: "/musician/disponibilites",
     label: "Mes prestations",
+    actingLabel: "navPrestations",
     tabLabel: "Prestations",
     icon: CalendarDays,
     inTabBar: true,
@@ -60,6 +64,7 @@ export const MUSICIAN_NAV_ITEMS: MusicianNavItem[] = [
   {
     href: "/musician/profile",
     label: "Mon profil",
+    actingLabel: "navProfile",
     tabLabel: "Profil",
     icon: User,
     inTabBar: false,
@@ -89,6 +94,11 @@ export const MUSICIAN_TAB_ITEMS = [
   "/musician/idee",
 ].flatMap((href) => MUSICIAN_NAV_ITEMS.filter((item) => item.inTabBar && item.href === href));
 export const MUSICIAN_OVERFLOW_ITEMS = MUSICIAN_NAV_ITEMS.filter((item) => !item.inTabBar);
+
+/** Libellé affiché : « Prestations de Lila » en délégation, le libellé d'origine sinon. */
+export function getNavItemLabel(item: MusicianNavItem, labels: ActingLabels): string {
+  return labels.name && item.actingLabel ? labels[item.actingLabel] : item.label;
+}
 
 export function isNavItemActive(item: MusicianNavItem, pathname: string): boolean {
   return !item.external && isMusicianPathActive(pathname, item.href);

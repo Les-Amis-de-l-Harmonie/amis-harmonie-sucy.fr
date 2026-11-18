@@ -14,6 +14,7 @@ import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { Shield, Lock, Plus, Trash2, Loader2, RefreshCw } from "lucide-react";
 import type { InsuranceInstrument } from "@/db/types";
 // Pas d'import de `@/lib/logger` ici : ce module commence par
@@ -176,6 +177,7 @@ function MusicianAssuranceContent() {
   const [instruments, setInstruments] = useState<InstrumentForm[]>([
     { instrument_name: "", brand: "", model: "", serial_number: "" },
   ]);
+  const labels = useActingLabels();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -312,9 +314,7 @@ function MusicianAssuranceContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Assurance instrument</h1>
-        <p className="mt-1 text-muted-foreground">
-          Enregistrez vos instruments pour bénéficier de l'assurance de l'association
-        </p>
+        <p className="mt-1 text-muted-foreground">{labels.insuranceIntro}</p>
       </div>
 
       {error ? (
@@ -337,7 +337,7 @@ function MusicianAssuranceContent() {
               role="status"
               className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
             >
-              Vos instruments assurés ont été enregistrés.
+              {labels.insuranceSaved}
             </div>
           )}
 
@@ -350,7 +350,7 @@ function MusicianAssuranceContent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-primary" />
-                  Mes instruments assurés
+                  {labels.insuranceTitle}
                 </CardTitle>
                 <CardDescription>
                   Vous pouvez enregistrer jusqu'à 2 instruments. Tous les champs sont obligatoires.
@@ -400,7 +400,7 @@ function MusicianAssuranceContent() {
                         Enregistrement...
                       </>
                     ) : (
-                      "Enregistrer mes instruments"
+                      labels.insuranceSaveButton
                     )}
                   </Button>
                 </div>

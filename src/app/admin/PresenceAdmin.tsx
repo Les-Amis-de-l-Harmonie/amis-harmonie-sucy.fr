@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Minus,
   Table2,
+  UserRound,
   Users,
   X,
   XCircle,
@@ -33,6 +34,11 @@ import { Switch } from "@/app/components/ui/switch";
 import { formatDateFrench, formatDateShort, isEventPast } from "@/lib/dates";
 import { groupMembersByPupitre } from "@/lib/presence-groups";
 import { cn } from "@/lib/utils";
+import {
+  formatAnsweredByLong,
+  formatAnsweredByShort,
+  type PresenceAnsweredBy,
+} from "./presence-answered-by";
 
 // --- Vue d'ensemble (tableau croisé musiciens × prestations) ---------------
 
@@ -49,6 +55,9 @@ interface PresenceGridAnswer {
   status: PresenceStatus;
   comment: string | null;
   changedAfterDeadline: boolean;
+  /** Absent quand le musicien a répondu lui-même (ou avec une API plus ancienne). */
+  answeredBy?: PresenceAnsweredBy | null;
+  answeredAt?: string | null;
 }
 
 interface PresenceGridMember {
@@ -195,6 +204,10 @@ function GridLegend() {
         <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
         Modifié après la date limite
       </span>
+      <span className="inline-flex items-center gap-1.5">
+        <UserRound className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+        Réponse saisie par un parent ou un admin
+      </span>
     </div>
   );
 }
@@ -307,7 +320,7 @@ function EditPresenceDialog({
                       <button
                         key={choice.label}
                         type="button"
-                        disabled={submitting !== null}
+                        disabled={submitting !== null || isCurrent}
                         onClick={() => onSubmit(choice.status)}
                         className={cn(
                           "w-full min-h-[44px] flex items-center gap-3 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors disabled:opacity-60",
@@ -329,6 +342,13 @@ function EditPresenceDialog({
                     );
                   })}
                 </div>
+
+                {currentAnswer?.answeredBy && currentStatus !== null && (
+                  <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <UserRound className="w-3.5 h-3.5" aria-hidden="true" />
+                    {formatAnsweredByLong(currentAnswer.answeredBy, currentAnswer.answeredAt)}
+                  </p>
+                )}
 
                 {comment && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3">
@@ -581,15 +601,23 @@ function PresenceGrid({
                             const answer = member.answers[String(event.id)];
                             const status = answer?.status ?? null;
                             const isLate = answer?.changedAfterDeadline ?? false;
+                            const answeredBy =
+                              status !== null ? (answer?.answeredBy ?? null) : null;
+                            const answeredByLong = answeredBy
+                              ? formatAnsweredByLong(answeredBy, answer?.answeredAt)
+                              : null;
                             return (
                               <td key={event.id} className="p-0.5 sm:p-1 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => onEdit(member, event)}
+                                  title={answeredByLong ?? undefined}
                                   aria-label={`${formatMemberName(member)} — ${event.title} : ${
                                     CELL_LABELS[statusKey(status)]
-                                  }${isLate ? ", modifié après la date limite" : ""}. Modifier.`}
-                                  className="w-full min-h-11 h-11 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+                                  }${isLate ? ", modifié après la date limite" : ""}${
+                                    answeredByLong ? `. ${answeredByLong}` : ""
+                                  }. Modifier.`}
+                                  className="w-full min-h-11 flex flex-col items-center justify-center rounded-md py-0.5 hover:bg-muted transition-colors"
                                 >
                                   <span className="relative inline-flex">
                                     <GridStatusGlyph
@@ -602,7 +630,22 @@ function PresenceGrid({
                                         aria-hidden="true"
                                       />
                                     )}
+                                    {answeredBy && (
+                                      <UserRound
+                                        className="sm:hidden absolute -bottom-1 -right-1 w-3 h-3 text-sky-600 dark:text-sky-400 bg-card rounded-full ring-1 ring-card"
+                                        aria-hidden="true"
+                                        data-testid="answered-by-marker"
+                                      />
+                                    )}
                                   </span>
+                                  {answeredBy && (
+                                    <span
+                                      className="hidden sm:block max-w-full truncate text-[10px] leading-tight text-muted-foreground"
+                                      data-testid="answered-by"
+                                    >
+                                      {formatAnsweredByShort(answeredBy)}
+                                    </span>
+                                  )}
                                 </button>
                               </td>
                             );
@@ -708,6 +751,13 @@ export function PresenceAdminClient() {
                       status: resolvedStatus,
                       comment: resolvedComment,
                       changedAfterDeadline,
+                      // La réponse vient d'être saisie ici : elle est « par un administrateur »
+                      // jusqu'au prochain chargement, qui donnera le nom exact.
+                      answeredBy:
+                        resolvedStatus === null
+                          ? null
+                          : { name: null, relation: null, isAdmin: true, kind: "noProfile" },
+                      answeredAt: resolvedStatus === null ? null : new Date().toISOString(),
                     },
                   },
                 }

@@ -114,6 +114,46 @@ describe("API des responsables légaux", () => {
     expect(await response.json()).toMatchObject({ error: expect.any(String) });
   });
 
+  it("renvoie tous les liens sans userId et réserve cette liste aux administrateurs", async () => {
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation, created_by) VALUES (?, ?, ?, ?)"
+      )
+      .run(4, 3, "mère", 1);
+    database
+      .prepare(
+        "INSERT INTO guardian_links (guardian_user_id, child_user_id, relation, created_by) VALUES (?, ?, ?, ?)"
+      )
+      .run(7, 8, "père", 2);
+
+    const response = await send("", "GET", undefined, "admin");
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      links: Array<{
+        linkId: number;
+        guardianUserId: number;
+        childUserId: number;
+        relation: string | null;
+        createdAt: string;
+      }>;
+    };
+    expect(body.links).toHaveLength(2);
+    expect(body.links.map(({ guardianUserId, childUserId, relation }) => ({
+      guardianUserId,
+      childUserId,
+      relation,
+    }))).toEqual([
+      { guardianUserId: 4, childUserId: 3, relation: "mère" },
+      { guardianUserId: 7, childUserId: 8, relation: "père" },
+    ]);
+    expect(body.links.every((link) => link.linkId > 0 && link.createdAt.length > 0)).toBe(true);
+
+    const unauthorized = await send("", "GET", undefined, null);
+    expect(unauthorized.status).toBe(401);
+    expect(await unauthorized.json()).toMatchObject({ error: expect.any(String) });
+  });
+
   it.each(["create-guardian", "handover", "give-access"])(
     "réserve l'action %s aux super-administrateurs",
     async (action) => {

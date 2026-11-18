@@ -1,3 +1,4 @@
+import { getActingLabels, type ActingLabels } from "./acting-labels";
 import { PROFILE_SECTIONS, validateProfile } from "./profile-validation";
 import type { ProfileWithExtras, UpcomingEvent } from "./musician-types";
 
@@ -76,7 +77,8 @@ export function buildProfileJourney(
   profile: ProfileWithExtras | null,
   planningUrgent: boolean,
   urgentEvent: UpcomingEvent | null,
-  pendingCount: number
+  pendingCount: number,
+  labels: ActingLabels["journey"] = getActingLabels(null).journey
 ): JourneyStep[] {
   const completion = summarizeProfileCompletion(profile);
   const isMember = profile?.adhesion_2026_2027 === 1;
@@ -95,7 +97,7 @@ export function buildProfileJourney(
       status: completion.isComplete ? "done" : "todo",
       detail: `${completion.completedSections} section${completion.completedSections > 1 ? "s" : ""} sur ${completion.totalSections}`,
       href: profileHref,
-      cta: completion.isComplete ? "Modifier mon profil" : "Compléter mon profil",
+      cta: completion.isComplete ? labels.editProfile : labels.completeProfile,
     },
     {
       key: "adhesion",
@@ -103,19 +105,19 @@ export function buildProfileJourney(
       status: isMember ? "done" : "todo",
       detail: isMember ? "Adhérent 2026-2027" : "Non adhérent en 2026-2027",
       href: "/adhesion",
-      cta: isMember ? "Voir mon adhésion" : "Adhérer maintenant",
+      cta: isMember ? labels.seeMembership : "Adhérer maintenant",
     },
     {
       key: "assurance",
       title: "Assurance",
       status: isMember && insuranceComplete ? "done" : "todo",
       detail: !isMember
-        ? "À déclarer après votre adhésion"
+        ? labels.insuranceAfterMembership
         : insuranceComplete
           ? `${insuredCount} instrument${insuredCount > 1 ? "s" : ""} assuré${insuredCount > 1 ? "s" : ""}`
           : "Aucun instrument déclaré",
       href: "/musician/assurance",
-      cta: insuranceComplete ? "Gérer mes instruments" : "Déclarer un instrument",
+      cta: insuranceComplete ? labels.manageInstruments : "Déclarer un instrument",
     },
     {
       key: "presence",
@@ -129,9 +131,9 @@ export function buildProfileJourney(
           ? `En attente : ${urgentEvent.title}`
           : hasPendingPresence
             ? `${pendingCount} prestation${pendingCount > 1 ? "s" : ""} sans réponse`
-            : "Toutes vos réponses sont à jour",
+            : labels.allAnswersUpToDate,
       href: "/musician/disponibilites",
-      cta: hasPendingPresence ? "Répondre maintenant" : "Voir mes prestations",
+      cta: hasPendingPresence ? "Répondre maintenant" : labels.seePrestations,
     },
   ];
 }

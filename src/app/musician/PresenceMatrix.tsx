@@ -6,6 +6,7 @@ import type { PresenceStatus } from "@/db/types";
 import { groupMembersByPupitre } from "@/lib/presence-groups";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { LegendItem } from "./LegendItem";
 import {
   buildMusicianRows,
@@ -27,6 +28,7 @@ export interface PresenceMatrixProps {
 }
 
 export function PresenceMatrix({ events, currentUserId, onEditResponse }: PresenceMatrixProps) {
+  const labels = useActingLabels();
   const rows = useMemo(() => buildMusicianRows(events, currentUserId), [events, currentUserId]);
   const groups = useMemo(() => groupMembersByPupitre(rows), [rows]);
 
@@ -56,7 +58,7 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card ring-1 ring-border dark:bg-card dark:ring-border">
               <Pencil className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
             </span>
-            Modifier votre réponse
+            {labels.legendEditAnswer}
           </span>
         )}
       </div>
@@ -144,7 +146,7 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                         {getFullName(row.firstName, row.lastName)}
                         {row.isCurrentUser && (
                           <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                            Vous
+                            {labels.currentRowBadge}
                           </span>
                         )}
                       </span>
@@ -164,9 +166,10 @@ export function PresenceMatrix({ events, currentUserId, onEditResponse }: Presen
                         // qui échouerait (le serveur refuse le POST). Le clic ouvre malgré
                         // tout la carte, qui explique pourquoi c'est fermé.
                         const cellIsPast = isEventPast(event.date);
+                        const eventLabel = `${event.title} du ${formatDateShortLabel(event.date)}`;
                         const label = cellIsPast
-                          ? `Voir votre réponse pour ${event.title} du ${formatDateShortLabel(event.date)} (prestation passée), actuellement : ${visual.label.toLowerCase()}`
-                          : `Modifier votre réponse pour ${event.title} du ${formatDateShortLabel(event.date)}, actuellement : ${visual.label.toLowerCase()}`;
+                          ? labels.viewAnswerCell(eventLabel, visual.label.toLowerCase())
+                          : labels.editAnswerCell(eventLabel, visual.label.toLowerCase());
                         return (
                           <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
                             <button

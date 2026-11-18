@@ -4,7 +4,12 @@ import { Globe, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import { MusicianUserSummary } from "@/app/musician/MusicianUserSummary";
 import { MusicianSidebarNavItem } from "@/app/musician/MusicianSidebarNavItem";
-import { isNavItemActive, MUSICIAN_NAV_ITEMS } from "@/app/musician/musician-nav-items";
+import { useActingLabels } from "@/app/musician/acting-labels";
+import {
+  getNavItemLabel,
+  isNavItemActive,
+  MUSICIAN_NAV_ITEMS,
+} from "@/app/musician/musician-nav-items";
 
 interface MusicianSidebarProps {
   pathname: string;
@@ -28,6 +33,7 @@ interface MusicianSidebarProps {
  * qu'un alignement indifférencié.
  */
 export function MusicianSidebar({ pathname, firstName, lastName, avatar }: MusicianSidebarProps) {
+  const labels = useActingLabels();
   const internalItems = MUSICIAN_NAV_ITEMS.filter((item) => !item.external);
   const externalItems = MUSICIAN_NAV_ITEMS.filter((item) => item.external);
 
@@ -48,7 +54,7 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
           <MusicianSidebarNavItem
             key={item.href}
             href={item.href}
-            label={item.label}
+            label={getNavItemLabel(item, labels)}
             icon={item.icon}
             external={item.external}
             active={isNavItemActive(item, pathname)}
@@ -65,7 +71,7 @@ export function MusicianSidebar({ pathname, firstName, lastName, avatar }: Music
           <MusicianSidebarNavItem
             key={item.href}
             href={item.href}
-            label={item.label}
+            label={getNavItemLabel(item, labels)}
             icon={item.icon}
             external={item.external}
             active={isNavItemActive(item, pathname)}

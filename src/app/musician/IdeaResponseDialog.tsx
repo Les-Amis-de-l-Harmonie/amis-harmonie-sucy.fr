@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/componen
 import { MessageCircle } from "lucide-react";
 import type { IdeaWithLikes } from "@/db/types";
 import { formatIdeaDate } from "./idea-filters";
+import { useActingLabels } from "./acting-labels";
 
 interface IdeaResponseDialogProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface IdeaResponseDialogProps {
 }
 
 export function IdeaResponseDialog({ idea, open, onOpenChange }: IdeaResponseDialogProps) {
+  const labels = useActingLabels();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -21,7 +23,9 @@ export function IdeaResponseDialog({ idea, open, onOpenChange }: IdeaResponseDia
         {idea && (
           <div className="space-y-4 py-4">
             <div>
-              <p className="mb-1 text-sm font-medium text-muted-foreground">Votre idée</p>
+              <p className="mb-1 text-sm font-medium text-muted-foreground">
+                {labels.ideaResponseTitle}
+              </p>
               <p className="text-base font-semibold text-foreground">{idea.title}</p>
             </div>
             <div className="rounded-md bg-muted p-4">

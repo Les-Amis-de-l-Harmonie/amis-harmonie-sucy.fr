@@ -20,6 +20,7 @@ import {
   Shield,
   Globe,
   ClipboardList,
+  UsersRound,
 } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
 import type { UserRole } from "@/db/types";
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/admin/outing-settings", label: "Inscription Sortie", icon: Ticket },
   { href: "/admin/info-settings", label: "Cartouche Info", icon: Info },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
+  { href: "/admin/familles", label: "Familles", icon: UsersRound },
 ];
 
 const externalLinks = [

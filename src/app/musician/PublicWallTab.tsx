@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import { Search } from "lucide-react";
 import type { IdeaWithLikes } from "@/db/types";
+import { getActingLabels } from "./acting-labels";
 import { IdeaCard } from "./IdeaCard";
 import { IdeaFiltersBar } from "./IdeaFiltersBar";
 import { filterAndSortIdeas, type IdeaFilterCategory, type IdeaSortOption } from "./idea-filters";
@@ -27,6 +28,7 @@ interface PublicWallTabProps {
   onViewLikers: (idea: IdeaWithLikes) => void;
   /** Responsable qui agit pour un enfant : « j'aime » désactivé. */
   readOnly?: boolean;
+  actingForName?: string | null;
 }
 
 export function PublicWallTab({
@@ -47,6 +49,7 @@ export function PublicWallTab({
   onViewResponse,
   onViewLikers,
   readOnly = false,
+  actingForName = null,
 }: PublicWallTabProps) {
   const filteredIdeas = useMemo(
     () => filterAndSortIdeas(ideas, searchQuery, categoryFilter, sortBy),
@@ -77,8 +80,9 @@ export function PublicWallTab({
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Soutenez vos idées préférées dès maintenant et participez à faire émerger les meilleures
-            !
+            {readOnly
+              ? getActingLabels(actingForName).publicWallIntro
+              : getActingLabels(null).publicWallIntro}
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredIdeas.map((idea) => (

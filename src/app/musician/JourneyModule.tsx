@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronDown, ChevronRight, Circle } from "lucide-react";
 import { Progress } from "@/app/components/ui/progress";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { buildProfileJourney } from "./profile-journey";
 import type { ProfileWithExtras, UpcomingEvent } from "./musician-types";
 
@@ -29,6 +30,7 @@ export function JourneyModule({
   urgentEvent,
   pendingCount,
 }: JourneyModuleProps) {
+  const labels = useActingLabels();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
 
@@ -46,7 +48,13 @@ export function JourneyModule({
     );
   }
 
-  const steps = buildProfileJourney(profile, planningUrgent, urgentEvent, pendingCount);
+  const steps = buildProfileJourney(
+    profile,
+    planningUrgent,
+    urgentEvent,
+    pendingCount,
+    labels.journey
+  );
   const doneCount = steps.filter((step) => step.status === "done").length;
   const allDone = doneCount === steps.length;
 
@@ -104,7 +112,7 @@ export function JourneyModule({
         className="rounded-lg border border-success/20 bg-success/5"
       >
         <h2 id="journey-heading" className="sr-only">
-          Votre progression
+          {labels.journeyTitle}
         </h2>
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5">
           <p className="flex items-center gap-2 text-sm font-medium text-success">
@@ -142,7 +150,7 @@ export function JourneyModule({
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id="journey-heading" className="font-heading text-lg font-bold text-foreground">
-            Votre progression
+            {labels.journeyTitle}
           </h2>
           <p className="text-sm text-muted-foreground">
             {`${doneCount} étape${doneCount > 1 ? "s" : ""} sur ${steps.length} en ordre.`}

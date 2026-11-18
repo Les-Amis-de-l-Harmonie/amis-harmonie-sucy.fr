@@ -111,7 +111,9 @@ describe("UsersAdminClient", () => {
   describe("liste", () => {
     it("signale quand la liste ne peut pas être chargée", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: "Session expirée." }, 401));
-      render(<UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />);
+      render(
+        <UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />
+      );
 
       expect(await screen.findByRole("status")).toHaveTextContent(
         "La liste des utilisateurs n'a pas pu être actualisée. Rechargez la page."
@@ -172,6 +174,35 @@ describe("UsersAdminClient", () => {
 
       expect(screen.queryByText("Tom Petit")).toBeNull();
       expect(screen.getByText("Paul Durand")).toBeTruthy();
+    });
+  });
+
+  describe("lien direct depuis la page Familles", () => {
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("ouvre la fiche de l'utilisateur demandé avec ?user=ID", async () => {
+      window.history.replaceState(null, "", "/admin/users?user=3");
+      mockApi();
+      render(
+        <UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />
+      );
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("Pas de connexion, géré par", { exact: false })).toBeTruthy();
+      expect(within(dialog).getByText("Petit")).toBeTruthy();
+    });
+
+    it("n'ouvre rien si l'identifiant est inconnu", async () => {
+      window.history.replaceState(null, "", "/admin/users?user=99999");
+      mockApi();
+      render(
+        <UsersAdminClient currentUserRole="SUPER_ADMIN" currentUserEmail="root@example.com" />
+      );
+      await screen.findByText("Tom Petit");
+
+      expect(screen.queryByRole("dialog")).toBeNull();
     });
   });
 

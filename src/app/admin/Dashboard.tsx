@@ -12,6 +12,50 @@ import {
   UserCheck,
   BarChart3,
 } from "lucide-react";
+import { logger } from "@/lib/logger";
+import { AttentionCard } from "./AttentionCard";
+import { buildFamiliesModel, countAttention, type AttentionCounts } from "./families";
+import type { UserWithProfile } from "./users-shared";
+
+interface AttentionUserRow {
+  id: number;
+  email: string;
+  role: UserWithProfile["role"];
+  kind: UserWithProfile["kind"];
+  is_active: number;
+  first_name: string | null;
+  last_name: string | null;
+  date_of_birth: string | null;
+}
+
+interface AttentionLinkRow {
+  linkId: number;
+  guardianUserId: number;
+  childUserId: number;
+  relation: string | null;
+}
+
+/** Mêmes règles que la page Familles (rappel des 18 ans, mineurs sans responsable…). */
+async function getAttentionCounts(): Promise<AttentionCounts | null> {
+  try {
+    const [users, links] = await Promise.all([
+      env.DB.prepare(
+        `SELECT u.id, u.email, u.role, u.kind, u.is_active,
+                p.first_name, p.last_name, p.date_of_birth
+         FROM users u LEFT JOIN musician_profiles p ON p.user_id = u.id`
+      ).all<AttentionUserRow>(),
+      env.DB.prepare(
+        `SELECT id AS linkId, guardian_user_id AS guardianUserId, child_user_id AS childUserId, relation
+         FROM guardian_links`
+      ).all<AttentionLinkRow>(),
+    ]);
+    return countAttention(buildFamiliesModel(users.results ?? [], links.results ?? []).attention);
+  } catch (error) {
+    // Le tableau de bord ne doit pas tomber pour un compteur.
+    logger.error("Attention counters error:", error);
+    return null;
+  }
+}
 
 async function getStats() {
   const [events, videos, publications, guestbook, contacts, galleryImages, ideas, users, members] =
@@ -70,8 +114,12 @@ interface AnalyticsData {
   };
 }
 export async function AdminDashboard() {
-  const stats = await getStats();
-  const analytics = (await getAnalytics()) as AnalyticsData | null;
+  const [stats, analyticsResult, attention] = await Promise.all([
+    getStats(),
+    getAnalytics(),
+    getAttentionCounts(),
+  ]);
+  const analytics = analyticsResult as AnalyticsData | null;
 
   const cards = [
     {
@@ -174,26 +222,30 @@ export async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Taux d'adhésion */}
-      <Card className="border-2 border-emerald-100 dark:border-emerald-900">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Taux d'adhésion 2026-2027
-          </CardTitle>
-          <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900">
-            <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-foreground">
-            {stats.users > 0 ? Math.round((stats.members / stats.users) * 100) : 0}%
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {stats.members} adhérent{stats.members > 1 ? "s" : ""} (sur {stats.users} musicien
-            {stats.users > 1 ? "s" : ""})
-          </p>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-start">
+        {attention && <AttentionCard counts={attention} />}
+
+        {/* Taux d'adhésion */}
+        <Card className="border-2 border-emerald-100 dark:border-emerald-900">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Taux d'adhésion 2026-2027
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900">
+              <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {stats.users > 0 ? Math.round((stats.members / stats.users) * 100) : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.members} adhérent{stats.members > 1 ? "s" : ""} (sur {stats.users} musicien
+              {stats.users > 1 ? "s" : ""})
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Statistiques de visite du site public */}
       <div className="space-y-4">

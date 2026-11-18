@@ -12,6 +12,7 @@ import { OutingSettingsClient } from "./OutingSettingsAdmin";
 import { InfoSettingsClient } from "./InfoSettingsAdmin";
 import { InsuranceAdminClient } from "./InsuranceAdmin";
 import { PresenceAdminClient } from "./PresenceAdmin";
+import { FamiliesAdminClient } from "./FamiliesAdmin";
 import { ReservationsAdminClient, ReservationsPrintClient } from "./ReservationsAdmin";
 import { ReservationsCheckinClient } from "./ReservationsCheckin";
 
@@ -122,6 +123,14 @@ export function AdminPresencePage({ email, role }: AdminPageProps) {
   return (
     <AdminLayout email={email} role={role}>
       <PresenceAdminClient />
+    </AdminLayout>
+  );
+}
+
+export function AdminFamiliesPage({ email, role }: AdminPageProps) {
+  return (
+    <AdminLayout email={email} role={role}>
+      <FamiliesAdminClient />
     </AdminLayout>
   );
 }

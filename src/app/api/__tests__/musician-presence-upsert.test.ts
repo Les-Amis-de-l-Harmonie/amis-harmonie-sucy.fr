@@ -119,7 +119,14 @@ describe("PRESENCE_UPSERT_SQL", () => {
       )
       .run("2000-01-02 00:00:00", 12, 7);
 
-    // L'administrateur corrige la case depuis la grille : statut seul, aucun commentaire.
+    // Une sauvegarde du même statut ne doit ni modifier le responsable ni sa date de statut.
+    database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "absent", null, 99);
+    const afterSameStatus = readPresence();
+    expect(afterSameStatus.status).toBe("absent");
+    expect(afterSameStatus.updated_by).toBe(7);
+    expect(afterSameStatus.status_changed_at).toBe("2000-01-02 00:00:00");
+
+    // L'administrateur corrige ensuite effectivement le statut depuis la grille.
     database.prepare(PRESENCE_UPSERT_ADMIN_SQL).run(12, 7, "present", null, 99);
     const afterAdmin = readPresence();
 

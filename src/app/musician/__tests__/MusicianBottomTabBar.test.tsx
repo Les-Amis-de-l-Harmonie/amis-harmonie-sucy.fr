@@ -7,7 +7,12 @@ import { SELF, withSession } from "./session-fixtures";
 
 describe("Navigation mobile du musicien", () => {
   it("déplace Accueil à la place de Profil sans doublon", () => {
-    render(<MusicianBottomTabBar pathname="/musician/" firstName="Jean" lastName="Dupont" />);
+    render(
+      withSession(
+        { profiles: [SELF] },
+        <MusicianBottomTabBar pathname="/musician/" firstName="Jean" lastName="Dupont" />
+      )
+    );
 
     const navigation = screen.getByRole("navigation", { name: "Navigation mobile" });
     expect(within(navigation).getAllByRole("link").map((link) => link.textContent)).toEqual([

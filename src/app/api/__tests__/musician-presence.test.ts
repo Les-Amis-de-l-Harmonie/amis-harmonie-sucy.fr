@@ -38,6 +38,13 @@ interface FakePresence {
   status_changed_at: string;
 }
 
+interface FakeAnswerAuthor {
+  updatedBy: number | null;
+  updaterRole: "ADMIN" | "SUPER_ADMIN" | "MUSICIAN" | null;
+  updaterFirstName: string | null;
+  updaterRelation: string | null;
+}
+
 interface FakeEvent {
   id: number;
   title: string;
@@ -52,6 +59,7 @@ interface FakeDb {
   prepare(sql: string): FakeStatement;
   calls: FakeCall[];
   ownPresence: FakePresence | null;
+  ownAuthor: FakeAnswerAuthor;
   otherPresence: FakePresence;
   event: FakeEvent;
   events: FakeEvent[];
@@ -79,6 +87,12 @@ function createFakeDb(): FakeDb {
       comment: "MON_PROPRE_COMMENTAIRE",
       updated_at: "2026-08-20 12:00:00",
       status_changed_at: "2026-08-20 12:00:00",
+    },
+    ownAuthor: {
+      updatedBy: 7,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Paul",
+      updaterRelation: null,
     },
     otherPresence: {
       status: "absent",
@@ -110,8 +124,12 @@ function createFakeDb(): FakeDb {
           if (sql.includes("FROM events")) {
             return (db.pastEvent ? null : db.event) as T;
           }
-          if (sql.includes("FROM event_presences WHERE")) {
-            return db.ownPresence as T;
+          if (sql.includes("FROM event_presences ep") && sql.includes("WHERE ep.event_id")) {
+            return (
+              db.ownPresence
+                ? { eventId: 12, ...db.ownPresence, ...db.ownAuthor }
+                : null
+            ) as T;
           }
           return null;
         },
@@ -122,7 +140,15 @@ function createFakeDb(): FakeDb {
               results: T[];
             };
           }
-          if (sql.includes("FROM event_presences") && sql.includes("json_each")) {
+          if (sql.includes("WHERE ep.user_id = ?") && sql.includes("json_each")) {
+            const eventIds = JSON.parse(String(call.binds[1])) as number[];
+            const results = eventIds.flatMap((eventId) => {
+              if (eventId !== 12 || db.ownPresence === null) return [];
+              return [{ eventId, ...db.ownPresence, updatedAt: db.ownPresence.updated_at, ...db.ownAuthor }];
+            });
+            return { results } as { results: T[] };
+          }
+          if (sql.includes("FROM event_presences ep") && sql.includes("json_each")) {
             const eventIds = JSON.parse(String(call.binds[0])) as number[];
             const results = eventIds.flatMap((eventId) => {
               if (eventId !== 12) return [];
@@ -140,6 +166,10 @@ function createFakeDb(): FakeDb {
                   status: db.otherPresence.status,
                   comment: db.otherPresence.comment,
                   updatedAt: db.otherPresence.updated_at,
+                  updatedBy: null,
+                  updaterRole: null,
+                  updaterFirstName: null,
+                  updaterRelation: null,
                 },
               ];
             });
@@ -237,7 +267,17 @@ describe("handleMusicianPresenceApi", () => {
       currentUserId: number;
       events: Array<{
         id: number;
-        response: { status: string; comment: string | null; updated_at: string | null };
+        response: {
+          status: string;
+          comment: string | null;
+          updated_at: string | null;
+          answeredBy: {
+            name: string | null;
+            relation: string | null;
+            byAssociation: boolean;
+            byYou: boolean;
+          } | null;
+        };
         roster: Array<Record<string, unknown>>;
         counts: Record<string, number>;
       }>;
@@ -263,7 +303,8 @@ describe("handleMusicianPresenceApi", () => {
       "roster",
       "counts",
     ]);
-    expect(Object.keys(event.response)).toEqual(["status", "comment", "updated_at"]);
+    expect(Object.keys(event.response)).toEqual(["status", "comment", "updated_at", "answeredBy"]);
+    expect(event.response.answeredBy).toBeNull();
     expect(Object.keys(event.roster[0] ?? {})).toEqual([
       "userId",
       "firstName",
@@ -282,10 +323,16 @@ describe("handleMusicianPresenceApi", () => {
     for (const entry of body.events[0]?.roster ?? []) {
       expect(Object.keys(entry as object)).not.toContain("comment");
     }
-    const answers = fakeDb.calls.find((call) => call.sql.includes("json_each"));
+    const answers = fakeDb.calls.find(
+      (call) => call.sql.includes("json_each") && !call.sql.includes("WHERE ep.user_id = ?")
+    );
     expect(answers?.binds).toEqual([JSON.stringify([12])]);
-    expect(answers?.sql).toContain("WHERE event_id IN (SELECT value FROM json_each(?)");
+    expect(answers?.sql).toContain("WHERE ep.event_id IN (SELECT value FROM json_each(?)");
     expect(answers?.sql).toContain("WHERE type = 'integer'");
+    expect(answers?.sql).not.toContain("LEFT JOIN users updater");
+    const ownAnswerQuery = fakeDb.calls.find((call) => call.sql.includes("WHERE ep.user_id = ?"));
+    expect(ownAnswerQuery?.binds).toEqual([caller.id, JSON.stringify([12])]);
+    expect(ownAnswerQuery?.sql).toContain("LEFT JOIN users updater");
     expect(
       fakeDb.calls.filter((call) => call.sql.includes("FROM event_presences WHERE"))
     ).toHaveLength(0);
@@ -293,6 +340,148 @@ describe("handleMusicianPresenceApi", () => {
       fakeDb.calls.find((call) => call.sql === MUSICIAN_PRESENCE_MEMBER_QUERY)?.sql
     ).not.toContain("comment");
     expect(MUSICIAN_PRESENCE_MEMBER_QUERY).toContain("AND u.role = 'MUSICIAN'");
+  });
+
+  it("indique le prénom et la relation du responsable ayant répondu", async () => {
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
+    fakeDb.ownAuthor = {
+      updatedBy: 21,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Aurélie",
+      updaterRelation: "mère",
+    };
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      events: Array<{ response: { answeredBy: unknown } }>;
+    };
+
+    expect(body.events[0]?.response.answeredBy).toEqual({
+      name: "Aurélie",
+      relation: "mère",
+      byAssociation: false,
+      byYou: false,
+    });
+  });
+
+  it("n'affiche pas le nom d'un administrateur dans le portail musicien", async () => {
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
+    fakeDb.ownAuthor = {
+      updatedBy: 1,
+      updaterRole: "ADMIN",
+      updaterFirstName: "Mario",
+      updaterRelation: null,
+    };
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      events: Array<{ response: { answeredBy: unknown } }>;
+    };
+
+    expect(body.events[0]?.response.answeredBy).toEqual({
+      name: null,
+      relation: null,
+      byAssociation: true,
+      byYou: false,
+    });
+  });
+
+  it("conserve le prénom du responsable mais retire la relation si le lien n'existe plus", async () => {
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
+    fakeDb.ownAuthor = {
+      updatedBy: 21,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Aurélie",
+      updaterRelation: null,
+    };
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      events: Array<{ response: { answeredBy: unknown } }>;
+    };
+
+    expect(body.events[0]?.response.answeredBy).toEqual({
+      name: "Aurélie",
+      relation: null,
+      byAssociation: false,
+      byYou: false,
+    });
+  });
+
+  it("marque votre propre réponse comme telle uniquement en délégation", async () => {
+    const child = { ...caller, id: 8, kind: "managed" as const };
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: child,
+      delegated: true,
+      profiles: [],
+    });
+    fakeDb.ownAuthor = {
+      updatedBy: caller.id,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Paul",
+      updaterRelation: null,
+    };
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      events: Array<{ response: { answeredBy: unknown } }>;
+    };
+
+    expect(body.events[0]?.response.answeredBy).toEqual({
+      name: "Paul",
+      relation: null,
+      byAssociation: false,
+      byYou: true,
+    });
+  });
+
+  it("ne montre aucune attribution quand le musicien a répondu lui-même en délégation", async () => {
+    const child = { ...caller, id: 8, kind: "managed" as const };
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: caller,
+      effective: child,
+      delegated: true,
+      profiles: [],
+    });
+    fakeDb.ownAuthor = {
+      updatedBy: child.id,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Léa",
+      updaterRelation: null,
+    };
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      events: Array<{ response: { answeredBy: unknown } }>;
+    };
+
+    expect(body.events[0]?.response.answeredBy).toBeNull();
   });
 
   it("inclut les événements passés des douze derniers mois avec includePast=1", async () => {
@@ -339,8 +528,8 @@ describe("handleMusicianPresenceApi", () => {
       return db.calls.length;
     };
 
-    expect(await queryCountFor(3)).toBe(3);
-    expect(await queryCountFor(6)).toBe(3);
+    expect(await queryCountFor(3)).toBe(4);
+    expect(await queryCountFor(6)).toBe(4);
   });
 
   it("rejette la valeur de statut peut-être", async () => {

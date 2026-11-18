@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IdeaWithLikes } from "@/db/types";
 import { IdeaCard } from "../IdeaCard";
+import { IdeaResponseDialog } from "../IdeaResponseDialog";
 import { MusicianIdeeClient } from "../MusicianIdee";
 import { MyIdeasTab } from "../MyIdeasTab";
 import { LEA, SELF, withSession } from "./session-fixtures";
@@ -107,7 +108,7 @@ describe("Idées en délégation", () => {
     expect(screen.getByRole("button", { name: /Soumettre une idée/ })).toBeDisabled();
     expect(await screen.findByRole("button", { name: "J'aime" })).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: /Mes idées/ }));
+    await user.click(screen.getByRole("button", { name: "Idées de Léa" }));
     expect(await screen.findByRole("button", { name: "Modifier l'idée" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Supprimer l'idée" })).toBeDisabled();
 
@@ -125,5 +126,24 @@ describe("Idées en délégation", () => {
     expect(await screen.findByRole("button", { name: "J'aime" })).toBeEnabled();
     expect(screen.getByRole("button", { name: /Soumettre une idée/ })).toBeEnabled();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("adapte le titre de la réponse du bureau en délégation et garde le texte à soi", () => {
+    const idea = createIdea({ admin_notes: "Nous allons en discuter." });
+    const { rerender } = render(
+      withSession(
+        { profiles: [SELF, LEA], userId: LEA.userId, delegated: true },
+        <IdeaResponseDialog idea={idea} open onOpenChange={vi.fn()} />
+      )
+    );
+    expect(screen.getByText("Idée de Léa")).toBeInTheDocument();
+
+    rerender(
+      withSession(
+        { profiles: [SELF, LEA] },
+        <IdeaResponseDialog idea={idea} open onOpenChange={vi.fn()} />
+      )
+    );
+    expect(screen.getByText("Votre idée")).toBeInTheDocument();
   });
 });

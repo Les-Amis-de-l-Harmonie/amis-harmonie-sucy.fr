@@ -55,6 +55,12 @@ interface FakeDbFixture {
     status: "present" | "absent";
     comment: string | null;
     statusChangedAt: string | null;
+    updatedAt: string | null;
+    updatedBy: number | null;
+    updaterRole: "ADMIN" | "SUPER_ADMIN" | "MUSICIAN" | null;
+    updaterFirstName: string | null;
+    updaterLastName: string | null;
+    updaterRelation: string | null;
   }>;
 }
 
@@ -155,6 +161,15 @@ function applySqlDispatchingDb(fixture: FakeDbFixture): FakeDb {
               status: status as "present" | "absent",
               comment: (comment as string | null) ?? existingAnswer?.comment ?? null,
               statusChangedAt: "2026-09-03 10:00:00",
+              updatedAt: "2026-09-03 10:05:00",
+              updatedBy:
+                existingAnswer && existingAnswer.status === status
+                  ? existingAnswer.updatedBy
+                  : (values[4] as number),
+              updaterRole: "ADMIN",
+              updaterFirstName: null,
+              updaterLastName: null,
+              updaterRelation: null,
             },
           ];
         });
@@ -173,7 +188,7 @@ function applySqlDispatchingDb(fixture: FakeDbFixture): FakeDb {
         };
         return readback;
       }
-      if (sql.includes("SELECT event_id AS eventId, user_id AS userId, status, comment")) {
+      if (sql.includes("FROM event_presences ep") && sql.includes("json_each")) {
         return trackedStatementFor(null, currentAnswers);
       }
       throw new Error(`Unexpected SQL: ${sql}`);
@@ -286,6 +301,12 @@ const fixture: FakeDbFixture = {
       status: "present",
       comment: "Présent confirmé",
       statusChangedAt: "2026-09-01 14:30:00",
+      updatedAt: "2026-09-01 14:32:00",
+      updatedBy: 1,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Alice",
+      updaterLastName: "Martin",
+      updaterRelation: null,
     },
     {
       eventId: event.id,
@@ -293,6 +314,12 @@ const fixture: FakeDbFixture = {
       status: "absent",
       comment: "Blessure au poignet",
       statusChangedAt: "2026-09-02 10:00:00",
+      updatedAt: "2026-09-02 10:05:00",
+      updatedBy: 10,
+      updaterRole: "MUSICIAN",
+      updaterFirstName: "Aurélie",
+      updaterLastName: "Parent",
+      updaterRelation: "mère",
     },
     {
       eventId: 43,
@@ -300,6 +327,12 @@ const fixture: FakeDbFixture = {
       status: "absent",
       comment: null,
       statusChangedAt: "2026-09-06 14:30:00",
+      updatedAt: "2026-09-06 14:35:00",
+      updatedBy: 99,
+      updaterRole: "ADMIN",
+      updaterFirstName: "Mario",
+      updaterLastName: "Administrateur",
+      updaterRelation: null,
     },
     {
       eventId: 43,
@@ -307,6 +340,12 @@ const fixture: FakeDbFixture = {
       status: "present",
       comment: "Présent",
       statusChangedAt: "2026-09-06 14:30:00",
+      updatedAt: "2026-09-06 14:35:00",
+      updatedBy: null,
+      updaterRole: null,
+      updaterFirstName: null,
+      updaterLastName: null,
+      updaterRelation: null,
     },
     {
       eventId: 44,
@@ -314,6 +353,12 @@ const fixture: FakeDbFixture = {
       status: "present",
       comment: "Réponse tardive",
       statusChangedAt: "2026-08-01 14:30:00",
+      updatedAt: "2026-08-01 14:35:00",
+      updatedBy: 777,
+      updaterRole: null,
+      updaterFirstName: null,
+      updaterLastName: null,
+      updaterRelation: null,
     },
   ],
 };
@@ -610,6 +655,13 @@ describe("handleAdminPresenceApi", () => {
             status: "present" | "absent" | null;
             comment: string | null;
             changedAfterDeadline: boolean;
+            answeredBy: {
+              name: string | null;
+              relation: string | null;
+              isAdmin: boolean;
+              kind: "parent" | "admin" | "deleted" | "noProfile";
+            } | null;
+            answeredAt: string | null;
           }
         >;
       }>;
@@ -622,16 +674,62 @@ describe("handleAdminPresenceApi", () => {
     expect(data.members.find((member) => member.userId === 2)?.primaryInstrument).toBe("Trombone");
     expect(data.members.find((member) => member.userId === 3)?.primaryInstrument).toBeNull();
     expect(data.members.find((member) => member.userId === 1)?.answers).toEqual({
-      "42": { status: "present", comment: "Présent confirmé", changedAfterDeadline: false },
-      "43": { status: "absent", comment: null, changedAfterDeadline: false },
+      "42": {
+        status: "present",
+        comment: "Présent confirmé",
+        changedAfterDeadline: false,
+        answeredBy: null,
+        answeredAt: "2026-09-01 14:32:00",
+      },
+      "43": {
+        status: "absent",
+        comment: null,
+        changedAfterDeadline: false,
+        answeredBy: {
+          name: "Mario Administrateur",
+          relation: null,
+          isAdmin: true,
+          kind: "admin",
+        },
+        answeredAt: "2026-09-06 14:35:00",
+      },
     });
     expect(data.members.find((member) => member.userId === 2)?.answers).toEqual({
-      "42": { status: "absent", comment: "Blessure au poignet", changedAfterDeadline: true },
-      "43": { status: "present", comment: "Présent", changedAfterDeadline: false },
+      "42": {
+        status: "absent",
+        comment: "Blessure au poignet",
+        changedAfterDeadline: true,
+        answeredBy: {
+          name: "Aurélie Parent",
+          relation: "mère",
+          isAdmin: false,
+          kind: "parent",
+        },
+        answeredAt: "2026-09-02 10:05:00",
+      },
+      "43": {
+        status: "present",
+        comment: "Présent",
+        changedAfterDeadline: false,
+        answeredBy: null,
+        answeredAt: "2026-09-06 14:35:00",
+      },
     });
     expect(data.members.find((member) => member.userId === 3)?.answers).toEqual({
-      "42": { status: null, comment: null, changedAfterDeadline: false },
-      "43": { status: null, comment: null, changedAfterDeadline: false },
+      "42": {
+        status: null,
+        comment: null,
+        changedAfterDeadline: false,
+        answeredBy: null,
+        answeredAt: null,
+      },
+      "43": {
+        status: null,
+        comment: null,
+        changedAfterDeadline: false,
+        answeredBy: null,
+        answeredAt: null,
+      },
     });
 
     const memberQuery = db.calls.find((call) => call.sql === PRESENCE_MEMBER_QUERY);
@@ -653,8 +751,20 @@ describe("handleAdminPresenceApi", () => {
     const pastResponse = await handleAdminPresenceApi(
       new Request("https://test.local/api/admin/presence?grid=1&includePast=1")
     );
-    const body = (await pastResponse.json()) as { events: Array<{ id: number }> };
+    const body = (await pastResponse.json()) as {
+      events: Array<{ id: number }>;
+      members: Array<{
+        userId: number;
+        answers: Record<string, { answeredBy: { name: string | null; kind: string } | null }>;
+      }>;
+    };
     expect(body.events.map((item) => item.id)).toEqual([42, 43, 44]);
+    expect(body.members.find((member) => member.userId === 2)?.answers["44"]?.answeredBy).toEqual({
+      name: null,
+      relation: null,
+      isAdmin: false,
+      kind: "deleted",
+    });
     const eventQuery = db.calls.find((call) => call.sql.includes("-12 months"));
     expect(eventQuery?.sql).toContain("date >= date('now', '-12 months')");
   });
@@ -668,9 +778,9 @@ describe("handleAdminPresenceApi", () => {
     );
 
     const answerQuery = db.calls.find((call) =>
-      call.sql.includes("SELECT event_id AS eventId, user_id AS userId, status, comment")
+      call.sql.includes("FROM event_presences ep") && call.sql.includes("json_each")
     );
-    expect(answerQuery?.sql).toContain("WHERE event_id IN (SELECT value FROM json_each(?)");
+    expect(answerQuery?.sql).toContain("WHERE ep.event_id IN (SELECT value FROM json_each(?)");
     expect(answerQuery?.sql).toContain("WHERE type = 'integer'");
     expect(answerQuery?.binds).toHaveLength(1);
     expect(answerQuery?.binds[0]).toBe(JSON.stringify([42, 43, 44]));

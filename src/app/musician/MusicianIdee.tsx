@@ -15,12 +15,14 @@ import { PublicWallTab } from "./PublicWallTab";
 import type { IdeaFilterCategory, IdeaSortOption } from "./idea-filters";
 import { delegatedIdeasMessage } from "./idea-delegation";
 import { MusicianChoiceGate } from "./ChooseMusicianState";
+import { useActingLabels } from "./acting-labels";
 import { useMusicianSession } from "./MusicianSession";
 
 type IdeaTab = "my-ideas" | "public-wall";
 
 function MusicianIdeeContent() {
   const { delegated, effective } = useMusicianSession();
+  const labels = useActingLabels();
   const actingForName = effective?.firstName ?? null;
   const [myIdeas, setMyIdeas] = useState<IdeaWithLikes[]>([]);
   const [publicIdeas, setPublicIdeas] = useState<IdeaWithLikes[]>([]);
@@ -181,8 +183,9 @@ function MusicianIdeeContent() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Boîte à idée</h1>
           <p className="mt-1 text-muted-foreground">
-            Vous avez une idée pour faire évoluer l'association ou enrichir la vie de l'harmonie ?
-            Partagez-la avec nous !
+            {delegated
+              ? "Les idées des musiciens pour faire évoluer l'association et enrichir la vie de l'harmonie."
+              : "Vous avez une idée pour faire évoluer l'association ou enrichir la vie de l'harmonie ? Partagez-la avec nous !"}
           </p>
         </div>
         <Button type="button" onClick={openComposer} disabled={delegated} className="gap-2">
@@ -250,7 +253,7 @@ function MusicianIdeeContent() {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          Mes idées
+          {labels.myIdeasTab}
         </button>
       </div>
 
@@ -267,6 +270,7 @@ function MusicianIdeeContent() {
           }}
           onViewResponse={openResponse}
           readOnly={delegated}
+          actingForName={actingForName}
         />
       ) : (
         <PublicWallTab
@@ -297,6 +301,7 @@ function MusicianIdeeContent() {
             setLikersDialogOpen(true);
           }}
           readOnly={delegated}
+          actingForName={actingForName}
         />
       )}
 

@@ -83,7 +83,10 @@ VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
 ON CONFLICT(event_id, user_id) DO UPDATE SET
   status = excluded.status,
   comment = COALESCE(excluded.comment, event_presences.comment),
-  updated_by = excluded.updated_by,
+  updated_by = CASE
+    WHEN excluded.status <> event_presences.status THEN excluded.updated_by
+    ELSE event_presences.updated_by
+  END,
   updated_at = datetime('now'),
   status_changed_at = CASE
     WHEN excluded.status <> event_presences.status THEN datetime('now')

@@ -28,6 +28,7 @@ import { InstrumentPracticeSection } from "./InstrumentPracticeSection";
 import { EmergencyContactSection } from "./EmergencyContactSection";
 import { ImageConsentSection } from "./ImageConsentSection";
 import { GuardianCoordinates } from "./GuardianCoordinates";
+import { useActingLabels } from "./acting-labels";
 import { useMusicianSession } from "./MusicianSession";
 
 interface MusicianProfileClientProps {
@@ -53,8 +54,7 @@ function calculateAge(dateOfBirth: string | null | undefined): number | null {
  * section dans son propre fichier.
  */
 function MusicianProfileContent() {
-  const { delegated, effective } = useMusicianSession();
-  const actingForName = delegated ? effective?.firstName : null;
+  const labels = useActingLabels();
   const [profile, setProfile] = useState<ProfileWithInstruments>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -217,12 +217,10 @@ function MusicianProfileContent() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold text-foreground sm:text-2xl">
-              {actingForName ? `Profil de ${actingForName}` : "Mon Profil"}
+              {labels.pageProfileTitle}
             </h1>
             <p className="hidden text-sm text-muted-foreground sm:block">
-              {actingForName
-                ? `Gérez les informations de ${actingForName}`
-                : "Gérez vos informations personnelles"}
+              {labels.pageProfileSubtitle}
             </p>
           </div>
           {saveButton}
@@ -306,12 +304,9 @@ function MusicianProfileContent() {
           <CardHeader>
             <CardTitle>Photo de profil</CardTitle>
             <CardDescription>
-              Cliquez sur l&apos;image pour changer votre photo.
+              {labels.profilePhotoHint}
               <br />
-              <span className="text-xs text-muted-foreground">
-                Votre photo pourra être affichée sur le site internet pour le trombinoscope des
-                musiciens.
-              </span>
+              <span className="text-xs text-muted-foreground">{labels.profilePhotoPublic}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>

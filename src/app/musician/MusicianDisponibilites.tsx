@@ -9,6 +9,7 @@ import { EmptyState } from "@/app/components/ui/empty-state";
 import type { PresenceStatus } from "@/db/types";
 import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { PresenceCard } from "./PresenceCard";
 import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
@@ -25,6 +26,7 @@ function focusResponseCard(card: HTMLDivElement | null) {
 }
 
 function MusicianDisponibilitesContent() {
+  const labels = useActingLabels();
   const [events, setEvents] = useState<PresenceEvent[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,13 +150,13 @@ function MusicianDisponibilitesContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Mes prestations</h1>
+          <h1 className="text-3xl font-bold text-foreground">{labels.pageTitlePrestations}</h1>
           <p className="mt-1 text-muted-foreground">
             {events && events.length > 0
               ? unansweredCount > 0
-                ? `${unansweredCount} prestation${unansweredCount > 1 ? "s" : ""} en attente de votre réponse`
-                : "Vous avez répondu pour toutes les prestations à venir"
-              : "Indiquez votre présence pour chaque prestation"}
+                ? labels.pagePendingCount(unansweredCount)
+                : labels.pageAllAnswered
+              : labels.pageIndicateEach}
           </p>
         </div>
 
@@ -207,9 +209,7 @@ function MusicianDisponibilitesContent() {
           <EmptyState
             icon={<Calendar className="h-10 w-10" />}
             title={
-              showPast
-                ? "Aucune prestation sur les 12 derniers mois."
-                : "Aucune prestation ne nécessite votre réponse pour le moment."
+              showPast ? "Aucune prestation sur les 12 derniers mois." : labels.pageNothingToAnswer
             }
             description="Revenez ici dès qu'une nouvelle date sera annoncée."
           />
@@ -245,7 +245,7 @@ function MusicianDisponibilitesContent() {
                 ) : (
                   <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3.5 text-sm font-medium text-success dark:border-success/40 dark:bg-success/20">
                     <Check className="h-5 w-5 shrink-0" />
-                    Vous avez répondu à toutes les prestations à venir.
+                    {labels.pageAllAnsweredBanner}
                   </div>
                 )}
 

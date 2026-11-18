@@ -8,6 +8,7 @@ import {
 } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { useActingLabels } from "./acting-labels";
 import { StatusPill } from "./StatusPill";
 import { formatDateFrench } from "@/lib/dates";
 import type { UpcomingEvent } from "./musician-types";
@@ -37,6 +38,7 @@ export function PrestationsModule({
   planningUrgent,
   urgentEvent,
 }: PrestationsModuleProps) {
+  const labels = useActingLabels();
   if (loading) {
     return (
       <Card className="min-h-[168px]" aria-hidden="true">
@@ -70,9 +72,7 @@ export function PrestationsModule({
         <CardDescription>
           {/* Ni « sortie » (le mot désigne déjà la sortie annuelle, module voisin)
               ni « orchestre » : l'ensemble est une harmonie. */}
-          {isUrgent
-            ? "Une réponse est attendue de votre part."
-            : "Vos prochaines dates avec l'harmonie."}
+          {isUrgent ? labels.prestationsUrgent : labels.prestationsNext}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -114,7 +114,7 @@ export function PrestationsModule({
               <div className="mt-3 flex justify-end">
                 <a href="/musician/disponibilites">
                   <Button variant="outline" size="sm">
-                    Indiquer mes présences
+                    {labels.ctaIndicatePresences}
                     <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
                   </Button>
                 </a>
@@ -128,7 +128,7 @@ export function PrestationsModule({
             </p>
             <a href="/musician/disponibilites" className="shrink-0">
               <Button variant="outline" size="sm">
-                Voir mes prestations
+                {labels.ctaSeePrestations}
                 <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
               </Button>
             </a>

@@ -64,6 +64,13 @@ describe("handleAdminPresenceApi", () => {
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE(event_id, user_id)
       );
+      CREATE TABLE guardian_links (
+        id INTEGER PRIMARY KEY,
+        guardian_user_id INTEGER NOT NULL,
+        child_user_id INTEGER NOT NULL,
+        relation TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
       INSERT INTO users (id, role, is_active) VALUES (1, 'ADMIN', 1), (2, 'MUSICIAN', 1);
       INSERT INTO events (id, title, date, presence_required) VALUES (42, 'Concert', '2099-01-01', 1);
       INSERT INTO musician_profiles (user_id, first_name, last_name) VALUES (2, 'Musicien', 'Test');
@@ -91,6 +98,100 @@ describe("handleAdminPresenceApi", () => {
     expect(
       database.prepare("SELECT user_id, updated_by FROM event_presences WHERE event_id = 42").get()
     ).toEqual({ user_id: 2, updated_by: 1 });
+  });
+
+  it("joint l'auteur d'une réponse parentale et sa relation encore active", async () => {
+    database.exec(`
+      INSERT INTO users (id, role, kind, is_active) VALUES (3, 'MUSICIAN', 'guardian', 1);
+      INSERT INTO musician_profiles (user_id, first_name, last_name)
+        VALUES (3, 'Aurélie', 'Parent');
+      INSERT INTO guardian_links (guardian_user_id, child_user_id, relation)
+        VALUES (3, 2, 'mère');
+      INSERT INTO event_presences (event_id, user_id, status, updated_by)
+        VALUES (42, 2, 'present', 3);
+    `);
+    vi.mocked(verifySession).mockResolvedValue(admin);
+
+    const response = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence?grid=1")
+    );
+    const body = (await response.json()) as {
+      members: Array<{
+        userId: number;
+        answers: Record<
+          string,
+          {
+            answeredBy: {
+              name: string | null;
+              relation: string | null;
+              isAdmin: boolean;
+              kind: string;
+            } | null;
+          }
+        >;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.members.find((member) => member.userId === 2)?.answers["42"]?.answeredBy).toEqual({
+      name: "Aurélie Parent",
+      relation: "mère",
+      isAdmin: false,
+      kind: "parent",
+    });
+  });
+
+  it("utilise le nom de repli pour un administrateur sans profil et un compte supprimé", async () => {
+    database.exec(`
+      INSERT INTO event_presences (
+        event_id, user_id, status, updated_by, status_changed_at, updated_at
+      ) VALUES (42, 2, 'present', 1, '2026-09-01 10:00:00', '2026-09-02 11:00:00');
+    `);
+    vi.mocked(verifySession).mockResolvedValue(admin);
+
+    const adminResponse = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence?grid=1")
+    );
+    const adminBody = (await adminResponse.json()) as {
+      members: Array<{
+        userId: number;
+        answers: Record<
+          string,
+          { answeredBy: { name: string | null; kind: string } | null; answeredAt: string | null }
+        >;
+      }>;
+    };
+    expect(adminBody.members.find((member) => member.userId === 2)?.answers["42"]?.answeredBy).toEqual({
+      name: null,
+      relation: null,
+      isAdmin: true,
+      kind: "noProfile",
+    });
+    expect(adminBody.members.find((member) => member.userId === 2)?.answers["42"]?.answeredAt).toBe(
+      database
+        .prepare("SELECT updated_at FROM event_presences WHERE event_id = 42")
+        .get()
+        ?.updated_at
+    );
+
+    database.prepare("UPDATE event_presences SET updated_by = 999 WHERE event_id = 42").run();
+    const deletedResponse = await handleAdminPresenceApi(
+      new Request("https://test.local/api/admin/presence?grid=1")
+    );
+    const deletedBody = (await deletedResponse.json()) as {
+      members: Array<{
+        userId: number;
+        answers: Record<string, { answeredBy: { name: string | null; kind: string } | null }>;
+      }>;
+    };
+    expect(
+      deletedBody.members.find((member) => member.userId === 2)?.answers["42"]?.answeredBy
+    ).toEqual({
+      name: null,
+      relation: null,
+      isAdmin: false,
+      kind: "deleted",
+    });
   });
 
   it("renvoie 401 JSON quand la session n'est pas administrateur", async () => {

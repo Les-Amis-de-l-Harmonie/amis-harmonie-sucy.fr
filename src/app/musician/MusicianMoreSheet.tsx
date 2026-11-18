@@ -10,8 +10,10 @@ import {
   SheetTrigger,
 } from "@/app/components/ui/sheet";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { useActingLabels } from "@/app/musician/acting-labels";
 import { MusicianUserSummary } from "@/app/musician/MusicianUserSummary";
 import {
+  getNavItemLabel,
   isNavItemActive,
   MUSICIAN_OVERFLOW_ITEMS,
 } from "@/app/musician/musician-nav-items";
@@ -41,6 +43,7 @@ export function MusicianMoreSheet({
   avatar,
 }: MusicianMoreSheetProps) {
   const [open, setOpen] = useState(false);
+  const labels = useActingLabels();
   const tabActive = MUSICIAN_OVERFLOW_ITEMS.some((item) => isNavItemActive(item, pathname));
   const internalOverflowItems = MUSICIAN_OVERFLOW_ITEMS.filter((item) => !item.external);
   const externalOverflowItems = MUSICIAN_OVERFLOW_ITEMS.filter((item) => item.external);
@@ -91,7 +94,7 @@ export function MusicianMoreSheet({
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                {item.label}
+                {getNavItemLabel(item, labels)}
               </a>
             );
           })}

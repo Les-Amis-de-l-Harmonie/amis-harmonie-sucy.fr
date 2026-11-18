@@ -249,7 +249,9 @@ describe("UserGuardianLinks", () => {
       const { onLinksChanged } = renderLinks();
 
       await user.click(await screen.findByRole("button", { name: "Retirer Marie Dupont" }));
-      await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Retirer" }));
+      await user.click(
+        within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Retirer" })
+      );
 
       expect(await screen.findByRole("alert")).toHaveTextContent("Session expirée.");
       expect(api.writes()).toHaveLength(1);

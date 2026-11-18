@@ -271,6 +271,10 @@ refused by `verifySession`). `kind` has no SQL CHECK on purpose; validate with
 Portal UI reads the acting state from `useMusicianSession()` (`src/app/musician/MusicianSession.tsx`,
 provided by `MusicianLayout`; it throws outside the provider). A guardian on « Moi » must not
 call the musician data APIs (they return 403): pages render `ChooseMusicianState` instead.
+When delegated, portal wording switches to the third person through `useActingLabels()`
+(`src/app/musician/acting-labels.ts`); add new user-facing strings there rather than
+hard-coding « mon / votre ». Presence answers expose `answeredBy` (never an admin's name on
+the portal); an unchanged status re-saved by an admin keeps the original `updated_by`.
 
 Auth failures: redirect for pages, `401` JSON for APIs.
 
@@ -388,7 +392,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **58 test files on disk, 57 executed, 437 tests passing** —
+Current baseline: **65 test files on disk, 64 executed, 510 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

@@ -81,6 +81,7 @@ import {
   AdminInfoSettingsPage,
   AdminInsurancePage,
   AdminPresencePage,
+  AdminFamiliesPage,
   AdminReservationsPage,
   AdminReservationsPrintPage,
   AdminReservationsCheckinPage,
@@ -494,6 +495,12 @@ const app = defineApp([
       const auth = await adminAuthMiddleware({ request });
       if (auth instanceof Response) return auth;
       return <AdminPresencePage email={auth.email} role={auth.role} />;
+    }),
+
+    route("/admin/familles", async ({ request }: { request: Request }) => {
+      const auth = await adminAuthMiddleware({ request });
+      if (auth instanceof Response) return auth;
+      return <AdminFamiliesPage email={auth.email} role={auth.role} />;
     }),
 
     route("/admin/reservations", async ({ request }: { request: Request }) => {

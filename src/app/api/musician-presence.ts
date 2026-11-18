@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { resolveMusicianIdentity } from "./auth";
+import { isAdmin, type UserRole } from "@/db/types";
 import { logger } from "@/lib/logger";
 import {
   MUSICIAN_PRESENCE_MEMBER_QUERY,
@@ -19,9 +20,14 @@ interface PresenceEventRow {
 }
 
 interface OwnPresenceRow {
+  eventId: number;
   status: "present" | "absent";
   comment: string | null;
   updated_at: string;
+  updatedBy: number | null;
+  updaterRole: UserRole | null;
+  updaterFirstName: string | null;
+  updaterRelation: string | null;
 }
 
 interface PresenceAnswerRow {
@@ -30,6 +36,17 @@ interface PresenceAnswerRow {
   status: "present" | "absent";
   comment: string | null;
   updatedAt: string;
+}
+
+interface OwnPresenceAnswerRow {
+  eventId: number;
+  status: "present" | "absent";
+  comment: string | null;
+  updatedAt: string;
+  updatedBy: number | null;
+  updaterRole: UserRole | null;
+  updaterFirstName: string | null;
+  updaterRelation: string | null;
 }
 
 interface PresenceRosterEntry {
@@ -45,6 +62,12 @@ interface PresenceResponse {
   status: "present" | "absent" | null;
   comment: string | null;
   updated_at: string | null;
+  answeredBy: {
+    name: string | null;
+    relation: string | null;
+    byAssociation: boolean;
+    byYou: boolean;
+  } | null;
 }
 
 interface MusicianPresenceEvent {
@@ -95,10 +118,21 @@ function isPresenceRequestBody(value: unknown): value is PresenceRequestBody {
 
 async function readPresenceEvent(
   event: PresenceEventRow,
-  userId: number
+  userId: number,
+  actorId: number,
+  delegated: boolean
 ): Promise<MusicianPresenceEvent> {
   const ownPresence = await env.DB.prepare(
-    "SELECT status, comment, updated_at FROM event_presences WHERE event_id = ? AND user_id = ?"
+    `SELECT ep.event_id AS eventId, ep.status, ep.comment, ep.updated_at,
+            ep.updated_by AS updatedBy,
+            updater.role AS updaterRole, updaterProfile.first_name AS updaterFirstName,
+            guardianLink.relation AS updaterRelation
+     FROM event_presences ep
+     LEFT JOIN users updater ON updater.id = ep.updated_by
+     LEFT JOIN musician_profiles updaterProfile ON updaterProfile.user_id = updater.id
+     LEFT JOIN guardian_links guardianLink
+       ON guardianLink.guardian_user_id = ep.updated_by AND guardianLink.child_user_id = ep.user_id
+     WHERE ep.event_id = ? AND ep.user_id = ?`
   )
     .bind(event.id, userId)
     .first<OwnPresenceRow>();
@@ -122,6 +156,7 @@ async function readPresenceEvent(
       status: ownPresence?.status ?? null,
       comment: ownPresence?.comment ?? null,
       updated_at: ownPresence?.updated_at ?? null,
+      answeredBy: ownPresence ? getAnsweredBy(ownPresence, userId, actorId, delegated) : null,
     },
     roster,
     counts: {
@@ -150,11 +185,13 @@ function indexPresenceAnswers(
 
 async function readPresenceEvents(
   events: PresenceEventRow[],
-  userId: number
+  userId: number,
+  actorId: number,
+  delegated: boolean
 ): Promise<MusicianPresenceEvent[]> {
-  // Le statut de la colonne jointe n'est pas utilisé ici : les réponses sont chargées en une
-  // seule requête groupée ci-dessous. L'identifiant lié est donc arbitraire et sans effet sur
-  // l'effectif, qui dépend uniquement des utilisateurs actifs et de leurs instruments.
+  // La colonne de statut jointe n'est pas utilisée pour construire l'effectif. Les réponses
+  // sont chargées à part ; les jointures d'auteur ne concernent que les réponses du profil actif.
+  // L'identifiant lié est donc arbitraire et sans effet sur l'effectif de référence.
   const memberRows = await env.DB.prepare(MUSICIAN_PRESENCE_MEMBER_QUERY)
     .bind(events[0]?.id ?? 0)
     .all<PresenceRow>();
@@ -164,18 +201,37 @@ async function readPresenceEvents(
 
   const eventIds = events.map((event) => event.id);
   let answerRows: PresenceAnswerRow[] = [];
+  let ownAnswerRows: OwnPresenceAnswerRow[] = [];
   if (eventIds.length > 0) {
     const answers = await env.DB.prepare(
-      `SELECT event_id AS eventId, user_id AS userId, status, comment,
-              updated_at AS updatedAt
-       FROM event_presences
-       WHERE event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+      `SELECT ep.event_id AS eventId, ep.user_id AS userId, ep.status, ep.comment,
+              ep.updated_at AS updatedAt
+       FROM event_presences ep
+       WHERE ep.event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
     )
       .bind(JSON.stringify(eventIds))
       .all<PresenceAnswerRow>();
     answerRows = answers.results || [];
+
+    const ownAnswers = await env.DB.prepare(
+      `SELECT ep.event_id AS eventId, ep.status, ep.comment, ep.updated_at AS updatedAt,
+              ep.updated_by AS updatedBy, updater.role AS updaterRole,
+              updaterProfile.first_name AS updaterFirstName,
+              guardianLink.relation AS updaterRelation
+       FROM event_presences ep
+       LEFT JOIN users updater ON updater.id = ep.updated_by
+       LEFT JOIN musician_profiles updaterProfile ON updaterProfile.user_id = updater.id
+       LEFT JOIN guardian_links guardianLink
+         ON guardianLink.guardian_user_id = ep.updated_by AND guardianLink.child_user_id = ep.user_id
+       WHERE ep.user_id = ?
+         AND ep.event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+    )
+      .bind(userId, JSON.stringify(eventIds))
+      .all<OwnPresenceAnswerRow>();
+    ownAnswerRows = ownAnswers.results || [];
   }
   const answersByEvent = indexPresenceAnswers(answerRows);
+  const ownAnswersByEvent = new Map(ownAnswerRows.map((answer) => [answer.eventId, answer]));
 
   return events.map((event) => {
     const eventAnswers = answersByEvent.get(event.id);
@@ -190,7 +246,7 @@ async function readPresenceEvents(
         status: answer?.status ?? null,
       };
     });
-    const ownPresence = eventAnswers?.get(userId);
+    const ownPresence = ownAnswersByEvent.get(event.id);
 
     return {
       ...event,
@@ -198,6 +254,7 @@ async function readPresenceEvents(
         status: ownPresence?.status ?? null,
         comment: ownPresence?.comment ?? null,
         updated_at: ownPresence?.updatedAt ?? null,
+        answeredBy: ownPresence ? getAnsweredBy(ownPresence, userId, actorId, delegated) : null,
       },
       roster,
       counts: {
@@ -210,7 +267,31 @@ async function readPresenceEvents(
   });
 }
 
-async function handleGet(request: Request, userId: number): Promise<Response> {
+function getAnsweredBy(
+  answer: Pick<
+    OwnPresenceAnswerRow,
+    "updatedBy" | "updaterRole" | "updaterFirstName" | "updaterRelation"
+  >,
+  userId: number,
+  actorId: number,
+  delegated: boolean
+): PresenceResponse["answeredBy"] {
+  if (answer.updatedBy === null || answer.updatedBy === userId) return null;
+  const byAssociation = answer.updaterRole !== null && isAdmin(answer.updaterRole);
+  return {
+    name: byAssociation ? null : answer.updaterFirstName,
+    relation: byAssociation ? null : answer.updaterRelation,
+    byAssociation,
+    byYou: delegated && answer.updatedBy === actorId,
+  };
+}
+
+async function handleGet(
+  request: Request,
+  userId: number,
+  actorId: number,
+  delegated: boolean
+): Promise<Response> {
   if (request.method !== "GET") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   }
@@ -224,7 +305,7 @@ async function handleGet(request: Request, userId: number): Promise<Response> {
      ORDER BY date ASC`
   ).all<PresenceEventRow>();
 
-  const eventStates = await readPresenceEvents(events.results || [], userId);
+  const eventStates = await readPresenceEvents(events.results || [], userId, actorId, delegated);
 
   // `currentUserId` évite à l'interface un second appel à /api/musician/profile
   // uniquement pour savoir qui est connecté : sans lui, un échec de cet appel ferait
@@ -233,7 +314,12 @@ async function handleGet(request: Request, userId: number): Promise<Response> {
   return jsonResponse({ currentUserId: userId, events: eventStates });
 }
 
-async function handlePost(request: Request, userId: number, actorId: number): Promise<Response> {
+async function handlePost(
+  request: Request,
+  userId: number,
+  actorId: number,
+  delegated: boolean
+): Promise<Response> {
   if (request.method !== "POST") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   }
@@ -288,7 +374,7 @@ async function handlePost(request: Request, userId: number, actorId: number): Pr
       .run();
   }
 
-  const updatedEvent = await readPresenceEvent(event, userId);
+  const updatedEvent = await readPresenceEvent(event, userId, actorId, delegated);
   return jsonResponse({ success: true, event: updatedEvent });
 }
 
@@ -301,8 +387,12 @@ export async function handleMusicianPresenceApi(request: Request): Promise<Respo
   }
 
   try {
-    if (request.method === "GET") return await handleGet(request, user.id);
-    if (request.method === "POST") return await handlePost(request, user.id, identity.actor.id);
+    if (request.method === "GET") {
+      return await handleGet(request, user.id, identity.actor.id, identity.delegated);
+    }
+    if (request.method === "POST") {
+      return await handlePost(request, user.id, identity.actor.id, identity.delegated);
+    }
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
   } catch (error) {
     logger.error("Erreur de l'API des présences musicien :", error);

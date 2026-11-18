@@ -23,6 +23,14 @@ interface LinkRow {
   isActive: number;
 }
 
+interface AllGuardianLinksRow {
+  linkId: number;
+  guardianUserId: number;
+  childUserId: number;
+  relation: string | null;
+  createdAt: string;
+}
+
 interface LinkInput {
   childUserId?: unknown;
   guardianUserId?: unknown;
@@ -189,6 +197,16 @@ async function getGuardians(userId: number): Promise<Response> {
       isActive: link.isActive === 1,
     })),
   });
+}
+
+async function getAllGuardianLinks(): Promise<Response> {
+  const links = await env.DB.prepare(
+    `SELECT id AS linkId, guardian_user_id AS guardianUserId, child_user_id AS childUserId,
+            relation, created_at AS createdAt
+     FROM guardian_links
+     ORDER BY guardian_user_id, child_user_id, id`
+  ).all<AllGuardianLinksRow>();
+  return json({ links: links.results ?? [] });
 }
 
 async function createGuardian(data: CreateGuardianInput, actorId: number): Promise<Response> {
@@ -385,7 +403,9 @@ export async function handleGuardiansApi(request: Request): Promise<Response> {
     const action = url.searchParams.get("action");
 
     if (request.method === "GET") {
-      const userId = parseId(url.searchParams.get("userId"));
+      const userIdParam = url.searchParams.get("userId");
+      if (userIdParam === null) return await getAllGuardianLinks();
+      const userId = parseId(userIdParam);
       if (userId === null)
         return json({ error: "L'identifiant du compte doit être un entier positif." }, 400);
       return await getGuardians(userId);

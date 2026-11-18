@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import type { Event } from "@/db/types";
+import type { Event, UserRole } from "@/db/types";
 import { isAdmin } from "@/db/types";
 import { verifySession } from "@/app/api/auth";
 import {
@@ -24,6 +24,12 @@ interface PresenceAnswerRow {
   status: "present" | "absent";
   comment: string | null;
   statusChangedAt: string | null;
+  updatedAt: string | null;
+  updatedBy: number | null;
+  updaterRole: UserRole | null;
+  updaterFirstName: string | null;
+  updaterLastName: string | null;
+  updaterRelation: string | null;
 }
 
 interface PersistedPresenceRow {
@@ -83,10 +89,17 @@ async function readGrid(request: Request): Promise<Response> {
   const answers = new Map<number, Map<number, PresenceAnswerRow>>();
   if (eventIds.length > 0) {
     const answerRows = await env.DB.prepare(
-      `SELECT event_id AS eventId, user_id AS userId, status, comment,
-              status_changed_at AS statusChangedAt
-       FROM event_presences
-       WHERE event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
+      `SELECT ep.event_id AS eventId, ep.user_id AS userId, ep.status, ep.comment,
+              ep.status_changed_at AS statusChangedAt, ep.updated_by AS updatedBy,
+              ep.updated_at AS updatedAt,
+              updater.role AS updaterRole, updaterProfile.first_name AS updaterFirstName,
+              updaterProfile.last_name AS updaterLastName, guardianLink.relation AS updaterRelation
+       FROM event_presences ep
+       LEFT JOIN users updater ON updater.id = ep.updated_by
+       LEFT JOIN musician_profiles updaterProfile ON updaterProfile.user_id = updater.id
+       LEFT JOIN guardian_links guardianLink
+         ON guardianLink.guardian_user_id = ep.updated_by AND guardianLink.child_user_id = ep.user_id
+       WHERE ep.event_id IN (SELECT value FROM json_each(?) WHERE type = 'integer')`
     )
       .bind(JSON.stringify(eventIds))
       .all<PresenceAnswerRow>();
@@ -110,6 +123,13 @@ async function readGrid(request: Request): Promise<Response> {
           status: "present" | "absent" | null;
           comment: string | null;
           changedAfterDeadline: boolean;
+          answeredBy: {
+            name: string | null;
+            relation: string | null;
+            isAdmin: boolean;
+            kind: "parent" | "admin" | "deleted" | "noProfile";
+          } | null;
+          answeredAt: string | null;
         }
       > = {};
       for (const event of eventRows) {
@@ -120,6 +140,8 @@ async function readGrid(request: Request): Promise<Response> {
           changedAfterDeadline: answer
             ? hasChangedAfterDeadline(answer.statusChangedAt, event.response_deadline)
             : false,
+          answeredBy: answer ? getAnsweredBy(answer, member.userId) : null,
+          answeredAt: answer?.updatedAt ?? null,
         };
       }
       return {
@@ -132,6 +154,39 @@ async function readGrid(request: Request): Promise<Response> {
       };
     }),
   });
+}
+
+function getAnsweredBy(
+  answer: PresenceAnswerRow,
+  userId: number
+): {
+  name: string | null;
+  relation: string | null;
+  isAdmin: boolean;
+  kind: "parent" | "admin" | "deleted" | "noProfile";
+} | null {
+  if (answer.updatedBy === null || answer.updatedBy === userId) return null;
+
+  const updaterIsAdmin = answer.updaterRole !== null && isAdmin(answer.updaterRole);
+  const profileName = [answer.updaterFirstName, answer.updaterLastName]
+    .map((part) => part?.trim() ?? "")
+    .filter((part) => part.length > 0)
+    .join(" ");
+  const kind =
+    answer.updaterRole === null
+      ? "deleted"
+      : !profileName
+        ? "noProfile"
+        : updaterIsAdmin
+          ? "admin"
+          : "parent";
+
+  return {
+    name: profileName || null,
+    relation: answer.updaterRelation,
+    isAdmin: updaterIsAdmin,
+    kind,
+  };
 }
 
 async function handlePost(request: Request, adminId: number): Promise<Response> {

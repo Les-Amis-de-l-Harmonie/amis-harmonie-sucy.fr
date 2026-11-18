@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { ChevronDown, Lock, X } from "lucide-react";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { PresenceCard, type PresenceCardProps } from "./PresenceCard";
 import { getCellVisual } from "./presence-matrix-helpers";
 import type { PresenceEvent } from "./musician-types";
@@ -26,6 +27,7 @@ export function PresenceResponses({
   onUpdate,
   onStatusChanged,
 }: PresenceResponsesProps) {
+  const labels = useActingLabels();
   const triggers = useRef(new Map<number, HTMLButtonElement>());
   const previousOpenId = useRef<number | null>(null);
 
@@ -43,7 +45,7 @@ export function PresenceResponses({
   return (
     <section aria-labelledby="my-responses-heading" className="space-y-3 md:hidden">
       <h2 id="my-responses-heading" className="text-lg font-semibold text-foreground">
-        Mes réponses
+        {labels.responsesHeading}
       </h2>
       <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
         {events.map((event) => {

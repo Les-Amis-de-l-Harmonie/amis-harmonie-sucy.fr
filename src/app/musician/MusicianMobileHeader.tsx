@@ -27,7 +27,7 @@ export function MusicianMobileHeader({ pathname }: MusicianMobileHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:hidden">
       <p className="truncate font-heading text-base font-bold text-foreground">
-        {current?.label ?? FALLBACK_TITLE}
+        {(delegated ? (current?.tabLabel ?? current?.label) : current?.label) ?? FALLBACK_TITLE}
       </p>
       {/* Rappel permanent (l'en-tête reste visible au défilement) : le bandeau
           complet est en haut de page et sort de l'écran dès qu'on descend. */}

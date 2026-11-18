@@ -11,6 +11,7 @@ import {
   MapPin,
   MessageSquare,
   Undo2,
+  UserRound,
   X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
@@ -18,8 +19,9 @@ import { Textarea } from "@/app/components/ui/textarea";
 import type { PresenceStatus } from "@/db/types";
 import { formatDateFrench, isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { useActingLabels } from "./acting-labels";
 import { getDeadlineTone } from "./presence-deadline";
-import type { PresenceEvent } from "./musician-types";
+import type { PresenceAnsweredBy, PresenceEvent } from "./musician-types";
 import { StatusPill } from "./StatusPill";
 
 export type { PresenceEvent, PresenceRosterEntry } from "./musician-types";
@@ -31,16 +33,28 @@ export interface PresenceCardProps {
   onStatusChanged: (eventId: number, status: PresenceStatus | null) => void;
 }
 
+/**
+ * « Réponse donnée par Aurélie (mère) », « … par Aurélie » sans lien de parenté,
+ * « … par l'association » pour un administrateur. `null` quand le musicien a
+ * répondu lui-même (ou que l'API ne renseigne pas l'auteur).
+ */
+export function formatAnsweredBy(answeredBy: PresenceAnsweredBy | null | undefined): string | null {
+  if (!answeredBy) return null;
+  if (answeredBy.byYou) return "Réponse donnée par vous";
+  if (answeredBy.byAssociation) return "Réponse donnée par l'association";
+  const name = answeredBy.name?.trim();
+  if (!name) return null;
+  const relation = answeredBy.relation?.trim();
+  return relation ? `Réponse donnée par ${name} (${relation})` : `Réponse donnée par ${name}`;
+}
+
 /** `null` représente l'action "effacer" ; `null` "tout court" (pas d'action en cours)
  * est représenté par `pendingAction === null`, d'où ce type dédié plutôt que de
  * réutiliser `PresenceStatus | null` pour les deux sens à la fois. */
 type PendingAction = "present" | "absent" | "clear";
 
-export function PresenceCard({
-  event,
-  onUpdate,
-  onStatusChanged,
-}: PresenceCardProps) {
+export function PresenceCard({ event, onUpdate, onStatusChanged }: PresenceCardProps) {
+  const labels = useActingLabels();
   const [comment, setComment] = useState(event.response.comment ?? "");
   const [commentOpen, setCommentOpen] = useState(false);
   const [confirmingClear, setConfirmingClear] = useState(false);
@@ -119,6 +133,7 @@ export function PresenceCard({
     [comment, event.id, onStatusChanged, onUpdate]
   );
 
+  const answeredByLine = answered ? formatAnsweredBy(event.response.answeredBy) : null;
   const commentDirty = comment.trim() !== (event.response.comment ?? "").trim();
 
   const statusActions = (
@@ -239,6 +254,13 @@ export function PresenceCard({
           <Clock className="h-3.5 w-3.5" />
           {deadlineInfo.label}
         </p>
+
+        {answeredByLine && (
+          <p className="mt-1 flex w-fit items-center gap-1.5 text-xs text-muted-foreground">
+            <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {answeredByLine}
+          </p>
+        )}
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col pt-0">
@@ -252,7 +274,7 @@ export function PresenceCard({
             {confirmingClear ? (
               <div className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2 text-xs text-warning dark:border-warning/40 dark:bg-warning/20 dark:text-warning">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span>Votre commentaire sera aussi supprimé.</span>
+                <span>{labels.clearCommentWarning}</span>
                 <div className="ml-auto flex items-center gap-3">
                   <button
                     type="button"
@@ -279,7 +301,7 @@ export function PresenceCard({
                 className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Undo2 className="h-3 w-3" aria-hidden="true" />
-                Effacer ma réponse
+                {labels.clearAnswer}
               </button>
             )}
           </div>
@@ -305,7 +327,7 @@ export function PresenceCard({
               className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground dark:hover:text-foreground"
             >
               <MessageSquare className="h-3.5 w-3.5" />
-              {event.response.comment ? "Modifier mon commentaire" : "Ajouter un commentaire"}
+              {event.response.comment ? labels.editComment : "Ajouter un commentaire"}
               <ChevronDown
                 className={cn("h-3 w-3 transition-transform", commentOpen && "rotate-180")}
               />
@@ -333,7 +355,7 @@ export function PresenceCard({
                     </button>
                   ) : (
                     <span className="text-[11px] text-muted-foreground">
-                      Envoyé avec votre réponse
+                      {labels.commentSentWithAnswer}
                     </span>
                   )}
                 </div>
