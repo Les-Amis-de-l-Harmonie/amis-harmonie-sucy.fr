@@ -2,9 +2,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MusicianDisponibilites } from "../MusicianDisponibilites";
-import { PresenceCard } from "../PresenceCard";
+import { PresenceDetail } from "../PresenceSheet";
 import type { PresenceAuthorization, PresenceEvent } from "../musician-types";
 import { GUARDIAN_SELF, LEA, SELF, withSession } from "./session-fixtures";
+
+// Le bouton principal d'une ligne commence par la date ; les boutons rapides, eux, par la réponse.
+const ROW_PROVINS = /^[A-Z][a-zé]{2}\. 20 juin/;
 
 const DETAILS = "Départ en car à 8 h. Prévoir un pique-nique.";
 
@@ -54,6 +57,8 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+const saver = { save: vi.fn(), pending: {}, errors: {} };
+
 function renderCard(
   event: PresenceEvent,
   session: Parameters<typeof withSession>[0] = parentSession
@@ -62,7 +67,7 @@ function renderCard(
   render(
     withSession(
       session,
-      <PresenceCard event={event} onUpdate={onUpdate} onStatusChanged={vi.fn()} />
+      <PresenceDetail event={event} currentUserId={null} onUpdate={onUpdate} saver={saver} />
     )
   );
   return { onUpdate };
@@ -72,7 +77,7 @@ function authorizationBlock() {
   return screen.getByRole("region", { name: "Autorisation parentale" });
 }
 
-describe("Autorisation parentale sur la carte de présence", () => {
+describe("Autorisation parentale dans la feuille de détail", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -104,7 +109,7 @@ describe("Autorisation parentale sur la carte de présence", () => {
     expect(within(block).queryByRole("button", { name: /Retirer/ })).not.toBeInTheDocument();
   });
 
-  it("parent : autoriser envoie la demande puis rafraîchit la carte", async () => {
+  it("parent : autoriser envoie la demande puis rafraîchit l'événement", async () => {
     const user = userEvent.setup();
     const granted = authorization({
       status: "authorized",
@@ -137,7 +142,13 @@ describe("Autorisation parentale sur la carte de présence", () => {
       createEvent(
         authorization({
           status: "authorized",
-          authorizedBy: { name: null, relation: null, byYou: true, byAssociation: false, paper: false },
+          authorizedBy: {
+            name: null,
+            relation: null,
+            byYou: true,
+            byAssociation: false,
+            paper: false,
+          },
           authorizedAt: "2026-11-12 09:30:00",
         })
       )
@@ -221,7 +232,13 @@ describe("Autorisation parentale sur la carte de présence", () => {
       createEvent(
         authorization({
           status: "authorized",
-          authorizedBy: { name: null, relation: null, byYou: false, byAssociation: true, paper: false },
+          authorizedBy: {
+            name: null,
+            relation: null,
+            byYou: false,
+            byAssociation: true,
+            paper: false,
+          },
           authorizedAt: "2026-11-12 09:30:00",
         })
       )
@@ -279,7 +296,7 @@ describe("Autorisation parentale sur la carte de présence", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("affiche l'erreur du serveur sans rafraîchir la carte", async () => {
+  it("affiche l'erreur du serveur sans rafraîchir l'événement", async () => {
     const user = userEvent.setup();
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: "Événement passé." }, 403));
     const { onUpdate } = renderCard(createEvent(authorization()));
@@ -346,21 +363,6 @@ describe("Page Prestations : autorisations à traiter", () => {
     vi.unstubAllGlobals();
   });
 
-  it("garde visible une sortie déjà répondue dont l'autorisation manque", async () => {
-    const event = createEvent(authorization(), {
-      response: { status: "present", comment: null, updated_at: "2026-11-01 10:00:00" },
-    });
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ currentUserId: LEA.userId, events: [event] })
-    );
-    render(withSession(parentSession, <MusicianDisponibilites />));
-
-    expect(
-      await screen.findByRole("region", { name: "Autorisation parentale" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("1 autorisation parentale à donner pour Léa")).toBeInTheDocument();
-  });
-
   const answeredPresent = {
     response: { status: "present" as const, comment: null, updated_at: "2026-11-01 10:00:00" },
   };
@@ -375,80 +377,100 @@ describe("Page Prestations : autorisations à traiter", () => {
     },
   };
 
-  it("parent : garde la carte visible une fois autorisé, pour pouvoir retirer, sans compter en attente", async () => {
-    const event = createEvent(authorization(grantedByOther), answeredPresent);
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ currentUserId: LEA.userId, events: [event] })
-    );
+  function mockEvent(event: PresenceEvent, currentUserId: number) {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ currentUserId, events: [event] }));
+  }
+
+  it("garde visible une sortie déjà répondue dont l'autorisation manque, et ouvre le bloc au toucher de la ligne", async () => {
+    const user = userEvent.setup();
+    mockEvent(createEvent(authorization(), answeredPresent), LEA.userId);
     render(withSession(parentSession, <MusicianDisponibilites />));
 
+    const row = await screen.findByRole("button", { name: ROW_PROVINS });
+    expect(row).toHaveTextContent("Autorisation parentale manquante");
+    expect(screen.getByText("1 autorisation parentale à donner pour Léa")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Autorisation parentale" })
+    ).not.toBeInTheDocument();
+
+    await user.click(row);
+
+    const block = await screen.findByRole("region", { name: "Autorisation parentale" });
+    expect(
+      within(block).getByRole("button", { name: "J'autorise Léa à participer" })
+    ).toBeInTheDocument();
+  });
+
+  it("parent : une autorisation donnée reste visible pour pouvoir la retirer, sans compter en attente", async () => {
+    const user = userEvent.setup();
+    mockEvent(createEvent(authorization(grantedByOther), answeredPresent), LEA.userId);
+    render(withSession(parentSession, <MusicianDisponibilites />));
+
+    const row = await screen.findByRole("button", { name: ROW_PROVINS });
+    expect(row).toHaveTextContent("Autorisation parentale donnée");
+    expect(screen.queryByText(/autorisation(s)? parentale(s)? à donner/)).not.toBeInTheDocument();
+
+    await user.click(row);
     const block = await screen.findByRole("region", { name: "Autorisation parentale" });
     expect(
       within(block).getByRole("button", { name: "Retirer l'autorisation" })
     ).toBeInTheDocument();
-    expect(screen.queryByText(/autorisation(s)? parentale(s)? à donner/)).not.toBeInTheDocument();
   });
 
-  it("jeune : une autorisation donnée n'ajoute pas de carte", async () => {
-    const event = createEvent(
-      authorization({ ...grantedByOther, canAuthorize: false }),
-      answeredPresent
-    );
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ currentUserId: SELF.userId, events: [event] })
+  it("jeune : une autorisation donnée n'ajoute aucun indicateur sur la ligne", async () => {
+    mockEvent(
+      createEvent(authorization({ ...grantedByOther, canAuthorize: false }), answeredPresent),
+      SELF.userId
     );
     render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
+    const row = await screen.findByRole("button", { name: ROW_PROVINS });
+    expect(row).not.toHaveTextContent(/Autorisation parentale/);
     expect(
-      (await screen.findAllByText(/Vous avez répondu (pour|à) toutes les prestations/)).length
-    ).toBeGreaterThan(0);
-    expect(
-      screen.queryByRole("region", { name: "Autorisation parentale" })
-    ).not.toBeInTheDocument();
+      screen.getByText("Vous avez répondu pour toutes les prestations à venir")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/autorisation(s)? parentale(s)? en attente/)).not.toBeInTheDocument();
   });
 
-  it("jeune : une autorisation manquante garde la carte visible, en attente des parents", async () => {
-    const event = createEvent(authorization({ canAuthorize: false }), answeredPresent);
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ currentUserId: SELF.userId, events: [event] })
-    );
+  it("jeune : une autorisation manquante est signalée sur la ligne, en attente des parents", async () => {
+    const user = userEvent.setup();
+    mockEvent(createEvent(authorization({ canAuthorize: false }), answeredPresent), SELF.userId);
     render(withSession({ profiles: [SELF] }, <MusicianDisponibilites />));
 
+    const row = await screen.findByRole("button", { name: ROW_PROVINS });
+    expect(row).toHaveTextContent("Autorisation parentale manquante");
+    expect(screen.getByText("1 autorisation parentale en attente")).toBeInTheDocument();
+
+    await user.click(row);
     expect(
       await screen.findByText("En attente de l'autorisation de vos parents")
     ).toBeInTheDocument();
-    expect(screen.getByText("1 autorisation parentale en attente")).toBeInTheDocument();
   });
 
-  it("mobile : la liste des réponses signale l'autorisation et ouvre la carte au toucher", async () => {
-    vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-      matches: true,
-      media: query,
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(() => true),
-    }));
+  it("autoriser dans la feuille met à jour l'indicateur de la ligne", async () => {
     const user = userEvent.setup();
-    const event = createEvent(authorization(), answeredPresent);
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ currentUserId: LEA.userId, events: [event] })
-    );
+    const granted = authorization({
+      status: "authorized",
+      authorizedBy: { name: null, relation: null, byYou: true, byAssociation: false, paper: false },
+      authorizedAt: "2026-11-18 10:00:00",
+    });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        jsonResponse({
+          currentUserId: LEA.userId,
+          events: [createEvent(authorization(), answeredPresent)],
+        })
+      )
+      .mockResolvedValueOnce(jsonResponse({ success: true, authorization: granted }));
     render(withSession(parentSession, <MusicianDisponibilites />));
 
-    expect(await screen.findByText("Autorisation parentale manquante")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("region", { name: "Autorisation parentale" })
-    ).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: ROW_PROVINS }));
+    await user.click(await screen.findByRole("button", { name: "J'autorise Léa à participer" }));
 
-    await user.click(screen.getByRole("button", { name: /Modifier : Sortie à Provins/ }));
-    expect(
-      within(screen.getByRole("region", { name: "Autorisation parentale" })).getByRole("button", {
-        name: "J'autorise Léa à participer",
-      })
-    ).toBeInTheDocument();
-    vi.restoreAllMocks();
+    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    expect(await screen.findByRole("button", { name: ROW_PROVINS })).toHaveTextContent(
+      "Autorisation parentale donnée"
+    );
+    expect(screen.queryByText(/autorisation(s)? parentale(s)? à donner/)).not.toBeInTheDocument();
   });
 });

@@ -1,29 +1,40 @@
 "use client";
 
-import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Calendar, Check, History, Loader2, RefreshCw } from "lucide-react";
-import { Label } from "@/app/components/ui/label";
-import { Switch } from "@/app/components/ui/switch";
+import { Calendar, Check, Clock, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import type { PresenceStatus } from "@/db/types";
 import { isEventPast } from "@/lib/dates";
-import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
-import { needsAuthorizationAttention, showsAuthorizationCard } from "./authorization-helpers";
-import { PresenceCard } from "./PresenceCard";
+import { MusicianChoiceGate } from "./ChooseMusicianState";
+import { needsAuthorizationAttention } from "./authorization-helpers";
 import type { PresenceEvent } from "./musician-types";
 import { PresenceMatrix } from "./PresenceMatrix";
-import { PresenceResponses } from "./PresenceResponses";
+import { PresenceResponses, type PastEventsState } from "./PresenceResponses";
+import { PresenceSheet } from "./PresenceSheet";
+import { PresenceToast, type PresenceToastData } from "./PresenceToast";
+import {
+  PRESENCE_PANEL_IDS,
+  PRESENCE_TAB_IDS,
+  PresenceViewSwitch,
+  type PresenceView,
+} from "./PresenceViewSwitch";
+import { usePresenceSave } from "./usePresenceSave";
 
 interface PresenceApiResponse {
   currentUserId?: number;
   events: PresenceEvent[];
 }
 
-function focusResponseCard(card: HTMLDivElement | null) {
-  card?.focus({ preventScroll: true });
-  card?.scrollIntoView({ behavior: "smooth", block: "center" });
+interface SheetState {
+  eventId: number;
+  focusComment: boolean;
+}
+
+const INITIAL_PAST: PastEventsState = { open: false, loading: false, error: null, events: null };
+
+function replaceEvent(list: PresenceEvent[], updated: PresenceEvent): PresenceEvent[] {
+  return list.map((event) => (event.id === updated.id ? updated : event));
 }
 
 function MusicianDisponibilitesContent() {
@@ -32,27 +43,22 @@ function MusicianDisponibilitesContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [openEventId, setOpenEventId] = useState<number | null>(null);
-  // La fenêtre "passé/à venir" est décidée par le serveur (rolling 12 mois) : on ne
-  // fait ici que lui transmettre l'intention, jamais de calcul de date côté client.
-  const [showPast, setShowPast] = useState(false);
-  const focusedCardRef = useRef<HTMLDivElement | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const useInlineResponses = isMobile && currentUserId !== null;
+  const [view, setView] = useState<PresenceView>("list");
+  const [past, setPast] = useState<PastEventsState>(INITIAL_PAST);
+  const [sheet, setSheet] = useState<SheetState | null>(null);
+  const [toast, setToast] = useState<PresenceToastData | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  // Mémorisé hors état : Radix demande le retour du focus APRÈS la fermeture, quand `sheet` est déjà vidé.
+  const lastOpenedEventId = useRef<number | null>(null);
+  // Lu après un `await` (réponse rapide) : l'état de la feuille y serait périmé.
+  const sheetOpenRef = useRef(false);
+  const toastCounter = useRef(0);
 
-  useEffect(() => {
-    const media = window.matchMedia("(width < 48rem)");
-    const update = () => setIsMobile(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  const fetchData = useCallback(async (includePast: boolean) => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/musician/presence${includePast ? "?includePast=1" : ""}`);
+      const response = await fetch("/api/musician/presence");
       if (!response.ok) {
         throw new Error("Erreur lors du chargement des prestations.");
       }
@@ -60,8 +66,7 @@ function MusicianDisponibilitesContent() {
       setEvents(result.events);
       // L'identifiant de l'utilisateur connecté vient de la même réponse : il est
       // dérivé de la session côté serveur. Un appel séparé à /api/musician/profile
-      // ferait disparaître silencieusement la mise en avant et l'icône d'édition
-      // de sa propre ligne s'il échouait.
+      // ferait disparaître silencieusement la ligne personnelle s'il échouait.
       setCurrentUserId(result.currentUserId ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur inattendue est survenue.");
@@ -71,42 +76,90 @@ function MusicianDisponibilitesContent() {
   }, []);
 
   useEffect(() => {
-    fetchData(showPast);
-  }, [showPast, fetchData]);
+    void fetchData();
+  }, [fetchData]);
 
-  useEffect(() => {
-    if (openEventId === null || useInlineResponses) return;
-    focusResponseCard(focusedCardRef.current);
-  }, [openEventId, useInlineResponses]);
-
-  const handleUpdate = useCallback((updatedEvent: PresenceEvent) => {
-    setEvents((prev) =>
-      prev ? prev.map((event) => (event.id === updatedEvent.id ? updatedEvent : event)) : prev
-    );
-  }, []);
-
-  const handleEditResponse = useCallback(
-    (eventId: number) => {
-      if (eventId === openEventId && !useInlineResponses) focusResponseCard(focusedCardRef.current);
-      setOpenEventId(eventId);
-    },
-    [openEventId, useInlineResponses]
-  );
-
-  const handleStatusChanged = useCallback((eventId: number, status: PresenceStatus | null) => {
-    if (status !== null) {
-      setOpenEventId((current) => (current === eventId ? null : current));
+  // La fenêtre « passé » (12 mois glissants) est décidée par le serveur : on ne fait
+  // ici que lui transmettre l'intention, jamais de calcul de date côté client.
+  const loadPast = useCallback(async () => {
+    setPast((current) => ({ ...current, loading: true, error: null }));
+    try {
+      const response = await fetch("/api/musician/presence?includePast=1");
+      if (!response.ok) {
+        throw new Error("Impossible de charger les prestations passées.");
+      }
+      const result = (await response.json()) as PresenceApiResponse;
+      const pastEvents = result.events
+        .filter((event) => isEventPast(event.date))
+        .sort((a, b) => b.date.localeCompare(a.date));
+      setPast((current) => ({ ...current, loading: false, events: pastEvents }));
+    } catch (err) {
+      setPast((current) => ({
+        ...current,
+        loading: false,
+        error: err instanceof Error ? err.message : "Une erreur inattendue est survenue.",
+      }));
     }
   }, []);
 
-  // Premier chargement : aucune donnée à montrer, la page entière est un état de
-  // chargement. Bascule ultérieure du filtre passé/à venir : on garde l'affichage
-  // existant et on se contente d'un indicateur discret (cf. `isRefreshing` plus bas),
-  // pour ne pas faire clignoter toute la vue en squelette.
-  const isInitialLoad = loading && events === null;
-  const isRefreshing = loading && events !== null;
+  const handleTogglePast = useCallback(() => {
+    const willOpen = !past.open;
+    setPast((current) => ({ ...current, open: willOpen }));
+    if (willOpen && past.events === null && !past.loading) void loadPast();
+  }, [past.open, past.events, past.loading, loadPast]);
 
-  if (isInitialLoad) {
+  const handleUpdate = useCallback((updated: PresenceEvent) => {
+    setEvents((current) => (current ? replaceEvent(current, updated) : current));
+    setPast((current) =>
+      current.events ? { ...current, events: replaceEvent(current.events, updated) } : current
+    );
+  }, []);
+
+  const quick = usePresenceSave(handleUpdate);
+
+  const handleQuickAnswer = useCallback(
+    async (event: PresenceEvent, status: PresenceStatus) => {
+      if (event.response.status === status) return;
+      const previous = event.response.status;
+      setToast(null);
+      // Le commentaire déjà enregistré accompagne le nouvel état, comme dans la feuille.
+      const result = await quick.save(event, status, event.response.comment);
+      // Si la feuille s'est ouverte entre-temps, un toast passerait sous son fond : on s'en passe.
+      if (!result.ok || sheetOpenRef.current) return;
+      toastCounter.current += 1;
+      setToast({
+        id: toastCounter.current,
+        message: previous === null ? labels.quickSaved : labels.quickChanged,
+        eventId: event.id,
+      });
+    },
+    [quick, labels.quickSaved, labels.quickChanged]
+  );
+
+  const openSheet = useCallback((eventId: number, focusComment = false) => {
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    lastOpenedEventId.current = eventId;
+    sheetOpenRef.current = true;
+    setToast(null);
+    setSheet({ eventId, focusComment });
+  }, []);
+
+  const handleOpen = useCallback((eventId: number) => openSheet(eventId), [openSheet]);
+  const handleAddNote = useCallback((eventId: number) => openSheet(eventId, true), [openSheet]);
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  const sheetEventId = sheet?.eventId ?? null;
+  const getReturnFocusTarget = useCallback((): HTMLElement | null => {
+    const opener = openerRef.current;
+    if (opener?.isConnected && opener.hasAttribute("data-presence-trigger")) return opener;
+    const eventId = lastOpenedEventId.current;
+    if (eventId === null) return null;
+    return document.querySelector<HTMLElement>(`[data-presence-trigger="${eventId}"]`);
+  }, []);
+
+  // Premier chargement : aucune donnée à montrer, la page entière est un état de chargement.
+  if (loading && events === null) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -122,7 +175,7 @@ function MusicianDisponibilitesContent() {
         </div>
         <p className="text-lg font-medium text-destructive">{error}</p>
         <button
-          onClick={() => fetchData(showPast)}
+          onClick={() => void fetchData()}
           className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <RefreshCw className="h-4 w-4" />
@@ -132,64 +185,58 @@ function MusicianDisponibilitesContent() {
     );
   }
 
-  // Les prestations passées répondent "non" au serveur pour tout POST : leurs
-  // cartes sont donc en lecture seule (voir `isPast` dans PresenceCard) et ne
-  // comptent pas comme "en attente de réponse", puisque l'utilisateur ne peut plus agir dessus.
-  const unansweredCount = (events ?? []).filter(
-    (event) => event.response.status === null && !isEventPast(event.date)
-  ).length;
-  const visibleEvents = (events ?? []).filter(
-    (event) =>
-      event.response.status === null || event.id === openEventId || showsAuthorizationCard(event)
-  );
-  const authorizationsPending = (events ?? []).filter(needsAuthorizationAttention).length;
-  // Le même critère que `unansweredCount` sépare la liste en deux : la file "à répondre"
-  // (jamais de prestation passée, par construction) et une zone de consultation à part
-  // pour ce que le bouton "Prestations passées" a révélé.
-  const pendingEvents = visibleEvents.filter((event) => !isEventPast(event.date));
-  const revealedPastEvents = visibleEvents.filter((event) => isEventPast(event.date));
+  // Le serveur peut encore renvoyer la veille au soir (fuseau UTC) : ce qui est passé pour
+  // l'appareil n'a ni boutons de réponse, ni colonne, ni décompte « en attente ».
+  const upcoming = (events ?? []).filter((event) => !isEventPast(event.date));
+  // Les prestations passées ne comptent jamais comme « en attente » : on ne peut plus agir dessus.
+  const unansweredCount = upcoming.filter((event) => event.response.status === null).length;
+  const authorizationsPending = upcoming.filter(needsAuthorizationAttention).length;
+  const canPersonalise = currentUserId !== null;
+  const showSwitch = canPersonalise && upcoming.length > 0;
+  const activeView: PresenceView = canPersonalise ? view : "table";
+
+  const sheetEvent =
+    sheetEventId === null
+      ? null
+      : ([...upcoming, ...(past.events ?? [])].find((event) => event.id === sheetEventId) ?? null);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{labels.pageTitlePrestations}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {events && events.length > 0
+    <div className="mx-auto w-full max-w-4xl space-y-4">
+      <div className="space-y-2">
+        {/* Le téléphone affiche déjà le titre dans son bandeau : le <h1> reste pour les
+            lecteurs d'écran et réapparaît dès `sm`. */}
+        <h1 className="sr-only text-3xl font-bold text-foreground sm:not-sr-only">
+          {labels.pageTitlePrestations}
+        </h1>
+        <p
+          className={
+            upcoming.length > 0 && unansweredCount === 0
+              ? "flex items-start gap-2 sm:mt-3 rounded-xl bg-success/10 px-3 py-2.5 text-sm font-semibold text-success dark:bg-success/20"
+              : upcoming.length > 0
+                ? "flex items-start gap-2 sm:mt-3 rounded-xl bg-warning/10 px-3 py-2.5 text-sm font-semibold text-warning dark:bg-warning/20"
+                : "text-muted-foreground sm:mt-3"
+          }
+        >
+          {upcoming.length > 0 &&
+            (unansweredCount === 0 ? (
+              <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+            ) : (
+              <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            ))}
+          <span>
+            {upcoming.length > 0
               ? unansweredCount > 0
                 ? labels.pagePendingCount(unansweredCount)
                 : labels.pageAllAnswered
               : labels.pageIndicateEach}
+          </span>
+        </p>
+        {authorizationsPending > 0 && (
+          <p className="flex items-center gap-1.5 text-sm font-medium text-warning">
+            <ShieldAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {labels.pageAuthorizationsPending(authorizationsPending)}
           </p>
-          {authorizationsPending > 0 && (
-            <p className="mt-0.5 text-sm font-medium text-warning">
-              {labels.pageAuthorizationsPending(authorizationsPending)}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {isRefreshing && (
-            <Loader2
-              className="h-3.5 w-3.5 animate-spin text-muted-foreground"
-              aria-hidden="true"
-            />
-          )}
-          <Switch
-            id="show-past-events"
-            checked={showPast}
-            onCheckedChange={setShowPast}
-            disabled={isRefreshing}
-            className="cursor-pointer disabled:cursor-not-allowed"
-          />
-          <Label
-            htmlFor="show-past-events"
-            className="flex cursor-pointer items-center gap-1.5 text-sm font-normal text-muted-foreground"
-          >
-            <History className="h-3.5 w-3.5" />
-            Prestations passées
-          </Label>
-        </div>
+        )}
       </div>
 
       {error && events !== null && (
@@ -200,8 +247,8 @@ function MusicianDisponibilitesContent() {
           <span>{error}</span>
           <button
             type="button"
-            onClick={() => fetchData(showPast)}
-            className="inline-flex cursor-pointer items-center gap-1.5 font-medium underline-offset-2 hover:underline"
+            onClick={() => void fetchData()}
+            className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 font-medium underline-offset-2 hover:underline"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Réessayer
@@ -209,103 +256,80 @@ function MusicianDisponibilitesContent() {
         </div>
       )}
 
-      <div
-        className={cn(isRefreshing && "pointer-events-none opacity-60 transition-opacity")}
-        aria-busy={isRefreshing}
-      >
-        {!events || events.length === 0 ? (
-          <EmptyState
-            icon={<Calendar className="h-10 w-10" />}
-            title={
-              showPast ? "Aucune prestation sur les 12 derniers mois." : labels.pageNothingToAnswer
-            }
-            description="Revenez ici dès qu'une nouvelle date sera annoncée."
-          />
-        ) : (
-          <div className="space-y-6">
-            {useInlineResponses ? (
-              <PresenceResponses
-                events={events}
-                openEventId={openEventId}
-                onEditResponse={handleEditResponse}
-                onClose={() => setOpenEventId(null)}
-                onUpdate={handleUpdate}
-                onStatusChanged={handleStatusChanged}
-              />
-            ) : (
-              <>
-                {pendingEvents.length > 0 ? (
-                  <div className="space-y-4">
-                    {pendingEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        tabIndex={-1}
-                        ref={event.id === openEventId ? focusedCardRef : undefined}
-                      >
-                        <PresenceCard
-                          event={event}
-                          onUpdate={handleUpdate}
-                          onStatusChanged={handleStatusChanged}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3.5 text-sm font-medium text-success dark:border-success/40 dark:bg-success/20">
-                    <Check className="h-5 w-5 shrink-0" />
-                    {labels.pageAllAnsweredBanner}
-                  </div>
-                )}
+      {showSwitch && (
+        <PresenceViewSwitch
+          view={view}
+          onChange={setView}
+          listLabel={labels.responsesHeading}
+          tableLabel="Tableau"
+        />
+      )}
 
-                {/* Zone à part, jamais mêlée à la file "à répondre" ci-dessus : ce sont des
-                prestations révélées par le bouton "Prestations passées", pas des cartes en
-                attente — le compteur d'en-tête ne les compte déjà plus, la mise en page doit
-                le confirmer plutôt que le contredire. */}
-                {revealedPastEvents.length > 0 && (
-                  <section
-                    aria-labelledby="past-events-heading"
-                    className="space-y-3 border-t border-dashed border-border pt-4"
-                  >
-                    <div>
-                      <h2
-                        id="past-events-heading"
-                        className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground"
-                      >
-                        <History className="h-4 w-4" aria-hidden="true" />
-                        Prestations passées
-                      </h2>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Terminées : elles ne sont plus comptées ni modifiables.
-                      </p>
-                    </div>
-                    <div className="space-y-4">
-                      {revealedPastEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          tabIndex={-1}
-                          ref={event.id === openEventId ? focusedCardRef : undefined}
-                        >
-                          <PresenceCard
-                            event={event}
-                            onUpdate={handleUpdate}
-                            onStatusChanged={handleStatusChanged}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
-              </>
-            )}
-
-            <PresenceMatrix
-              events={events}
-              currentUserId={currentUserId}
-              onEditResponse={handleEditResponse}
+      {activeView === "list" ? (
+        <div
+          id={PRESENCE_PANEL_IDS.list}
+          role={showSwitch ? "tabpanel" : undefined}
+          aria-labelledby={showSwitch ? PRESENCE_TAB_IDS.list : undefined}
+          aria-label={showSwitch ? undefined : labels.responsesHeading}
+          className="space-y-3"
+        >
+          {upcoming.length === 0 && (
+            <EmptyState
+              icon={<Calendar className="h-10 w-10" />}
+              title={labels.pageNothingToAnswer}
+              description="Revenez ici dès qu'une nouvelle date sera annoncée."
             />
-          </div>
-        )}
-      </div>
+          )}
+          <PresenceResponses
+            events={upcoming}
+            pending={quick.pending}
+            errors={quick.errors}
+            past={past}
+            onOpen={handleOpen}
+            onQuickAnswer={(event, status) => void handleQuickAnswer(event, status)}
+            onTogglePast={handleTogglePast}
+            onRetryPast={() => void loadPast()}
+          />
+        </div>
+      ) : upcoming.length === 0 ? (
+        <EmptyState
+          icon={<Calendar className="h-10 w-10" />}
+          title={labels.pageNothingToAnswer}
+          description="Revenez ici dès qu'une nouvelle date sera annoncée."
+        />
+      ) : (
+        <div
+          id={PRESENCE_PANEL_IDS.table}
+          role={showSwitch ? "tabpanel" : undefined}
+          aria-labelledby={showSwitch ? PRESENCE_TAB_IDS.table : undefined}
+        >
+          <PresenceMatrix
+            events={upcoming}
+            currentUserId={currentUserId}
+            onOpenEvent={handleOpen}
+          />
+        </div>
+      )}
+
+      <PresenceToast
+        toast={toast}
+        actionLabel={labels.toastAddNote}
+        onAction={handleAddNote}
+        onDismiss={dismissToast}
+      />
+
+      <PresenceSheet
+        event={sheetEvent}
+        currentUserId={currentUserId}
+        focusComment={sheet?.focusComment ?? false}
+        saver={quick}
+        onClose={() => {
+          sheetOpenRef.current = false;
+          setSheet(null);
+        }}
+        onUpdate={handleUpdate}
+        getReturnFocusTarget={getReturnFocusTarget}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { getActingLabels } from "../acting-labels";
 import { MusicianDisponibilites } from "../MusicianDisponibilites";
 import { MusicianLayout } from "../MusicianLayout";
 import { MusicianSidebar } from "../MusicianSidebar";
-import { PresenceCard } from "../PresenceCard";
+import { PresenceDetail } from "../PresenceSheet";
 import { PrestationsModule } from "../PrestationsModule";
 import { buildProfileJourney } from "../profile-journey";
 import type { PresenceEvent } from "../musician-types";
@@ -14,6 +14,8 @@ import { actorOf, GUARDIAN_SELF, LEA, SELF, withSession } from "./session-fixtur
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
 }
+
+const saver = { save: vi.fn(), pending: {}, errors: {} };
 
 function createEvent(): PresenceEvent {
   return {
@@ -140,30 +142,88 @@ describe("Textes à la troisième personne en délégation", () => {
     expect(await screen.findByRole("heading", { name: "Prestations de Léa" })).toBeInTheDocument();
   });
 
-  it("la carte de présence parle du commentaire de l'enfant", async () => {
+  it("la feuille de détail parle du commentaire de l'enfant", async () => {
     const user = userEvent.setup();
     render(
       withSession(
         delegatedSession,
-        <PresenceCard event={createEvent()} onUpdate={vi.fn()} onStatusChanged={vi.fn()} />
+        <PresenceDetail
+          event={createEvent()}
+          currentUserId={LEA.userId}
+          onUpdate={vi.fn()}
+          saver={saver}
+        />
       )
     );
-    expect(
-      screen.getByRole("button", { name: /Modifier le commentaire pour Léa/ })
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Modifier le commentaire pour Léa/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Effacer la réponse/ }));
     expect(screen.getByText("Le commentaire pour Léa sera aussi supprimé.")).toBeInTheDocument();
   });
 
-  it("la carte de présence garde ses textes d'origine hors délégation", () => {
+  it("la feuille de détail garde ses textes d'origine hors délégation", () => {
     render(
       withSession(
         { profiles: [SELF, LEA] },
-        <PresenceCard event={createEvent()} onUpdate={vi.fn()} onStatusChanged={vi.fn()} />
+        <PresenceDetail
+          event={createEvent()}
+          currentUserId={SELF.userId}
+          onUpdate={vi.fn()}
+          saver={saver}
+        />
       )
     );
-    expect(screen.getByRole("button", { name: /Modifier mon commentaire/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Modifier mon commentaire/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Effacer ma réponse/ })).toBeInTheDocument();
+  });
+
+  it("getActingLabels décline les textes de la liste et du tableau à la troisième personne", () => {
+    const own = getActingLabels(null);
+    expect(own.listHelp).toBe("Touchez ✓ si vous venez, ✕ si vous ne venez pas.");
+    expect(own.ownRowLabel).toBe("Vous");
+    expect(own.quickAnswer("present", "22 novembre", "Banquet à 11:30")).toBe(
+      "Présent le 22 novembre, Banquet à 11:30"
+    );
+    expect(own.quickSaved).toBe("Réponse enregistrée");
+    expect(own.quickChanged).toBe("Réponse modifiée");
+
+    const kid = getActingLabels("Léa");
+    expect(kid.listHelp).toBe("Touchez ✓ si Léa peut venir, ✕ si Léa ne peut pas venir.");
+    expect(kid.ownRowLabel).toBe("Léa");
+    expect(kid.quickAnswer("absent", "22 novembre", "Banquet à 11:30")).toBe(
+      "Absent le 22 novembre, Banquet à 11:30, pour Léa"
+    );
+    expect(kid.quickSaved).toBe("Réponse enregistrée pour Léa");
+    expect(kid.quickChanged).toBe("Réponse modifiée pour Léa");
+    expect(kid.detailAnswerHeading).toBe("Réponse de Léa");
+    expect(kid.commentFieldLabel).toBe("Commentaire pour Léa (facultatif)");
+  });
+
+  it("la page Prestations parle de l'enfant : onglet, aide, boutons rapides et message", async () => {
+    const user = userEvent.setup();
+    const event = { ...createEvent(), response: { status: null, comment: null, updated_at: null } };
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(jsonResponse({ currentUserId: LEA.userId, events: [event] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          success: true,
+          event: { ...event, response: { ...event.response, status: "present" } },
+        })
+      );
+    render(withSession(delegatedSession, <MusicianDisponibilites />));
+
+    expect(await screen.findByRole("tab", { name: "Réponses de Léa" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Touchez ✓ si Léa peut venir, ✕ si Léa ne peut pas venir.")
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: /^Présent le 11 novembre 2099, Concert d'automne à 20:30, pour Léa$/,
+      })
+    );
+    expect(await screen.findByText("Réponse enregistrée pour Léa")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Tableau" }));
+    expect(screen.getByRole("rowheader", { name: "Léa" })).toBeInTheDocument();
   });
 
   it("le parcours de l'accueil se décline à la troisième personne", () => {

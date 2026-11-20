@@ -1,8 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { formatAnsweredBy, PresenceCard } from "../PresenceCard";
+import { PresenceDetail } from "../PresenceSheet";
+import { formatAnsweredBy } from "../presence-format";
 import type { PresenceAnsweredBy, PresenceEvent } from "../musician-types";
 import { SELF, withSession } from "./session-fixtures";
+
+const saver = { save: vi.fn(), pending: {}, errors: {} };
 
 function createEvent(
   answeredBy?: PresenceAnsweredBy | null,
@@ -31,19 +34,23 @@ function renderCard(event: PresenceEvent) {
   render(
     withSession(
       { profiles: [SELF] },
-      <PresenceCard event={event} onUpdate={vi.fn()} onStatusChanged={vi.fn()} />
+      <PresenceDetail event={event} currentUserId={null} onUpdate={vi.fn()} saver={saver} />
     )
   );
 }
 
 describe("Auteur de la réponse de présence", () => {
   it("indique le prénom et le lien de parenté d'un parent", () => {
-    renderCard(createEvent({ name: "Aurélie", relation: "mère", byAssociation: false, byYou: false }));
+    renderCard(
+      createEvent({ name: "Aurélie", relation: "mère", byAssociation: false, byYou: false })
+    );
     expect(screen.getByText("Réponse donnée par Aurélie (mère)")).toBeInTheDocument();
   });
 
   it("n'ajoute pas de parenthèses sans lien de parenté", () => {
-    renderCard(createEvent({ name: "Aurélie", relation: null, byAssociation: false, byYou: false }));
+    renderCard(
+      createEvent({ name: "Aurélie", relation: null, byAssociation: false, byYou: false })
+    );
     expect(screen.getByText("Réponse donnée par Aurélie")).toBeInTheDocument();
   });
 
@@ -53,9 +60,7 @@ describe("Auteur de la réponse de présence", () => {
   });
 
   it("indique que le parent connecté a lui-même répondu pour l'enfant", () => {
-    renderCard(
-      createEvent({ name: "Paul", relation: null, byAssociation: false, byYou: true })
-    );
+    renderCard(createEvent({ name: "Paul", relation: null, byAssociation: false, byYou: true }));
     expect(screen.getByText("Réponse donnée par vous")).toBeInTheDocument();
   });
 
@@ -71,10 +76,7 @@ describe("Auteur de la réponse de présence", () => {
 
   it("n'affiche rien tant qu'il n'y a pas de réponse", () => {
     renderCard(
-      createEvent(
-        { name: "Aurélie", relation: "mère", byAssociation: false, byYou: false },
-        null
-      )
+      createEvent({ name: "Aurélie", relation: "mère", byAssociation: false, byYou: false }, null)
     );
     expect(screen.queryByText(/Réponse donnée par/)).not.toBeInTheDocument();
   });

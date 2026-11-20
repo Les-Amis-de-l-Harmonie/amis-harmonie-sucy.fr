@@ -74,7 +74,7 @@ export function AuthorizationBlock({
     <section
       aria-label={labels.authTitle}
       className={cn(
-        "mb-3 rounded-lg border p-3 text-sm",
+        "rounded-lg border p-3 text-sm",
         missing ? "border-warning/40 bg-warning/5" : "border-border bg-muted/40"
       )}
     >

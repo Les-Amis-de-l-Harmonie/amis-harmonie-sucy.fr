@@ -1,227 +1,265 @@
 "use client";
 
-import { useMemo } from "react";
-import { Check, Minus, Pencil, Lock, X } from "lucide-react";
-import type { PresenceStatus } from "@/db/types";
+import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { groupMembersByPupitre } from "@/lib/presence-groups";
-import { isEventPast } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
-import { LegendItem } from "./LegendItem";
+import type { PresenceEvent } from "./musician-types";
 import {
   buildMusicianRows,
+  countPupitre,
   getCellVisual,
+  getEventDateParts,
   getFullName,
-  type MusicianRow,
+  getShortName,
 } from "./presence-matrix-helpers";
-import type { PresenceEvent } from "./musician-types";
+import { StatusDot } from "./StatusDot";
 
-function formatDateShortLabel(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+// Fonds opaques : les colonnes et lignes épinglées passent par-dessus des cellules qui
+// défilent, une teinte translucide laisserait voir ce qu'il y a dessous.
+const OWN_BG = "bg-[color-mix(in_oklab,var(--color-primary)_22%,var(--color-card))]";
+
+function shortDate(event: PresenceEvent): string {
+  const parts = getEventDateParts(event.date);
+  return parts ? `${parts.dayPadded}/${parts.monthPadded}` : event.date;
 }
 
 export interface PresenceMatrixProps {
   events: PresenceEvent[];
   currentUserId: number | null;
-  onEditResponse: (eventId: number) => void;
+  /** Ouvre la feuille de détail de la prestation. */
+  onOpenEvent: (eventId: number) => void;
 }
 
-export function PresenceMatrix({ events, currentUserId, onEditResponse }: PresenceMatrixProps) {
+/**
+ * Tableau « Qui vient à quelle date » pensé pour un téléphone : colonne des noms étroite
+ * et épinglée, pastilles de 22 px, en-tête de dates et ligne personnelle épinglées, pupitres
+ * repliables avec un total neutre (« 3/6 ») par date. Les défilements se font dans le
+ * cadre du tableau lui-même (un seul conteneur) : les épinglages restent donc cohérents
+ * et ne se heurtent pas à l'en-tête fixe du téléphone.
+ */
+export function PresenceMatrix({ events, currentUserId, onOpenEvent }: PresenceMatrixProps) {
   const labels = useActingLabels();
   const rows = useMemo(() => buildMusicianRows(events, currentUserId), [events, currentUserId]);
   const groups = useMemo(() => groupMembersByPupitre(rows), [rows]);
-
-  const stickyCell =
-    "sticky left-0 z-10 min-w-[128px] max-w-[180px] px-3 py-2 text-left align-top shadow-[3px_0_6px_-3px_rgba(0,0,0,0.15)]";
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const nameColumn = "w-28 min-w-28 max-w-28 sm:w-40 sm:min-w-40 sm:max-w-40";
 
   return (
-    <section aria-label="Qui vient à quelle date" className="space-y-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-muted px-3 py-2.5 text-xs font-medium text-muted-foreground dark:bg-muted/40 dark:text-foreground">
-        <LegendItem
-          shapeClass="rounded-full bg-success text-success-foreground"
-          Icon={Check}
-          label="Présent"
-        />
-        <LegendItem
-          shapeClass="rounded-md bg-destructive text-destructive-foreground"
-          Icon={X}
-          label="Absent"
-        />
-        <LegendItem
-          shapeClass="rounded-full border-2 border-dashed border-border text-muted-foreground dark:border-border dark:text-muted-foreground"
-          Icon={Minus}
-          label="Sans réponse"
-        />
-        {currentUserId !== null && (
-          <span className="inline-flex items-center gap-1.5">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-card ring-1 ring-border dark:bg-card dark:ring-border">
-              <Pencil className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-            </span>
-            {labels.legendEditAnswer}
-          </span>
-        )}
-      </div>
-
-      {/* `contain:paint` est indispensable ici : une <table> en `min-width:max-content`
-          reste comptée dans la largeur de défilement du document malgré le
-          `overflow-x-auto` du conteneur, ce qui faisait défiler la page entière en 375px
-          (mesuré : 736px de large pour un écran de 375px). Vérifié : sans lui 736, avec lui 375. */}
-      <p className="text-xs text-muted-foreground md:hidden">
-        Toutes les réponses : faites défiler le tableau vers la droite.
-      </p>
-      <div className="isolate overflow-x-auto overscroll-x-contain [contain:paint] rounded-xl border border-border bg-card">
-        <table className="w-full min-w-max border-collapse text-left text-sm">
+    <section aria-label="Qui vient à quelle date" className="space-y-2">
+      {/* `contain:paint` est indispensable : une <table> plus large que son cadre reste comptée dans
+          la largeur de défilement du document malgré `overflow-auto` (mesuré : 365 px pour un
+          écran de 345 px sans lui, 345 avec). */}
+      <div className="isolate [--table-header-h:4.25rem] max-h-[calc(100dvh-16rem)] [contain:paint] min-h-72 overflow-auto overscroll-x-contain rounded-xl border border-border bg-card lg:max-h-[calc(100dvh-13rem)]">
+        <table className="w-full border-separate border-spacing-0 text-left">
           <thead>
-            <tr className="border-b border-border">
-              <th scope="col" className={cn(stickyCell, "bg-muted text-foreground")}>
+            <tr>
+              <th
+                scope="col"
+                className={cn(
+                  nameColumn,
+                  "sticky left-0 top-0 z-30 h-(--table-header-h) border-b border-r border-border bg-card px-2.5 pb-1.5 text-left align-bottom text-[12.5px] font-bold leading-tight text-foreground"
+                )}
+              >
                 Musicien
+                <span className="block text-[11px] font-medium text-muted-foreground">
+                  Présents
+                </span>
               </th>
-              {events.map((event) => (
-                <th
-                  key={event.id}
-                  scope="col"
-                  className="min-w-[92px] bg-muted px-2 py-2 text-center align-bottom dark:bg-muted/60"
-                >
-                  <span className="block text-sm font-bold text-foreground">
-                    {formatDateShortLabel(event.date)}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] font-normal leading-snug text-muted-foreground">
-                    {event.title}
-                  </span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          {groups.map((group) => (
-            <tbody key={group.key}>
-              <tr>
-                {/* `scope="rowgroup"` : cette cellule décrit les lignes qui suivent, jusqu'au
-                    prochain en-tête de groupe — c'est la sémantique exacte d'un titre de
-                    pupitre. Même pattern que `src/app/admin/PresenceAdmin.tsx`.
-                    Le <th> lui-même n'est PAS sticky : en `colSpan`, il occupe déjà toute la
-                    largeur du tableau, donc son bloc conteneur n'a nulle part où le décaler —
-                    l'offset se clampe à 0 et l'étiquette défilerait avec le reste (vérifié :
-                    elle finissait à −79px). C'est le <span> interne, plus étroit que son
-                    conteneur, qui est sticky : lui a de la place pour glisser vers la gauche
-                    pendant le défilement. Les deux portent le même fond pour que le libellé se
-                    fonde dans la bande de couleur, qui elle reste dans le flux normal. */}
-                <th
-                  scope="rowgroup"
-                  colSpan={events.length + 1}
-                  className="border-b border-t border-border bg-muted/80 p-0 text-left dark:border-border dark:bg-muted/60"
-                >
-                  <span className="sticky left-0 z-10 inline-block max-w-[80vw] truncate whitespace-nowrap bg-muted px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-foreground">
-                    {group.label}
-                    <span className="ml-1.5 font-normal normal-case text-muted-foreground">
-                      ({group.members.length})
-                    </span>
-                  </span>
-                </th>
-              </tr>
-              {group.members.map((row: MusicianRow, index) => {
-                const rowTint = row.isCurrentUser
-                  ? "bg-primary/10 dark:bg-primary/15"
-                  : index % 2 === 1
-                    ? "bg-muted/70 dark:bg-muted/20"
-                    : "bg-card dark:bg-card";
+              {events.map((event) => {
+                const parts = getEventDateParts(event.date);
+                const { present, totalMembers } = event.counts;
                 return (
-                  <tr
-                    key={row.userId}
-                    className={cn("border-b border-border last:border-0", rowTint)}
+                  <th
+                    key={event.id}
+                    scope="col"
+                    className="sticky top-0 z-20 h-(--table-header-h) min-w-12 border-b border-border bg-card px-0.5 pb-1 pt-1.5 align-bottom"
                   >
-                    {/* Fond opaque : les réponses défilent derrière, jamais à travers les noms. */}
-                    <th
-                      scope="row"
-                      className={cn(
-                        stickyCell,
-                        "bg-card",
-                        row.isCurrentUser
-                          ? "bg-linear-to-r from-primary/10 to-primary/10 dark:from-primary/15 dark:to-primary/15"
-                          : index % 2 === 1 &&
-                              "bg-linear-to-r from-muted/70 to-muted/70 dark:from-muted/20 dark:to-muted/20"
-                      )}
+                    <button
+                      type="button"
+                      data-presence-trigger={event.id}
+                      aria-haspopup="dialog"
+                      aria-label={`Détail du ${parts ? `${parts.weekday.toLowerCase()} ${parts.day} ${parts.monthName}` : event.date} : ${present} présent${present > 1 ? "s" : ""} sur ${totalMembers}`}
+                      onClick={() => onOpenEvent(event.id)}
+                      className="flex w-full cursor-pointer flex-col items-center gap-px rounded-lg py-0.5 leading-tight transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
-                      <span className="flex flex-wrap items-center gap-1.5 font-semibold text-foreground">
-                        {getFullName(row.firstName, row.lastName)}
-                        {row.isCurrentUser && (
-                          <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
-                            {labels.currentRowBadge}
-                          </span>
-                        )}
+                      <span className="text-[10.5px] font-bold uppercase text-muted-foreground">
+                        {parts?.weekdayShort}
                       </span>
-                      {row.instruments.length > 0 && (
-                        <span className="block text-xs font-normal text-muted-foreground">
-                          {row.instruments.join(", ")}
+                      <span className="text-[13.5px] font-extrabold text-foreground">
+                        {shortDate(event)}
+                      </span>
+                      <span className="mt-0.5 rounded-full bg-muted px-1.5 text-xs font-extrabold tabular-nums text-foreground">
+                        {present}
+                        <span className="text-[10.5px] font-semibold text-muted-foreground">
+                          /{totalMembers}
                         </span>
-                      )}
-                    </th>
-                    {events.map((event) => {
-                      const status: PresenceStatus | null = row.statuses.get(event.id) ?? null;
-                      const visual = getCellVisual(status);
-
-                      if (row.isCurrentUser) {
-                        // Une prestation passée reste consultable, mais plus modifiable : le
-                        // libellé et l'icône de coin ne doivent jamais promettre une édition
-                        // qui échouerait (le serveur refuse le POST). Le clic ouvre malgré
-                        // tout la carte, qui explique pourquoi c'est fermé.
-                        const cellIsPast = isEventPast(event.date);
-                        const eventLabel = `${event.title} du ${formatDateShortLabel(event.date)}`;
-                        const label = cellIsPast
-                          ? labels.viewAnswerCell(eventLabel, visual.label.toLowerCase())
-                          : labels.editAnswerCell(eventLabel, visual.label.toLowerCase());
-                        return (
-                          <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
-                            <button
-                              type="button"
-                              onClick={() => onEditResponse(event.id)}
-                              title={label}
-                              aria-label={label}
-                              className={cn(
-                                "relative mx-auto flex min-h-11 min-w-11 cursor-pointer items-center justify-center transition-transform active:scale-95",
-                                visual.shapeClass
-                              )}
-                            >
-                              <visual.Icon className="h-4 w-4" aria-hidden="true" />
-                              <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-card ring-1 ring-border dark:bg-card dark:ring-border">
-                                {cellIsPast ? (
-                                  <Lock
-                                    className="h-2.5 w-2.5 text-muted-foreground"
-                                    aria-hidden="true"
-                                  />
-                                ) : (
-                                  <Pencil
-                                    className="h-2.5 w-2.5 text-muted-foreground"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                              </span>
-                            </button>
-                          </td>
-                        );
-                      }
-
-                      return (
-                        <td key={event.id} className="px-1.5 py-1.5 text-center align-middle">
-                          <span
-                            className={cn(
-                              "mx-auto flex h-8 w-8 items-center justify-center",
-                              visual.shapeClass
-                            )}
-                          >
-                            <visual.Icon className="h-4 w-4" aria-hidden="true" />
-                            <span className="sr-only">{visual.label}</span>
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
+                      </span>
+                    </button>
+                  </th>
                 );
               })}
+            </tr>
+          </thead>
+
+          {currentUserId !== null && (
+            <tbody>
+              <tr>
+                <th
+                  scope="row"
+                  className={cn(
+                    nameColumn,
+                    OWN_BG,
+                    "sticky left-0 top-(--table-header-h) z-20 h-11 border-b border-r border-border px-2.5 text-left text-[13px] font-extrabold text-foreground"
+                  )}
+                >
+                  <span className="block truncate">{labels.ownRowLabel}</span>
+                </th>
+                {events.map((event) => {
+                  const visual = getCellVisual(event.response.status);
+                  const label = labels.editAnswerCell(
+                    `${event.title} du ${shortDate(event)}`,
+                    visual.label.toLowerCase()
+                  );
+                  return (
+                    <td
+                      key={event.id}
+                      className={cn(
+                        OWN_BG,
+                        "sticky top-(--table-header-h) z-10 border-b border-border p-0 text-center"
+                      )}
+                    >
+                      <button
+                        type="button"
+                        data-presence-trigger={event.id}
+                        aria-haspopup="dialog"
+                        title={label}
+                        aria-label={label}
+                        onClick={() => onOpenEvent(event.id)}
+                        className="grid h-11 w-full cursor-pointer place-items-center transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary active:scale-90"
+                      >
+                        <StatusDot status={event.response.status} size="lg" />
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
             </tbody>
-          ))}
+          )}
+
+          {groups.map((group) => {
+            const isOwnGroup = group.members.some((member) => member.isCurrentUser);
+            const open = openGroups[group.key] ?? isOwnGroup;
+            return (
+              <tbody key={group.key} data-pupitre={group.label}>
+                <tr>
+                  {/* `scope="rowgroup"` : cette cellule décrit les lignes qui suivent, jusqu'au
+                      prochain en-tête de pupitre. Même pattern que `PresenceAdmin.tsx`. */}
+                  <th
+                    scope="rowgroup"
+                    className={cn(
+                      nameColumn,
+                      "sticky left-0 z-10 border-b border-r border-border bg-muted p-0 text-left"
+                    )}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() =>
+                        setOpenGroups((current) => ({ ...current, [group.key]: !open }))
+                      }
+                      className="flex h-[38px] w-full cursor-pointer items-center gap-0.5 pl-1.5 pr-1 text-left text-[12.5px] font-extrabold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 transition-transform",
+                          !open && "-rotate-90"
+                        )}
+                        strokeWidth={2.6}
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 truncate" title={group.label}>
+                        {group.label}
+                      </span>
+                      <span className="sr-only">
+                        {" "}
+                        ({group.members.length} musicien{group.members.length > 1 ? "s" : ""})
+                      </span>
+                    </button>
+                  </th>
+                  {events.map((event) => {
+                    const counts = countPupitre(group.members, event.id);
+                    return (
+                      <td
+                        key={event.id}
+                        className="border-b border-border bg-muted text-center text-xs font-extrabold tabular-nums text-foreground"
+                      >
+                        <span aria-hidden="true">
+                          {counts.present}/{counts.total}
+                        </span>
+                        <span className="sr-only">
+                          {counts.present} présent{counts.present > 1 ? "s" : ""} sur {counts.total}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+                {open &&
+                  group.members.map((row) => {
+                    const fullName = getFullName(row.firstName, row.lastName);
+                    const cellBg = row.isCurrentUser ? OWN_BG : "bg-card";
+                    return (
+                      <tr key={row.userId}>
+                        <th
+                          scope="row"
+                          title={fullName}
+                          className={cn(
+                            nameColumn,
+                            cellBg,
+                            "sticky left-0 z-10 h-[34px] border-b border-r border-border px-2.5 text-left text-[12.5px] leading-tight text-foreground",
+                            row.isCurrentUser ? "font-extrabold" : "font-medium"
+                          )}
+                        >
+                          <span className="block truncate" aria-hidden="true">
+                            {getShortName(row.firstName, row.lastName)}
+                          </span>
+                          <span className="sr-only">
+                            {fullName}
+                            {row.isCurrentUser && ` (${labels.currentRowBadge})`}
+                          </span>
+                        </th>
+                        {events.map((event) => (
+                          <td
+                            key={event.id}
+                            className={cn(cellBg, "border-b border-border p-0 text-center")}
+                          >
+                            <StatusDot
+                              status={row.statuses.get(event.id) ?? null}
+                              size="md"
+                              labelled
+                              className="align-middle"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            );
+          })}
         </table>
       </div>
+
+      <div className="flex flex-wrap gap-x-3.5 gap-y-1 px-1 pt-1 text-xs text-muted-foreground">
+        {(["present", "absent", null] as const).map((status) => (
+          <span key={status ?? "none"} className="inline-flex items-center gap-1.5">
+            <StatusDot status={status} size="xs" />
+            {getCellVisual(status).label}
+          </span>
+        ))}
+      </div>
+      <p className="px-1 text-xs text-muted-foreground">{labels.tableHelp}</p>
     </section>
   );
 }

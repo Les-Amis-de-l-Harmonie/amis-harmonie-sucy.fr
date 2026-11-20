@@ -99,6 +99,121 @@ export function buildMusicianRows(
   });
 }
 
+/**
+ * « Prénom N. » : le tableau mobile n'a de place que pour un nom très court.
+ * Le nom complet reste disponible pour les lecteurs d'écran et en infobulle.
+ */
+export function getShortName(firstName: string | null, lastName: string | null): string {
+  const first = firstName?.trim() ?? "";
+  const lastInitial = Array.from(lastName?.trim() ?? "")[0]?.toLocaleUpperCase("fr-FR") ?? "";
+  if (!first && !lastInitial) return "Anonyme";
+  if (!lastInitial) return first;
+  return first ? `${first} ${lastInitial}.` : `${lastInitial}.`;
+}
+
+export interface PupitreCounts {
+  present: number;
+  absent: number;
+  noAnswer: number;
+  /** Musiciens du pupitre attendus à cette prestation. */
+  total: number;
+}
+
+/**
+ * Décompte neutre d'un pupitre pour une prestation (« 3/6 » = 3 présents sur 6).
+ * Un musicien qui n'apparaît pas dans l'effectif de cette prestation n'est pas compté ;
+ * `status: null` compte comme « sans réponse », jamais comme absent.
+ */
+export function countPupitre(members: MusicianRow[], eventId: number): PupitreCounts {
+  const counts: PupitreCounts = { present: 0, absent: 0, noAnswer: 0, total: 0 };
+  for (const member of members) {
+    if (!member.statuses.has(eventId)) continue;
+    counts.total += 1;
+    const status = member.statuses.get(eventId) ?? null;
+    if (status === "present") counts.present += 1;
+    else if (status === "absent") counts.absent += 1;
+    else counts.noAnswer += 1;
+  }
+  return counts;
+}
+
+const WEEKDAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"] as const;
+const WEEKDAYS_SHORT = ["Dim.", "Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam."] as const;
+const MONTHS = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre",
+] as const;
+const MONTHS_SHORT = [
+  "janv.",
+  "févr.",
+  "mars",
+  "avr.",
+  "mai",
+  "juin",
+  "juil.",
+  "août",
+  "sept.",
+  "oct.",
+  "nov.",
+  "déc.",
+] as const;
+
+export interface EventDateParts {
+  weekday: string;
+  weekdayShort: string;
+  day: number;
+  /** « 22 » ou « 05 », pour les formats à deux chiffres. */
+  dayPadded: string;
+  monthName: string;
+  monthShort: string;
+  monthPadded: string;
+  year: number;
+}
+
+/**
+ * Découpe une date `AAAA-MM-JJ` sans passer par un fuseau horaire : le jour de la
+ * semaine ne doit jamais dépendre de l'appareil de la personne qui regarde.
+ */
+export function getEventDateParts(dateStr: string): EventDateParts | null {
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const monthName = MONTHS[monthIndex];
+  const monthShort = MONTHS_SHORT[monthIndex];
+  if (monthName === undefined || monthShort === undefined) return null;
+  const weekdayIndex = new Date(Date.UTC(year, monthIndex, day)).getUTCDay();
+  return {
+    weekday: WEEKDAYS[weekdayIndex] ?? "",
+    weekdayShort: WEEKDAYS_SHORT[weekdayIndex] ?? "",
+    day,
+    dayPadded: String(day).padStart(2, "0"),
+    monthName,
+    monthShort,
+    monthPadded: String(monthIndex + 1).padStart(2, "0"),
+    year,
+  };
+}
+
+/** « 22 novembre » (l'année n'est ajoutée que si elle diffère de l'année en cours). */
+export function formatEventDayLabel(dateStr: string, currentYear: number): string {
+  const parts = getEventDateParts(dateStr);
+  if (!parts) return dateStr;
+  const base = `${parts.day} ${parts.monthName}`;
+  return parts.year === currentYear ? base : `${base} ${parts.year}`;
+}
+
 /** Les trois états se distinguent par la forme ET l'icône, pas seulement la couleur :
  * cercle plein + coche pour présent, carré plein + croix pour absent, cercle en
  * pointillés + tiret pour sans réponse. */
@@ -121,6 +236,6 @@ export function getCellVisual(status: PresenceStatus | null): CellVisual {
     Icon: Minus,
     label: "Sans réponse",
     shapeClass:
-      "rounded-full border-2 border-dashed border-border text-muted-foreground dark:border-border dark:text-muted-foreground",
+      "rounded-full border-[1.5px] border-dashed border-muted-foreground/70 text-muted-foreground",
   };
 }

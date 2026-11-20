@@ -25,7 +25,19 @@ export interface ActingLabels {
   pageAllAnswered: string;
   pageAllAnsweredBanner: string;
   responsesHeading: string;
-  legendEditAnswer: string;
+  /** Une phrase qui explique les boutons ✓ / ✕ de la liste (remplace la légende). */
+  listHelp: string;
+  /** Libellé de la ligne épinglée du tableau : « Vous » ou le prénom de l'enfant. */
+  ownRowLabel: string;
+  /** Nom accessible d'un bouton rapide ✓ / ✕ : « Présent le 22 novembre, Banquet à 11:30 ». */
+  quickAnswer: (status: "present" | "absent", dayLabel: string, eventLabel: string) => string;
+  quickSaved: string;
+  quickChanged: string;
+  toastAddNote: string;
+  ownCommentIndicator: string;
+  detailAnswerHeading: string;
+  commentFieldLabel: string;
+  tableHelp: string;
   currentRowBadge: string;
   viewAnswerCell: (eventLabel: string, status: string) => string;
   editAnswerCell: (eventLabel: string, status: string) => string;
@@ -74,6 +86,8 @@ export interface ActingLabels {
 
 const CONSENT_RULE =
   "Il suffit qu'un parent accepte ; si un parent refuse, la photo n'est pas utilisée.";
+const TABLE_HELP =
+  "Touchez une date pour voir le détail. Le chiffre d'un pupitre indique les présents sur le nombre de musiciens.";
 const AUTH_OUTDATED =
   "Les informations ont changé depuis l'autorisation : vérifiez-les et confirmez à nouveau.";
 
@@ -115,7 +129,17 @@ export function getActingLabels(
       pageAllAnswered: "Vous avez répondu pour toutes les prestations à venir",
       pageAllAnsweredBanner: "Vous avez répondu à toutes les prestations à venir.",
       responsesHeading: "Mes réponses",
-      legendEditAnswer: "Modifier votre réponse",
+      listHelp: "Touchez ✓ si vous venez, ✕ si vous ne venez pas.",
+      ownRowLabel: "Vous",
+      quickAnswer: (status, dayLabel, eventLabel) =>
+        `${status === "present" ? "Présent" : "Absent"} le ${dayLabel}, ${eventLabel}`,
+      quickSaved: "Réponse enregistrée",
+      quickChanged: "Réponse modifiée",
+      toastAddNote: "Ajouter un mot",
+      ownCommentIndicator: "Vous avez laissé un commentaire",
+      detailAnswerHeading: "Votre réponse",
+      commentFieldLabel: "Votre commentaire (facultatif)",
+      tableHelp: TABLE_HELP,
       currentRowBadge: "Vous",
       viewAnswerCell: (eventLabel, status) =>
         `Voir votre réponse pour ${eventLabel} (prestation passée), actuellement : ${status}`,
@@ -192,7 +216,17 @@ export function getActingLabels(
     pageAllAnswered: `Toutes les prestations à venir ont une réponse pour ${subject}`,
     pageAllAnsweredBanner: `Toutes les prestations à venir ont une réponse pour ${subject}.`,
     responsesHeading: `Réponses de ${subject}`,
-    legendEditAnswer: "Modifier la réponse",
+    listHelp: `Touchez ✓ si ${subject} peut venir, ✕ si ${subject} ne peut pas venir.`,
+    ownRowLabel: name ?? "Profil actif",
+    quickAnswer: (status, dayLabel, eventLabel) =>
+      `${status === "present" ? "Présent" : "Absent"} le ${dayLabel}, ${eventLabel}, pour ${subject}`,
+    quickSaved: `Réponse enregistrée pour ${subject}`,
+    quickChanged: `Réponse modifiée pour ${subject}`,
+    toastAddNote: "Ajouter un mot",
+    ownCommentIndicator: `Commentaire laissé pour ${subject}`,
+    detailAnswerHeading: `Réponse de ${subject}`,
+    commentFieldLabel: `Commentaire pour ${subject} (facultatif)`,
+    tableHelp: TABLE_HELP,
     currentRowBadge: "Profil actif",
     viewAnswerCell: (eventLabel, status) =>
       `Voir la réponse de ${subject} pour ${eventLabel} (prestation passée), actuellement : ${status}`,
