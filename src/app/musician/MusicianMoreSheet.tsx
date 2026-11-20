@@ -17,6 +17,11 @@ import {
   isNavItemActive,
   MUSICIAN_OVERFLOW_ITEMS,
 } from "@/app/musician/musician-nav-items";
+import {
+  MUSICIAN_TAB_ACTIVE_CLASSNAME,
+  MUSICIAN_TAB_CLASSNAME,
+  MUSICIAN_TAB_IDLE_CLASSNAME,
+} from "@/app/musician/musician-tab-styles";
 import { cn } from "@/lib/utils";
 
 interface MusicianMoreSheetProps {
@@ -55,10 +60,8 @@ export function MusicianMoreSheet({
           pour signaler qu'une des pages qu'il contient est ouverte. */}
       <SheetTrigger
         className={cn(
-          "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-0.5 py-2 text-[10px] leading-tight font-medium text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white min-[360px]:text-[11px] motion-reduce:transition-none",
-          tabActive || open
-            ? "bg-white/15 text-white ring-2 ring-white ring-inset"
-            : "hover:bg-white/10"
+          MUSICIAN_TAB_CLASSNAME,
+          tabActive || open ? MUSICIAN_TAB_ACTIVE_CLASSNAME : MUSICIAN_TAB_IDLE_CLASSNAME
         )}
       >
         <MoreHorizontal className="h-[22px] w-[22px]" aria-hidden="true" />

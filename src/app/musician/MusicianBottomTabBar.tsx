@@ -4,6 +4,11 @@ import { cn } from "@/lib/utils";
 import { MUSICIAN_TAB_ITEMS } from "@/app/musician/musician-nav-items";
 import { isMusicianPathActive } from "@/app/musician/isMusicianPathActive";
 import { MusicianMoreSheet } from "@/app/musician/MusicianMoreSheet";
+import {
+  MUSICIAN_TAB_ACTIVE_CLASSNAME,
+  MUSICIAN_TAB_CLASSNAME,
+  MUSICIAN_TAB_IDLE_CLASSNAME,
+} from "@/app/musician/musician-tab-styles";
 
 interface MusicianBottomTabBarProps {
   pathname: string;
@@ -29,13 +34,16 @@ export function MusicianBottomTabBar({
   avatar,
 }: MusicianBottomTabBarProps) {
   return (
-    // La barre flotte au-dessus de la zone gestuelle sans réduire les cibles
-    // tactiles. MusicianLayout réserve sa hauteur et ses marges dans le flux.
+    // Barre collée au bord bas de l'écran, pleine largeur : elle ne recouvre
+    // jamais le contenu (MusicianLayout réserve sa hauteur). La zone de sécurité
+    // (barre gestuelle) est ajoutée en padding DANS la barre, pour que le fond
+    // aille jusqu'au bord et que les cibles restent au-dessus du geste système.
+    // Hauteur hors zone de sécurité : 1px bordure + 6px + 56px d'onglet + 8px = 71px.
     <nav
       aria-label="Navigation mobile"
-      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] z-40 mx-auto max-w-md rounded-[1.75rem] border border-white/15 bg-primary p-1.5 text-white shadow-[0_10px_30px_-12px] shadow-primary-dark/40 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-primary-foreground/15 bg-primary px-2 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] text-primary-foreground shadow-[0_-4px_16px_-8px] shadow-black/25 lg:hidden"
     >
-      <div className="grid grid-cols-4 gap-1">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
         {MUSICIAN_TAB_ITEMS.map((item) => {
           const active = isMusicianPathActive(pathname, item.href);
           return (
@@ -44,10 +52,8 @@ export function MusicianBottomTabBar({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-0.5 py-2 text-[10px] leading-tight font-medium text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white min-[360px]:text-[11px] motion-reduce:transition-none",
-                active
-                  ? "bg-white/15 text-white ring-2 ring-white ring-inset"
-                  : "hover:bg-white/10"
+                MUSICIAN_TAB_CLASSNAME,
+                active ? MUSICIAN_TAB_ACTIVE_CLASSNAME : MUSICIAN_TAB_IDLE_CLASSNAME
               )}
             >
               <item.icon className="h-[22px] w-[22px]" aria-hidden="true" />

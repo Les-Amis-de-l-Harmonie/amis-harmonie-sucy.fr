@@ -37,7 +37,7 @@ describe("Navigation mobile du musicien", () => {
 
     expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
     const more = screen.getByRole("button", { name: "Plus" });
-    expect(more).toHaveClass("ring-2");
+    expect(more).toHaveClass("bg-card", "ring-2", "ring-primary-foreground");
     await user.click(more);
     const profile = screen.getByRole("link", { name: "Mon profil" });
     expect(profile).toHaveAttribute("href", "/musician/profile");
