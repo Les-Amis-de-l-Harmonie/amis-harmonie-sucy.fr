@@ -9,6 +9,8 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useActingLabels } from "./acting-labels";
+import { useMusicianSession } from "./MusicianSession";
+import { PresenceSheetButton } from "./PresenceLockedNotice";
 import { StatusPill } from "./StatusPill";
 import { formatDateFrench } from "@/lib/dates";
 import type { UpcomingEvent } from "./musician-types";
@@ -39,6 +41,7 @@ export function PrestationsModule({
   urgentEvent,
 }: PrestationsModuleProps) {
   const labels = useActingLabels();
+  const { presenceLocked } = useMusicianSession();
   if (loading) {
     return (
       <Card className="min-h-[168px]" aria-hidden="true">
@@ -54,11 +57,14 @@ export function PrestationsModule({
     );
   }
 
-  const isUrgent = planningUrgent && urgentEvent !== null;
+  // Réponses en ligne fermées (bêta) : on garde les dates, jamais d'appel à répondre ici.
+  const hasUrgentEvent = planningUrgent && urgentEvent !== null;
+  const isUrgent = hasUrgentEvent && !presenceLocked;
   const upcomingEvents = [
-    ...(isUrgent && urgentEvent ? [urgentEvent] : []),
+    ...(hasUrgentEvent && urgentEvent ? [urgentEvent] : []),
     ...nextEvents.filter(
-      (event) => !isUrgent || event.title !== urgentEvent?.title || event.date !== urgentEvent.date
+      (event) =>
+        !hasUrgentEvent || event.title !== urgentEvent?.title || event.date !== urgentEvent.date
     ),
   ].slice(0, 3);
 
@@ -72,7 +78,11 @@ export function PrestationsModule({
         <CardDescription>
           {/* Ni « sortie » (le mot désigne déjà la sortie annuelle, module voisin)
               ni « orchestre » : l'ensemble est une harmonie. */}
-          {isUrgent ? labels.prestationsUrgent : labels.prestationsNext}
+          {presenceLocked
+            ? labels.presenceLockedShort
+            : isUrgent
+              ? labels.prestationsUrgent
+              : labels.prestationsNext}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,15 +120,21 @@ export function PrestationsModule({
                 );
               })}
             </div>
-            {!isUrgent && (
+            {presenceLocked ? (
               <div className="mt-3 flex justify-end">
-                <a href="/musician/disponibilites">
-                  <Button variant="outline" size="sm">
-                    {labels.ctaIndicatePresences}
-                    <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </a>
+                <PresenceSheetButton variant="outline" size="sm" />
               </div>
+            ) : (
+              !isUrgent && (
+                <div className="mt-3 flex justify-end">
+                  <a href="/musician/disponibilites">
+                    <Button variant="outline" size="sm">
+                      {labels.ctaIndicatePresences}
+                      <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </a>
+                </div>
+              )
             )}
           </>
         ) : (
@@ -126,12 +142,16 @@ export function PrestationsModule({
             <p className="text-sm text-muted-foreground">
               Aucune prestation à venir pour le moment.
             </p>
-            <a href="/musician/disponibilites" className="shrink-0">
-              <Button variant="outline" size="sm">
-                {labels.ctaSeePrestations}
-                <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
-              </Button>
-            </a>
+            {presenceLocked ? (
+              <PresenceSheetButton variant="outline" size="sm" />
+            ) : (
+              <a href="/musician/disponibilites" className="shrink-0">
+                <Button variant="outline" size="sm">
+                  {labels.ctaSeePrestations}
+                  <ChevronRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                </Button>
+              </a>
+            )}
           </div>
         )}
       </CardContent>

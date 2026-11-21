@@ -295,6 +295,15 @@ before calling Resend. Locally, trigger the cron with
 Each reminder lists the triggering dates and, below, every other upcoming unanswered date
 (listed only, never claimed).
 
+**Presence answering is in beta** (decision of 21/11/2026): only the accounts in
+`PRESENCE_BETA_TESTERS` (`src/lib/presence-beta.ts`) may answer presences or give parental
+authorizations on the site; everyone else gets a notice pointing to the Google Sheet
+(`PRESENCE_SHEET_URL`). Enforced server-side on the actor (POST → 403) and in the portal via
+`useMusicianSession().presenceLocked`. Admin pages are unaffected. While the beta lasts the
+Sheet is the source of truth and presences are synced to the site by hand, so presence
+reminder e-mails must not be switched to « Activé ». To open to everyone: set
+`PRESENCE_BETA_ENABLED = false` and deploy.
+
 HTML e-mails are MJML templates (`src/lib/free-events/emails/*.mjml`,
 `src/lib/notifications/emails/*.mjml`) compiled by `npm run emails:build` into committed
 `*-html.ts` modules (the Worker cannot run mjml; a test checks they are in sync). Fill the
@@ -419,7 +428,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **80 test files on disk, 79 executed, 686 tests passing** —
+Current baseline: **82 test files on disk, 81 executed, 732 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

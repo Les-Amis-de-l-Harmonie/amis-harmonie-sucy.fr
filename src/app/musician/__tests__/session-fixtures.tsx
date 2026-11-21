@@ -31,8 +31,13 @@ export const THEO: MusicianProfileOption = {
   avatar: "https://example.com/theo.webp",
 };
 
-export function actorOf(profile: MusicianProfileOption): MusicianActorSummary {
+/** Par défaut le compte peut répondre en ligne (testeur de la bêta) : les tests existants restent « déverrouillés ». */
+export function actorOf(
+  profile: MusicianProfileOption,
+  canAnswerPresence = true
+): MusicianActorSummary {
   return {
+    canAnswerPresence,
     userId: profile.userId,
     kind: profile.kind,
     firstName: profile.firstName,
@@ -47,16 +52,24 @@ interface SessionOptions {
   userId?: number;
   delegated?: boolean;
   actor?: MusicianProfileOption;
+  /** Réponses de présence fermées pour ce compte (bêta) : `canAnswerPresence` à faux. */
+  presenceLocked?: boolean;
 }
 
 export function withSession(
-  { profiles, userId, delegated = false, actor = profiles[0] }: SessionOptions,
+  {
+    profiles,
+    userId,
+    delegated = false,
+    actor = profiles[0],
+    presenceLocked = false,
+  }: SessionOptions,
   children: ReactNode
 ) {
   return (
     <MusicianSessionProvider
       userId={userId ?? actor.userId}
-      actor={actorOf(actor)}
+      actor={actorOf(actor, !presenceLocked)}
       delegated={delegated}
       profiles={profiles}
     >

@@ -21,6 +21,11 @@ export interface MusicianSession {
   profiles: MusicianProfileOption[];
   /** Responsable connecté sur son propre compte : aucune donnée de musicien. */
   needsMusicianChoice: boolean;
+  /**
+   * Réponses de présence en ligne fermées pour ce compte (bêta, `src/lib/presence-beta.ts`) :
+   * afficher le renvoi vers le fichier des présences au lieu des réponses.
+   */
+  presenceLocked: boolean;
 }
 
 const MusicianSessionContext = createContext<MusicianSession | null>(null);
@@ -48,6 +53,7 @@ export function MusicianSessionProvider({
       delegated,
       profiles,
       needsMusicianChoice: actor.kind === "guardian" && !delegated,
+      presenceLocked: actor.canAnswerPresence !== true,
     }),
     [userId, actor, delegated, profiles]
   );

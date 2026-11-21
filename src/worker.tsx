@@ -103,6 +103,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { runScheduledTick } from "@/lib/notifications/scheduled";
 
 import { logger } from "@/lib/logger";
+import { canAnswerPresenceOnline } from "@/lib/presence-beta";
 export type AppContext = {};
 
 async function adminAuthMiddleware({ request }: { request: Request }) {
@@ -135,6 +136,7 @@ async function musicianAuthMiddleware({ request }: { request: Request }) {
       firstName: actorProfile?.firstName || "",
       lastName: actorProfile?.lastName || "",
       avatar: actorProfile?.avatar || null,
+      canAnswerPresence: canAnswerPresenceOnline(identity.actor.email),
     },
     delegated: identity.delegated,
     profiles: identity.profiles,

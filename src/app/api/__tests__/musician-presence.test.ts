@@ -4,6 +4,7 @@ import { handleMusicianPresenceApi } from "../musician-presence";
 import { resolveMusicianIdentity } from "../auth";
 import { invalidateCache } from "@/lib/cache";
 import { MUSICIAN_PRESENCE_MEMBER_QUERY } from "@/lib/presence";
+import { PRESENCE_SHEET_URL } from "@/lib/presence-beta";
 
 vi.mock("../auth", () => ({
   resolveMusicianIdentity: vi.fn(),
@@ -69,7 +70,7 @@ interface FakeDb {
 
 const caller = {
   id: 7,
-  email: "musicien@example.fr",
+  email: "leducmaxime@gmail.com",
   role: "MUSICIAN" as const,
   kind: "member" as const,
   is_active: 1,
@@ -265,6 +266,7 @@ describe("handleMusicianPresenceApi", () => {
     const wire = await response.text();
     const body = JSON.parse(wire) as {
       currentUserId: number;
+      presenceBeta: { locked: boolean; sheetUrl: string };
       events: Array<{
         id: number;
         response: {
@@ -289,6 +291,7 @@ describe("handleMusicianPresenceApi", () => {
     expect(wire).toContain("MON_PROPRE_COMMENTAIRE");
     expect(body.events[0]?.roster.length).toBeGreaterThan(0);
     expect(body.currentUserId).toBe(caller.id);
+    expect(body.presenceBeta).toEqual({ locked: false, sheetUrl: PRESENCE_SHEET_URL });
     const event = body.events[0];
     expect(event).toBeDefined();
     if (!event) throw new Error("La réponse événement est absente");
@@ -343,6 +346,24 @@ describe("handleMusicianPresenceApi", () => {
       fakeDb.calls.find((call) => call.sql === MUSICIAN_PRESENCE_MEMBER_QUERY)?.sql
     ).not.toContain("comment");
     expect(MUSICIAN_PRESENCE_MEMBER_QUERY).toContain("AND u.role = 'MUSICIAN'");
+  });
+
+  it("indique le verrou bêta dans la réponse quand le compte n'est pas testeur", async () => {
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: { ...caller, email: "musicien@example.fr" },
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      presenceBeta: { locked: boolean; sheetUrl: string };
+    };
+
+    expect(body.presenceBeta).toEqual({ locked: true, sheetUrl: PRESENCE_SHEET_URL });
   });
 
   it("indique le prénom et la relation du responsable ayant répondu", async () => {
@@ -593,6 +614,31 @@ describe("handleMusicianPresenceApi", () => {
     expect(insert?.binds[3]).toBe("Après répétition");
   });
 
+  it("refuse une réponse hors bêta sans écrire en base", async () => {
+    const originalPresence = fakeDb.ownPresence ? { ...fakeDb.ownPresence } : null;
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: { ...caller, email: "musicien@example.fr" },
+      effective: caller,
+      delegated: false,
+      profiles: [],
+    });
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 12, status: "absent" }),
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Les réponses de présence se font pour l'instant dans le fichier des présences.",
+      sheetUrl: PRESENCE_SHEET_URL,
+    });
+    expect(fakeDb.ownPresence).toEqual(originalPresence);
+    expect(fakeDb.calls).toHaveLength(0);
+  });
+
   it("efface une réponse avec un statut nul de façon idempotente", async () => {
     vi.mocked(resolveMusicianIdentity).mockResolvedValue({
       actor: caller,
@@ -642,6 +688,26 @@ describe("handleMusicianPresenceApi", () => {
     expect(response.status).toBe(200);
     expect(upsert?.binds).toEqual([12, 8, "present", "Réponse du parent", 7]);
     expect(upsert?.sql).toContain("updated_by");
+  });
+
+  it("verrouille aussi la réponse d'un enfant quand le parent n'est pas testeur", async () => {
+    const child = { ...caller, id: 8, kind: "managed" as const };
+    vi.mocked(resolveMusicianIdentity).mockResolvedValueOnce({
+      actor: { ...caller, email: "parent@example.fr" },
+      effective: child,
+      delegated: true,
+      profiles: [],
+    });
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence", {
+        method: "POST",
+        body: JSON.stringify({ eventId: 12, status: "present" }),
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(fakeDb.calls).toHaveLength(0);
   });
 
   it("refuse une réponse pour un musicien non éligible", async () => {

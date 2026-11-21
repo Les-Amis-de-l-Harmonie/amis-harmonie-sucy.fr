@@ -3,6 +3,10 @@ import { resolveMusicianIdentity } from "./auth";
 import { isAdmin, type UserRole } from "@/db/types";
 import { logger } from "@/lib/logger";
 import {
+  canAnswerPresenceOnline,
+  PRESENCE_SHEET_URL,
+} from "@/lib/presence-beta";
+import {
   getParisDate,
   MUSICIAN_PRESENCE_MEMBER_QUERY,
   PRESENCE_UPSERT_SQL,
@@ -432,7 +436,8 @@ async function handleGet(
   request: Request,
   userId: number,
   actorId: number,
-  delegated: boolean
+  delegated: boolean,
+  actorEmail: string
 ): Promise<Response> {
   if (request.method !== "GET") {
     return jsonResponse({ error: "Méthode non autorisée" }, 405);
@@ -454,7 +459,14 @@ async function handleGet(
   // uniquement pour savoir qui est connecté : sans lui, un échec de cet appel ferait
   // disparaître silencieusement la mise en avant et l'icône d'édition de sa propre ligne.
   // C'est l'identifiant de session, jamais une valeur fournie par le client.
-  return jsonResponse({ currentUserId: userId, events: eventStates });
+  return jsonResponse({
+    currentUserId: userId,
+    events: eventStates,
+    presenceBeta: {
+      locked: !canAnswerPresenceOnline(actorEmail),
+      sheetUrl: PRESENCE_SHEET_URL,
+    },
+  });
 }
 
 async function handlePost(
@@ -526,13 +538,28 @@ export async function handleMusicianPresenceApi(request: Request): Promise<Respo
   const identity = await resolveMusicianIdentity(request);
   const user = identity?.effective;
   if (!user) return jsonResponse({ error: "Non autorisé" }, 401);
+  if (request.method === "POST" && !canAnswerPresenceOnline(identity.actor.email)) {
+    return jsonResponse(
+      {
+        error: "Les réponses de présence se font pour l'instant dans le fichier des présences.",
+        sheetUrl: PRESENCE_SHEET_URL,
+      },
+      403
+    );
+  }
   if (user.kind === "guardian" && !identity.delegated) {
     return jsonResponse({ error: "Les présences sont réservées aux musiciens." }, 403);
   }
 
   try {
     if (request.method === "GET") {
-      return await handleGet(request, user.id, identity.actor.id, identity.delegated);
+      return await handleGet(
+        request,
+        user.id,
+        identity.actor.id,
+        identity.delegated,
+        identity.actor.email
+      );
     }
     if (request.method === "POST") {
       return await handlePost(request, user.id, identity.actor.id, identity.delegated);

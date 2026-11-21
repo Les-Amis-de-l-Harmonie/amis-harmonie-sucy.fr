@@ -7,6 +7,7 @@ import { handleMusicianAuthorizationsApi } from "../musician-authorizations";
 import { handleMusicianPresenceApi } from "../musician-presence";
 import { resolveMusicianIdentity } from "../auth";
 import { createD1Database } from "./d1-adapter";
+import { PRESENCE_SHEET_URL } from "@/lib/presence-beta";
 
 vi.mock("../auth", () => ({ resolveMusicianIdentity: vi.fn() }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
@@ -75,11 +76,11 @@ beforeEach(() => {
       .run(id, firstName, "Test");
     return id;
   };
-  const parentId = addUser("parent@example.test", "guardian", "Aurélie");
+  const parentId = addUser("leducmaxime@gmail.com", "guardian", "Aurélie");
   const secondParentId = addUser("second@example.test", "guardian", "Mario");
   const childId = addUser("child@example.test", "managed", "Léa");
   const otherChildId = addUser("other-child@example.test", "member", "Théo");
-  parent = musician(parentId, "guardian", "parent@example.test", "Aurélie");
+  parent = musician(parentId, "guardian", "leducmaxime@gmail.com", "Aurélie");
   child = musician(childId, "managed", "child@example.test", "Léa");
   otherChild = musician(otherChildId, "member", "other-child@example.test", "Théo");
   database
@@ -113,8 +114,10 @@ describe("autorisations parentales du portail", () => {
       new Request("https://test.local/api/musician/presence")
     );
     const initial = (await getResponse.json()) as {
+      presenceBeta: { locked: boolean; sheetUrl: string };
       events: Array<{ authorization: Record<string, unknown> | null }>;
     };
+    expect(initial.presenceBeta).toEqual({ locked: false, sheetUrl: PRESENCE_SHEET_URL });
     expect(initial.events[0]?.authorization).toMatchObject({
       details: "Départ à 8 h",
       status: "missing",
@@ -204,6 +207,36 @@ describe("autorisations parentales du portail", () => {
       success: true,
       authorization: { status: "missing", authorizedBy: null, outdated: false },
     });
+  });
+
+  it("refuse une autorisation parentale hors bêta sans créer de ligne", async () => {
+    useIdentity(true, child, { ...parent, email: "parent@example.test" });
+
+    const response = await handleMusicianAuthorizationsApi(
+      request({ eventId, authorize: true })
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: "Les réponses de présence se font pour l'instant dans le fichier des présences.",
+      sheetUrl: PRESENCE_SHEET_URL,
+    });
+    expect(
+      database.prepare("SELECT count(*) AS count FROM event_authorizations").get()
+    ).toEqual({ count: 0 });
+  });
+
+  it("ajoute le verrou bêta dans la réponse de lecture pour un compte non testeur", async () => {
+    useIdentity(true, child, { ...parent, email: "parent@example.test" });
+
+    const response = await handleMusicianPresenceApi(
+      new Request("https://test.local/api/musician/presence")
+    );
+    const body = (await response.json()) as {
+      presenceBeta: { locked: boolean; sheetUrl: string };
+    };
+
+    expect(body.presenceBeta).toEqual({ locked: true, sheetUrl: PRESENCE_SHEET_URL });
   });
 
   it("refuse l'adolescent hors délégation et une prestation passée", async () => {

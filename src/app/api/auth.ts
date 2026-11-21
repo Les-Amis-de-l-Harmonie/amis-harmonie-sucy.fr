@@ -485,6 +485,11 @@ export interface MusicianActorSummary {
   firstName: string;
   lastName: string;
   avatar: string | null;
+  /**
+   * Le compte connecté peut répondre aux présences sur le site (bêta : voir
+   * `src/lib/presence-beta.ts`). Absent ou false : renvoyer vers le fichier des présences.
+   */
+  canAnswerPresence?: boolean;
 }
 
 export interface MusicianIdentity {

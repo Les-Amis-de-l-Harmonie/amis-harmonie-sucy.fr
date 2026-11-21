@@ -65,6 +65,11 @@ export interface ActingLabels {
   consentStatus: (effective: ImageConsentDetail["effective"]) => string;
   consentRule: string;
   pageAuthorizationsPending: (count: number) => string;
+  presenceLockedTitle: string;
+  presenceLockedText: string;
+  presenceLockedShort: string;
+  presenceSheetButton: string;
+  presenceDatesTitle: string;
   authTitle: string;
   authAuthorize: string;
   authWithdrawMine: string;
@@ -84,6 +89,8 @@ export interface ActingLabels {
   };
 }
 
+const PRESENCE_LOCKED_TITLE = "Les réponses se font encore dans le fichier des présences";
+const PRESENCE_SHEET_BUTTON = "Ouvrir le fichier des présences";
 const CONSENT_RULE =
   "Il suffit qu'un parent accepte ; si un parent refuse, la photo n'est pas utilisée.";
 const TABLE_HELP =
@@ -177,6 +184,13 @@ export function getActingLabels(
       consentRule: CONSENT_RULE,
       pageAuthorizationsPending: (count) =>
         `${count} autorisation${count > 1 ? "s" : ""} parentale${count > 1 ? "s" : ""} en attente`,
+      presenceLockedTitle: PRESENCE_LOCKED_TITLE,
+      presenceLockedText:
+        "Cette page est en cours de finalisation. Pour l'instant, continuez à indiquer vos présences dans le fichier des présences.",
+      presenceLockedShort:
+        "Les présences s'indiquent encore dans le fichier des présences, pas sur le site.",
+      presenceSheetButton: PRESENCE_SHEET_BUTTON,
+      presenceDatesTitle: "Prochaines dates",
       authTitle: "Autorisation parentale",
       authAuthorize: "J'autorise à participer",
       authWithdrawMine: "Retirer mon autorisation",
@@ -263,6 +277,11 @@ export function getActingLabels(
     consentRule: CONSENT_RULE,
     pageAuthorizationsPending: (count) =>
       `${count} autorisation${count > 1 ? "s" : ""} parentale${count > 1 ? "s" : ""} à donner pour ${name}`,
+    presenceLockedTitle: PRESENCE_LOCKED_TITLE,
+    presenceLockedText: `Cette page est en cours de finalisation. Pour l'instant, continuez à indiquer les présences de ${name} dans le fichier des présences.`,
+    presenceLockedShort: `Les présences de ${name} s'indiquent encore dans le fichier des présences, pas sur le site.`,
+    presenceSheetButton: PRESENCE_SHEET_BUTTON,
+    presenceDatesTitle: "Prochaines dates",
     authTitle: "Autorisation parentale",
     authAuthorize: `J'autorise ${name} à participer`,
     authWithdrawMine: "Retirer mon autorisation",

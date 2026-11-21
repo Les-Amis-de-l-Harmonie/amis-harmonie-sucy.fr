@@ -7,6 +7,7 @@ import {
 } from "./musician-presence";
 import { getParisDate } from "@/lib/presence";
 import { logger } from "@/lib/logger";
+import { canAnswerPresenceOnline, PRESENCE_SHEET_URL } from "@/lib/presence-beta";
 
 interface AuthorizationRequestBody {
   eventId: number;
@@ -61,6 +62,15 @@ export async function handleMusicianAuthorizationsApi(request: Request): Promise
   }
   if (!identity) return jsonResponse({ error: "Non autorisé" }, 401);
   if (request.method !== "POST") return jsonResponse({ error: "Méthode non autorisée" }, 405);
+  if (!canAnswerPresenceOnline(identity.actor.email)) {
+    return jsonResponse(
+      {
+        error: "Les réponses de présence se font pour l'instant dans le fichier des présences.",
+        sheetUrl: PRESENCE_SHEET_URL,
+      },
+      403
+    );
+  }
   if (!identity.delegated) {
     return jsonResponse({ error: "Seul un responsable peut gérer cette autorisation." }, 403);
   }

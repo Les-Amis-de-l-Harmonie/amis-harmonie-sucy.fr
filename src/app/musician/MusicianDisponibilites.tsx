@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Calendar, Check, Clock, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/empty-state";
 import type { PresenceStatus } from "@/db/types";
-import { isEventPast } from "@/lib/dates";
+import { formatDateFrench, isEventPast } from "@/lib/dates";
+import { PRESENCE_BETA_ENABLED } from "@/lib/presence-beta";
 import { useActingLabels } from "./acting-labels";
+import { useMusicianSession } from "./MusicianSession";
+import { PresenceLockedNotice } from "./PresenceLockedNotice";
 import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { needsAuthorizationAttention } from "./authorization-helpers";
 import type { PresenceEvent } from "./musician-types";
@@ -205,9 +208,12 @@ function MusicianDisponibilitesContent() {
       <div className="space-y-2">
         {/* Le téléphone affiche déjà le titre dans son bandeau : le <h1> reste pour les
             lecteurs d'écran et réapparaît dès `sm`. */}
-        <h1 className="sr-only text-3xl font-bold text-foreground sm:not-sr-only">
-          {labels.pageTitlePrestations}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="sr-only text-3xl font-bold text-foreground sm:not-sr-only">
+            {labels.pageTitlePrestations}
+          </h1>
+          {PRESENCE_BETA_ENABLED && <BetaBadge />}
+        </div>
         <p
           className={
             upcoming.length > 0 && unansweredCount === 0
@@ -334,10 +340,95 @@ function MusicianDisponibilitesContent() {
   );
 }
 
+/** Rappel discret : les réponses en ligne sont en bêta. Le titre mobile est dans le bandeau. */
+function BetaBadge() {
+  return (
+    <span className="hidden rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:inline-block">
+      Bêta
+    </span>
+  );
+}
+
+interface UpcomingDate {
+  id: number;
+  title: string;
+  date: string;
+  time: string | null;
+  location: string | null;
+}
+
+/**
+ * Bêta des réponses en ligne : ce compte répond encore dans le fichier des présences.
+ * On n'affiche aucun état de réponse (il pourrait être périmé) ni aucune action, y compris
+ * l'autorisation parentale : seulement le renvoi vers le fichier, puis les prochaines dates.
+ */
+function MusicianDisponibilitesLocked() {
+  const labels = useActingLabels();
+  const [dates, setDates] = useState<UpcomingDate[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/musician/presence")
+      .then((response) => (response.ok ? (response.json() as Promise<PresenceApiResponse>) : null))
+      .then((result) => {
+        if (cancelled || !result) return;
+        setDates(
+          result.events
+            .filter((event) => !isEventPast(event.date))
+            .map(({ id, title, date, time, location }) => ({ id, title, date, time, location }))
+        );
+      })
+      .catch(() => {
+        // Les dates ne sont qu'un confort : le renvoi vers le fichier suffit.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-4">
+      <div className="flex items-center gap-3">
+        <h1 className="sr-only text-3xl font-bold text-foreground sm:not-sr-only">
+          {labels.pageTitlePrestations}
+        </h1>
+        <BetaBadge />
+      </div>
+
+      <PresenceLockedNotice />
+
+      {dates && dates.length > 0 && (
+        <section aria-labelledby="upcoming-dates-title" className="space-y-3">
+          <h2 id="upcoming-dates-title" className="text-lg font-semibold text-foreground">
+            {labels.presenceDatesTitle}
+          </h2>
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+            {dates.map((event) => (
+              <li key={event.id} className="space-y-0.5 p-3">
+                <p className="break-words text-sm font-semibold text-foreground">{event.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDateFrench(event.date)}
+                  {event.time && ` · ${event.time}`}
+                  {event.location && ` · ${event.location}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function MusicianDisponibilitesGate() {
+  const { presenceLocked } = useMusicianSession();
+  return presenceLocked ? <MusicianDisponibilitesLocked /> : <MusicianDisponibilitesContent />;
+}
+
 export function MusicianDisponibilites() {
   return (
     <MusicianChoiceGate title="Mes prestations">
-      <MusicianDisponibilitesContent />
+      <MusicianDisponibilitesGate />
     </MusicianChoiceGate>
   );
 }

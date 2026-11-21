@@ -6,6 +6,7 @@ import { Progress } from "@/app/components/ui/progress";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useActingLabels } from "./acting-labels";
+import { useMusicianSession } from "./MusicianSession";
 import { buildProfileJourney } from "./profile-journey";
 import type { ProfileWithExtras, UpcomingEvent } from "./musician-types";
 
@@ -31,6 +32,7 @@ export function JourneyModule({
   pendingCount,
 }: JourneyModuleProps) {
   const labels = useActingLabels();
+  const { presenceLocked } = useMusicianSession();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
 
@@ -48,18 +50,26 @@ export function JourneyModule({
     );
   }
 
+  // Réponses en ligne fermées (bêta) : l'étape « Prestations » n'a rien à faire faire sur
+  // le site, elle ne doit ni compter « à faire » ni renvoyer vers une page où l'on ne
+  // peut pas répondre. Le module des prestations, dessous, porte le renvoi vers le fichier.
   const steps = buildProfileJourney(
     profile,
     planningUrgent,
     urgentEvent,
     pendingCount,
     labels.journey
-  );
+  ).filter((step) => !(presenceLocked && step.key === "presence"));
   const doneCount = steps.filter((step) => step.status === "done").length;
   const allDone = doneCount === steps.length;
 
   const stepsList = (
-    <ol className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <ol
+      className={cn(
+        "grid grid-cols-2 gap-3",
+        steps.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
+      )}
+    >
       {steps.map((step, index) => (
         <li key={step.key}>
           <a
