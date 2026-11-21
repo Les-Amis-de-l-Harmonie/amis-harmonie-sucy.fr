@@ -9,6 +9,7 @@ import { PRESENCE_BETA_ENABLED } from "@/lib/presence-beta";
 import { useActingLabels } from "./acting-labels";
 import { useMusicianSession } from "./MusicianSession";
 import { PresenceLockedNotice } from "./PresenceLockedNotice";
+import { getPracticalInfo } from "./presence-format";
 import { MusicianChoiceGate } from "./ChooseMusicianState";
 import { needsAuthorizationAttention } from "./authorization-helpers";
 import type { PresenceEvent } from "./musician-types";
@@ -340,6 +341,24 @@ function MusicianDisponibilitesContent() {
   );
 }
 
+/** Rendez-vous, tenue et consignes d'une date (vue en lecture seule, sans feuille de détail). */
+function PracticalInfoLines({ event }: { event: UpcomingDate }) {
+  const { callTime, dressCode, notes } = getPracticalInfo(event);
+  if (!callTime && !dressCode && !notes) return null;
+  return (
+    <div className="space-y-0.5 pt-1 text-xs">
+      {(callTime || dressCode) && (
+        <p className="font-medium text-foreground/80">
+          {[callTime && `Rendez-vous ${callTime}`, dressCode && `Tenue : ${dressCode}`]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
+      {notes && <p className="whitespace-pre-wrap break-words text-muted-foreground">{notes}</p>}
+    </div>
+  );
+}
+
 /** Rappel discret : les réponses en ligne sont en bêta. Le titre mobile est dans le bandeau. */
 function BetaBadge() {
   return (
@@ -355,6 +374,9 @@ interface UpcomingDate {
   date: string;
   time: string | null;
   location: string | null;
+  call_time: string | null;
+  dress_code: string | null;
+  musician_notes: string | null;
 }
 
 /**
@@ -375,7 +397,16 @@ function MusicianDisponibilitesLocked() {
         setDates(
           result.events
             .filter((event) => !isEventPast(event.date))
-            .map(({ id, title, date, time, location }) => ({ id, title, date, time, location }))
+            .map(({ id, title, date, time, location, call_time, dress_code, musician_notes }) => ({
+              id,
+              title,
+              date,
+              time,
+              location,
+              call_time: call_time ?? null,
+              dress_code: dress_code ?? null,
+              musician_notes: musician_notes ?? null,
+            }))
         );
       })
       .catch(() => {
@@ -411,6 +442,7 @@ function MusicianDisponibilitesLocked() {
                   {event.time && ` · ${event.time}`}
                   {event.location && ` · ${event.location}`}
                 </p>
+                <PracticalInfoLines event={event} />
               </li>
             ))}
           </ul>

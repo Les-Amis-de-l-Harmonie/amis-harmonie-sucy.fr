@@ -283,6 +283,12 @@ linked child, parents answer in `guardian_image_consents`; admins record paper a
 `/api/admin/guardians?action=image-consent`. Parental authorizations per event live in
 `event_authorizations` (`/api/musician/authorizations`, `/api/admin/authorizations`).
 
+Musician-only event info (migration 0020): `events.dress_code`, `call_time` (free format like
+`time`, e.g. « 10H30 ») and `musician_notes` are entered in the admin event form (section
+« Pour les musiciens ») and shown in the musician portal and reminder e-mails only. They must
+**never** reach the public site: `src/lib/public-events.ts` lists its columns explicitly (a
+test enforces it), so never switch a public query to `SELECT *`.
+
 Automatic e-mails (migration 0019): the Worker default export in `src/worker.tsx` also has a
 `scheduled` handler (cron `0 9 * * *` in `wrangler.jsonc`) that only awaits
 `runScheduledTick` from `src/lib/notifications/scheduled.ts`. Presence reminders are gated by
@@ -388,8 +394,8 @@ for schema-altering SQL.**
 5. Update `src/db/types.ts`, and `src/db/schema.sql` if you touched structure
 
 Migrations are **append-only** — never edit one that has already been applied. Guard
-with `IF NOT EXISTS` / `IF EXISTS`. Current state: 19 migrations, latest
-`0019_add_notification_settings.sql`.
+with `IF NOT EXISTS` / `IF EXISTS`. Current state: 20 migrations, latest
+`0020_add_event_musician_info.sql`.
 
 > **`migrations/` is authoritative. `src/db/schema.sql` is a stale reference — do not
 > use it to confirm that a table or column exists.** See §6.
@@ -428,7 +434,7 @@ Vitest with `happy-dom`, `globals: true`, setup in `src/__tests__/setup.ts`, and
 `cloudflare:workers` aliased to `src/__tests__/mocks/cloudflare-workers.ts`.
 Tests live in `__tests__/` directories colocated with the code.
 
-Current baseline: **82 test files on disk, 81 executed, 732 tests passing** —
+Current baseline: **83 test files on disk, 82 executed, 756 tests passing** —
 `src/lib/__tests__/cache.test.ts` is excluded in `vitest.config.ts` because it needs
 real Cloudflare bindings. Test names are written in French, matching the codebase.
 

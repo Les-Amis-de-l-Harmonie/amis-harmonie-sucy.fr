@@ -17,6 +17,12 @@ export interface Event {
   parental_authorization_required: number;
   /** 0018 : précisions données aux parents (transport, horaires…). */
   authorization_details: string | null;
+  /** 0020 : tenue attendue des musiciens (jamais publique). */
+  dress_code: string | null;
+  /** 0020 : heure de rendez-vous des musiciens, format libre comme `time` (jamais publique). */
+  call_time: string | null;
+  /** 0020 : consignes pour les musiciens (jamais publiques). */
+  musician_notes: string | null;
   created_at: string;
 }
 

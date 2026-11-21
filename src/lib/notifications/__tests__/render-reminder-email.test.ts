@@ -35,6 +35,8 @@ function line(overrides: Partial<ReminderEventLine> = {}): ReminderEventLine {
     dateLabel: "samedi 19 décembre 2026",
     timeLabel: "20:30",
     location: "Espace Jean-Marie Poirier",
+    dressCode: null,
+    callTimeLabel: null,
     deadlineLabel: "20 novembre 2026",
     deadlineSoon: false,
     ...overrides,
@@ -193,6 +195,105 @@ describe("renderReminderHtml", () => {
     expect(text).toContain("samedi 19 décembre 2026 Réponse attendue");
     expect(text).not.toContain(" à null");
     expect(text).not.toContain("null");
+  });
+
+  it("affiche le rendez-vous et la tenue sous chaque date à confirmer", () => {
+    const text = visibleText(
+      renderReminderHtml(
+        reminder({
+          sections: [
+            {
+              label: "Pour vous",
+              isRecipient: true,
+              due: [line({ callTimeLabel: "10H30", dressCode: "Noir, nœud papillon" })],
+              others: [],
+            },
+          ],
+        })
+      )
+    );
+    expect(text).toContain("Rendez-vous : 10H30");
+    expect(text).toContain("Tenue : Noir, nœud papillon");
+    // Sous la date, avant la date limite de réponse.
+    expect(text.indexOf("Rendez-vous : 10H30")).toBeLessThan(text.indexOf("Réponse attendue"));
+    expect(text.indexOf("Concert de Noël")).toBeLessThan(text.indexOf("Rendez-vous : 10H30"));
+  });
+
+  it("affiche aussi le rendez-vous et la tenue des autres dates, sur une ligne", () => {
+    const text = visibleText(
+      renderReminderHtml(
+        reminder({
+          sections: [
+            {
+              label: "Pour vous",
+              isRecipient: true,
+              due: [line()],
+              others: [
+                line({ title: "Banquet", callTimeLabel: "10H30", dressCode: "Tenue de ville" }),
+              ],
+            },
+          ],
+        })
+      )
+    );
+    expect(text).toContain("Rendez-vous : 10H30 · Tenue : Tenue de ville");
+  });
+
+  it("n'affiche que ce qui est renseigné, sans mention vide", () => {
+    const onlyDress = visibleText(
+      renderReminderHtml(
+        reminder({
+          sections: [
+            {
+              label: "Pour vous",
+              isRecipient: true,
+              due: [line({ dressCode: "Noir" })],
+              others: [],
+            },
+          ],
+        })
+      )
+    );
+    expect(onlyDress).toContain("Tenue : Noir");
+    expect(onlyDress).not.toContain("Rendez-vous :");
+
+    const none = visibleText(
+      renderReminderHtml(
+        reminder({
+          sections: [
+            {
+              label: "Pour vous",
+              isRecipient: true,
+              due: [line({ dressCode: null, callTimeLabel: "  " })],
+              others: [],
+            },
+          ],
+        })
+      )
+    );
+    expect(none).not.toContain("Rendez-vous");
+    expect(none).not.toContain("Tenue");
+  });
+
+  it("échappe le rendez-vous et la tenue", () => {
+    const html = renderReminderHtml(
+      reminder({
+        sections: [
+          {
+            label: "Pour vous",
+            isRecipient: true,
+            due: [
+              line({ dressCode: '<script>alert("x")</script>', callTimeLabel: "{{reason}} <b>" }),
+            ],
+            others: [],
+          },
+        ],
+      })
+    );
+    expect(html).not.toContain("<script>alert");
+    expect(html).toContain("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;");
+    expect(html).toContain("&lt;b&gt;");
+    expect(html).toContain("{{reason}}");
   });
 
   it("rend une carte par personne, dans l'ordre donné", () => {

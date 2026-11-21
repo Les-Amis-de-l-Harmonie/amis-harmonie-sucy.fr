@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { dueReminderStages, groupReminderTargets } from "../planning";
-import type { ReminderTarget } from "../types";
+import { dueReminderStages, groupReminderTargets, withOtherEvents } from "../planning";
+import type { ReminderOtherEvent, ReminderTarget } from "../types";
 
 function target(overrides: Partial<ReminderTarget> = {}): ReminderTarget {
   return {
@@ -9,6 +9,8 @@ function target(overrides: Partial<ReminderTarget> = {}): ReminderTarget {
     eventDate: "2099-06-10",
     eventTime: "20:00",
     eventLocation: "Salle des fêtes",
+    eventDressCode: null,
+    eventCallTime: null,
     responseDeadline: "2099-06-10",
     stage: 7,
     recipientUserId: 10,
@@ -93,5 +95,35 @@ describe("paliers des rappels de présence", () => {
       "Pour Jules",
     ]);
     expect(reminder?.subjectNames).toEqual(["Sam", "Jules"]);
+  });
+
+  it("ajoute tenue et rendez-vous aux lignes dues et aux autres dates", () => {
+    const [baseReminder] = groupReminderTargets(
+      [target({ eventDressCode: "Tenue noire", eventCallTime: "10H30" })],
+      "2099-06-05"
+    );
+    if (!baseReminder) throw new Error("Le rappel attendu est absent");
+
+    const otherEvent: ReminderOtherEvent = {
+      subjectUserId: 1,
+      eventId: 2,
+      eventTitle: "Répétition",
+      eventDate: "2099-06-20",
+      eventTime: "14:00",
+      eventLocation: "Salle des fêtes",
+      eventDressCode: "Tenue claire",
+      eventCallTime: "13H45",
+      responseDeadline: null,
+    };
+    const reminder = withOtherEvents(baseReminder, [otherEvent]);
+    const dueLine = reminder.emailModel.sections[0]?.due[0];
+    const otherLine = reminder.emailModel.sections[0]?.others[0];
+
+    expect(dueLine).toMatchObject({ dressCode: "Tenue noire", callTimeLabel: "10H30" });
+    expect(otherLine).toMatchObject({ dressCode: "Tenue claire", callTimeLabel: "13H45" });
+    expect(reminder.text).toContain("Tenue : Tenue noire");
+    expect(reminder.text).toContain("Rendez-vous : 10H30");
+    expect(reminder.text).toContain("Tenue : Tenue claire");
+    expect(reminder.text).toContain("Rendez-vous : 13H45");
   });
 });

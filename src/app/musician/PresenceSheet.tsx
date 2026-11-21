@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   AlertTriangle,
   Calendar,
+  AlarmClock,
   Check,
   ChevronDown,
   Clock,
@@ -12,6 +13,7 @@ import {
   Lock,
   MapPin,
   MessageSquare,
+  Shirt,
   Undo2,
   UserRound,
   X,
@@ -31,7 +33,7 @@ import { useActingLabels } from "./acting-labels";
 import { AuthorizationBlock } from "./AuthorizationBlock";
 import type { PresenceEvent } from "./musician-types";
 import { getDeadlineTone } from "./presence-deadline";
-import { formatAnsweredBy } from "./presence-format";
+import { formatAnsweredBy, getPracticalInfo } from "./presence-format";
 import {
   buildMusicianRows,
   countPupitre,
@@ -233,6 +235,7 @@ export function PresenceDetail({
     ? { label: "Prestation passée : réponses closes", tone: "muted" as const }
     : getDeadlineTone(event.response_deadline, answered);
   const answeredByLine = answered ? formatAnsweredBy(event.response.answeredBy) : null;
+  const practical = getPracticalInfo(event);
   const pendingAction = pending[event.id] ?? null;
   const errorMessage = errors[event.id] ?? null;
   const commentDirty = comment.trim() !== (event.response.comment ?? "").trim();
@@ -286,6 +289,18 @@ export function PresenceDetail({
           </p>
         )}
       </div>
+
+      {practical.notes && (
+        <section
+          aria-label="Consignes"
+          className="rounded-lg border border-border bg-muted/40 p-3 text-sm"
+        >
+          <h3 className="text-sm font-semibold text-foreground">Consignes</h3>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-muted-foreground">
+            {practical.notes}
+          </p>
+        </section>
+      )}
 
       {event.authorization && (
         <AuthorizationBlock
@@ -491,6 +506,7 @@ export function PresenceSheet({
   const lastEvent = useRef<PresenceEvent | null>(null);
   if (event) lastEvent.current = event;
   const shown = event ?? lastEvent.current;
+  const practical = getPracticalInfo(shown ?? {});
 
   return (
     <Sheet open={event !== null} onOpenChange={(next) => !next && onClose()}>
@@ -535,6 +551,18 @@ export function PresenceSheet({
                           {shown.time && <> · {shown.time}</>}
                         </span>
                       </p>
+                      {practical.callTime && (
+                        <p className="flex items-center gap-1.5 font-medium text-foreground">
+                          <AlarmClock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          <span>Rendez-vous {practical.callTime}</span>
+                        </p>
+                      )}
+                      {practical.dressCode && (
+                        <p className="flex items-start gap-1.5">
+                          <Shirt className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          <span>Tenue : {practical.dressCode}</span>
+                        </p>
+                      )}
                       {(shown.location || shown.address) && (
                         <p className="flex items-start gap-1.5">
                           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />

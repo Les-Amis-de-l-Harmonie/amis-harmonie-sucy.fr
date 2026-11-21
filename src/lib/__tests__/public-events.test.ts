@@ -36,10 +36,13 @@ describe("requêtes de lecture publique des événements", () => {
     expect(PUBLIC_EVENTS_API_QUERY.split("FROM events")[0]).not.toContain("is_public");
   });
 
-  it("ne transmet jamais les nouvelles consignes parentales aux surfaces publiques", () => {
+  it("ne transmet jamais les informations réservées aux musiciens aux surfaces publiques", () => {
     for (const query of PUBLIC_EVENT_QUERIES) {
       expect(query).not.toContain("parental_authorization_required");
       expect(query).not.toContain("authorization_details");
+      expect(query).not.toContain("dress_code");
+      expect(query).not.toContain("call_time");
+      expect(query).not.toContain("musician_notes");
     }
   });
 

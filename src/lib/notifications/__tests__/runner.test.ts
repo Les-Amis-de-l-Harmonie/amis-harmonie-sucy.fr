@@ -117,12 +117,21 @@ beforeEach(() => {
     )
     .run(reservedGuardianId, childTwoId, "tuteur");
   database.exec(`
-    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
-      VALUES ('Concert du 10 juin', '2099-06-10', '20:00', 'Salle des fêtes', '2099-06-10', 1);
-    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
-      VALUES ('Sortie du 6 juin', '2099-06-06', '09:30', 'Parc municipal', '2099-06-06', 1);
-    INSERT INTO events (title, date, time, location, response_deadline, presence_required)
-      VALUES ('Répétition du 20 juin', '2099-06-20', '14:00:00', 'Salle de répétition', '2099-06-18', 1);
+    INSERT INTO events (
+      title, date, time, location, response_deadline, presence_required, dress_code, call_time
+    ) VALUES (
+      'Concert du 10 juin', '2099-06-10', '20:00', 'Salle des fêtes', '2099-06-10', 1,
+      'Tenue noire', '10H30'
+    );
+    INSERT INTO events (
+      title, date, time, location, response_deadline, presence_required
+    ) VALUES ('Sortie du 6 juin', '2099-06-06', '09:30', 'Parc municipal', '2099-06-06', 1);
+    INSERT INTO events (
+      title, date, time, location, response_deadline, presence_required, dress_code, call_time
+    ) VALUES (
+      'Répétition du 20 juin', '2099-06-20', '14:00:00', 'Salle de répétition', '2099-06-18', 1,
+      'Tenue claire', '13H45'
+    );
     INSERT INTO events (title, date, time, location, response_deadline, presence_required)
       VALUES ('Date déjà répondue', '2099-06-22', '18:00', 'École de musique', '2099-06-22', 1);
     INSERT INTO events (title, date, presence_required)
@@ -311,6 +320,10 @@ describe("exécution sûre des rappels de présence", () => {
     expect(parentItem?.text).toContain("Autres dates sans réponse");
     expect(parentItem?.text).toContain("Répétition du 20 juin");
     expect(parentItem?.text).toContain("Salle de répétition");
+    expect(parentItem?.text).toContain("Tenue : Tenue noire");
+    expect(parentItem?.text).toContain("Rendez-vous : 10H30");
+    expect(parentItem?.text).toContain("Tenue : Tenue claire");
+    expect(parentItem?.text).toContain("Rendez-vous : 13H45");
     expect(parentItem?.text).toContain("Date déjà répondue");
     expect(parentItem?.text).not.toContain("Date passée");
     expect(parentItem?.text).not.toContain("Sans réponse obligatoire");

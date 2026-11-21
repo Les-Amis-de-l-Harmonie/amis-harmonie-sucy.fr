@@ -24,6 +24,9 @@ export interface PresenceEventRow {
   response_deadline: string | null;
   parental_authorization_required: number;
   authorization_details: string | null;
+  dress_code: string | null;
+  call_time: string | null;
+  musician_notes: string | null;
 }
 
 interface OwnPresenceRow {
@@ -110,6 +113,9 @@ interface MusicianPresenceEvent {
   location: string | null;
   address: string | null;
   response_deadline: string | null;
+  dress_code: string | null;
+  call_time: string | null;
+  musician_notes: string | null;
   response: PresenceResponse;
   roster: PresenceRosterEntry[];
   counts: {
@@ -447,6 +453,7 @@ async function handleGet(
   const dateCondition = includePast ? "date >= date('now', '-12 months')" : "date >= date('now')";
   const events = await env.DB.prepare(
     `SELECT id, title, date, time, location, address, response_deadline,
+            dress_code, call_time, musician_notes,
             parental_authorization_required, authorization_details
      FROM events
      WHERE presence_required = 1 AND ${dateCondition}
@@ -496,6 +503,7 @@ async function handlePost(
   }
   const event = await env.DB.prepare(
     `SELECT id, title, date, time, location, address, response_deadline,
+            dress_code, call_time, musician_notes,
             parental_authorization_required, authorization_details
      FROM events
      WHERE id = ? AND presence_required = 1 AND date >= date('now')`

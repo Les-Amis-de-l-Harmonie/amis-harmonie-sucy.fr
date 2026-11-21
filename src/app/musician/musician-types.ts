@@ -123,6 +123,10 @@ export interface PresenceEvent {
   };
   roster: PresenceRosterEntry[];
   authorization?: PresenceAuthorization | null;
+  /** Infos pratiques saisies par l'association (jamais publiques) ; absentes des anciennes réponses. */
+  dress_code?: string | null;
+  call_time?: string | null;
+  musician_notes?: string | null;
   counts: {
     present: number;
     absent: number;

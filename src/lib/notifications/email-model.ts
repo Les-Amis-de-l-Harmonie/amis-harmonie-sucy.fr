@@ -13,6 +13,8 @@ export interface ReminderEventLine {
   /** Ex. « 14:00 » ; null si l'heure n'est pas connue. */
   timeLabel: string | null;
   location: string | null;
+  dressCode: string | null;
+  callTimeLabel: string | null;
   /** Ex. « 23 novembre 2026 » : date limite de réponse (ou date de l'événement à défaut). */
   deadlineLabel: string;
   /** La date limite tombe dans les 2 jours (affichage plus appuyé). */

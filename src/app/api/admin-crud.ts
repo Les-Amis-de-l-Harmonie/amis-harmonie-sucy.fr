@@ -17,6 +17,9 @@ export interface EventInput {
   response_deadline?: string | null;
   parental_authorization_required?: number;
   authorization_details?: string | null;
+  dress_code?: string | null;
+  call_time?: string | null;
+  musician_notes?: string | null;
 }
 
 export interface PublicationInput {

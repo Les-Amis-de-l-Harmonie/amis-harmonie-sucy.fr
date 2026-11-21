@@ -82,6 +82,9 @@ const emptyEvent = {
   presence_required: 0,
   parental_authorization_required: 0,
   authorization_details: "",
+  dress_code: "",
+  call_time: "",
+  musician_notes: "",
   address: "",
   response_deadline: "",
 };
@@ -341,6 +344,21 @@ export function EventsAdminClient() {
       <ChevronDown className="w-3.5 h-3.5 ml-1" />
     );
   };
+
+  // Tenues déjà utilisées (distinctes, les plus récentes d'abord) : on les propose à la saisie
+  // pour que « Tenue noire » ne devienne pas « tenue noir » d'un événement à l'autre.
+  const dressCodeSuggestions = useMemo(() => {
+    const seen = new Set<string>();
+    const suggestions: string[] = [];
+    const byRecentDate = [...events].sort((a, b) => b.date.localeCompare(a.date));
+    for (const event of byRecentDate) {
+      const dressCode = event.dress_code?.trim();
+      if (!dressCode || seen.has(dressCode.toLowerCase())) continue;
+      seen.add(dressCode.toLowerCase());
+      suggestions.push(dressCode);
+    }
+    return suggestions;
+  }, [events]);
 
   const availableYears = useMemo(
     () => [...new Set(events.map((e) => e.date.slice(0, 4)))].sort((a, b) => b.localeCompare(a)),
@@ -741,6 +759,62 @@ export function EventsAdminClient() {
                       Par défaut trois semaines avant la prestation. Une réponse modifiée après
                       cette date est signalée.
                     </p>
+                  </div>
+                )}
+
+                {!!editingEvent.presence_required && (
+                  <div className="border-t border-border pt-3 grid gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold">Pour les musiciens</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Visible uniquement dans l'espace musicien, jamais sur le site public.
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="dress_code">Tenue</Label>
+                      <Input
+                        id="dress_code"
+                        list="dress-code-suggestions"
+                        autoComplete="off"
+                        value={editingEvent.dress_code || ""}
+                        onChange={(e) =>
+                          setEditingEvent({ ...editingEvent, dress_code: e.target.value })
+                        }
+                        placeholder="Tenue noire, chemise blanche…"
+                      />
+                      <datalist id="dress-code-suggestions">
+                        {dressCodeSuggestions.map((dressCode) => (
+                          <option key={dressCode} value={dressCode} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="call_time">Heure de rendez-vous</Label>
+                      <Input
+                        id="call_time"
+                        value={editingEvent.call_time || ""}
+                        onChange={(e) =>
+                          setEditingEvent({ ...editingEvent, call_time: e.target.value })
+                        }
+                        placeholder="10H30"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        L'heure à laquelle les musiciens doivent être là, si elle diffère de l'heure
+                        de la prestation.
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="musician_notes">Consignes</Label>
+                      <Textarea
+                        id="musician_notes"
+                        value={editingEvent.musician_notes || ""}
+                        onChange={(e) =>
+                          setEditingEvent({ ...editingEvent, musician_notes: e.target.value })
+                        }
+                        rows={4}
+                        placeholder="Morceaux à apporter, stationnement, repas…"
+                      />
+                    </div>
                   </div>
                 )}
 

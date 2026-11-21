@@ -221,6 +221,9 @@ const event: Event = {
   response_deadline: "2026-09-01",
   parental_authorization_required: 0,
   authorization_details: null,
+  dress_code: null,
+  call_time: null,
+  musician_notes: null,
   created_at: "2026-01-01 00:00:00",
 };
 

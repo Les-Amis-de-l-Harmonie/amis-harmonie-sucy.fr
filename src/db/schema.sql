@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS events (
            OR response_deadline GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   parental_authorization_required INTEGER NOT NULL DEFAULT 0, -- 0018
-  authorization_details TEXT -- 0018
+  authorization_details TEXT, -- 0018
+  dress_code TEXT, -- 0020 : tenue attendue (musiciens seulement)
+  call_time TEXT, -- 0020 : heure de rendez-vous (musiciens seulement)
+  musician_notes TEXT -- 0020 : consignes pour les musiciens
 );
 
 CREATE TABLE IF NOT EXISTS videos (

@@ -26,7 +26,7 @@ import type { Event } from "@/db/types";
  *
  * Ne pas remplacer par `SELECT *` : la réponse exposerait alors `is_public`,
  * `presence_required`, `address` et `response_deadline`, c'est-à-dire
- * l'organisation interne des prestations.
+ * l'organisation interne des prestations et les informations réservées aux musiciens.
  *
  * `is_past` est une colonne héritée (`migrations/0001_initial.sql`), absente de
  * `schema.sql` et inutilisée dans `src/` : elle est conservée uniquement pour que
@@ -37,9 +37,9 @@ export const PUBLIC_EVENTS_API_QUERY =
   "details_link, reservation_link, created_at " +
   "FROM events WHERE is_public = 1 ORDER BY date ASC";
 
-// Les pages publiques conservaient historiquement SELECT * et donc ces colonnes
-// préexistantes. La liste explicite empêche les nouvelles consignes parentales de
-// devenir publiques lors de futures migrations.
+// Les pages publiques conservaient historiquement SELECT * et donc certaines colonnes
+// internes préexistantes. La liste explicite empêche les nouvelles informations réservées
+// aux musiciens de devenir publiques lors de futures migrations.
 const PUBLIC_PAGE_EVENT_COLUMNS =
   "id, title, image, location, description, date, time, price, is_past, " +
   "details_link, reservation_link, created_at, is_public, presence_required, address, response_deadline";
@@ -74,6 +74,9 @@ export type PublicEventRow = Omit<
   | "response_deadline"
   | "parental_authorization_required"
   | "authorization_details"
+  | "dress_code"
+  | "call_time"
+  | "musician_notes"
 > & { is_past: number | null };
 
 /** Toutes les requêtes de lecture publique, pour les tests de non-régression. */

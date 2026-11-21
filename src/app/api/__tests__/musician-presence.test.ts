@@ -54,6 +54,9 @@ interface FakeEvent {
   location: string | null;
   address: string | null;
   response_deadline: string | null;
+  dress_code: string | null;
+  call_time: string | null;
+  musician_notes: string | null;
 }
 
 interface FakeDb {
@@ -109,6 +112,9 @@ function createFakeDb(): FakeDb {
       location: "Salle des fêtes",
       address: "1 rue de Sucy",
       response_deadline: "2099-01-01",
+      dress_code: "Tenue de cérémonie",
+      call_time: "10H30",
+      musician_notes: "Apporter les partitions",
     },
     events: [],
     pastEvent: false,
@@ -301,14 +307,22 @@ describe("handleMusicianPresenceApi", () => {
       "date",
       "time",
       "location",
-      "address",
-      "response_deadline",
+        "address",
+        "response_deadline",
+        "dress_code",
+        "call_time",
+        "musician_notes",
         "response",
         "roster",
         "counts",
         "authorization",
       ]);
     expect(event.authorization).toBeNull();
+    expect(event).toMatchObject({
+      dress_code: "Tenue de cérémonie",
+      call_time: "10H30",
+      musician_notes: "Apporter les partitions",
+    });
     expect(Object.keys(event.response)).toEqual(["status", "comment", "updated_at", "answeredBy"]);
     expect(event.response.answeredBy).toBeNull();
     expect(Object.keys(event.roster[0] ?? {})).toEqual([
@@ -361,9 +375,19 @@ describe("handleMusicianPresenceApi", () => {
     );
     const body = (await response.json()) as {
       presenceBeta: { locked: boolean; sheetUrl: string };
+      events: Array<{
+        dress_code: string | null;
+        call_time: string | null;
+        musician_notes: string | null;
+      }>;
     };
 
     expect(body.presenceBeta).toEqual({ locked: true, sheetUrl: PRESENCE_SHEET_URL });
+    expect(body.events[0]).toMatchObject({
+      dress_code: "Tenue de cérémonie",
+      call_time: "10H30",
+      musician_notes: "Apporter les partitions",
+    });
   });
 
   it("indique le prénom et la relation du responsable ayant répondu", async () => {
@@ -610,6 +634,13 @@ describe("handleMusicianPresenceApi", () => {
 
     expect(response.status).toBe(200);
     expect(invalidateCache).not.toHaveBeenCalled();
+    expect(await response.clone().json()).toMatchObject({
+      event: {
+        dress_code: "Tenue de cérémonie",
+        call_time: "10H30",
+        musician_notes: "Apporter les partitions",
+      },
+    });
     const insert = fakeDb.calls.find((call) => call.sql.includes("INSERT INTO event_presences"));
     expect(insert?.binds[3]).toBe("Après répétition");
   });

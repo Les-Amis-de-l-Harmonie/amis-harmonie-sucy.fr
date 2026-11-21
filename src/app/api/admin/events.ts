@@ -47,6 +47,11 @@ function preservedAuthorizationDetails(value: string | null | undefined): string
   return value === null || value.trim() === "" ? "" : value.trim();
 }
 
+function preservedTrimmedText(value: string | null | undefined): string | null {
+  if (value === undefined) return null;
+  return value === null || value.trim() === "" ? "" : value.trim();
+}
+
 export async function handleEventsApi(request: Request): Promise<Response> {
   const authError = await checkAdminAuth(request);
   if (authError) return authError;
@@ -79,8 +84,9 @@ export async function handleEventsApi(request: Request): Promise<Response> {
       const result = await env.DB.prepare(
         `INSERT INTO events (title, image, location, description, date, time, price, details_link,
           reservation_link, is_public, presence_required, address, response_deadline,
-          parental_authorization_required, authorization_details)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          parental_authorization_required, authorization_details, dress_code, call_time,
+          musician_notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
         .bind(
           data.title,
@@ -97,7 +103,10 @@ export async function handleEventsApi(request: Request): Promise<Response> {
           data.address || null,
           responseDeadline,
           normalizeFlag(data.parental_authorization_required, 0),
-          data.authorization_details?.trim() || null
+          data.authorization_details?.trim() || null,
+          data.dress_code?.trim() || null,
+          data.call_time?.trim() || null,
+          data.musician_notes?.trim() || null
         )
         .run();
       await invalidateCache();
@@ -123,9 +132,12 @@ export async function handleEventsApi(request: Request): Promise<Response> {
           price = ?, details_link = ?, reservation_link = ?, is_public = COALESCE(?, is_public),
           presence_required = COALESCE(?, presence_required),
           address = NULLIF(COALESCE(?, address), ''),
-          response_deadline = NULLIF(COALESCE(?, response_deadline), ''),
-          parental_authorization_required = COALESCE(?, parental_authorization_required),
-          authorization_details = NULLIF(COALESCE(?, authorization_details), '')
+           response_deadline = NULLIF(COALESCE(?, response_deadline), ''),
+           parental_authorization_required = COALESCE(?, parental_authorization_required),
+           authorization_details = NULLIF(COALESCE(?, authorization_details), ''),
+           dress_code = NULLIF(COALESCE(?, dress_code), ''),
+           call_time = NULLIF(COALESCE(?, call_time), ''),
+           musician_notes = NULLIF(COALESCE(?, musician_notes), '')
          WHERE id = ?`
       )
         .bind(
@@ -144,6 +156,9 @@ export async function handleEventsApi(request: Request): Promise<Response> {
           preservedNullableText(data.response_deadline),
           preservedFlag(data.parental_authorization_required),
           preservedAuthorizationDetails(data.authorization_details),
+          preservedTrimmedText(data.dress_code),
+          preservedTrimmedText(data.call_time),
+          preservedTrimmedText(data.musician_notes),
           id
         )
         .run();

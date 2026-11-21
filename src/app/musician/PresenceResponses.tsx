@@ -17,7 +17,7 @@ import { useActingLabels } from "./acting-labels";
 import { showsAuthorizationCard, summarizeAuthorization } from "./authorization-helpers";
 import type { PresenceEvent } from "./musician-types";
 import { getDeadlineTone } from "./presence-deadline";
-import { formatPresentOnTotal } from "./presence-format";
+import { formatPracticalSummary, formatPresentOnTotal } from "./presence-format";
 import { formatEventDayLabel, getCellVisual, getEventDateParts } from "./presence-matrix-helpers";
 import type { PresenceSaveAction } from "./usePresenceSave";
 
@@ -90,6 +90,7 @@ function ResponseRow({ event, pending, error, onOpen, onQuickAnswer }: ResponseR
   const dayLabel = formatEventDayLabel(event.date, currentYear);
   // Titre et heure distinguent deux prestations le même jour.
   const eventLabel = event.time ? `${event.title} à ${event.time}` : event.title;
+  const practicalSummary = formatPracticalSummary(event);
   const authorization =
     event.authorization && showsAuthorizationCard(event)
       ? summarizeAuthorization(event.authorization)
@@ -119,6 +120,11 @@ function ResponseRow({ event, pending, error, onOpen, onQuickAnswer }: ResponseR
           <span className="mt-0.5 block text-sm leading-tight text-foreground/80">
             {event.title}
           </span>
+          {practicalSummary && (
+            <span className="mt-0.5 block text-xs font-medium text-foreground/80">
+              {practicalSummary}
+            </span>
+          )}
           <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             {formatPresentOnTotal(event.counts.present, event.counts.totalMembers)}
             {event.response.comment && (

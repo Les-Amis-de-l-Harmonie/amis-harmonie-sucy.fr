@@ -9,6 +9,8 @@ interface EventReminderRow {
   date: string;
   time: string | null;
   location: string | null;
+  dress_code: string | null;
+  call_time: string | null;
   response_deadline: string | null;
 }
 
@@ -95,7 +97,7 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
     async getReminderTargets(today) {
       const events = await db
         .prepare(
-          `SELECT id, title, date, time, location, response_deadline
+          `SELECT id, title, date, time, location, dress_code, call_time, response_deadline
            FROM events
            WHERE presence_required = 1 AND date >= ?
            ORDER BY date ASC, id ASC`
@@ -168,6 +170,8 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
                 eventDate: event.date,
                 eventTime: event.time,
                 eventLocation: event.location,
+                eventDressCode: event.dress_code,
+                eventCallTime: event.call_time,
                 responseDeadline: event.response_deadline,
                 stage,
                 recipientUserId: childUserId,
@@ -186,6 +190,8 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
                 eventDate: event.date,
                 eventTime: event.time,
                 eventLocation: event.location,
+                eventDressCode: event.dress_code,
+                eventCallTime: event.call_time,
                 responseDeadline: event.response_deadline,
                 stage,
                 recipientUserId: guardian.guardianUserId,
@@ -209,8 +215,9 @@ export function createNotificationStore(db: NotificationD1Database): Notificatio
         .prepare(
           `SELECT subjects.value AS subjectUserId,
                   e.id AS eventId, e.title AS eventTitle, e.date AS eventDate,
-                  e.time AS eventTime, e.location AS eventLocation,
-                  e.response_deadline AS responseDeadline
+                   e.time AS eventTime, e.location AS eventLocation,
+                   e.dress_code AS eventDressCode, e.call_time AS eventCallTime,
+                   e.response_deadline AS responseDeadline
            FROM json_each(?) AS subjects
            JOIN users u ON u.id = subjects.value
                  AND u.is_active = 1 AND u.kind <> 'guardian' AND u.role = 'MUSICIAN'

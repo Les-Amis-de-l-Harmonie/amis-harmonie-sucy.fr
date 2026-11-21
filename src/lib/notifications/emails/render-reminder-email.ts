@@ -52,6 +52,16 @@ function fillTemplate(template: string, values: Record<string, string>): string 
   return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => values[key] ?? match);
 }
 
+/** « Rendez-vous : 10H30 », « Tenue : noir » : seulement ce qui est renseigné. */
+function practicalInfoParts(line: ReminderEventLine): string[] {
+  // Anciennes lignes sans ces champs : on reste tolérant.
+  const { callTimeLabel, dressCode } = line;
+  return [
+    callTimeLabel?.trim() ? `Rendez-vous : ${callTimeLabel.trim()}` : "",
+    dressCode?.trim() ? `Tenue : ${dressCode.trim()}` : "",
+  ].filter(Boolean);
+}
+
 function joinParts(parts: (string | null | undefined)[], separator: string): string {
   return parts.filter((part): part is string => !!part && part.trim() !== "").join(separator);
 }
@@ -68,7 +78,13 @@ function dueLineHtml(line: ReminderEventLine): string {
     ? `<span style="display:inline-block;margin:6px 0 0;padding:3px 10px;border-radius:999px;background:${URGENT_BG};border:1px solid ${URGENT_BORDER};color:${URGENT_TEXT};font-size:14px;line-height:20px;font-weight:700;">${escapeHtml(deadline)}</span>`
     : `<span style="display:inline-block;margin:6px 0 0;font-size:14px;line-height:20px;font-weight:600;color:${INK_SOFT};">${escapeHtml(deadline)}</span>`;
   const accent = line.deadlineSoon ? URGENT_BORDER : LAVENDER;
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td style="border-left:4px solid ${accent};padding:2px 0 2px 12px;font-family:${FONT};"><div style="font-size:17px;line-height:24px;font-weight:800;color:${INK};">${escapeHtml(line.title)}</div><div style="font-size:14px;line-height:21px;color:${INK_SOFT};">${escapeHtml(when)}</div>${deadlineHtml}</td></tr></table>`;
+  const practical = practicalInfoParts(line)
+    .map(
+      (part) =>
+        `<div style="font-size:14px;line-height:21px;color:${INK_SOFT};">${escapeHtml(part)}</div>`
+    )
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr><td style="border-left:4px solid ${accent};padding:2px 0 2px 12px;font-family:${FONT};"><div style="font-size:17px;line-height:24px;font-weight:800;color:${INK};">${escapeHtml(line.title)}</div><div style="font-size:14px;line-height:21px;color:${INK_SOFT};">${escapeHtml(when)}</div>${practical}${deadlineHtml}</td></tr></table>`;
 }
 
 function otherLineHtml(line: ReminderEventLine): string {
@@ -76,7 +92,12 @@ function otherLineHtml(line: ReminderEventLine): string {
     [line.timeLabel ? `${line.dateLabel} à ${line.timeLabel}` : line.dateLabel, line.location],
     " · "
   );
-  return `<tr><td width="14" valign="top" style="padding:3px 0 0;font-family:${FONT};font-size:14px;line-height:20px;color:${LAVENDER};">&bull;</td><td style="padding:3px 0;font-family:${FONT};font-size:14px;line-height:20px;color:${INK_SOFT};"><strong style="color:${INK};">${escapeHtml(line.title)}</strong> · ${escapeHtml(when)}<br /><span style="font-size:13px;color:${MUTED};">Réponse avant le ${escapeHtml(line.deadlineLabel)}</span></td></tr>`;
+  const practical = practicalInfoParts(line);
+  const practicalHtml =
+    practical.length > 0
+      ? `<br /><span style="font-size:13px;color:${INK_SOFT};">${escapeHtml(practical.join(" · "))}</span>`
+      : "";
+  return `<tr><td width="14" valign="top" style="padding:3px 0 0;font-family:${FONT};font-size:14px;line-height:20px;color:${LAVENDER};">&bull;</td><td style="padding:3px 0;font-family:${FONT};font-size:14px;line-height:20px;color:${INK_SOFT};"><strong style="color:${INK};">${escapeHtml(line.title)}</strong> · ${escapeHtml(when)}${practicalHtml}<br /><span style="font-size:13px;color:${MUTED};">Réponse avant le ${escapeHtml(line.deadlineLabel)}</span></td></tr>`;
 }
 
 function sectionHtml(section: ReminderEmailSection): string {

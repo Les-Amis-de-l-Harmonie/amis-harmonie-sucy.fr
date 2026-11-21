@@ -82,6 +82,8 @@ function lineFromClaim(claim: ReminderClaim, today: string): ReminderEventLine {
     claim.eventDate,
     claim.eventTime,
     claim.eventLocation,
+    claim.eventDressCode,
+    claim.eventCallTime,
     claim.responseDeadline,
     today
   );
@@ -94,6 +96,8 @@ function lineFromOther(event: ReminderOtherEvent, today: string): ReminderEventL
     event.eventDate,
     event.eventTime,
     event.eventLocation,
+    event.eventDressCode,
+    event.eventCallTime,
     event.responseDeadline,
     today
   );
@@ -105,6 +109,8 @@ function eventLine(
   eventDate: string,
   eventTime: string | null,
   location: string | null,
+  dressCode: string | null,
+  callTime: string | null,
   responseDeadline: string | null,
   today: string
 ): ReminderEventLine {
@@ -119,6 +125,8 @@ function eventLine(
     dateLabel: frenchDate(eventDate, true),
     timeLabel: eventTime?.trim() ? eventTime.trim().slice(0, 5) : null,
     location: location?.trim() || null,
+    dressCode: dressCode?.trim() || null,
+    callTimeLabel: callTime?.trim() || null,
     deadlineLabel: frenchDate(deadline),
     deadlineSoon: deadlineDays >= 0 && deadlineDays <= 2,
   };
@@ -226,7 +234,12 @@ function modelForReminder(
 function textEventLine(line: ReminderEventLine): string {
   const when = `${line.dateLabel}${line.timeLabel ? ` à ${line.timeLabel}` : ""}`;
   const place = line.location ? ` · ${line.location}` : "";
-  return `• « ${line.title} » — ${when}${place}. Réponse attendue avant le ${line.deadlineLabel}.`;
+  const practicalInfo = [
+    line.dressCode ? `Tenue : ${line.dressCode}` : null,
+    line.callTimeLabel ? `Rendez-vous : ${line.callTimeLabel}` : null,
+  ].filter((value): value is string => value !== null);
+  const practicalInfoText = practicalInfo.length > 0 ? ` ${practicalInfo.join(" · ")}.` : "";
+  return `• « ${line.title} » — ${when}${place}. Réponse attendue avant le ${line.deadlineLabel}.${practicalInfoText}`;
 }
 
 function reminderText(model: ReminderEmailModel, recipientIsGuardian: boolean): string {
@@ -382,6 +395,8 @@ export function groupReminderTargets(targets: ReminderTarget[], today: string): 
         eventDate: target.eventDate,
         eventTime: target.eventTime,
         eventLocation: target.eventLocation,
+        eventDressCode: target.eventDressCode,
+        eventCallTime: target.eventCallTime,
         responseDeadline: target.responseDeadline,
       };
       recipient.claims.set(dedupeKey, claim);

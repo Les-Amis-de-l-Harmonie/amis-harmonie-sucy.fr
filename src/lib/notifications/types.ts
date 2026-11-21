@@ -10,6 +10,8 @@ export interface ReminderTarget {
   eventDate: string;
   eventTime: string | null;
   eventLocation: string | null;
+  eventDressCode: string | null;
+  eventCallTime: string | null;
   responseDeadline: string | null;
   stage: ReminderStage;
   recipientUserId: number;
@@ -39,6 +41,8 @@ export interface ReminderClaim {
   eventDate: string;
   eventTime: string | null;
   eventLocation: string | null;
+  eventDressCode: string | null;
+  eventCallTime: string | null;
   responseDeadline: string | null;
 }
 
@@ -50,6 +54,8 @@ export interface ReminderOtherEvent {
   eventDate: string;
   eventTime: string | null;
   eventLocation: string | null;
+  eventDressCode: string | null;
+  eventCallTime: string | null;
   responseDeadline: string | null;
 }
 
